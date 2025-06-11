@@ -1,0 +1,8 @@
+# NTP specific ignores
+ntp.conf.bak
+*.log
+*.pid
+
+# General ignores
+.DS_Store
+Thumbs.db
