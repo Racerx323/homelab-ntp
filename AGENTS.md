@@ -1,106 +1,130 @@
-# Repository Agents
+# Repository instructions
 
-This document outlines the various automated agents and services that have access to and interact with this repository. Understanding their roles is key to maintaining a secure and efficient workflow.
+## Scope and sources of truth
 
----
+- Keep portable NTPsec server and client configuration in this repository.
+- Treat `ntpsec/docs/ntp-architecture-deployment-plan-v1.0.md` as the source of
+  truth for locked decisions, deployment state, risks, and the resume point.
+- Keep host membership and OS facts in `homelab-server-configs/inventory`.
+- Keep A, AAAA, PTR, and SRV records in `homelab-dns`.
+- Keep addresses, DHCP, UniFi firewall policy, and NAT policy in
+  `homelab-network`.
+- Keep architecture diagrams in `homelab-docs`; keep secrets, private keys,
+  credentials, and controller exports out of Git.
+- Keep addresses, ports, schedules, records, and rollout procedure in the
+  governing plan instead of duplicating them here.
 
-## GitHub Actions
+## Working practice
 
-- **Purpose**: Automates workflows such as testing, building, and deploying code based on triggers like pushes, pull requests, or scheduled events.
-- **Configuration**: Workflows are defined in YAML files located in the `.github/workflows` directory.
-- **Permissions**: Permissions are granted on a per-workflow basis and are scoped to be as restrictive as possible. See each workflow file for its specific permissions.
+- Inspect live state before generating host configuration. Do not infer
+  interfaces, connection profiles, package paths, unit names, daemon users,
+  leapfile locations, or UniFi rule order.
+- Repository edits and local tests do not require a live-action gate.
+- Update the governing plan after a decision, milestone, failed live action,
+  rollback, or resume-point change.
+- A plan entry does not authorize live access.
+- One scoped approval may cover a defined read-only collection on one target.
+  It does not require approval for each command in that collection.
+- Obtain approval for each persistent host or controller change. The approved
+  action may include its predeclared read-only preflight, acceptance, and
+  rollback checks.
+- Record the SHA-256 of privileged remote scripts and preapproved command
+  bundles. An edit invalidates approval for that artifact.
+- Preserve executed privileged mutation artifacts with their evidence. Edit
+  unexecuted files through the normal review workflow.
+- After a failed or interrupted mutation, inspect live state before retrying.
 
----
+## Rollout safety
 
-## Dependabot
+- Change and accept `j1-svntp1` before changing `j1-svntp`.
+- Mutate one NTP node or one DNS node at a time. Keep the peer serving while
+  changing the other node.
+- Follow the governing plan's independent-server and active/standby DNAT
+  design. Do not add an HA mechanism without an approved plan change.
+- Define rollback before a persistent mutation. Verify the backup path and the
+  configuration needed to restore service.
+- Retain ordinary diagnostics without a classification step. Redact secrets and
+  protect output that may contain credentials or private material.
+- Use the observed UniFi rule model; do not require a fixed number of rules.
 
-- **Purpose**: Automatically keeps dependencies up-to-date by scanning for outdated packages and opening pull requests to update them. This helps to patch vulnerabilities and use the latest features.
-- **Configuration**: The configuration for Dependabot is located in the `.github/dependabot.yml` file.
-- **Scope**: Currently configured to monitor:
-  - GitHub Actions (`.github/workflows/*.yml`)
+## Configuration artifacts
 
----
+- Mirror each accepted live `/etc/ntp.conf` under a host-specific
+  `ntpsec/configs/` path. Keep the accepted mirror byte-for-byte exact.
+- Keep source templates separate from rendered files. Put server scripts under
+  `ntpsec/scripts/`, client scripts under `client/scripts/`, and runbooks under
+  `ntpsec/docs/`.
+- Keep public examples free of private hostnames, addresses, credentials, and
+  operational evidence.
+- Install files with explicit owner, group, and mode. Reject symlinks and
+  unexpected file types at installation boundaries.
 
-## Code Style Linter
+## NTPsec and systemd
 
-- **Purpose**: To automatically check the codebase against a set of style rules to ensure consistency and readability. This repository adheres to the **Google Style Guides**.
-- **Configuration**: This is typically configured as a step within a GitHub Actions workflow (e.g., `.github/workflows/lint.yml`) that runs on pull requests or pushes. It can use tools like `Super-Linter`.
-- **Permissions**: Requires read-only permissions to check out and analyze the repository's code.
+- Treat the installed Debian 11 NTPsec build and its local manual pages as the
+  runtime authority.
+- Audit the live GPS/PPS, upstream, restriction, interface, driftfile, leapfile,
+  and daemon state before changing `ntp.conf`.
+- Prove IPv4 and IPv6 listeners, client responses, peer selection, reach,
+  stratum, leap state, offset, jitter, and journal health after deployment.
+- Confirm the installed leapfile reload behavior before adding an `ntpd`
+  restart or reload.
+- Run `systemd-analyze verify` on changed units when available and repeat unit
+  validation on a Debian 11 target before installation.
+- Query `MainPID` and `NRestarts` only for service units. Use properties common
+  to the inspected type for timers, paths, sockets, and targets.
+- Treat workstation checks as partial when required packages, hardware,
+  systemd state, or UniFi behavior exist only on a target. Follow the governing
+  plan's network and DNS acceptance checks.
 
----
+## Shell rules
 
-## Codecov
+- Use Bash for repository shell entry points. Standalone entry points should
+  use `set -Eeuo pipefail`; sourced helpers must not change caller shell options.
+- Handle fallible commands explicitly in functions used by `if`, `!`, `&&`, or
+  `||`.
+- Never reuse a script-level readonly variable name as a function-local name.
+  Bash dynamic scope can reject the local declaration at runtime.
+- Run `bash -n`, ShellCheck, and shfmt on each changed shell file. Never run
+  bare `shfmt -w`; format intended files with `shfmt -w -i 4 -ci FILE`.
+- Keep tracked shell entry points executable in the working tree and Git index.
+- Test success and rejection paths for parsers, fail-closed validators, and
+  mutation scripts. Give simple read-only wrappers a focused dry run or
+  self-test.
 
-- **Purpose**: To upload code coverage reports to Codecov to track the percentage of the codebase that is tested.
-- **Configuration**: This is typically configured within a GitHub Actions workflow (e.g., in a file within `.github/workflows/`) to run after tests and upload the results.
-- **Permissions**: It generally requires permissions to read repository contents and, in some configurations, to post comments on pull requests with coverage information.
+Privileged remote runners require extra controls:
 
----
+- Set an explicit remote working directory, invoke staged files through
+  `/bin/bash`, and capture both output streams with the transport status.
+- Give acceptance conditions distinct labels and fail on missing, duplicate,
+  or false results.
+- Test rollback and early-failure behavior before requesting live execution.
 
-## Security Considerations
+## Validation
 
-- **Least Privilege**: Each automated agent should operate with the minimum permissions necessary to perform its tasks. Review and adjust permissions regularly.
-- **Secrets Management**: Sensitive information such as API keys and tokens should be stored securely using GitHub Secrets and not hard-coded in workflows.
-- **Dependency Updates**: Regularly review and merge Dependabot pull requests to keep dependencies up-to-date and reduce the risk of vulnerabilities.
-- **Monitoring and Alerts**: Set up monitoring for automated workflows to detect and respond to any unusual activity or failures.
+Run focused checks for changed files, followed by:
 
----
+```bash
+git diff --check
+pre-commit run --all-files
+```
 
-## Testing instructions
+Run Markdownlint on changed documentation that policy does not exclude. Review
+excluded `AGENTS.md` by inspection.
 
-- Fix any test or type errors until the whole suite is green.
-- After moving files or changing imports, check that all files or imports adhere to the project's coding standards.
-- Add or update tests for the code you change, even if nobody asked.
-- Run linters and formatters to ensure code quality.
-- Make sure to test edge cases and error handling.
-- Document any new features or changes to existing functionality.
-- Ensure all changes are backward compatible.
-- Update any relevant documentation or comments in the code.
+If Gitleaks classifies a reviewed public integrity hash as a secret, allowlist
+that exact value. Do not add path-wide or arbitrary-hex exclusions.
 
----
+## Reviews
 
-## PR instructions
+- Run `coderabbit review` with network escalation.
+- Use pull-request title format `[homelab-ntp] <title>`. Describe validation,
+  live impact, authorization, rollback, and cross-repository changes.
+- Do not claim live acceptance from local tests.
 
-- **Title format**: [&lt;project_name&gt;] &lt;Title&gt;
-- **Description**: Provide a clear and concise description of the changes made in the PR.
-- **Related Issues**: Link any related issues or pull requests.
-- **Checklist**:
-  - [ ] Code is well-tested
-  - [ ] Documentation has been updated
-  - [ ] Changes have been reviewed by at least one other person
+## vexp
 
-
-## CodeRabbit reviews
-
-CodeRabbit requires external network access. Run all `coderabbit review` commands with network escalation (`sandbox_permissions: "require_escalated"`). Request the reusable approval prefix `["coderabbit", "review"]`.
-
-Do not wait for a sandboxed review to time out. If it stalls while connecting, rerun it immediately with network escalation.
-
-## vexp <!-- vexp v2.1.7 -->
-
-**MANDATORY: use `run_pipeline` - do NOT grep or glob the codebase.**
-vexp returns pre-indexed, graph-ranked context in a single call.
-
-### Workflow
-1. `run_pipeline` with your task description - ALWAYS FIRST (replaces all other tools)
-2. Make targeted changes based on the context returned
-3. `run_pipeline` again only if you need more context
-
-### Available MCP tools
-- `run_pipeline` - **PRIMARY TOOL**. Runs capsule + impact + memory in 1 call.
-  Auto-detects intent. Includes file content. Example: `run_pipeline({ "task": "fix auth bug" })`
-- `get_skeleton` - compact file structure
-- `index_status` - indexing status
-- `expand_vexp_ref` - expand V-REF placeholders in v2 output
-
-### Agentic search
-- Do NOT use built-in file search, grep, or codebase indexing - always call `run_pipeline` first
-- If you spawn sub-agents or background tasks, pass them the context from `run_pipeline`
-  rather than letting them search the codebase independently
-
-### Smart Features
-Intent auto-detection, hybrid ranking, session memory, auto-expanding budget.
-
-### Multi-Repo
-`run_pipeline` auto-queries all indexed repos. Use `repos: ["alias"]` to scope. Run `index_status` to see aliases.
-<!-- /vexp -->
+Call `run_pipeline` once at task start for orientation unless the task names
+the files or symbols to inspect. Use `eager: true` for non-trivial work. After
+that call, use normal tools and native search for literal strings and runtime
+output.
