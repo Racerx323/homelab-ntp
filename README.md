@@ -18,14 +18,18 @@ NTPsec servers and clients.
 | Permanent ULA | `fd36:5aa8:6971:1::50/64` | `fd36:5aa8:6971:1::51/64` |
 | Platform | Raspberry Pi 4B, 8 GB | Raspberry Pi 4B, 4 GB |
 | GPS | Uputronics GPS/RTC expansion board | Uputronics GPS/RTC expansion board |
-| Power | Raspberry Pi PoE+ HAT | Raspberry Pi PoE+ HAT |
+| Power | HAT model pending per-node confirmation | Working Raspberry Pi PoE HAT (2018), retained |
 | Reported current OS | Debian 11 | Debian 11 |
 | Rebuild target | Raspberry Pi OS Lite (64-bit), Trixie (Debian 13-based) | Raspberry Pi OS Lite (64-bit), Trixie (Debian 13-based) |
 | Reported current NTPsec | `1.2.1+82-g7abe7fba6` | `1.2.1+82-g7abe7fba6` |
 | Rollout order | Second | First |
 
 The nodes provide independent time service. The design does not use
-Keepalived, VRRP, or another NTP HA mechanism.
+Keepalived, VRRP, or another NTP HA mechanism. Both nodes share a GPS Source
+L1G1A-STD antenna through a two-output Uputronics splitter; j1-svntp supplies
+antenna power. Its outage requires the governing plan's power-continuity gate.
+Retain j1-svntp1's working PoE HAT; PoE+ is the selected replacement upon failure,
+subject to separate compatibility validation and live authorization.
 
 ## Network model
 
@@ -54,7 +58,7 @@ The approved target adds:
 - Equal-priority `_ntp._udp.local.theama.co` SRV records.
 - A local leapfile maintained by `ntpleapfetch` every four weeks.
 - A clean, one-node-at-a-time Trixie rebuild with Webmin, needrestart, msmtp,
-  watchdog, a Munin endpoint, NTPsec, GPS/RTC/PPS, and PoE+ HAT acceptance.
+  watchdog, a Munin endpoint, NTPsec, GPS/RTC/PPS, and installed PoE HAT acceptance.
   Spare SD cards will preserve both Debian 11 installations for rollback.
 
 ## Project status

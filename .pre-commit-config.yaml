@@ -6,6 +6,14 @@ exclude: (?:^|/)(?:\.vexp|\.agents)/
 repos:
   - repo: local
     hooks:
+      - id: ntp-baseline-offline
+        name: NTP baseline collector offline tests
+        entry: ntpsec/tests/run.sh
+        language: system
+        files: >-
+          ^(?:ntpsec/(?:scripts/|tests/|configs/|docs/(?:inspect-node|phase1-evidence-checklist)\.md)|\.pre-commit-config\.yaml$|\.github/workflows/validation\.yml$)
+        pass_filenames: false
+
       - id: shellcheck
         name: ShellCheck
         entry: shellcheck

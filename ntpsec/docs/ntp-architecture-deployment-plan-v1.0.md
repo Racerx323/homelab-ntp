@@ -1,6 +1,6 @@
 # Dual-stack NTP architecture and deployment
 
-Plan version: `1.2` (stable filename retained for existing links).
+Plan version: `1.3` (stable filename retained for existing links).
 For current status, operation history, and the next gate, see
 [NTPsec history](../HISTORY.md).
 
@@ -53,15 +53,52 @@ destinations to the active local DNAT target.
 | Permanent ULA | `fd36:5aa8:6971:1::50/64` | `fd36:5aa8:6971:1::51/64` |
 | Platform | Raspberry Pi 4B, 8 GB | Raspberry Pi 4B, 4 GB |
 | GPS | Uputronics GPS/RTC expansion board | Uputronics GPS/RTC expansion board |
-| Power | Raspberry Pi PoE+ HAT | Raspberry Pi PoE+ HAT |
+| Power | HAT model pending per-node confirmation | Working Raspberry Pi PoE HAT (2018), retained |
 | Reported current OS | Debian 11 | Debian 11 |
 | Target OS | Raspberry Pi OS Lite (64-bit), Trixie | Raspberry Pi OS Lite (64-bit), Trixie |
 | Reported current NTPsec | `1.2.1+82-g7abe7fba6` | `1.2.1+82-g7abe7fba6` |
 | Target NTPsec | Record installed Trixie build; do not pin the old build | Record installed Trixie build; do not pin the old build |
 | Rollout order | Second | First |
 
-Both nodes act as independent authoritative time sources. The project will not
-add Keepalived, VRRP, or another NTP HA layer.
+Both nodes run independent NTP services. They share a GPS antenna and its
+power path, so they are not independent GPS failure domains. The project will
+not add Keepalived, VRRP, or another NTP HA layer.
+
+### Existing hardware and replacement policy
+
+Retain j1-svntp1's working Raspberry Pi PoE HAT through the OS rebuild. Aaron
+identified its 2018 marking and confirmed that it is in use and works. He
+reports that this model is no longer available and selected the Raspberry Pi
+PoE+ HAT as its replacement **upon failure**, not as a rebuild prerequisite.
+The prior PoE+ description is not accepted evidence for j1-svntp's HAT;
+confirm that node's model during its own baseline.
+
+Validate power, fan, thermal behavior and GPS/RTC stack compatibility for the
+actual installed HAT on Trixie. Existing Debian 11 operation does not establish
+Trixie compatibility. A future PoE+ replacement requires its own scoped action,
+verified switch power capability/budget, stack clearance and GPIO/I2C
+compatibility, boot configuration, fan and thermal tests, and recovery path.
+Do not reuse PoE HAT assumptions or claim the old SD card alone reverses a
+hardware replacement; a failed HAT is not a working rollback spare.
+
+### Shared GPS antenna and maintenance dependency
+
+Both receivers share one GPS Source L1G1A-STD antenna through a Uputronics
+two-output SMA GPS splitter, one receiver per output. Aaron visually confirmed
+that **j1-svntp supplies antenna power** through its GPS board. Preserve that
+power path and the common antenna/splitter connections during the first
+j1-svntp1 rebuild. There is no unused third receiver output.
+
+The shared antenna, splitter and supplying node are GPS failure dependencies.
+Before any later j1-svntp power-off, define a separately authorized antenna-power
+continuity procedure with the exact connection mapping, power compatibility,
+expected interruption, acceptance and rollback. Verify the surviving
+j1-svntp1's GPS/PPS selection and IPv4/IPv6 time service with the planned
+maintenance power arrangement before allowing that outage. No alternative
+power source, splitter reconnection or hardware purchase is selected here.
+If continuity cannot be established, stop and obtain an explicit revised
+service-impact decision; do not assume holdover or upstreams meet acceptance.
+Record the final antenna-power source and mapping after maintenance.
 
 ## Locked decisions
 
@@ -216,7 +253,7 @@ interval while `j1-svntp` remains available.
   cards' capacities and identities before writing either new card.
 - Confirm console or hands-on access, maintenance window, acceptable client
   impact, and a named operator for power, media, and PoE recovery.
-- Identify exact GPS/RTC board revision, antenna and PPS wiring, PoE+ HAT
+- Identify exact GPS/RTC board revision, antenna and PPS wiring, installed PoE HAT
   revision, physical stack order, and the network switch port for each node.
   Board revision controls the RTC chip, UART settings, and boot overlay choice.
 
@@ -236,7 +273,7 @@ origin and installed version. Configure and validate:
 | `munin-node` endpoint | Installed package and enabled service; observed listener and client allowlist; collection from the approved Munin poller over each intended address family; usable host metrics and no unintended External exposure. The Munin component owns endpoint configuration and plugin choices |
 | `watchdog` | Observed `/dev/watchdog` owner/driver and service configuration, reboot behavior and recovery path; enable only after the node can be recovered independently and a controlled acceptance test is approved |
 | GPS/RTC HAT | Verified board revision, antenna/fix, UART device and baud, I2C RTC identity and sane time, PPS GPIO and `/dev/pps*` pulses, `gpsd` feed and permissions, and persistence after reboot; choose boot overlays for the selected image and observed hardware |
-| PoE+ HAT | Correct switch PoE class and power budget, boot and sustained power without undervoltage, fan detection/control and thermal behavior, and no GPIO/I2C conflict with the GPS/RTC HAT |
+| Installed PoE HAT (PoE+ only if replaced) | Correct switch PoE class and power budget, boot and sustained power without undervoltage, fan detection/control and thermal behavior, and no GPIO/I2C conflict with the GPS/RTC HAT |
 | `ntpsec` | Installed Trixie package/build and actual config path, GPS/PPS and sanity-source selection, leapfile and four-week timer, no competing time daemon, IPv4/IPv6 UDP 123 listeners and client responses, NTS/IPv4/IPv6 upstream behavior as configured |
 
 Use the existing NTPsec/GPSD arrangement as input evidence, not as an
@@ -251,9 +288,9 @@ The Uputronics datasheet describes GPS UART, PPS, I2C RTC, and different
 settings by board revision. Its Raspberry Pi OS examples are reference inputs,
 not proof of a Trixie boot configuration. The older NTPsec microserver
 HOWTO is likewise a conceptual reference, not a Trixie installation script.
-The Raspberry Pi PoE+ HAT includes I2C-controlled fan hardware; prove fan and
-power operation on the selected image rather than assuming that a successful
-boot proves full HAT support.
+Prove fan and power operation for the installed HAT on the selected image;
+a successful boot alone does not establish full HAT support. Apply the
+replacement policy above only if the working PoE HAT fails.
 
 ### Inventory contract
 
@@ -269,7 +306,7 @@ Both host files must have observed, non-secret specifications: exact Pi model
 and revision, CPU architecture/cores, installed RAM, boot/root storage type,
 capacity and filesystem, boot firmware/kernel and Raspberry Pi OS release,
 GPS/RTC HAT manufacturer/model/PCB revision/chipset and connection roles,
-PoE+ HAT model
+Installed PoE HAT model (including PoE+ if replaced)
 and IEEE class/power characteristics, physical switch-port reference where
 inventory convention permits it, and permanent-management ULA with
 `address_authority: homelab-network`. Record service role (independent NTP
@@ -343,7 +380,7 @@ and post-state hashes for protected host artifacts.
    statistics, and leapfile directives. Produce a separate Trixie candidate
    against observed installed package paths and units.
 4. Define node baseline configuration and validation for Webmin, needrestart,
-   msmtp/sendmail, the Munin endpoint, watchdog, GPS/RTC/PPS, PoE+ power and
+   msmtp/sendmail, the Munin endpoint, watchdog, GPS/RTC/PPS, installed PoE HAT power and
    fan, GPSD, NTPsec, dual-stack networking, and the four-week
    `ntpleapfetch` timer. Reuse established `homelab-server-configs` baseline
    app artifacts only after checking them against Trixie and the node's actual
@@ -371,7 +408,8 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    remains reachable. Capture a pre-rebuild client and NTP health baseline;
    identify clients that use only `j1-svntp1` and their retry/failover behavior.
    One healthy node does not guarantee zero client impact.
-2. Under the approved maintenance window, power down only `j1-svntp1` and
+2. Preserve j1-svntp's antenna-power path and the shared splitter connections.
+   Under the approved maintenance window, power down only `j1-svntp1` and
    preserve its labelled Debian 11 SD card. Insert its verified Trixie card;
    do not reuse `j1-svntp` media or identity.
 3. Boot with console access available. Confirm image, release, architecture,
@@ -406,7 +444,9 @@ old network profile or NTP config onto the new image is not a rollback.
 
 Repeat the Phase 3 controls with `10.1.0.50` and
 `fd36:5aa8:6971:1::50`. First prove that rebuilt `j1-svntp1` serves clients
-independently. For each family with an existing active `j1-svntp` DNAT rule,
+independently. Complete the shared-antenna power-continuity gate above before
+any primary power-off; DNAT failover does not preserve antenna power. For each
+family with an existing active `j1-svntp` DNAT rule,
 disable that rule and promote the matching `j1-svntp1` standby rule under a
 separately approved UniFi action before taking the primary down; verify one
 active rule per affected family and client traffic through the standby. If
@@ -496,7 +536,7 @@ Acceptance requires:
   identified replacement media, and their labelled Debian 11 cards remain
   available for recovery through the agreed retention period.
 - Webmin, needrestart, msmtp, `munin-node`, watchdog, GPS/RTC, PPS, GPSD,
-  NTPsec, and PoE+ HAT checks in the per-node acceptance table pass on each
+  NTPsec, and installed PoE HAT checks in the per-node acceptance table pass on each
   host.
 - Both hosts retain their static IPv4 and permanent ULA after reboot.
 - Both hosts retain global IPv6 and a Router Advertisement default route.
@@ -524,7 +564,10 @@ declaring acceptance.
 ## Rollback policy
 
 - Roll back one node or one controller policy surface at a time.
-- Keep the other NTP node serving throughout host rollback.
+- Keep the other NTP node serving throughout host rollback. Preserve the
+  accepted antenna-power arrangement; restore any changed mapping only under
+  its approved rollback sequence and verify GPS/PPS and client service. Do not
+  restore the original power dependency while its supplying node is unavailable.
 - For a failed Trixie rebuild, restore only that host's preserved Debian 11
   SD card and verify boot and NTP client service. Do not overwrite the old
   card. After Trixie acceptance, restore individual files or network
@@ -541,6 +584,8 @@ declaring acceptance.
 
 | Risk | Control |
 | --- | --- |
+| Shared antenna loses power during primary maintenance | Complete the antenna-power continuity gate before j1-svntp shutdown; verify surviving GPS/PPS and client service and retain an explicit rollback path |
+| Failed PoE HAT replaced with PoE+ | Revalidate switch power, stack compatibility, boot/fan behavior and recovery; retain working HATs during the OS rebuild |
 | SSH loss during profile activation | Use console or an access path that tolerates interruption; verify a rollback profile before activation |
 | Duplicate ULA | Check neighbor ownership and Duplicate Address Detection before acceptance |
 | Loss of global IPv6 | Keep `ipv6.method auto`, Router Advertisement routes, and source-selection checks |
@@ -561,6 +606,7 @@ declaring acceptance.
 - [Raspberry Pi OS editions and Trixie release](https://www.raspberrypi.com/documentation/computers/os.html)
 - [Raspberry Pi Imager and headless setup](https://www.raspberrypi.com/documentation/computers/getting-started.html)
 - [Uputronics GPS/RTC board and revision-specific datasheet](https://store.uputronics.com/products/raspberry-pi-gps-rtc-expansion-board)
-- [Raspberry Pi PoE+ HAT](https://www.raspberrypi.com/products/poe-plus-hat/)
+- [Uputronics two-output GPS antenna splitter](https://store.uputronics.com/products/gps-antenna-signal-splitter-with-sma)
+- [Raspberry Pi PoE+ HAT replacement reference](https://www.raspberrypi.com/products/poe-plus-hat/)
 - [NTPsec Stratum-1 Microserver HOWTO](https://www.ntpsec.org/white-papers/stratum-1-microserver-howto/)
 - [Webmin installation and repository](https://webmin.com/download/)
