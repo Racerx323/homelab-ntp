@@ -1,0 +1,5 @@
+[mcp_servers.vexp]
+cwd = "/home/aaron/code/homelab-ntp"
+
+[mcp_servers.vexp.env]
+VEXP_WORKSPACE = "/home/aaron/code/homelab-ntp"

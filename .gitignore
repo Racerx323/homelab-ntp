@@ -1,11 +1,18 @@
-# NTP specific ignores
-ntp.conf.bak
+# Temporary and diagnostic artifacts
 *.log
+*.tmp
+*.bak
+*.out
+*.err
 *.pid
 
 # General ignores
 .DS_Store
 Thumbs.db
+
+# Repository-shared VS Code configuration
+!/.vscode/
+!/.vscode/**
 
 # vexp — repository-local runtime files
 /.vexp/*

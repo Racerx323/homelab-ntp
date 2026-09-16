@@ -72,6 +72,8 @@ repos:
 
       - id: gitleaks
         name: Gitleaks
+        # Commit guard only; use `gitleaks detect --source . --no-git` for
+        # untracked and unstaged working-tree artifacts.
         entry: gitleaks protect --staged --redact --no-banner
         language: system
         pass_filenames: false

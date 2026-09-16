@@ -4,11 +4,10 @@ Configuration, deployment tooling, and operating documentation for the homelab
 NTPsec servers and clients.
 
 > [!NOTE]
-> The repository foundation is complete, but it does not contain deployable
-> `ntp.conf` files or systemd units yet. Work starts with a scoped read-only
-> capture from `j1-svntp1`. The
-> [governing implementation plan](ntpsec/docs/ntp-architecture-deployment-plan-v1.0.md)
-> records the approved design, deployment state, rollback, and resume point.
+> The repository does not contain deployable `ntp.conf` files or systemd units
+> yet. The [governing plan](ntpsec/docs/ntp-architecture-deployment-plan-v1.0.md)
+> defines the design and acceptance criteria. [NTPsec history](ntpsec/HISTORY.md)
+> records current status and the exact resume point.
 
 ## NTP servers
 
@@ -20,8 +19,9 @@ NTPsec servers and clients.
 | Platform | Raspberry Pi 4B, 8 GB | Raspberry Pi 4B, 4 GB |
 | GPS | Uputronics GPS/RTC expansion board | Uputronics GPS/RTC expansion board |
 | Power | Raspberry Pi PoE+ HAT | Raspberry Pi PoE+ HAT |
-| OS | Debian 11 | Debian 11 |
-| NTPsec | `1.2.1+82-g7abe7fba6` | `1.2.1+82-g7abe7fba6` |
+| Reported current OS | Debian 11 | Debian 11 |
+| Rebuild target | Raspberry Pi OS Lite (64-bit), Trixie (Debian 13-based) | Raspberry Pi OS Lite (64-bit), Trixie (Debian 13-based) |
+| Reported current NTPsec | `1.2.1+82-g7abe7fba6` | `1.2.1+82-g7abe7fba6` |
 | Rollout order | Second | First |
 
 The nodes provide independent time service. The design does not use
@@ -53,16 +53,16 @@ The approved target adds:
 - One active and one disabled standby DNAT rule for each IP family.
 - Equal-priority `_ntp._udp.local.theama.co` SRV records.
 - A local leapfile maintained by `ntpleapfetch` every four weeks.
+- A clean, one-node-at-a-time Trixie rebuild with Webmin, needrestart, msmtp,
+  watchdog, a Munin endpoint, NTPsec, GPS/RTC/PPS, and PoE+ HAT acceptance.
+  Spare SD cards will preserve both Debian 11 installations for rollback.
 
 ## Project status
 
-- Repository governance and the governing plan are in place.
-- The existing live configuration has not been captured or changed under this
-  plan.
-- Deployable NTPsec configuration, systemd units, scripts, and tests remain
-  pending live evidence.
-- The next gate defines and reviews the complete read-only `j1-svntp1`
-  baseline collector. Execution requires one scoped authorization.
+Raspberry Pi OS Lite (64-bit), Trixie, is the locked rebuild image. No live
+host or controller action has been authorized under this plan. See
+[NTPsec history](ntpsec/HISTORY.md) for current state, completed work, and the
+next gate.
 
 ## Current repository layout
 
@@ -76,6 +76,7 @@ homelab-ntp/
 │   └── templates/
 │       └── gitkeep
 ├── ntpsec/
+│   ├── HISTORY.md
 │   ├── configs/
 │   │   └── gitkeep
 │   ├── docs/
@@ -85,6 +86,7 @@ homelab-ntp/
 │   └── templates/
 │       └── gitkeep
 ├── .github/workflows/validation.yml
+├── .codex/config.toml
 ├── .pre-commit-config.yaml
 ├── AGENTS.md
 └── README.md
@@ -102,17 +104,34 @@ deployment scripts, runbook, and test layout.
 | Host membership, functions, components, and OS facts | `homelab-server-configs/inventory` |
 | A, AAAA, PTR, and SRV records | `homelab-dns` |
 | Addresses, DHCP, firewall policy, and DNAT | `homelab-network` |
+| Munin endpoint configuration and plugins | `homelab-monitoring-observability/Munin` |
 | Architecture diagrams | `homelab-docs` |
 | Secrets and private keys | Approved secrets manager |
 
 ## Validation
 
-Run repository checks from the repository root:
+Run focused checks from the repository root. For broad or executable changes,
+run the full pre-commit suite:
 
 ```bash
 git diff --check
 pre-commit run --all-files
 ```
+
+The pre-commit Gitleaks hook checks staged files. Its pass does not cover
+untracked or unstaged artifacts; scan the working tree before reviewing new
+local artifacts or requesting deployment:
+
+```bash
+gitleaks detect --source . --no-git --redact --no-banner
+```
+
+The repository has no NTP executable or regression suite yet. When the first
+collector, installer, or deployment operation arrives, add a focused offline
+test, connect it to a path-triggered pre-commit hook, and run that test in this
+repository's CI. The shared baseline CI job does not run new NTP hooks by
+default. Keep the current fixed-flag shfmt check; add a scoped `--write`
+helper only if shell scripts make one useful.
 
 Local checks do not prove GPS/PPS operation, NTP listener state, systemd state,
 or UniFi behavior. The governing plan requires target and client evidence for

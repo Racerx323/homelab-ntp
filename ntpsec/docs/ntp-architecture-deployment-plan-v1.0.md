@@ -1,27 +1,24 @@
 # Dual-stack NTP architecture and deployment
 
-## Implementation status
-
-| Field | Value |
-| --- | --- |
-| Plan version | `1.0` |
-| Phase | Repository foundation complete; read-only baseline collector definition is next |
-| Last updated | `2026-08-10` |
-| Current accepted live state | Existing dual-node NTP service; no live state inspected or changed under this plan |
-| Current repository state | Condensed governance policy and foundation files accepted by repository validation; deployable NTPsec artifacts remain pending live capture |
-| Current next single gate | Define and review a read-only baseline collector for `j1-svntp1`; do not execute it without separate authorization |
-| Authorization boundary | This document authorizes repository planning only. It does not authorize SSH, UniFi access, file installation, network changes, service actions, DNS reloads, or tests that alter live state |
+Plan version: `1.2` (stable filename retained for existing links).
+For current status, operation history, and the next gate, see
+[NTPsec history](../HISTORY.md).
 
 ## Purpose
 
-This document governs the audit and deployment of the two Raspberry Pi NTPsec
-servers on the Default LAN. It records design decisions, action boundaries,
-validation, rollback, and evidence. Update it after each defined or executed
-gate so another operator can resume from the status table without reconstructing
-state from chat or shell history.
+This document governs the one-node-at-a-time clean rebuild of the two Raspberry
+Pi NTPsec servers from Debian 11 to Raspberry Pi OS Lite (64-bit), Trixie
+(Debian 13-based), on the Default LAN. The existing dual-stack and
+network-policy work follows the rebuild. This plan records design decisions,
+action boundaries, validation, rollback, and evidence requirements. Change it
+for approved architecture decisions or deviations. Record operation outcomes
+and the exact resume point in `ntpsec/HISTORY.md`.
 
 The project covers:
 
+- Trixie boot-media preparation, baseline applications, hardware bring-up,
+  one-node acceptance, and recovery to Debian 11.
+- A Munin endpoint on each NTP node, governed by the Munin component repo.
 - Four-week leapfile maintenance with `ntpleapfetch` and systemd.
 - Static dual-stack host networking and DHCP-resistant DNS settings.
 - Exact mirrors and audits of each live `/etc/ntp.conf`.
@@ -57,8 +54,10 @@ destinations to the active local DNAT target.
 | Platform | Raspberry Pi 4B, 8 GB | Raspberry Pi 4B, 4 GB |
 | GPS | Uputronics GPS/RTC expansion board | Uputronics GPS/RTC expansion board |
 | Power | Raspberry Pi PoE+ HAT | Raspberry Pi PoE+ HAT |
-| OS | Debian 11 | Debian 11 |
-| NTPsec | `1.2.1+82-g7abe7fba6` | `1.2.1+82-g7abe7fba6` |
+| Reported current OS | Debian 11 | Debian 11 |
+| Target OS | Raspberry Pi OS Lite (64-bit), Trixie | Raspberry Pi OS Lite (64-bit), Trixie |
+| Reported current NTPsec | `1.2.1+82-g7abe7fba6` | `1.2.1+82-g7abe7fba6` |
+| Target NTPsec | Record installed Trixie build; do not pin the old build | Record installed Trixie build; do not pin the old build |
 | Rollout order | Second | First |
 
 Both nodes act as independent authoritative time sources. The project will not
@@ -128,6 +127,7 @@ one.
 | Host membership, functions, components, and OS facts | `homelab-server-configs/inventory` |
 | A, AAAA, PTR, and SRV records | `homelab-dns` |
 | Addresses, DHCP, firewall policy, and DNAT | `homelab-network` |
+| Munin endpoint configuration and plugins | `homelab-monitoring-observability/Munin` |
 | Architecture diagrams | `homelab-docs` |
 | Secrets and private keys | Approved secrets manager |
 
@@ -135,6 +135,7 @@ one.
 
 ```text
 ntpsec/
+├── HISTORY.md
 ├── configs/
 │   ├── j1-svntp/
 │   │   └── ntp.conf
@@ -157,35 +158,21 @@ ntpsec/
 Create deployable files after the read-only captures establish their exact
 paths and contracts. Do not create guessed `ntp.conf` files or systemd units.
 
-## Current repository evidence
-
-The repository audit on `2026-08-10` found:
-
-- `homelab-ntp` contains skeletal `client/` and `ntpsec/` trees.
-- No deployable NTPsec configuration or service unit exists in the repository.
-- `homelab-dns` already has IPv4 A and PTR data for `.50` and `.51` in its
-  private ignored Unbound local-zone fragment.
-- The local zone lacks the agreed NTP AAAA, IPv6 PTR, and SRV records.
-- Pi-hole already forwards the ULA `/64` reverse namespace to Unbound.
-- `homelab-server-configs` inventory has no NTP group or NTP hosts.
-- `homelab-network` records the Default LAN ULA and DNS VIP design but has no
-  NTP-specific firewall and DNAT runbook.
-- All four repositories had clean `main` worktrees before this foundation
-  change.
-
 ## Change-control model
 
 Repository changes and local validation do not require live authorization. A
 scoped approval may cover one complete read-only collection on one target. A
-persistent deployment approval may include its defined preflight, mutation,
-acceptance, and rollback checks.
+persistent deployment approval may cover one node or controller stage from
+preflight through mutation, convergence, acceptance, and rollback. Approve
+each node or controller stage on its own exact deployment-bundle hash.
 
 ### Gate requirements
 
 Each persistent live action must define:
 
 - Scope and host or controller target.
-- Exact privileged script or command-bundle path and SHA-256.
+- Exact SHA-256 deployment bundle containing the operation specification and
+  every non-secret execution input, including privileged scripts.
 - Preconditions and expected observations.
 - Commands and permitted side effects.
 - Evidence paths and sensitive-output handling.
@@ -193,9 +180,10 @@ Each persistent live action must define:
 - Cleanup and rollback.
 - The next action that remains unauthorized.
 
-Execution consumes the approved privileged mutation artifact. An edit, retry,
-or scope change requires a new hash and authorization. Unexecuted repository
-files use the normal edit and review workflow.
+Execution consumes the approved bundle. An edit or scope change requires a new
+hash and authorization. After an interrupted or failed mutation, inspect live
+state before proposing a retry. Unexecuted repository files use the normal
+edit and review workflow.
 
 ### Evidence rules
 
@@ -207,11 +195,95 @@ files use the normal edit and review workflow.
 - Compare pre-state and post-state hashes for read-only actions.
 - Inspect cleanup and persistent state after an interrupted action.
 
+## Trixie rebuild contract
+
+This is a **clean install**, not an in-place Debian 11-to-13 upgrade. Each node
+must have its own approved image, boot media, configuration bundle, preflight,
+acceptance record, and recovery path. Rebuild `j1-svntp1` first. Do not begin
+`j1-svntp` until the rebuilt standby has served real IPv4 and IPv6 clients,
+selected GPS/PPS, survived a reboot, and completed the agreed observation
+interval while `j1-svntp` remains available.
+
+### Locked media choice and pre-imaging checks
+
+- Use **Raspberry Pi OS Lite (64-bit), Trixie** in Raspberry Pi Imager for the
+  Raspberry Pi 4B. This is the Raspberry Pi-supported headless image based on
+  Debian 13, **not pure Debian 13**. Record Imager version, exact image
+  release/build, architecture, and the write verification result. Verify a
+  published image digest when a separately downloaded image is used.
+- Use spare SD cards for both nodes. Label and retain each working Debian 11
+  card unmodified for a physical media-swap rollback; record the old and new
+  cards' capacities and identities before writing either new card.
+- Confirm console or hands-on access, maintenance window, acceptable client
+  impact, and a named operator for power, media, and PoE recovery.
+- Identify exact GPS/RTC board revision, antenna and PPS wiring, PoE+ HAT
+  revision, physical stack order, and the network switch port for each node.
+  Board revision controls the RTC chip, UART settings, and boot overlay choice.
+
+### Per-node baseline and acceptance
+
+For **each** Trixie node, install only from approved Raspberry Pi OS/Debian
+repositories and an explicitly approved Webmin repository. Record package
+origin and installed version. Configure and validate:
+
+| Area | Required evidence before accepting the node |
+| --- | --- |
+| Base OS and access | Raspberry Pi OS Lite Trixie release and arm64 architecture; boot firmware and kernel; correct hostname, SSH access, package sources, updates, users and administrative access; persistent boot and root filesystems |
+| Network and DNS | Stable node IPv4 and ULA, retained Router Advertisement global IPv6 and default route, both DNS VIPs with DHCP/RA DNS replacement disabled; dual-stack reachability and reboot persistence |
+| `webmin` | Package provenance, service health, authenticated management access from an approved LAN path, intended bind/firewall scope, and no unintended External exposure; restore required settings from observed Debian 11 state only after review |
+| `needrestart` | Trixie package, non-disruptive reporting policy, actual kernel/service report, and notification through the accepted mail path; do not allow an unattended restart of `ntpsec` during acceptance |
+| `msmtp` | `msmtp` plus a sendmail-compatible transport if required by the notification workflow; protected relay configuration, successful test delivery through Mailrise, and no committed credentials |
+| `munin-node` endpoint | Installed package and enabled service; observed listener and client allowlist; collection from the approved Munin poller over each intended address family; usable host metrics and no unintended External exposure. The Munin component owns endpoint configuration and plugin choices |
+| `watchdog` | Observed `/dev/watchdog` owner/driver and service configuration, reboot behavior and recovery path; enable only after the node can be recovered independently and a controlled acceptance test is approved |
+| GPS/RTC HAT | Verified board revision, antenna/fix, UART device and baud, I2C RTC identity and sane time, PPS GPIO and `/dev/pps*` pulses, `gpsd` feed and permissions, and persistence after reboot; choose boot overlays for the selected image and observed hardware |
+| PoE+ HAT | Correct switch PoE class and power budget, boot and sustained power without undervoltage, fan detection/control and thermal behavior, and no GPIO/I2C conflict with the GPS/RTC HAT |
+| `ntpsec` | Installed Trixie package/build and actual config path, GPS/PPS and sanity-source selection, leapfile and four-week timer, no competing time daemon, IPv4/IPv6 UDP 123 listeners and client responses, NTS/IPv4/IPv6 upstream behavior as configured |
+
+Use the existing NTPsec/GPSD arrangement as input evidence, not as an
+installable Trixie artifact. Keep byte-exact Debian 11 `/etc/ntp.conf`
+captures for audit. Derive a separate Trixie configuration from the installed
+package's unit, config path, default files, man pages, user/group, device
+names, and live hardware; validate it on `j1-svntp1` before reusing the design
+on `j1-svntp`. Do not copy old boot overlays, `/etc/ntp.conf`, GPSD unit
+assumptions, Webmin settings, or network-manager profiles blindly.
+
+The Uputronics datasheet describes GPS UART, PPS, I2C RTC, and different
+settings by board revision. Its Raspberry Pi OS examples are reference inputs,
+not proof of a Trixie boot configuration. The older NTPsec microserver
+HOWTO is likewise a conceptual reference, not a Trixie installation script.
+The Raspberry Pi PoE+ HAT includes I2C-controlled fan hardware; prove fan and
+power operation on the selected image rather than assuming that a successful
+boot proves full HAT support.
+
+### Inventory contract
+
+Draft `homelab-server-configs/inventory/prod` entries after read-only capture
+and finalize each host's accepted facts after its rebuild. Add an `ntp` group,
+host membership, `ntp` function, and components for the installed NTP,
+hardware-interface, Munin endpoint, and baseline app bundles. Reuse
+`groups/all.yaml` common `needrestart`/`watchdog` policy and notification
+defaults where applicable;
+record only NTP-specific or host-specific differences in the new files.
+
+Both host files must have observed, non-secret specifications: exact Pi model
+and revision, CPU architecture/cores, installed RAM, boot/root storage type,
+capacity and filesystem, boot firmware/kernel and Raspberry Pi OS release,
+GPS/RTC HAT manufacturer/model/PCB revision/chipset and connection roles,
+PoE+ HAT model
+and IEEE class/power characteristics, physical switch-port reference where
+inventory convention permits it, and permanent-management ULA with
+`address_authority: homelab-network`. Record service role (independent NTP
+node), no virtual-IP ownership, and the current manual DNAT target/standby
+role as service metadata, not as HA ownership. Include package/component
+versions only where the inventory's version policy calls for actual installed
+facts; never guess from a candidate package list. If a detail cannot be
+observed, mark it unverified and leave inventory acceptance open rather than
+inventing a value. IP allocation, DNS zones, credentials, raw controller
+exports, and volatile performance measurements remain outside inventory.
+
 ## Work plan
 
 ### Phase 0: repository foundation
-
-Status: Complete.
 
 1. Replace the generic `AGENTS.md` with NTP-specific repository and live-action
    rules.
@@ -219,18 +291,20 @@ Status: Complete.
 3. Link the governing plan and architecture summary from the repository
    `README.md`.
 4. Run Markdown, whitespace, secret, and pre-commit validation.
-5. Record validation, artifact hashes, deviations, and the exact resume point.
+5. Record validation, artifact hashes, operation outcomes, and the exact
+   resume point in `ntpsec/HISTORY.md`.
 
 Phase 0 makes no live-system or controller contact.
 
 ### Phase 1: define and execute read-only baselines
 
-Status: Pending separate authorization.
-
 Create a fail-closed collector, then run it against `j1-svntp1` before
 `j1-svntp`. Capture:
 
 - Host identity, Debian release, boot time, and package/build provenance.
+- Pi model/revision, RAM, boot/root media capacity and filesystem, bootloader,
+  kernel, boot configuration, board/HAT revisions, antenna, HAT stack, PoE
+  switch port and power class, and available console/recovery access.
 - Active network manager, interface, connection profile, addresses, routes,
   DNS sources, and `/etc/resolv.conf` ownership.
 - `/etc/ntp.conf`, defaults, drop-ins, startup options, ownership, modes, and
@@ -241,6 +315,11 @@ Create a fail-closed collector, then run it against `j1-svntp1` before
 - Leapfile path, validity, expiration, ownership, mode, and hash.
 - Current `ntpleapfetch` command, source URL, manual success, and exit status.
 - Competing time daemons, local firewall state, and UDP 123 ownership.
+- Webmin package/source and settings, needrestart behavior, msmtp relay,
+  `munin-node` package/service, listener, client allowlist, and current plugin
+  set, watchdog driver/configuration, notification path, and enabled services.
+- Existing boot-media identity and a verified way to restore that node without
+  depending on the other node's rebuild.
 
 Create a separate read-only UniFi audit for DHCP Option 42, address objects,
 zone membership, firewall rule order, IP-family selectors, counters, and all
@@ -249,60 +328,104 @@ four planned DNAT rules. Export or capture enough state for exact rollback.
 Acceptance requires complete evidence with no mutation and identical pre-state
 and post-state hashes for protected host artifacts.
 
-### Phase 2: build and validate repository candidates
+### Phase 2: prepare image, preserve rollback, and build candidates
 
-Status: Blocked by Phase 1 evidence.
+1. Select Raspberry Pi 4B and Raspberry Pi OS Lite (64-bit), Trixie in
+   Raspberry Pi Imager. Record Imager version, exact image release/build,
+   verified write result, and boot-media ID. This is Raspberry Pi OS based on
+   Debian 13, not pure Debian.
+2. Keep each current Debian 11 SD card untouched and labelled by host. Prepare
+   separate replacement cards; verify each card's identity before Raspberry Pi
+   Imager writes it. Maintain a protected, tested backup of node-specific
+   configuration and a known-working media-swap procedure.
+3. Mirror each live `/etc/ntp.conf` byte for byte for audit. Review GPS, PPS,
+   upstream sources, NTS, restrictions, interfaces, IPv6, driftfile,
+   statistics, and leapfile directives. Produce a separate Trixie candidate
+   against observed installed package paths and units.
+4. Define node baseline configuration and validation for Webmin, needrestart,
+   msmtp/sendmail, the Munin endpoint, watchdog, GPS/RTC/PPS, PoE+ power and
+   fan, GPSD, NTPsec, dual-stack networking, and the four-week
+   `ntpleapfetch` timer. Reuse established `homelab-server-configs` baseline
+   app artifacts only after checking them against Trixie and the node's actual
+   package versions. Define the NTP Munin endpoint in its governing component
+   after confirming the approved poller and plugin set. The existing
+   Caddy-specific Munin files are deferred Caddy deployment work, not an
+   accepted endpoint or an NTP configuration template.
+5. Create node inspection, installation, recovery, and acceptance scripts or
+   runbooks with host-specific inputs. Test success and rejection paths for
+   parsers, fail-closed validators, and mutation scripts; give simple
+   collectors a focused dry run or self-test.
+6. Draft the NTP inventory group and host entries from captured facts, clearly
+   marking any unverified hardware detail. Do not declare the entries complete
+   until each rebuilt node has confirmed its final OS, media, and HAT facts.
+7. Validate shell, systemd, Markdown, YAML, secret scanning, and the relevant
+   repository suites. Verify units and application settings again on the
+   selected Trixie image before installation.
 
-1. Mirror each live `/etc/ntp.conf` byte for byte in its host-specific path.
-2. Audit the mirrors for GPS, PPS, upstream sources, NTS, restrictions,
-   interfaces, IPv6, driftfile, statistics, and leapfile directives.
-3. Create the `ntpleapfetch` service and four-week timer from installed command
-   evidence.
-4. Create node inspection, installation, rollback, and acceptance scripts.
-5. Add success and rejection fixtures for parsers, fail-closed validators, and
-   mutation scripts. Give simple collectors a focused dry run or self-test.
-6. Validate shell, systemd, Markdown, YAML, secret scanning, and the complete
-   repository suite.
+Repository tests provide artifact evidence, not evidence that the replacement
+card boots or that its GPS, PPS, fan, mail, and NTP paths work.
 
-Repository tests provide artifact evidence. Debian 11 and NTPsec checks on the
-target remain required before deployment.
+### Phase 3: rebuild and accept `j1-svntp1`
 
-### Phase 3: configure and accept `j1-svntp1`
+1. Confirm `j1-svntp` serves clients and the reported active IPv4 DNAT target
+   remains reachable. Capture a pre-rebuild client and NTP health baseline;
+   identify clients that use only `j1-svntp1` and their retry/failover behavior.
+   One healthy node does not guarantee zero client impact.
+2. Under the approved maintenance window, power down only `j1-svntp1` and
+   preserve its labelled Debian 11 SD card. Insert its verified Trixie card;
+   do not reuse `j1-svntp` media or identity.
+3. Boot with console access available. Confirm image, release, architecture,
+   hostname, unique host identity, package sources, kernel, boot firmware,
+   storage, switch link, PoE power, fan, and no undervoltage or thermal faults.
+   Complete security updates and any required reboot while the primary serves.
+4. Check `fd36:5aa8:6971:1::51` for ownership/DAD conflicts. Configure
+   `10.1.0.51/22`, gateway `10.1.0.1`, permanent ULA, retained RA global IPv6
+   and default route, and the two DNS VIPs without DHCP/RA DNS replacement.
+   Validate addresses, source selection, routes, DNS, egress and reboot
+   persistence before service cutover.
+5. Install and validate the baseline apps, then bring up GPS UART, RTC, PPS,
+   GPSD, and NTPsec with the Trixie candidate configuration. Activate the
+   leapfile timer after verifying its command and path. Do not enable watchdog
+   resets until recovery is proven.
+6. Query `j1-svntp1` directly from controlled clients over IPv4 and IPv6;
+   confirm GPS/PPS selection, upstream reachability, leap state, Webmin
+   management scope, approved Munin polling, delivered mail, needrestart
+   reporting, PoE fan/thermal behavior, and a second successful boot. After
+   recovery is proven, enable watchdog and run its separately approved
+   controlled acceptance test. Record package and hardware facts.
+7. Only if the rebuilt node passes all gates, observe it for an agreed interval
+   and finish its inventory record. Keep the existing primary DNAT active; do
+   not switch DNAT merely to prove the standby rebuild.
 
-Status: Pending Phase 2 and separate authorization.
+If boot, network, GPS/PPS, or client acceptance fails, remove the new card and
+reinstall that node's preserved Debian 11 card. Validate the old node's NTP
+health and client responses. A media swap is the recovery action; copying the
+old network profile or NTP config onto the new image is not a rollback.
 
-1. Reconfirm hostname, active profile, IPv4 state, NTP health, and rollback
-   profile.
-2. Check `fd36:5aa8:6971:1::51` for neighbor ownership and Duplicate Address
-   Detection conflicts.
-3. Preserve `10.1.0.51/22`, gateway `10.1.0.1`, Router Advertisement routes,
-   and global IPv6 addressing.
-4. Add the permanent ULA and both DNS VIPs. Disable automatic DNS replacement
-   for IPv4 and IPv6.
-5. Reactivate the profile from an access path that tolerates SSH interruption.
-6. Validate addresses, lifetimes, routes, source selection, DNS, IPv4 and IPv6
-   Internet access, and reboot persistence.
-7. Install and validate the mirrored `ntp.conf` and leapfile units.
-8. Confirm GPS/PPS selection and NTP service over IPv4 and IPv6.
-9. Observe the node before authorizing primary work.
-
-Rollback activates the captured pre-change profile and restores each accepted
-configuration by exact hash. Inspect NTP health after rollback.
-
-### Phase 4: configure and accept `j1-svntp`
-
-Status: Pending accepted Phase 3 and separate authorization.
+### Phase 4: rebuild and accept `j1-svntp`
 
 Repeat the Phase 3 controls with `10.1.0.50` and
-`fd36:5aa8:6971:1::50`. Confirm `j1-svntp1` serves clients before the primary
-network action and remains healthy throughout it.
+`fd36:5aa8:6971:1::50`. First prove that rebuilt `j1-svntp1` serves clients
+independently. For each family with an existing active `j1-svntp` DNAT rule,
+disable that rule and promote the matching `j1-svntp1` standby rule under a
+separately approved UniFi action before taking the primary down; verify one
+active rule per affected family and client traffic through the standby. If
+the current UniFi rules do not support this exact transition, stop and revise
+the controller runbook before the primary outage. The planned Phase 6 final
+policy is **not** a prerequisite for this interim, separately audited primary
+rebuild transition. If no standby DNAT exists and one cannot be prepared, get
+an explicit decision on hard-coded-client outage before taking the primary
+down. After primary acceptance, restore primary-target rules one family at a
+time and verify client traffic.
 
-Do not combine the two node changes. Re-run the primary preflight because the
-secondary result does not prove the primary's profile, paths, or state.
+Preserve the primary's Debian 11 card. Re-run all hardware, package, network,
+GPS/PPS, power, fan, NTP, mail, watchdog, and reboot checks on the primary;
+standby success does not prove primary hardware or boot behavior. If the
+primary rebuild fails, restore its old card while keeping standby DNAT active,
+then validate old primary service before restoring primary DNAT. Never take
+both nodes down in the same maintenance action.
 
 ### Phase 5: deploy local-zone DNS records
-
-Status: Pending accepted dual-stack listeners on both NTP nodes.
 
 Add and audit:
 
@@ -329,8 +452,6 @@ IPv4 PTR, and IPv6 PTR from both nodes and both DNS VIPs.
 
 ### Phase 6: audit and enforce UniFi policy
 
-Status: Pending dual-stack node and DNS acceptance.
-
 1. Reconcile DHCP Option 42 with `10.1.0.50` and `10.1.0.51`.
 2. Place NTP-server allow policy above the Default LAN deny policy.
 3. Allow both NTP devices to External over IPv4 and IPv6 UDP 123 and TCP 4460.
@@ -352,24 +473,31 @@ at a time. Leave the primary target active after acceptance.
 
 ### Phase 7: add inventory
 
-Status: Pending accepted service state.
-
 In `homelab-server-configs/inventory/prod`:
 
 1. Add group `ntp` and `groups/ntp.yaml`.
-2. Record function `ntp` and components `ntpsec` and `gpsd`.
+2. Record function `ntp` and the installed NTP, GPSD/PPS, Webmin,
+   `munin-node`, needrestart, msmtp, and watchdog components. Do not duplicate
+   the existing all-host needrestart/watchdog policy unless a node needs an
+   override.
 3. Add host keys `j1-svntp` and `j1-svntp1` with their management FQDNs.
-4. Add host files for display name, Raspberry Pi model and RAM, GPS/RTC HAT,
-   PoE+ HAT, Debian release, and manual DNAT role.
+4. Add host files that satisfy the complete observed hardware, storage, OS,
+   HAT, address-authority, and no-HA inventory contract above. Preserve the
+   exact per-host differences; do not fill missing fields with assumptions.
 5. Keep IP allocation and authoritative DNS records out of inventory.
-6. Run strict YAML and inventory repository validation.
+6. Run strict YAML and inventory repository validation. Compare each final
+   host record with accepted live readback before marking it complete.
 
 ### Phase 8: end-to-end acceptance
 
-Status: Pending Phases 3 through 7.
-
 Acceptance requires:
 
+- Both nodes boot the selected Trixie arm64 image from separately
+  identified replacement media, and their labelled Debian 11 cards remain
+  available for recovery through the agreed retention period.
+- Webmin, needrestart, msmtp, `munin-node`, watchdog, GPS/RTC, PPS, GPSD,
+  NTPsec, and PoE+ HAT checks in the per-node acceptance table pass on each
+  host.
 - Both hosts retain their static IPv4 and permanent ULA after reboot.
 - Both hosts retain global IPv6 and a Router Advertisement default route.
 - Each resolver view contains only the two DNS VIPs for its address family.
@@ -385,7 +513,7 @@ Acceptance requires:
 - Active IPv4 and IPv6 DNAT reach `j1-svntp`; the disabled standby rules can be
   promoted one family at a time to `j1-svntp1` and restored.
 - Inventory names, functions, components, hardware, and OS facts match live
-  observations.
+  observations, including exact Pi and HAT revisions and boot/root media.
 - Each repository passes its focused tests, full baseline, secret scan, and
   whitespace checks.
 
@@ -397,7 +525,10 @@ declaring acceptance.
 
 - Roll back one node or one controller policy surface at a time.
 - Keep the other NTP node serving throughout host rollback.
-- Restore host files and NetworkManager profiles by accepted path and hash.
+- For a failed Trixie rebuild, restore only that host's preserved Debian 11
+  SD card and verify boot and NTP client service. Do not overwrite the old
+  card. After Trixie acceptance, restore individual files or network
+  profiles by accepted path and hash only for later configuration changes.
 - Restore DNS on the node changed last, validate it, then decide whether the
   other DNS node needs rollback.
 - Disable the promoted standby DNAT rule before restoring the primary rule for
@@ -420,93 +551,16 @@ declaring acceptance.
 | Both DNAT rules become active | Validate enabled-state cardinality before and after each controller action |
 | DNS records precede listeners | Deploy records after both nodes serve NTP on their permanent addresses |
 | Repository validation overstates live acceptance | Require target-node and client evidence for each runtime claim |
+| New image boots but misses RTC/PPS or fan drivers | Prove UART, GPIO PPS, RTC, fan and PoE behavior on the selected image before declaring node acceptance |
+| Watchdog masks a boot or network failure with restart loops | Keep watchdog resets off until console/media recovery and a controlled test are ready |
+| Primary rebuild interrupts hard-coded NTP clients | Before primary outage, verify family-specific DNAT transition to the accepted standby and a surviving direct-client path |
+| Incomplete or invented inventory facts | Capture exact per-host hardware/media facts; leave an unverified field and open gate when evidence is missing |
 
-## Deviation log
+## Reference documentation
 
-| ID | Date | Deviation | Rationale | Status |
-| --- | --- | --- | --- | --- |
-| None | 2026-08-10 | No deviations recorded | The plan matches the approved preplanning decisions | N/A |
-
-Add deviations before implementing work that differs from a locked decision or
-accepted phase. Record the operator decision, affected artifacts, validation,
-rollback impact, and replacement resume point.
-
-## Implementation journal
-
-### 2026-08-10: preplanning decisions
-
-- Locked permanent ULAs `::50/64` and `::51/64`.
-- Accepted equal-priority, equal-weight `_ntp._udp` SRV records.
-- Selected one active and one disabled standby DNAT rule per IP family.
-- Kept NTP without an HA mechanism.
-- Confirmed both nodes have working Internet access and a working manual
-  `ntpleapfetch` download path.
-- Limited leapfile scope to a systemd four-week schedule and its validation.
-
-### 2026-08-10: repository foundation
-
-- Replaced the generic agent guidance with NTP-specific repository and
-  live-infrastructure rules.
-- Created this governing plan and linked it from the repository README.
-- Made no SSH, DNS-node, NTP-node, or UniFi connection.
-- Made no live configuration, service, firewall, DHCP, NAT, or DNS change.
-- `git diff --check` passed.
-- Markdownlint passed for `README.md` and this governing plan.
-- `pre-commit run --all-files` passed ShellCheck, shfmt, Markdownlint, yamllint,
-  actionlint, JSON validation, and Gitleaks. Hooks without matching files
-  reported `Skipped`.
-- `gitleaks detect --source . --no-git --redact --no-banner` scanned the full
-  working tree, including untracked files, and found no leaks.
-- `AGENTS.md` SHA-256:
-  `ce27f170479d9bf39c25633bcd885bd8bff0370ca4c8fb1b396249277076a225`.
-- `README.md` SHA-256:
-  `68e3d59b87d07917a999f164887cc5f021f408f8bf4c75b6d7632d35da69f000`.
-- The final handoff records this plan's SHA-256 because a document cannot
-  contain its own stable digest.
-
-### 2026-08-10: governance policy simplification
-
-- Audited `AGENTS.md` and accepted all recommendations from that review.
-- Reduced `AGENTS.md` from 229 to 130 lines.
-- Removed duplicated architecture values and deployment procedure. The
-  governing plan retains those details.
-- Removed the unavailable `verify_done` requirement.
-- Allowed one scoped approval to cover one complete read-only collection.
-- Allowed a persistent deployment approval to include its defined preflight,
-  acceptance, and rollback checks.
-- Limited immutable artifact hashes to privileged remote scripts and
-  preapproved command bundles.
-- Limited the Caddy-derived SSH evidence and fail-closed assertion controls to
-  privileged remote runners.
-- Replaced mandatory regression fixtures for simple collectors with a focused
-  dry run or self-test.
-- `git diff --check`, focused Markdownlint, the full pre-commit suite, and the
-  full working-tree Gitleaks scan passed after the policy change.
-- Reviewed the Markdownlint-excluded `AGENTS.md` for stale requirements and
-  writing defects.
-- Updated `AGENTS.md` SHA-256:
-  `b8155034057c4189c0c2c240098b2c7e5c3fe8bd4d668eb89d352fca82c22e96`.
-- Made no live-system or controller contact.
-
-### 2026-08-10: README current-state expansion
-
-- Expanded the repository entry point with server hardware and software facts,
-  the reported current network behavior, and the approved target changes.
-- Added the current tracked layout and explained the placeholder `gitkeep`
-  files.
-- Added project status, cross-repository ownership, validation boundaries, and
-  upstream hardware and implementation references.
-- Distinguished reported live behavior from target design and repository-only
-  validation.
-- Updated `README.md` SHA-256:
-  `de0227e797a4accf6bcbdb9e788fa6d9c85299390f6db1c30a822be6e2641d7a`.
-- `git diff --check`, focused Markdownlint, the full pre-commit suite, and the
-  full working-tree Gitleaks scan passed.
-- Made no live-system or controller contact.
-
-## Exact resume point
-
-Define a read-only `j1-svntp1` baseline collector with an exact output contract,
-focused self-test, and SHA-256. Stop before execution and request one scoped
-authorization for that complete read-only node collection. No host or UniFi
-contact has been authorized.
+- [Raspberry Pi OS editions and Trixie release](https://www.raspberrypi.com/documentation/computers/os.html)
+- [Raspberry Pi Imager and headless setup](https://www.raspberrypi.com/documentation/computers/getting-started.html)
+- [Uputronics GPS/RTC board and revision-specific datasheet](https://store.uputronics.com/products/raspberry-pi-gps-rtc-expansion-board)
+- [Raspberry Pi PoE+ HAT](https://www.raspberrypi.com/products/poe-plus-hat/)
+- [NTPsec Stratum-1 Microserver HOWTO](https://www.ntpsec.org/white-papers/stratum-1-microserver-howto/)
+- [Webmin installation and repository](https://webmin.com/download/)
