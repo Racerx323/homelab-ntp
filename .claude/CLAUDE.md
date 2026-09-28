@@ -1,23 +1,7 @@
-## vexp context tools
+# vexp - Context-Aware AI Coding <!-- vexp v3.3.0 -->
 
-For a broad task, call `run_pipeline` once to find relevant files. Skip that
-orientation call when the task names the files or symbols to inspect. Use
-ordinary file tools for exact text searches, reading, and editing. Call
-`run_pipeline` again only when the task moves to another area.
+## Context strategy: call run_pipeline ONCE at task start
 
-The NTP repository belongs to the shared `/home/aaron/code` vexp workspace.
-The optional project Codex configuration targets this Git checkout. Start a
-fresh Codex session with `homelab-ntp` as its trusted working root so Codex
-can load that setting.
-A session started from `/home/aaron/code` can query NTP files, but its
-`verify_done` call cannot verify this repo's Git diff. Use
-`VEXP_NO_AUTOSTART=1 vexp verify --json` from this repo as a fallback and run
-the tests it names. Do not count an unavailable verifier result as a pass.
-
-
-## vexp <!-- vexp v3.3.0 -->
-
-### Context strategy: call run_pipeline ONCE at task start
 If the task already names the files/symbols to touch, SKIP vexp. Otherwise one
 `run_pipeline({ "task": "..." })` returns ranked pivot files with line ranges and
 blast radius. Do NOT open files one by one to find your way around - every extra
@@ -25,7 +9,8 @@ tool call costs a turn. Call it again ONLY when the task moves to a new area.
 `get_skeleton` for files to understand, not edit. `verify_done` before calling a
 multi-file task complete, then RUN the tests it names.
 
-### Query shape (do this)
+## Query shape (do this)
+
 Anchor the task on real identifiers (ClassName, functionName) or file paths:
 `run_pipeline({ "task": "fix JWT expiry in AuthService.validateToken" })`
 
