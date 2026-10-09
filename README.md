@@ -11,7 +11,7 @@ NTPsec servers and clients.
 
 ## NTP servers
 
-| Property | `j1-svntp` | `j1-svntp1` |
+| Property | `j1-svntp` | `j2-svntp1` |
 | --- | --- | --- |
 | Service name | `ntp.local.theama.co` | `ntp1.local.theama.co` |
 | IPv4 | `10.1.0.50/22` | `10.1.0.51/22` |
@@ -28,7 +28,7 @@ The nodes provide independent time service. The design does not use
 Keepalived, VRRP, or another NTP HA mechanism. Both nodes share a GPS Source
 L1G1A-STD antenna through a two-output Uputronics splitter; j1-svntp supplies
 antenna power. Its outage requires the governing plan's power-continuity gate.
-Retain j1-svntp1's working PoE HAT; PoE+ is the selected replacement upon failure,
+Retain j2-svntp1's working PoE HAT; PoE+ is the selected replacement upon failure,
 subject to separate compatibility validation and live authorization.
 
 ## Network model
@@ -145,3 +145,8 @@ runtime acceptance.
 
 - [NTPsec Stratum-1 Microserver HOWTO](https://www.ntpsec.org/white-papers/stratum-1-microserver-howto/)
 - [Uputronics Raspberry Pi GPS/RTC expansion board](https://store.uputronics.com/products/raspberry-pi-gps-rtc-expansion-board)
+
+The approved rebuild hostname is j2-svntp1 (formerly j1-svntp1 on Debian 11).
+Historical evidence keeps the original name; the rename does not change the
+node's planned addresses or existing service FQDN. See governing plan v1.4
+for inventory, monitoring and DNS reconciliation gates.

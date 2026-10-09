@@ -1,9 +1,17 @@
-# Trixie candidate and recovery plan: j1-svntp1
+# Trixie candidate and recovery plan: j2-svntp1
 
 Status: repository planning only, `2026-09-16`. This document implements
-[governing plan v1.3](ntp-architecture-deployment-plan-v1.0.md); it is not an
+[governing plan v1.4](ntp-architecture-deployment-plan-v1.0.md); it is not an
 execution bundle or permission to write media, access nodes, install packages,
 change services, alter wiring or reboot. The architecture remains unchanged.
+
+Target identity: **j2-svntp1**, the approved rebuild name for the existing
+j1-svntp1 physical node. References to j1-svntp1 below identify that node's
+baseline and existing recovery resources, not another deployment target.
+Use j2-svntp1 in new rendered host configuration; preserve original artifact
+names and the protected evidence directory. Old-card recovery restores
+j1-svntp1. Addresses and service FQDN are unchanged; reconcile inventory,
+monitoring and DNS references as specified in governing plan v1.4.
 
 ## Inputs and limits
 

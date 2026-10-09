@@ -9,12 +9,12 @@ A plan entry or history entry does not authorize live action.
 
 | Field | Value |
 | --- | --- |
-| Phase | Phase 1 v2 evidence reviewed; IPv6 loopback time probe passed; operator confirmations remain |
-| Last updated | `2026-09-16` |
-| Reported live state | j1-svntp1 snapshots show NTP/GPSD running, PPS selected and stratum 1; IPv6 loopback time reply verified; full baseline unaccepted; j1-svntp not contacted |
-| Current repository state | Phase 1 checklist updated; v3 response-validation fixes tested offline; IPv6 probe executed successfully; exact executed artifacts preserved |
-| Current next single gate | Complete operator inputs for image/media/bootstrap specification before concrete media-only scope |
-| Authorization boundary | V2 and IPv6 probe completed; requested read-only UniFi switch/port lookup completed. No further live action, cleanup or mutation authorized |
+| Phase | First boot and bounded bootstrap acceptance complete for j2-svntp1; later configuration and full service/hardware acceptance pending |
+| Last updated | `2026-10-08` |
+| Reported live state | j2-svntp1 booted Debian 13 Trixie on the verified spare, Ethernet DHCP 10.1.0.137, SSH active and no failed units listed; primary power and antenna path preserved; NTP/GPSD not yet configured or accepted on the new image |
+| Current repository state | First boot and both read-only inspections completed; P0 confirms needrestart package absent and existing kernel-hint suppression; results and immutable executed inputs preserved |
+| Current next single gate | Define the needrestart/package stage using P0 results, resolving APT hook inputs, kernel-reporting policy and fresh trusted candidates before mutation approval |
+| Authorization boundary | Exact approved P0 read-only SSH preflight completed; no further target access, metadata refresh, installation, policy write, network/service change or reboot authorized by P0 |
 
 ## Repository observations
 
@@ -535,15 +535,443 @@ rollback impact, and replacement resume point.
   does not extend the outage allowance to j1-svntp.
 - Focused Markdown, local-link and Git whitespace checks passed.
 
+### 2026-10-08: operator Imager settings and hostname discrepancy
+
+- Aaron reports Generic Storage Device USB Device, 127.9 GB, selected in
+  Imager; ama password set and SSH password authentication enabled.
+- Recorded US/Washington DC localisation, America/Chicago time zone and US
+  keyboard. No password value was requested or recorded.
+- Entered hostname j2-svntp1 differs from governing j1-svntp1. Hold media
+  preparation pending clarification; no rename, DNS or address change inferred.
+- Generic device name/capacity are not unique disk verification. No write,
+  verification or first boot was reported or executed. Documentation checks
+  cover this update only; the September image selection was not revalidated.
+
+### 2026-10-08: approved rebuild rename to j2-svntp1
+
+- Aaron confirmed j2-svntp1 is intentional. Updated governing plan to v1.4,
+  README and active candidate/bootstrap documents for the same physical node.
+- Preserved historical j1-svntp1 captures, filenames and evidence directory;
+  old-card recovery restores that identity. Existing IP assignments and
+  ntp1.local.theama.co service FQDN remain unchanged.
+- Added inventory/monitoring/DNS reconciliation gates without authorizing
+  cross-repository or live mutation. Primary j1-svntp and antenna power unchanged.
+
+### 2026-10-08: image verified and Windows spare candidate identified
+
+- Under Aaron's read-only identification/image-verification authorization,
+  queried Windows disk metadata. Candidate USB disk 5 reports 127865454592
+  bytes and reader serial 000000009451, matching the Imager capacity/name.
+  Physical spare correlation remains pending; reader serial is not card ID.
+- Downloaded the exact September 15 Trixie Lite arm64 image into the existing
+  protected evidence directory. SHA-256 matches both the official sidecar and
+  the pinned specification. No media write or node/controller access occurred.
+
+### 2026-10-08: G: drive mapping verified
+
+- Aaron identified the spare as Windows G:. Read-only Windows metadata maps
+  G: to partition 1 on disk 5, Generic STORAGE DEVICE, 127865454592 bytes,
+  reader serial 000000009451, USB; IsBoot and IsSystem are both false.
+- This confirms the logical mapping, not physical removal/reinsertion
+  correlation. No disk write or node access occurred.
+
+### 2026-10-08: visual spare confirmation and Imager review screenshot
+
+- Aaron confirmed the new SanDisk card is in the reader mapped to G:/disk 5
+  and remains selected in Imager. Accepted this physical correlation with
+  Windows metadata; removed the unnecessary disconnect/reconnect requirement.
+- Aaron confirms Imager is awaiting Write; no writing has started. Screenshot
+  shows Imager 2.0.12, Pi 4, Lite 64-bit and the expected generic USB target.
+  Corrected the earlier version report. Release/hash are not visible.
+- The separately downloaded image is verified; the current Imager selection
+  still needs binding to that exact release/artifact before media approval.
+
+### 2026-10-08: catalogue selection and October image verification
+
+- Aaron selected Lite 64-bit from Imager's catalogue. Current official metadata
+  resolves that entry to October 6, superseding the September 15 candidate.
+- Downloaded October 6 into the existing evidence directory; compressed hash
+  matches the official sidecar, expanded hash and both sizes match catalogue
+  metadata. Streaming decompression verified integrity without another tree.
+- Retained image-verification-20261006.json. Active Imager cache was not read;
+  final media scope must bind selection to the verified October release.
+  No media write, cleanup or node/controller access occurred.
+
+### 2026-10-08: media-only write and verification approved
+
+- Aaron approved writing and verifying the exact October 6 image to the
+  physically confirmed SanDisk spare (Windows G:/disk 5), using recorded
+  customizations. Stop if the release or target differs. No boot is included.
+- The open Imager catalogue cache remains unverified. Supply the verified
+  local artifact through Imager's custom-image selection, reviewing all
+  customizations and the target again before Aaron presses Write. If the
+  chosen route cannot retain/apply customizations, stop for inspection.
+- Approval is recorded, not execution: no write result or card verification
+  result has yet been reported. Retain both existing downloaded artifacts.
+
+### 2026-10-08: catalogue customization route retained
+
+- Aaron reports Use custom prevents applying the required customizations.
+  Withdrew the custom-image recommendation and retained the catalogue route.
+- Read-only local Imager file discovery found historical catalogue caches;
+  these do not prove the running session's selected release. No credentials
+  were read or printed, and no application settings were changed.
+- Existing media-only approval remains valid for the exact October 6 image,
+  confirmed spare and recorded customizations. A different artifact or scope
+  would require review; do not repeat approval for the unchanged scope.
+
+### 2026-10-08: selected release and media write completion observed
+
+- OS-selection screenshot confirms catalogue Lite 64-bit, Debian Trixie,
+  release 2026-10-06, matching the verified image.
+- Aaron supplied Imager 2.0.12 Write complete evidence for Pi 4 and Generic
+  STORAGE DEVICE. Hostname, localisation, user account and SSH customizations
+  are shown applied; the card was automatically ejected.
+- Record this as operator-supplied write completion, not agent execution.
+  The screen does not independently show whether verification was skipped;
+  request confirmation once before the boot gate. No re-image requested.
+- No first boot, node shutdown/card swap or service change is authorized.
+
+### 2026-10-08: media verification confirmed at 100 percent
+
+- Aaron confirms Imager verification completed to 100% after writing, without
+  being skipped. The authorized media write/verification is complete on
+  operator evidence; no independent agent card readback is claimed.
+- Added the proposed first-boot/recovery scope to the bootstrap specification.
+  It retains the governing Phase 3.1 current primary/client-health gate and
+  stops after bootstrap inspection. No first boot or live inspection executed.
+- Current surviving-service evidence and client-impact disposition must be
+  established before finalizing and authorizing the shutdown/card-swap bundle.
+
+### 2026-10-08: read-only preflight and first-boot authorization candidate
+
+- Prepared [separate preflight scopes](docs/pre-rebuild-preflight.md) for primary
+  local health, GET-only controller audit and workstation IPv4 client probes.
+  Added offline-tested primary/client collector; existing pre-commit and CI
+  test runner now include its success/rejection tests.
+- Aaron reports UDM Beast configured with both NTP server addresses and
+  supplies workstation ntpq evidence: primary selected, standby candidate,
+  both PPS/stratum 1/reach 377, offsets about +24 to +25 ms. Recorded as
+  operator evidence, not proof that every DHCP client fails over.
+- Validation: 27 existing and 8 new offline tests passed; Bash syntax,
+  ShellCheck, shfmt, full pre-commit, local links, working-tree secret scan
+  and Git whitespace checks passed. The first pre-commit run found a bare
+  URL; corrected it and reran the full suite successfully. Vexp verification
+  was unavailable (not a git repository), not a passing check.
+- Prepared [first-boot/recovery scope](docs/first-boot-authorization.md), held
+  on accepted current preflight/client-impact evidence. No live connection,
+  probe, controller request, shutdown or media operation performed.
+
+Preflight approval artifact: `pre-rebuild-preflight-v1.tar`, SHA-256
+`2c261a77056bf754be2eb130fd7ba2597ae2a9daf6330e6c3ce782ad1c9c38af`.
+First-boot candidate (HOLD): `first-boot-candidate-v1.tar`, SHA-256
+`9d2ec651d824ef8f335235bb6b0e41902326c507d8d3835f55096bd2a3894d71`.
+Both are retained in the existing protected host evidence directory; no new
+directory or live evidence was created. Candidate first-boot hash is not yet
+an execution approval: accepted preflight inputs require a final bound bundle.
+
+### 2026-10-08: approved preflight executed; R1 trust correction retried
+
+- Executed approved R1/R2/R3 bundle. Initial R1 failed strict host-key checking
+  before authentication. Aaron reported trust fixed; retried R1 only, preserving
+  the original failed evidence and using the unchanged approved script.
+- R1 retry passed: primary PPS selected, reach 377, stratum 1/leap 00, system
+  offset 0.006963 ms and unchanged default-config hash. One upstream has reach
+  0; cause remains unverified. No blanket upstream-health claim.
+- R2 confirmed both IPv4 DHCP NTP servers and unchanged sampled projections,
+  but allowed legacy endpoints did not expose the active redirect. R3 returned
+  valid stratum-1/leap-0 replies from both servers; no clock changes or retries.
+- Recorded [complete results](docs/pre-rebuild-results-20261008.md). No shutdown,
+  media swap, boot, live configuration change or new evidence directory.
+
+### 2026-10-08: R2b preparation and client-impact decision
+
+- Aaron accepts possible temporary loss of time synchronization on unidentified
+  clients during this standby outage. This resolves the client-impact decision,
+  not the active-redirect or primary/recovery gates.
+- Prepared [current-policy lookup](docs/controller-current-policy.md) using
+  documented integration policy/ordering/zone/matching-list GET routes and a
+  bounded operator UI fallback for NAT translation fields. Public documentation
+  does not establish a dedicated NAT endpoint; no private endpoint guessed.
+- Reused captured default-site and prior sanitized rule-group/DHCP evidence.
+  No new controller, node, DNS or client query performed during preparation.
+
+R2b approval artifact: `controller-current-policy-v1.tar`, SHA-256
+`6c64a58f2d53987a189f4c033fef7130b940310c1f1c551cf42cb7d8d7c7dd4c`.
+Retained in the existing protected evidence directory with its member manifest.
+Markdown, local links, secret scan, Git whitespace and archive/member integrity
+checks passed. Documentation-only preparation required no behavior-test rerun.
+
+### 2026-10-08: approved R2b API branch completed
+
+- Verified approved bundle/member hashes and performed four GETs with verified
+  controller TLS: application info, site identity, policy list before/after.
+  Network 11.0.81 returned 92 policies; projected configuration hashes match.
+- Actions ALLOW/BLOCK/REJECT do not expose NAT translation. Stopped this branch
+  without speculative endpoints or unrelated queries, as the scope requires.
+- Recorded protected controller-current-policy.json and updated the results.
+  Operator UI fallback is already in the approved R2b scope; no new approval
+  is needed to supply those screenshots. No live mutation or NTP-node access.
+
+### 2026-10-08: operator IPv4 NTP redirect details received
+
+- UI evidence shows NTP Redirect on Default LAN (1), IPv4 TCP/UDP, destination
+  Any:123 translated to 10.1.0.50:123; Pause control indicates active state.
+- Source is Local Device: NTP DNAT, limited to the supplied eight-address list,
+  not every LAN client. Primary .50 and standby .51 are not in that list.
+  Recorded TCP/UDP scope as an observed difference for later policy review.
+- Retained 10.1.0.4 as listed; its Remove annotation is not treated as a
+  completed or authorized change. No controller modification performed.
+- NAT rule ordering and any standby counterpart remain unseen. Updated
+  results; do not repeat the expanded-rule details already provided.
+
+### 2026-10-08: interrupted session recovered
+
+- Recovered the saved Add NTP baseline collector session in a new chat;
+  retained its completed actions, client-impact decision and authorization
+  boundaries. No live access or repeated execution occurred during recovery.
+- Aaron clarified that Remove beside 10.1.0.4 was copied UI text. The address
+  remains in the source list; no removal was requested.
+- The later screenshot showed Internal to Internal firewall policies, not
+  the NAT rule list. NAT rule ordering and relevant enabled/paused states
+  remain the next evidence gate.
+
+### 2026-10-08: complete rule list and recovery readiness confirmed
+
+- Operator screenshot shows all 36 displayed rules. NTP Redirect is the only
+  visible Destination NAT rule; the preceding row is a static route. Combined
+  with its earlier active-state/detail evidence, accepted the source-limited
+  IPv4 redirect to 10.1.0.50:123 for this standby-rebuild preflight. No actual
+  forwarding test or universal client failover is claimed.
+- No standby DNAT rule is shown. Retain this for later network-policy work
+  before the primary-rebuild transition; no controller changes included here.
+- Aaron confirmed KVM access, original-card preservation and continued primary
+  power with antenna/splitter wiring untouched. Rechecked the retained baseline
+  archive against its recorded hash; it matches. Historical baseline acceptance
+  remains false.
+- Updated the first-boot proposal with accepted preflight evidence and readiness.
+  No shutdown, card swap, boot or new live query occurred during preparation.
+- Verified all 377 manifest-listed files inside the retained baseline archive
+  without extraction. Prepared owner-private first-boot-approval-v1.tar with
+  the operation, accepted results, retained-evidence hashes, recovery readiness
+  and unchanged rollback probe. Verified every bundled member hash.
+- Final approval bundle SHA-256:
+  `04c6208589d6f4dc602cdb44403276e2ca79bc73725d018432678588c3c1e42c`.
+  This bundle is prepared, not approved or executed.
+
+### 2026-10-08: final first-boot/recovery bundle approved
+
+- Aaron authorized the exact first-boot-approval-v1.tar SHA-256
+  `04c6208589d6f4dc602cdb44403276e2ca79bc73725d018432678588c3c1e42c`.
+- Reverified the approved archive, all nine manifest-covered members, ten
+  retained evidence files and both approved preflight bundle hashes. No drift.
+- Created owner-private first-boot-result.json in the existing evidence
+  directory, recording authorization and awaiting_original_console_identity.
+  No shutdown, media action, boot or live query performed by the agent.
+- Operator actions remain exactly as specified in the immutable approved
+  bundle. Repository proposal documents retain their preparation-time text;
+  this history and the protected result record track approval and execution.
+
+### 2026-10-08: original KVM identity confirmed before shutdown
+
+- Aaron supplied hostname and /etc/os-release output from the rebuilding
+  node's console: j1-svntp1 and Debian GNU/Linux 11 (bullseye). Identity gate
+  passed; command exit statuses were not supplied and are not inferred.
+- Reverified the approved bundle SHA-256 and recorded the console output in
+  first-boot-result.json. The operation now awaits Aaron's shutdown, powered-off
+  card swap and first boot. None of those actions has been reported completed.
+
+### 2026-10-08: new-node SSH login observed
+
+- Aaron supplied a successful password SSH transcript to 10.1.0.137. Banner
+  and prompt identify j2-svntp1, aarch64 and kernel 6.18.50+rpt-rpi-v8.
+- Reported ED25519 fingerprint:
+  `SHA256:yXiID8RObBoIejVpvr2KesaqIlocbSORyemD5dKrEys`.
+  Aaron accepted this key. Independent console comparison has not been
+  supplied; SSH success alone does not establish that trust check.
+- New-console OS/media/interface/service inspection remains pending, along
+  with explicit confirmation of halt-before-swap, old-card preservation and
+  fan/power behavior. Recorded the SSH observation in first-boot-result.json;
+  first-boot acceptance remains incomplete. No agent node contact occurred.
+
+### 2026-10-08: new-console bootstrap inspection and host-key match
+
+- Aaron supplied the requested console inspection: j2-svntp1, Debian 13
+  Trixie (DEBIAN_VERSION_FULL 13.7), aarch64 and kernel 6.18.50+rpt-rpi-v8.
+  Root is /dev/mmcblk0p2 ext4; mmcblk0 is 119.1G, consistent with the selected
+  spare's capacity but not independent proof of the physical card identity.
+- eth0 is UP with DHCP 10.1.0.137/22 and gateway 10.1.0.1; IPv6 ULA/global/
+  link-local addresses and an RA default route are present. These are bootstrap
+  observations, not the later fixed-address or routing acceptance.
+- No failed units are listed; SSH is active. wlan0 is DOWN with no address;
+  Wi-Fi disablement is not established and remains later scoped work.
+- Console ED25519 fingerprint matches the previously accepted SSH key exactly.
+  Recorded the observations; exit statuses were not supplied or inferred.
+- Existing-SSH hostname/release confirmation and the operator's physical
+  sequence, correct-spare identity and fan/power observations remain pending.
+  First-boot acceptance is not yet complete; no new agent node contact occurred.
+
+### 2026-10-08: first-boot acceptance completed
+
+- Existing SSH-session output confirms j2-svntp1 and Debian 13 Trixie
+  (DEBIAN_VERSION_FULL 13.7), matching the independent console inspection.
+- Aaron confirmed halt and power removal before using the verified spare,
+  original Debian 11 card preservation, normal observed fan/power behavior,
+  and untouched primary power/shared antenna/splitter wiring.
+- Recorded 13 distinct successful first-boot acceptance checks and final
+  state in owner-private first-boot-result.json. Operation completed without
+  rollback. Exact physical event times and individual command exit statuses
+  were not supplied; record receipt times are not inferred event times.
+- Final bootstrap state: j2-svntp1, Debian 13 Trixie, aarch64, kernel
+  6.18.50+rpt-rpi-v8, ext4 root on /dev/mmcblk0p2, Ethernet DHCP 10.1.0.137,
+  IPv6 addresses and RA default route, SSH active, no failed units listed,
+  matching console/SSH ED25519 fingerprint and preserved old-card rollback.
+- This accepts first boot only. Wi-Fi is DOWN but disablement remains
+  unverified. Full HAT/sensor/thermal tests and NTP/GPSD configuration and
+  acceptance remain later stages. No agent node contact, package/security
+  updates, fixed-network changes or controller mutation occurred.
+
+### 2026-10-08: scoped Trixie inspection prepared offline
+
+- Aaron authorized preparation of the next inspection, not live execution.
+  Added inspect-trixie.py and its specification for one non-root operator-run
+  collection through stdin at the existing trusted console/SSH session.
+- Scope covers package/source metadata, service/network ownership, selected
+  active Ethernet settings, Wi-Fi state and passive boot/hardware diagnostics.
+  It excludes credentials, target staging files, sudo, package refreshes,
+  network probes, device scans and configuration/service mutation.
+- Collector rejects wrong host/OS/architecture or root before subprocesses;
+  preserves unsupported tools, timeouts, truncation, hashes and boot continuity.
+  Missing evidence does not authorize tool substitution or later changes.
+- Added offline tests and included them in the shared runner used by CI and
+  pre-commit. No target contact or live command occurred during preparation.
+- Final validation: 42 offline tests and full pre-commit passed. Bash syntax,
+  ShellCheck, canonical shfmt and the readonly/local collision policy passed
+  for the changed shell runner. Focused documentation checks passed after
+  correcting literal glob formatting. The index verifier was unavailable
+  (not a Git repository) and is not counted as verification.
+- Prepared owner-private trixie-inspection-v1.tar, verified all five manifest
+  members, and retained the matching runnable operator paste alongside it.
+  Bundle SHA-256:
+  `0e24687cf003dc20b72a8901f31bebf6a79b3a9ac5dccff77aacdbc05b0800e9`.
+  The accepted first-boot result is bound by hash; no inspection has executed.
+
+### 2026-10-08: exact Trixie inspection bundle approved
+
+- Aaron approved trixie-inspection-v1.tar SHA-256
+  `0e24687cf003dc20b72a8901f31bebf6a79b3a9ac5dccff77aacdbc05b0800e9`.
+- Reverified the archive, all five manifest-covered members, matching operator
+  paste and both bound first-boot references. No drift was detected.
+- Created owner-private trixie-inspection-result.json in the existing evidence
+  directory, recording approval and approved_awaiting_operator_inspection.
+  No target contact or inspection execution occurred during this verification.
+- Authorization covers one non-root operator stdin invocation at the existing
+  trusted console/SSH session only. Preserve complete output, status and gaps;
+  no retry or later mutation is inferred from approval.
+
+### 2026-10-08: authorized SSH inspection executed and reviewed
+
+- Aaron directed the agent to connect as ama to 10.1.0.137 and run the exact
+  file after adding his public key and verifying connectivity. Recorded this
+  explicit transport override; the approved payload and exclusions were
+  unchanged. Reverified the bundle/paste and console-matching local host key.
+- Submitted one key-authenticated SSH execution with strict ED25519 checking,
+  no connection reuse/proxy/forwarding and a 330-second bound. Streamed the
+  exact paste to /bin/bash on stdin; no remote staging file was written.
+- SSH status 0, collector status 2, SSH stderr empty. Retained complete raw
+  output, status, hashes and parsed report in owner-private evidence files.
+  Boot continuity passed; no sampled file-content hash drift was detected.
+- Collection gaps are missing package matches and normal nmcli help on
+  stderr with exit 0. Preserved those outcomes without a rerun or installation.
+- Observed NetworkManager 1.52.1 owning active eth0 profile UUID
+  30c72d67-6d27-3d62-8d4d-6ef2e477815b; IPv4/IPv6 auto and automatic DNS
+  retained. Wi-Fi radio is disabled, WLAN rfkill unblocked; permanent
+  disablement remains unverified. vcgencmd showed 0x0 and 55.5 C at the snapshot.
+- Added the sanitized Trixie results document. No package, configuration,
+  controller, clock or service mutation was performed by this inspection.
+
+### 2026-10-08: needrestart inventory omission corrected
+
+- Aaron identified needrestart as required. The governing plan already lists
+  its Trixie package, non-disruptive reporting, accepted mail notification
+  and prohibition of unattended ntpsec restart during acceptance.
+- The executed v1 query omitted needrestart; its replacement-node package
+  version and effective policy remain unknown. Historical Debian 11 evidence
+  is not used as proof of the Trixie state.
+- Added needrestart to the current collector's future package query and
+  corrected the inspection results/specification to distinguish source
+  revision from the immutable executed v1 bundle. No rerun or node contact
+  occurred. A revised executable bundle needs its own execution approval.
+- The next package stage must account for needrestart and establish its
+  effective non-disruptive policy before any package mutation.
+
+### 2026-10-08: package-stage policy preflight and rollback defined
+
+- Aaron authorized defining the next scoped operation and rollback, including
+  verification of needrestart's non-disruptive policy before package changes.
+- Added trixie-package-stage.md with a ready-to-package read-only P0 proposal
+  and held update/reboot/recovery boundaries. Added --package-policy mode to
+  the current collector, reusing its identity gate and bounded query runner.
+- P0 queries needrestart package status/cached candidates, dpkg audit, selected
+  automatic-update unit state and installed manual locations. It captures
+  bounded needrestart/APT policy as data, never evaluating Perl, invoking
+  needrestart/hooks, refreshing metadata or using sudo.
+- Reviewed the common Needrestart component read-only. Its supplied active
+  filter is for Pi 5 -2712; the target runs Pi 4 -v8. That file and the Debian
+  12 notification job must not be deployed unchanged. No common-component,
+  inventory, mail or live-target change occurred.
+- Defined old-card rollback and original-node semantic recovery checks for
+  the eventual package mutation, with interrupted APT state inspected before
+  retries. Those future mutation/recovery commands are not executable under P0.
+- Validation passed: 45 offline tests, full pre-commit, focused Markdown and
+  local link/anchor checks. The index verifier remained unavailable (not a Git
+  repository) and is not counted as validation.
+- Packaged the specification, exact collector/test source, runnable stdin
+  payload and bound accepted evidence as owner-private
+  package-policy-preflight-v1.tar. Verified all five manifest-covered members.
+  Bundle SHA-256:
+  `9df701beefe20f5e2e5eaee6a128738c2c0339db3369a1e4ab25a7aa48c13772`.
+  No P0 command or package mutation executed during preparation.
+
+### 2026-10-08: approved P0 package-policy preflight executed
+
+- Aaron approved exact P0 bundle SHA-256
+  `9df701beefe20f5e2e5eaee6a128738c2c0339db3369a1e4ab25a7aa48c13772`.
+  Reverified all members/paste, bound evidence and trusted console-matching
+  ED25519 key; ran one non-root key-authenticated SSH invocation with the
+  120-second bound. No retry, remote staging or privilege escalation.
+- SSH 0, collector 2, SSH stderr empty. Retained complete stdout, status and
+  parsed report in owner-private package-policy evidence files. Boot and
+  sampled policy content/ownership/mode continuity passed; dpkg audit was clean.
+- Confirmed needrestart is not installed as a package, its default binary,
+  APT hook/main configuration and installed manual are absent, and the cached
+  candidate is 3.11-1. Cache freshness and effective reporting policy remain
+  unaccepted. No needrestart or hook invocation occurred.
+- Captured root-owned rpi-kernel.conf with kernelhints = 0; package ownership
+  was not queried. Review suppression against required kernel reporting before
+  any package/policy change; do not install the Pi 5 common filter unchanged.
+- APT timers are enabled/waiting, services inactive at snapshot, and the
+  unattended-upgrades package is absent. Captured listchanges/preconfigure
+  hooks; their referenced listchanges config remains outside P0 coverage.
+- Added package-policy-results-20261008.md. No metadata refresh, package
+  installation, policy/timer/service/network change, mail or reboot performed.
+
 ## Exact resume point
 
-Complete exact spare disk identity, public-key reference and locale in the
-[bootstrap specification](docs/image-media-bootstrap-spec.md). Windows Imager
-2.0.11.1, anytime maintenance with no fixed j1-svntp1 outage limit, direct reader
-access, new packaged spare, ama, password-first Ethernet
-SSH using DHCP and disabled Wi-Fi are confirmed. Aaron will discover the
-address in UniFi Network first, with KVM fallback. Apply static assignments only
-after first boot and observed target network ownership, under the later
-configuration scope. No Imager static-IP UI investigation remains. No media
-write, live preflight or first boot is authorized. Preserve old media, working
-HAT and primary antenna power; baseline acceptance remains open.
+P0 is complete with preserved absence/coverage gaps; do not rerun it to erase
+those facts. Define the next stage from package-policy-results-20261008.md:
+required needrestart installation/non-disruptive policy, existing kernel-hint
+suppression and ownership, APT hook/config and timer behavior, trusted sources
+and fresh candidate inputs. Obtain new exact-stage approval before further
+target access or any metadata/package/policy change. The executed P0 bundle
+SHA-256 is 9df701beefe20f5e2e5eaee6a128738c2c0339db3369a1e4ab25a7aa48c13772.
+Preserve original media and primary/antenna power. No update, reboot, network,
+mail or NTP/GPSD change is authorized by stage preparation or P0 approval.
+The executed inspection bundle is trixie-inspection-v1.tar, SHA-256
+0e24687cf003dc20b72a8901f31bebf6a79b3a9ac5dccff77aacdbc05b0800e9.
+Use its observed facts before defining updates, fixed addressing or service
+setup; the preparation authorization does not cover those changes.
+Preserve the original card, primary power and antenna/splitter wiring. The
+completed first-boot bundle is
+first-boot-approval-v1.tar, SHA-256
+`04c6208589d6f4dc602cdb44403276e2ca79bc73725d018432678588c3c1e42c`.

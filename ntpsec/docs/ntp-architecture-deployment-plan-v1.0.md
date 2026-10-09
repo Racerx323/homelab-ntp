@@ -1,8 +1,24 @@
 # Dual-stack NTP architecture and deployment
 
-Plan version: `1.3` (stable filename retained for existing links).
+Plan version: `1.4` (stable filename retained for existing links).
 For current status, operation history, and the next gate, see
 [NTPsec history](../HISTORY.md).
+
+## Approved rebuild identity change
+
+On `2026-10-08`, Aaron approved renaming the existing j1-svntp1 to
+**j2-svntp1** during its Trixie rebuild. This is the same physical node, not
+an additional server. Operational references below use the target name.
+The current Debian 11 hostname, baseline filenames, captured configurations
+and protected evidence directory retain j1-svntp1 as historical identity.
+Old-card recovery restores that original hostname.
+
+The rename alone changes neither IP assignments nor the existing service FQDN
+ntp1.local.theama.co. Before acceptance, reconcile the target hostname in the
+owning inventory, monitoring and management records; review DNS/PTR references
+with homelab-dns and update only under their separate approved scope. No DNS,
+controller, inventory or live-host mutation is authorized by this plan update.
+Keep the primary j1-svntp and its antenna-power role unchanged.
 
 ## Purpose
 
@@ -46,7 +62,7 @@ destinations to the active local DNAT target.
 
 ### Servers
 
-| Property | `j1-svntp` | `j1-svntp1` |
+| Property | `j1-svntp` | `j2-svntp1` |
 | --- | --- | --- |
 | Service name | `ntp.local.theama.co` | `ntp1.local.theama.co` |
 | IPv4 | `10.1.0.50/22` | `10.1.0.51/22` |
@@ -66,7 +82,7 @@ not add Keepalived, VRRP, or another NTP HA layer.
 
 ### Existing hardware and replacement policy
 
-Retain j1-svntp1's working Raspberry Pi PoE HAT through the OS rebuild. Aaron
+Retain j2-svntp1's working Raspberry Pi PoE HAT through the OS rebuild. Aaron
 identified its 2018 marking and confirmed that it is in use and works. He
 reports that this model is no longer available and selected the Raspberry Pi
 PoE+ HAT as its replacement **upon failure**, not as a rebuild prerequisite.
@@ -87,13 +103,13 @@ Both receivers share one GPS Source L1G1A-STD antenna through a Uputronics
 two-output SMA GPS splitter, one receiver per output. Aaron visually confirmed
 that **j1-svntp supplies antenna power** through its GPS board. Preserve that
 power path and the common antenna/splitter connections during the first
-j1-svntp1 rebuild. There is no unused third receiver output.
+j2-svntp1 rebuild. There is no unused third receiver output.
 
 The shared antenna, splitter and supplying node are GPS failure dependencies.
 Before any later j1-svntp power-off, define a separately authorized antenna-power
 continuity procedure with the exact connection mapping, power compatibility,
 expected interruption, acceptance and rollback. Verify the surviving
-j1-svntp1's GPS/PPS selection and IPv4/IPv6 time service with the planned
+j2-svntp1's GPS/PPS selection and IPv4/IPv6 time service with the planned
 maintenance power arrangement before allowing that outage. No alternative
 power source, splitter reconnection or hardware purchase is selected here.
 If continuity cannot be established, stop and obtain an explicit revised
@@ -105,7 +121,7 @@ Record the final antenna-power source and mapping after maintenance.
 ### Addressing
 
 - `j1-svntp` uses `fd36:5aa8:6971:1::50/64`.
-- `j1-svntp1` uses `fd36:5aa8:6971:1::51/64`.
+- `j2-svntp1` uses `fd36:5aa8:6971:1::51/64`.
 - Both nodes use `10.1.0.55` and `fd36:5aa8:6971:1::55` for DNS.
 - Host profiles reject DNS values learned through DHCP or Router
   Advertisement.
@@ -176,7 +192,7 @@ ntpsec/
 ├── configs/
 │   ├── j1-svntp/
 │   │   └── ntp.conf
-│   └── j1-svntp1/
+│   └── j2-svntp1/
 │       └── ntp.conf
 ├── docs/
 │   ├── ntp-architecture-deployment-plan-v1.0.md
@@ -236,7 +252,7 @@ edit and review workflow.
 
 This is a **clean install**, not an in-place Debian 11-to-13 upgrade. Each node
 must have its own approved image, boot media, configuration bundle, preflight,
-acceptance record, and recovery path. Rebuild `j1-svntp1` first. Do not begin
+acceptance record, and recovery path. Rebuild `j2-svntp1` first. Do not begin
 `j1-svntp` until the rebuilt standby has served real IPv4 and IPv6 clients,
 selected GPS/PPS, survived a reboot, and completed the agreed observation
 interval while `j1-svntp` remains available.
@@ -280,7 +296,7 @@ Use the existing NTPsec/GPSD arrangement as input evidence, not as an
 installable Trixie artifact. Keep byte-exact Debian 11 `/etc/ntp.conf`
 captures for audit. Derive a separate Trixie configuration from the installed
 package's unit, config path, default files, man pages, user/group, device
-names, and live hardware; validate it on `j1-svntp1` before reusing the design
+names, and live hardware; validate it on `j2-svntp1` before reusing the design
 on `j1-svntp`. Do not copy old boot overlays, `/etc/ntp.conf`, GPSD unit
 assumptions, Webmin settings, or network-manager profiles blindly.
 
@@ -335,7 +351,7 @@ Phase 0 makes no live-system or controller contact.
 
 ### Phase 1: define and execute read-only baselines
 
-Create a fail-closed collector, then run it against `j1-svntp1` before
+Create a fail-closed collector, then run it against `j2-svntp1` before
 `j1-svntp`. Capture:
 
 - Host identity, Debian release, boot time, and package/build provenance.
@@ -402,14 +418,14 @@ and post-state hashes for protected host artifacts.
 Repository tests provide artifact evidence, not evidence that the replacement
 card boots or that its GPS, PPS, fan, mail, and NTP paths work.
 
-### Phase 3: rebuild and accept `j1-svntp1`
+### Phase 3: rebuild and accept `j2-svntp1`
 
 1. Confirm `j1-svntp` serves clients and the reported active IPv4 DNAT target
    remains reachable. Capture a pre-rebuild client and NTP health baseline;
-   identify clients that use only `j1-svntp1` and their retry/failover behavior.
+   identify clients that use only `j2-svntp1` and their retry/failover behavior.
    One healthy node does not guarantee zero client impact.
 2. Preserve j1-svntp's antenna-power path and the shared splitter connections.
-   Under the approved maintenance window, power down only `j1-svntp1` and
+   Under the approved maintenance window, power down only `j2-svntp1` and
    preserve its labelled Debian 11 SD card. Insert its verified Trixie card;
    do not reuse `j1-svntp` media or identity.
 3. Boot with console access available. Confirm image, release, architecture,
@@ -425,7 +441,7 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    GPSD, and NTPsec with the Trixie candidate configuration. Activate the
    leapfile timer after verifying its command and path. Do not enable watchdog
    resets until recovery is proven.
-6. Query `j1-svntp1` directly from controlled clients over IPv4 and IPv6;
+6. Query `j2-svntp1` directly from controlled clients over IPv4 and IPv6;
    confirm GPS/PPS selection, upstream reachability, leap state, Webmin
    management scope, approved Munin polling, delivered mail, needrestart
    reporting, PoE fan/thermal behavior, and a second successful boot. After
@@ -443,11 +459,11 @@ old network profile or NTP config onto the new image is not a rollback.
 ### Phase 4: rebuild and accept `j1-svntp`
 
 Repeat the Phase 3 controls with `10.1.0.50` and
-`fd36:5aa8:6971:1::50`. First prove that rebuilt `j1-svntp1` serves clients
+`fd36:5aa8:6971:1::50`. First prove that rebuilt `j2-svntp1` serves clients
 independently. Complete the shared-antenna power-continuity gate above before
 any primary power-off; DNAT failover does not preserve antenna power. For each
 family with an existing active `j1-svntp` DNAT rule,
-disable that rule and promote the matching `j1-svntp1` standby rule under a
+disable that rule and promote the matching `j2-svntp1` standby rule under a
 separately approved UniFi action before taking the primary down; verify one
 active rule per affected family and client traffic through the standby. If
 the current UniFi rules do not support this exact transition, stop and revise
@@ -520,7 +536,7 @@ In `homelab-server-configs/inventory/prod`:
    `munin-node`, needrestart, msmtp, and watchdog components. Do not duplicate
    the existing all-host needrestart/watchdog policy unless a node needs an
    override.
-3. Add host keys `j1-svntp` and `j1-svntp1` with their management FQDNs.
+3. Add host keys `j1-svntp` and `j2-svntp1` with their management FQDNs.
 4. Add host files that satisfy the complete observed hardware, storage, OS,
    HAT, address-authority, and no-HA inventory contract above. Preserve the
    exact per-host differences; do not fill missing fields with assumptions.
@@ -551,7 +567,7 @@ Acceptance requires:
   4460.
 - Other Default LAN clients cannot send UDP 123 to the External zone.
 - Active IPv4 and IPv6 DNAT reach `j1-svntp`; the disabled standby rules can be
-  promoted one family at a time to `j1-svntp1` and restored.
+  promoted one family at a time to `j2-svntp1` and restored.
 - Inventory names, functions, components, hardware, and OS facts match live
   observations, including exact Pi and HAT revisions and boot/root media.
 - Each repository passes its focused tests, full baseline, secret scan, and
