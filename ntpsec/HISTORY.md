@@ -10,11 +10,11 @@ A plan entry or history entry does not authorize live action.
 | Field | Value |
 | --- | --- |
 | Phase | First boot and bounded bootstrap acceptance complete for j2-svntp1; later configuration and full service/hardware acceptance pending |
-| Last updated | `2026-10-08` |
+| Last updated | `2026-10-10` |
 | Reported live state | j2-svntp1 booted Debian 13 Trixie on the verified spare, Ethernet DHCP 10.1.0.137, SSH active and no failed units listed; primary power and antenna path preserved; NTP/GPSD not yet configured or accepted on the new image |
-| Current repository state | First boot and both read-only inspections completed; P0 confirms needrestart package absent and existing kernel-hint suppression; results and immutable executed inputs preserved |
-| Current next single gate | Define the needrestart/package stage using P0 results, resolving APT hook inputs, kernel-reporting policy and fresh trusted candidates before mutation approval |
-| Authorization boundary | Exact approved P0 read-only SSH preflight completed; no further target access, metadata refresh, installation, policy write, network/service change or reboot authorized by P0 |
+| Current repository state | Signed source releases and 115200 helpers validated; the approved v2 metadata-resolution bundle was submitted once and stopped before the root collector because sudo required a password; evidence preserved |
+| Current next single gate | Metadata v4 held and policy cleanup verified; review retained signed release metadata before proposing an index-completeness correction or new attempt |
+| Authorization boundary | Metadata v4 approval consumed; terminal review and exact policy cleanup complete; further target contact, retry, policy mutation, installation, build, service/network change and reboot require new scoped approval |
 
 ## Repository observations
 
@@ -956,13 +956,507 @@ checks passed. Documentation-only preparation required no behavior-test rerun.
 - Added package-policy-results-20261008.md. No metadata refresh, package
   installation, policy/timer/service/network change, mail or reboot performed.
 
+### 2026-10-09: needrestart preparation recovered after stream interruption
+
+- Recovered from the retained checkpoint without repeating either completed
+  inspection. No new target contact or package operation occurred.
+- Aaron requires explicitly enabled kernel checks. Defined effective
+  kernelhints = 1 and list-only service restart reporting, with actual boot-image
+  names and Pi-fragment ownership still required before selecting an override.
+- Reviewed the designated common-component msmtp-mailrise.md and its reporting
+  script. Preserved needrestart.sh/cron to sendmail to msmtp to Mailrise/Apprise
+  as the notification design. Built-in sendnotify suppression does not remove
+  the external reporting requirement.
+- Added these requirements and remaining inputs to trixie-package-stage.md.
+  The local package review is preparation evidence; fresh signed archive and
+  dependency trust remain unaccepted. No installation or mail executor exists.
+
+### 2026-10-09: installation-inputs inspection prepared
+
+- Aaron approved preparing one hash-bound read-only inspection and asked whether
+  it covers the governing plan's package requirements. Added a coverage table
+  in installation-inputs-preflight.md for every baseline area, distinguishing
+  package inputs from later configuration, hardware and service acceptance.
+- Extended inspect-trixie.py with --installation-inputs: baseline package
+  status/cached candidates/direct dependencies, native/foreign architecture,
+  additional APT/dpkg inputs, Pi-fragment/sendmail ownership, boot-image and
+  keyring metadata, and bounded notification configuration evidence.
+- Included every dependency declared by the locally reviewed needrestart
+  3.11-1 archive. Cached direct dependencies do not prove fresh transitive
+  resolution; keyring hashes do not establish signature trust. Relay permission
+  gaps and omitted directives remain explicit; no sudo or mail test is proposed.
+- Prepared installation-inputs-preflight.tar and its external paste, pinned
+  known-host entry and approval manifest in the existing private evidence
+  directory. Verified the retained console fingerprint locally. Bundle SHA-256:
+  `9d2e34dc0221a4d456beb1aafa8d0056d1d27666c1622cf7cd474495dd60e4cc`.
+- State is prepared_not_submitted. No target contact, metadata refresh,
+  installation, restart, reboot, SMTP probe or notification occurred.
+
+### 2026-10-09: authorized installation-inputs inspection completed
+
+- Aaron authorized exact bundle SHA-256
+  `9d2e34dc0221a4d456beb1aafa8d0056d1d27666c1622cf7cd474495dd60e4cc`.
+  Reverified archive/members, stdin payload and console-matching pinned key.
+  Registered before submission and executed one non-root SSH invocation.
+- Transport 2 and collector 2, complete terminal marker/JSON, empty SSH stderr.
+  Boot ID unchanged; sampled policy/metadata showed no drift; dpkg audit clean.
+  Preserved full output, transport state and parsed result in private evidence.
+- Captured arm64 native/armhf foreign architecture, baseline/dependency package
+  status, raspberrypi-sys-mods ownership of the Pi fragment, both v8/2712 boot
+  images, APT/listchanges inputs and missing mail transport/configuration.
+- Discovered Signed-By .pgp paths omitted by the executed .gpg/.asc metadata
+  patterns. Thirteen .gpg aliases were rejected as symlinks. Recorded the gap;
+  corrected future .pgp collection with an offline regression. The exact
+  executed archive and paste remain unchanged; no rerun occurred.
+- Added installation-inputs-results-20261009.md. No metadata refresh,
+  installation, service/timer change, restart, reboot, SMTP probe or mail ran.
+
+### 2026-10-10: keyring/hook inspection and trusted resolution defined
+
+- Aaron approved defining the narrow keyring/hook inspection, followed by fresh
+  trusted package resolution. No new target contact occurred.
+- Added --keyring-hooks to the collector: captures the two actual Signed-By
+  .pgp keyrings as bounded public bytes, hook programs/package-listed modules as
+  data, installed manuals and relevant policy; queries versions, ownership,
+  package-file checksums, audit and update-unit state. No key import, hook or
+  signature-verifier execution, sudo, metadata refresh or simulation is included.
+- Added keyring-hooks-preflight.md and trusted-package-resolution.md. Resolution
+  must retain complete selected dependencies/alternatives/recommends and exact
+  provenance. Webmin and hardware-specific support selections remain unresolved;
+  the resolution stage cannot be rendered until keys and hook inputs are accepted.
+- Prepared keyring-hooks-preflight.tar, its paste, pinned known-host file and
+  approval manifest in the existing private evidence directory. Bundle SHA-256:
+  `d4a4850654845c7db25905f6b51d72abe5eb80dac2c527cd021c7bf5bc5e5f99`.
+  State is prepared_not_submitted. Prior executed archives and evidence remain
+  unchanged; installation, refresh and notification are not authorized.
+
+### 2026-10-10: approved keyring/hook inspection executed and reviewed
+
+- Aaron approved exact bundle SHA-256
+  `d4a4850654845c7db25905f6b51d72abe5eb80dac2c527cd021c7bf5bc5e5f99`.
+  Reverified archive/members, stdin and pinned console key; registered before
+  submitting one non-root SSH invocation. No retry or target staging.
+- Transport 2 and collector 2, complete JSON/terminal marker, empty SSH stderr.
+  Boot, inputs, package versions and file lists stayed unchanged. dpkg audit and
+  package-file verification were clean; all nine queries completed without
+  failure/truncation. Both source-referenced .pgp keyrings were captured.
+- Compared captured public keys locally using a protected GPG home with auto
+  retrieval disabled. All nine Debian primary fingerprints matched the publisher
+  keys page; the Raspberry Pi primary matched its publisher archive key. Public
+  resources were fetched locally over validated HTTPS, never through the Pi.
+  Fresh repository signatures and package chains remain unverified.
+- Retained eleven redacted lines in six Debconf modules. Also found that
+  apt-listchanges 4.8 imports implementation under the package-listed
+  /usr/lib/python3/dist-packages/apt_listchanges path, outside the executed
+  collector boundary. Fixed future module capture and its offline regression;
+  preserved the original archive/paste and did not rerun the inspection.
+- Added keyring-hooks-results-20261010.md and updated the resolution definition
+  to include the remaining module read in its next preflight. Installation-hook
+  closure remains unaccepted. No target refresh, simulation, package download/
+  install, service/timer change, reboot, SMTP probe or mail occurred.
+
+### 2026-10-10: exact isolated metadata/resolution bundle prepared
+
+- Aaron approved preparing the exact metadata/resolution bundle with the
+  remaining module read in preflight. No new Pi contact occurred.
+- Added resolve-trixie-packages.py and run-package-resolution.py. The stage
+  validates bound inputs, caller/time/architecture, package checksums and APT
+  prerequisites; reads remaining modules as data; then uses isolated APT
+  configuration, copied installed state and empty owned lists. System sources,
+  package state, caches and timers are not mutation inputs.
+- Defined one authenticated metadata acquisition and native simulations for
+  needrestart, notification transport, NTP/GPS, Munin and watchdog. Python APT
+  must match native changed versions and retain full selected dependency graphs,
+  alternatives/recommends, origins and changed-archive hashes. No commit, package
+  archive download, install or hook/service execution is allowed.
+- Verified four public publisher InRelease references locally to bind release
+  identities. This was workstation-only HTTPS/GPGv work, not Pi refresh or
+  acceptance of the Pi's future metadata. Webmin provenance remains deferred.
+- Added metadata-resolution-operation.md, offline regressions and shared runner
+  coverage. The operation defines owned staging/evidence retention, bounded
+  subprocesses, cleanup before refresh and holds after interruption/drift.
+- Prepared metadata-resolution.tar and its payload/pinned key/approval manifest
+  in existing private evidence, SHA-256
+  `e5dd57bda2c554c7844a67a4b5734d67e52c125892fe3b94247f9fbdd414244f`.
+  State is prepared_not_submitted. No live metadata/solver command ran.
+
+## 2026-10-10: source-build application lifecycle correction
+
+- Aaron requires target-local source builds of NTPsec and GPSD using maintained
+  clockmaker/pinup adaptations, native waf/SCons installs with file manifests,
+  and stable release tags pinned to exact commits. No APT application/client
+  package is selected for either source application.
+- Preserve and modernize combined timeservice; a daemon failure stops the pair
+  and systemd restarts both. Keep existing configuration and the four-week leap
+  schedule; source updates require their own reviewed candidate and rollback.
+- Corrected governing plan to v1.5 and aligned active candidate/package plans.
+  Added source-build-audit-20261010.md with upstream defects, configuration and
+  inventory/fixture/manifest/test differences. Historical snapshots remain facts.
+- Superseded the unsubmitted metadata-resolution bundle
+  `e5dd57bda2c554c7844a67a4b5734d67e52c125892fe3b94247f9fbdd414244f`:
+  its APT ntpsec/gpsd/gpsd-clients roots conflict with this decision. Retained
+  the archive and its hashes; no execution occurred and no replacement is approved.
+- Public upstream review and local repository work only; no Pi contact,
+  installation, reboot, network change, notification or primary outage.
+- Aaron requested modernizing clockmaker and checking its flags. Added Python 3
+  clockmaker/pinup adaptations, combined foreground supervision and a proposed
+  service template. Retained application flags and single-hyphen aliases have
+  offline dispatch coverage; account/SSH/purge modes are explicitly removed.
+- Native source build/test/staging, hash-bound configuration staging, protected
+  installation, obsolete-file handling and completed-install rollback have
+  offline coverage. Extended collector unit queries for combined timeservice
+  and package GPSD socket; APT executor/launcher reject source application roots
+  and solver selections. No selected release has been built on the target.
+
+## 2026-10-10: Uputronics UART requirement
+
+- Aaron confirmed 115200 baud and approved supported GPSD runtime speed plus
+  checked supervisor `stty` initialization. GPSD 3.27.5 does not declare the
+  guide's `fixed_port_speed` SCons option. The native combined service replaces
+  the legacy `/etc/init.d/timeservice` baud declaration.
+- Configuration staging requires `uart_device` and exactly one GPSD
+  `-s 115200`, rejects conflicting speed arguments, and binds the same device.
+  The supervisor initializes 115200/8N1 without hardware flow control before
+  either daemon starts; initialization error or timeout prevents startup.
+- Source selection and build review are recorded in
+  [source-release-selection-20261010.md](docs/source-release-selection-20261010.md):
+  NTPsec 1.2.5 and GPSD 3.27.5, with release signatures, exact commits and
+  archive hashes. No source build or host mutation has occurred.
+- Marked the provisional source-prerequisites-resolution-v1 bundle as
+  superseded, not submitted: changed helper/document inputs require a rebuilt
+  bundle and its own exact execution approval. No target contact occurred.
+
+## 2026-10-10: source-prerequisite resolution bundle rebuilt
+
+- Aaron approved local rebuilding, validation and hashing only. Prepared
+  source-prerequisites-resolution-v2 with the current 115200 helpers, tests,
+  source review and governing documents. Preserved both superseded archives.
+- Bundle SHA-256:
+  `f37a5c575baf5852749f1ac9b7eab7eaa47a244482b60bd7e34a7117bf6792ce`.
+  State is prepared_not_submitted; execution_authorized is false.
+- Local validation checked every member hash, current workspace bytes,
+  embedded metadata worker/helper identity and syntax, source-root/catalog
+  agreement, exclusion of APT application roots and strict-key launcher
+  preparation. Wrong archive hashes and changed external payloads were rejected.
+  All 13 focused resolution tests passed. No target contact or submission
+  artifacts exist; installation, builds and service activation remain held.
+
+## 2026-10-10: approved resolution execution stopped at sudo
+
+- Aaron approved execution of the exact v2 bundle. Verified its archive/member
+  hashes, strict host key and absence of prior submission artifacts, then
+  submitted the one-shot SSH command once.
+- Transport exited 1: `sudo: a password is required`. Stdout was empty; the
+  launcher rejected the absent terminal worker JSON/marker. Root execution
+  was not admitted, so no metadata collector, workspace, acquisition or
+  dependency simulation ran. Acceptance is false. No retry occurred.
+- Preserved the unchanged bundle and original registration, streams and
+  launcher log; added a private execution review with evidence hashes. See
+  [source-prerequisites-resolution-results-20261010.md](docs/source-prerequisites-resolution-results-20261010.md).
+- Next gate is reviewed elevation and a distinct, separately authorized
+  attempt. The existing operation forbids password fallback; do not edit or
+  reuse its attempted submission. Build/install/activation remain held.
+
+## 2026-10-10: narrow metadata elevation defined and reviewed
+
+- Defined a temporary exact-command sudo rule for a fixed root-owned runner,
+  with protected sealed payload inputs, timestamp-only stdin, fixed expiry,
+  environment clearing and a persistent exclusive execution claim.
+- Bootstrap uses separately approved operator administrative access to stage
+  verified data and the named fragment. Subsequent metadata execution retains
+  noninteractive sudo and no password fallback. Cleanup removes only that
+  fragment and preserves claimed state/evidence.
+- Reviewed arbitrary-code, mutable-input, environment, repeated-execution and
+  residual-permission boundaries in
+  [source-prerequisites-elevation.md](docs/source-prerequisites-elevation.md).
+  The exact candidate parsed successfully with controller visudo 1.9.15p5;
+  target sudo tools, policy and runtime behavior remain unverified.
+- Documentation and controller-local candidate only: no runner implementation,
+  live staging, sudo policy change, target contact or new execution occurred.
+  Next implement/test bootstrap, runner and v3 controller inputs, then bind
+  separate bootstrap and metadata bundles for scoped approval.
+
+## 2026-10-10: narrow elevation implemented and approval bundles prepared
+
+- Aaron approved local implementation/tests and bundle preparation only.
+  Added the sealed one-shot runner, operator bootstrap/removal procedure,
+  verified fresh-clock operator-paste preparation and replacement controller
+  launcher. Root execution inputs are fixed, protected and hash-verified;
+  metadata stdin accepts only the controller timestamp.
+- Added exclusive claim persistence, expiry, environment clearing, completed
+  bootstrap-receipt checks and atomic policy publication. Bootstrap rejects
+  input/identity/clock drift and existing attempts. Removal preserves claimed
+  state; rollback cannot reset a consumed attempt.
+- All 107 offline tests passed, including 16 new elevation regressions.
+  Shell syntax, ShellCheck, canonical formatting, native unit verification
+  and repository-wide pre-commit passed. Target tools/policy remain unverified.
+- Prepared operator bootstrap v1, SHA-256
+  `066cdcaa3d1762faed932a6bb5a5d275c39dfe611ac85176bce47a1da8541d9b`,
+  and sealed metadata execution v3, SHA-256
+  `f197494310cdc110c6f494325f4d7d1486ab27b689284917958ee0309cc45660`.
+  Both are prepared_not_submitted with execution_authorized false. Admission
+  expires October 12, 2026, 08:08:48 UTC (03:08:48 CDT).
+- Validate bootstrap on the target only after its separate scoped approval;
+  review operator receipt/effective policy before requesting metadata execution
+  approval. The v3 bundle retains v2 worker/helper/spec bytes. Preserved the
+  failed v2 submission and all superseded archives; no target contact occurred.
+
+## 2026-10-10: operator bootstrap authorized; awaiting operator execution
+
+- Aaron authorized bootstrap installation and the defined rollback/removal
+  procedures for bundle
+  `066cdcaa3d1762faed932a6bb5a5d275c39dfe611ac85176bce47a1da8541d9b`.
+  Reverified archive, member and helper hashes and the admission deadline.
+- Generated and syntax-checked the private timestamped operator installation
+  paste. Its controller epoch is 1791621961 (08:46:01 UTC / 03:46:01 CDT);
+  the bootstrap requires execution within 300 seconds of that observation.
+  Preserve the generated paste and its separate authorization record.
+- The approved bootstrap requires the operator's existing interactive
+  administrative terminal. No target contact or installation was performed
+  by the agent; the next input is the original operator receipt or error.
+  Metadata execution remains separately gated and is not authorized.
+
+## 2026-10-10: operator bootstrap rejected by target clock
+
+- Aaron reported `ValueError: bootstrap clock/window mismatch`. The supplied
+  traceback identifies the clock gate before persistent bootstrap writes;
+  bootstrap installation is not accepted. Preserve the original operator paste.
+- Strict-key read-only SSH observed target epoch 1791379794
+  (2026-10-07 13:29:54 UTC), bracketed by controller epochs
+  1791622377.7819626 and 1791622378.3147755
+  (2026-10-10 08:52:57–08:52:58 UTC). The target was about 242584 seconds
+  behind and reported `NTP=yes`, `NTPSynchronized=no`. This later observation
+  does not establish the exact clock value at the failed invocation.
+- The observed target time violates both the preparation lower bound and the
+  300-second controller comparison. Refreshing the paste alone cannot admit
+  installation. No clock or time-service mutation was performed; correction
+  requires separate scoped authorization. Metadata execution remains held.
+- Private clock output and failure review are retained in the bootstrap v1
+  evidence directory. No target filesystem inspection was performed.
+
+## 2026-10-10: clock correction authorized; awaiting operator step
+
+- Aaron approved clock correction through annotation 1. Read-only preflight
+  found systemd-timesyncd enabled and running, no active NTPsec/chrony/combined
+  time service, and repeated timeouts to the configured Debian fallback pool.
+  The cause of those timeouts remains unproved; no network policy was changed.
+- Prepared an operator-only forward clock step from a strict-key target sample
+  and the controller clock. The paste binds hostname, kernel and boot identity,
+  compensates for elapsed target monotonic time, rejects samples older than
+  300 seconds and steps less than three days forward. It writes no files and
+  changes no service configuration. Nine focused checks used a mocked clock
+  setter; no target clock correction has yet been observed.
+- The operator must use the existing interactive sudo terminal and retain the
+  original JSON/error. Do not roll the clock back to its known incorrect value.
+  Verify agreement over SSH after the step, then refresh the authorized bootstrap
+  paste. Ongoing NTP synchronization and metadata execution remain unaccepted.
+
+## 2026-10-10: clock agreement verified; bootstrap paste refreshed
+
+- Aaron reported the operator clock correction done; the original terminal
+  JSON/error was not supplied. Subsequent strict-key read-only verification
+  found the same boot/kernel and target-controller agreement within
+  0.41 seconds. The bootstrap parent, attempt directory and sudoers fragment
+  were absent. No bootstrap installation is accepted from these checks.
+- NTP remains enabled but reports unsynchronized. The one-time clock correction
+  is verified; ongoing synchronization and the cause of pool timeouts remain
+  unresolved. The agent performed no target mutation.
+- Generated a new private installation paste from the unchanged authorized
+  bootstrap v1 archive. Verified all archive/member/helper hashes, shell syntax,
+  and that only the declared runtime epoch differs from the preserved original.
+  Clock verification and paste review are retained privately. Await the original
+  operator bootstrap result before policy review or any repeat submission.
+
+## 2026-10-10: operator bootstrap installed and acceptance reviewed
+
+- Aaron supplied the installation receipt, observed at 09:01:43 UTC.
+  Its file hashes/modes, paths, admission window and exact command match the
+  approved bootstrap v1. Native visudo reports the complete include set parsed.
+- Strict-key live policy listing confirms the fragment grants only the fixed
+  runner command with NOPASSWD/NOSETENV. Reviewed the protected pre-install
+  policy and current Defaults; the pre-existing administrative grant remains.
+  No NOEXEC or interception tag appeared in the listing. Actual collector
+  admission has not been tested by invoking the runner.
+- Read-only protected acceptance readback succeeded through noninteractive sudo
+  using the existing administrative authentication state, without password
+  fallback. The root-owned attempt has mode 0700; all four installed inputs and
+  the effective fragment match their protected hashes/modes. The protected
+  receipt JSON equals the operator-supplied receipt. No claim is present and no
+  collector was invoked. Private raw evidence and acceptance review are retained.
+- Reverified sealed metadata v3 archive/member/helper/host-key inputs and its
+  current admission window without registration or execution. Its exact hash is
+  `f197494310cdc110c6f494325f4d7d1486ab27b689284917958ee0309cc45660`.
+  Execution requires separate approval. Ongoing NTP synchronization remains
+  unresolved; bootstrap acceptance does not accept the application platform.
+
+## 2026-10-10: sealed metadata v3 executed once; held before acquisition
+
+- Aaron approved one metadata v3 execution through annotation 1, bound to the
+  reviewed archive hash. Submitted the strict-key fixed runner command once.
+  Worker and SSH both returned status 2; launcher status 0 confirms matching
+  terminal output, not metadata acceptance. Original streams and private
+  authorization/submission/result/review records are retained.
+- The worker held at `keyring/hook input count exceeds approved 128-file bound`.
+  The general keyring/hook enumerator enforces its aggregate bound before the
+  caller filters remaining apt-listchanges modules. The retained listing has
+  13 relevant Python paths and 101 Debconf Perl paths, plus fixed policy,
+  manual and source paths. This is a preflight enumeration failure.
+- Metadata acquisition and dependency simulation did not start; no workspace
+  was created. Package-file verification and dpkg audit passed, and the worker
+  reports installed state, approved inputs and boot unchanged. No source build,
+  package installation or service change occurred. Metadata acceptance is false.
+- Protected readback verifies claim state completed_with_gaps, exit status 2,
+  the matching runtime epoch/payload, and the unchanged temporary fragment hash.
+  Do not reset that claim or rerun the one-shot launcher. Generated and checked
+  the already-authorized operator removal paste; policy removal is pending.
+
+## 2026-10-10: temporary metadata sudo policy removed and verified
+
+- Aaron supplied the successful operator removal receipt. Strict-key read-only
+  protected readback confirms the temporary fragment is absent and the receipt
+  matches the operator JSON. Native visudo validates the remaining include set.
+  Effective permissions match the retained pre-bootstrap policy exactly.
+- The terminal claim hash/content are unchanged. All four protected input
+  hashes/modes remain verified. Removal preserved the consumed attempt and its
+  evidence; no collector rerun or further target mutation occurred.
+- Cleanup acceptance is complete. Private operator receipt, original readback
+  and hash-bound review are retained. The metadata result remains held and
+  unaccepted. A corrected attempt needs distinct paths and newly approved
+  bootstrap/execution bundles; ongoing NTP synchronization remains unresolved.
+
+## 2026-10-10: remaining-module enumeration corrected offline
+
+- Aaron approved offline correction and preparation through annotation 1.
+  The worker now selects only apt-listchanges dist-packages Python modules
+  before enforcing the existing 128-file ceiling. Broad keyring/hook inspection
+  is unchanged. Replayed the retained 13 Python and 101 Perl paths; added empty,
+  traversal, deduplication and overflow regressions. All 109 offline tests pass.
+- Prepared bootstrap v2 for distinct attempt-v4 paths, SHA-256
+  `379a852fb752953a90ca35dac570950241c712629174181cdc4edb6ff0611adf`,
+  and metadata v4, SHA-256
+  `ac80afd65ae1e5936cc80c2942c2cf49892cd80668e65cd4bf4ef2e57a553a06`.
+  The new payload changes only its embedded worker literal; inspection helper
+  and acquisition specification match v3. Local template and launcher
+  preparation passed without registration or target contact.
+- Preserve the consumed v3 claim, removed policy evidence and prior archives.
+  The reviewed admission deadline remains October 12, 2026, 08:08:48 UTC.
+  Bootstrap v2 installation needs its own exact-hash approval; metadata v4
+  execution needs a later separate approval after bootstrap acceptance.
+
+## 2026-10-10: bootstrap v2 approved; operator installation pending
+
+- Aaron approved bootstrap v2 through annotation 1, bound to the archive hash
+  recorded above. Approval covers its identity/policy checks, attempt-v4 staging,
+  exact temporary sudo rule, acceptance readback and defined recovery/removal.
+  Metadata v4 execution remains separately gated and unauthorized.
+- Reverified archive/member hashes, the preparation helper, owner-private
+  evidence storage and admission window. Prepared a fresh install paste with
+  its declared controller epoch under source-prerequisites-bootstrap-v2.
+  The operator must use the existing interactive administrative terminal and
+  preserve the original receipt or error. No target command was submitted.
+- Await that original result before acceptance readback. A stale paste requires
+  a new timestamped output; an attempted installation must never be retried
+  automatically or have its target staging removed to bypass rejection.
+
+## 2026-10-10: bootstrap v2 installed and acceptance verified
+
+- Aaron supplied the successful operator install receipt for attempt-v4.
+  Approved strict-key readback confirms root-protected inputs with exact hashes
+  and modes, the matching protected receipt and no collector claim.
+- The effective rule permits only the fixed runner command with NOPASSWD and
+  NOSETENV. No NOEXEC or INTERCEPT setting was observed. The pre-existing
+  administrative policy matches the retained prior snapshot. Controller and
+  target clock observations agree within the 300-second admission bound;
+  ongoing NTP synchronization is not accepted by this observation.
+- Bootstrap acceptance is complete, with private receipt, original readbacks
+  and hash-bound review preserved. Reverified the metadata v4 archive and
+  launcher preparation without registration or collector invocation. The next
+  gate is approval of one metadata v4 execution, SHA-256
+  `ac80afd65ae1e5936cc80c2942c2cf49892cd80668e65cd4bf4ef2e57a553a06`.
+
+## 2026-10-10: metadata v4 executed once; held at index completeness
+
+- Aaron approved one metadata v4 execution through annotation 1, bound to its
+  archive hash above. Submitted the one-shot launcher once. SSH and worker
+  returned 2; launcher returned 0 because transport matched the terminal
+  collector status. That launcher result does not establish metadata acceptance.
+- Corrected module enumeration passed. Native authenticated update returned 0
+  in the isolated workspace. Index completeness then held with 16 observed
+  architecture/component package targets against 26 required, no unexpected
+  targets. Missing targets cover contrib/non-free/non-free-firmware in
+  trixie-updates and non-free/non-free-firmware in trixie-security, for both
+  arm64 and armhf. Whether these indexes are empty requires signed-metadata
+  review; no acceptance rule was relaxed. No dependency group was evaluated.
+- Worker reported package state, approved inputs and boot unchanged. It retained
+  its isolated workspace for evidence. Original output, transport/worker status,
+  index-set review and strict-key terminal readback are preserved privately.
+  The protected claim is completed_with_gaps, status 2, with matching payload
+  and controller epoch. The consumed claim must never be reset or rerun.
+- Verified the exact unchanged temporary fragment and prepared the authorized
+  operator removal paste under source-prerequisites-bootstrap-v2. Await the
+  original removal receipt or error, then verify cleanup. Preserve protected
+  inputs, claim and staged metadata. No package build/install or notification ran.
+
+## 2026-10-10: attempt-v4 temporary policy removed and verified
+
+- Aaron supplied the successful operator removal receipt. Approved strict-key
+  protected readback confirms the fragment is absent, the protected receipt
+  matches the operator JSON and native visudo validates the remaining includes.
+  Effective permissions exactly match the attempt-v4 pre-install snapshot.
+- The terminal claim content/hash and all four protected input hashes/modes
+  are unchanged. Cleanup acceptance is complete; original receipt, readback
+  and hash-bound review remain private. No collector retry or additional target
+  mutation occurred. Do not repeat removal or delete the consumed attempt.
+- Metadata v4 remains held and unaccepted. Review retained signed release
+  metadata to distinguish empty indexes from missing acquisition before
+  proposing a correction. Do not relax completeness based only on target
+  counts. Any additional target evidence retrieval or new execution requires
+  its own scoped approval; preserve staged evidence and prior archives.
+
 ## Exact resume point
 
-P0 is complete with preserved absence/coverage gaps; do not rerun it to erase
-those facts. Define the next stage from package-policy-results-20261008.md:
-required needrestart installation/non-disruptive policy, existing kernel-hint
-suppression and ownership, APT hook/config and timer behavior, trusted sources
-and fresh candidate inputs. Obtain new exact-stage approval before further
+Source-build correction takes precedence over the earlier prepared bundle.
+Do not execute that archive. Release selection and build-description review
+are recorded in source-release-selection-20261010.md. The authorized v2
+execution failed before the root collector because noninteractive sudo
+required a password. Preserve its evidence. The proposed elevation mechanism
+is implemented and tested locally. Historical bootstrap v1 was installed and
+accepted, then its temporary policy was removed after metadata v3 completed
+with gaps. The earlier clock rejection and correction remain preserved.
+Do not repeat bootstrap v1 installation.
+The authorized sealed metadata v3 execution is terminal with a held result
+before metadata acquisition. Its claim is consumed and must remain preserved.
+Operator policy removal and its acceptance checks are complete. Do not repeat
+the removal or delete the preserved attempt. The remaining-module correction
+and distinct attempt-v4 bundles are prepared offline. Bootstrap v2 is installed
+and its receipt, protected inputs and effective policy are acceptance reviewed.
+Do not repeat installation. Metadata v4 executed once and held at package-index
+completeness after acquisition; its terminal claim is verified and consumed.
+Operator policy removal and acceptance readback are complete. Do not repeat
+removal, rerun v4 or reset its claim. Review retained signed release metadata
+before proposing an index-completeness correction and a distinct new attempt.
+Additional target evidence retrieval requires its own scoped approval. See
+source-prerequisites-resolution-results-20261010.md. UART device,
+runtime accounts and exact target dependency/Python inputs remain unresolved.
+
+P0 and installation-inputs collection are complete with retained gaps; do not
+rerun them to erase those facts. Continue trixie-package-stage.md from
+keyring-hooks-results-20261010.md. The keyring/hooks inspection is complete,
+bundle SHA-256 d4a4850654845c7db25905f6b51d72abe5eb80dac2c527cd021c7bf5bc5e5f99,
+state completed_with_gaps. Do not rerun it. The previous metadata/resolution
+operation in metadata-resolution-operation.md, bundle SHA-256
+e5dd57bda2c554c7844a67a4b5734d67e52c125892fe3b94247f9fbdd414244f, is
+superseded and must not be submitted. A replacement needs reviewed source-build
+prerequisites, diagnostic roots, rejection of conflicting APT applications and
+its own exact approval. The v2 replacement was submitted once and failed at sudo.
+Incomplete install-hook review still blocks installation. No metadata refresh,
+simulation, package installation or notification is currently authorized.
+Keep explicit kernel checks, list-only
+service reporting and the common msmtp/Mailrise notification route required.
+The executed installation-inputs bundle is
+9d2e34dc0221a4d456beb1aafa8d0056d1d27666c1622cf7cd474495dd60e4cc; its state is
+completed_with_gaps. Installation and notification executors remain unprepared.
+Obtain new exact-stage approval before further
 target access or any metadata/package/policy change. The executed P0 bundle
 SHA-256 is 9df701beefe20f5e2e5eaee6a128738c2c0339db3369a1e4ab25a7aa48c13772.
 Preserve original media and primary/antenna power. No update, reboot, network,

@@ -1,9 +1,39 @@
 # Trixie package stage: policy preflight and update/recovery design
 
 Prepared October 8, 2026. Aaron authorized defining this stage and rollback.
-No new node access, package command or persistent mutation has executed.
-The executable proposal is P0 below. Package updates and reboot remain held
-until P0 evidence is reviewed and their own exact inputs are approved.
+P0 and the follow-on installation-inputs inspection completed under their
+separate exact approvals. See the
+[latest results](installation-inputs-results-20261009.md) for observed inputs
+and retained gaps. Package updates and reboot remain held until trusted inputs
+and their own exact operation are reviewed and approved.
+
+The [keyring/hook inspection](keyring-hooks-results-20261010.md) completed with
+public-key identity comparisons and retained install-module review gaps. The subsequent
+[trusted metadata and package-resolution definition](trusted-package-resolution.md)
+now has a prepared [isolated operation](metadata-resolution-operation.md).
+Its live preflight and metadata side effects require exact bundle approval;
+installation remains a later stage.
+
+## Source application decision: October 10, 2026
+
+The governing plan now requires source-built NTPsec **and GPSD**, using adapted
+clockmaker/pinup and one modernized combined timeservice. See the
+[source-build audit](source-build-audit-20261010.md). APT application candidates
+for ntpsec, gpsd and gpsd-clients are historical observations, not install roots.
+APT remains for reviewed build prerequisites, hardware diagnostics and baseline
+applications. Needrestart must report the combined service without restarting it.
+
+The prepared metadata-resolution bundle is **superseded, never submitted**.
+Its NTP/GPS roots conflict with this decision. Preserve that archive and prior
+inspection evidence; do not execute or silently rebuild it under its old hash.
+Prepare a replacement only after reviewing both pinned releases' build inputs,
+then obtain approval for the new bundle. Existing APT trust/hook gaps remain.
+
+The [selected release review](source-release-selection-20261010.md) now binds
+signed NTPsec/GPSD release archives/tags and source-derived prerequisite roots.
+The [replacement metadata operation](source-prerequisites-resolution-operation.md)
+collects Python ABI/paths and resolves trusted build inputs. No executable build
+profile or installation stage is ready until those target facts are observed.
 
 ## Current facts and unresolved inputs
 
@@ -15,7 +45,8 @@ card is preserved; KVM, primary power and the shared antenna path were confirmed
 
 The [first Trixie inspection](trixie-inspection-results-20261008.md) established
 NetworkManager ownership and Trixie source hints. It omitted needrestart.
-That package's current version, configuration and effective policy are unknown.
+Subsequent inspections confirmed needrestart is absent and the Pi fragment
+suppresses kernel hints; effective replacement policy remains unaccepted.
 Source hints do not prove signing-key trust, repository availability or fresh
 update candidates. Fixed networking and service setup are later stages.
 
@@ -110,6 +141,51 @@ disposition, sufficient storage and unchanged KVM/media recovery readiness.
 P0 cached candidates are not a fresh update manifest. A metadata refresh is
 itself a separately defined live side effect; bind the resulting reviewed
 candidate list and all policy/config inputs into the eventual mutation bundle.
+
+## Required needrestart policy and Mailrise reporting
+
+The next proposed collection is the
+[installation-inputs preflight](installation-inputs-preflight.md). It maps the
+governing plan's package requirements to collected inputs and later acceptance;
+its cached metadata is not a complete trusted installation dependency closure.
+
+Aaron requires enabled kernel checks on the rebuilding Pi. The installation
+definition must make `kernelhints = 1` effective after all configuration
+snippets load; batch-mode reporting alone does not satisfy this requirement.
+Preserve the existing Pi fragment until its package ownership and override
+order are reviewed. Select the `-v8` kernel-image filter only after capturing
+the actual boot-image names and confirming how the reviewed Trixie package
+matches them. The shared active Pi 5 `-2712` filter is not an input for this node.
+
+Use explicit list-only restart mode (`restart = 'l'` and an explicit `-l` on
+reporting invocations). The reviewed package's built-in session-notification
+control is `sendnotify`; `sendnotify = 0` suppresses that mechanism without
+removing the required external reporting route. Review the final configuration
+closure and APT invocation overrides before accepting these settings.
+
+The common component owns that external route:
+[needrestart.sh and cron](../../../homelab-server-configs/Needrestart/README.md)
+use `/usr/sbin/sendmail`, with
+[msmtp delivering to Mailrise](../../../homelab-server-configs/Needrestart/msmtp-mailrise.md)
+and Mailrise forwarding to Apprise. Keep this workflow in the installation
+definition; do not replace it with built-in needrestart notifications or treat
+`sendnotify = 0` as permission to omit mail acceptance. The component's examples
+are proposed inputs, not observed configuration on the rebuilding Pi.
+
+Before preparing the exact installation bundle, resolve the target's native
+architecture and dependency versions, nested apt-listchanges/dpkg configuration,
+Pi-fragment ownership, boot-image names and configured archive signing keys.
+The locally reviewed `needrestart_3.11-1_all.deb` is not yet a trusted fresh
+installation input: matching a public checksum does not complete archive
+signature verification. Bind the reviewed fresh package/dependency inputs,
+policy snippet and permitted hooks into the eventual installation bundle.
+
+Notification setup also needs observed sendmail ownership, msmtp/cron state,
+reviewed default-account behavior and explicit recipient/schedule inputs.
+Keep `RECIPIENT` and cron `MAILTO` distinct. Enable scheduling and prove delivery
+only within an authorized notification stage; no synthetic message, SMTP probe,
+cron activation or Mailrise restart is authorized by this definition. The
+preserved original-card rollback below remains the recovery boundary.
 
 ## Follow-on update and reboot boundaries
 

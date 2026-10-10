@@ -1,7 +1,7 @@
 # Trixie candidate and recovery plan: j2-svntp1
 
 Status: repository planning only, `2026-09-16`. This document implements
-[governing plan v1.4](ntp-architecture-deployment-plan-v1.0.md); it is not an
+[governing plan v1.5](ntp-architecture-deployment-plan-v1.0.md); it is not an
 execution bundle or permission to write media, access nodes, install packages,
 change services, alter wiring or reboot. The architecture remains unchanged.
 
@@ -11,7 +11,7 @@ baseline and existing recovery resources, not another deployment target.
 Use j2-svntp1 in new rendered host configuration; preserve original artifact
 names and the protected evidence directory. Old-card recovery restores
 j1-svntp1. Addresses and service FQDN are unchanged; reconcile inventory,
-monitoring and DNS references as specified in governing plan v1.4.
+monitoring and DNS references as specified in governing plan v1.5.
 
 ## Inputs and limits
 
@@ -27,7 +27,7 @@ stay visible; do not rerun the broad collector merely to obtain a clean status.
 | Uputronics GPS/RTC rev 5.9 (2020), observed rv3028 RTC | Match the revision and selected image's device support before specifying overlays, UART, baud or PPS GPIO |
 | Working PoE HAT (2018), beneath GPS HAT; header-only connection | Retain hardware; prove fan, thermals, power and shared GPIO/I2C compatibility on Trixie |
 | Shared L1G1A-STD antenna and two-output splitter; j1-svntp supplies power | Leave primary and antenna-power path running during first-node work; defer primary outage until power continuity is designed and verified |
-| Custom NTPsec/GPSD launched through timeservice.service | Do not copy that launcher or source-built binaries into Trixie; discover target package units and ownership |
+| Custom NTPsec/GPSD launched through timeservice.service | Do not copy that launcher or source-built binaries into Trixie; build pinned sources on the target and validate the modernized combined service and installed-file manifests |
 | IPv4 PPS selected, reach 377, stratum 1, leap 0; IPv6 loopback time response verified | Useful historical reference; external clients, sustained health and post-reboot behavior still require acceptance |
 | Webmin, msmtp, munin-node and watchdog not installed; needrestart installed | Plan fresh application setup; only reviewed needrestart settings are migration inputs |
 | Aaron, working-console history, spare SanDisk Max Endurance 128 GB and USB reader | Recovery resources reported available; physical target identity and actual recovery remain untested |
@@ -44,8 +44,8 @@ owner/group/mode, installation destination, validation, backup and rollback.
 | Image and bootstrap | Exact official image release/build, integrity evidence, Imager version, spare-media identity, approved bootstrap account/key and connection method | Correct Pi/arm64 identity, unique host keys and machine identity; console access before network cutover |
 | Network/resolver | Observed Trixie manager, interface/profile, resolver ownership; approved allocation and conflict checks | Apply addresses and DNS from the governing plan through the actual manager; verify RA/global IPv6 retention and DHCP/RA DNS resistance after updates and reboot; homelab-network owns allocation |
 | Boot/GPS/RTC/PPS | Revision-specific board information and selected image support; actual UART/PPS/RTC devices and permissions | Correct GPS feed/fix, RTC sanity, sustained PPS, no fan/GPIO/I2C conflict; do not open devices or change clocks during passive discovery |
-| GPSD | Installed build, supported transport, startup/socket activation, device access and selected NTP refclock interface | One intended GPSD instance, correct feed ownership and persistence; choose SHM or another supported interface from target evidence |
-| NTPsec | Target build/manuals, unit/config paths, daemon user, refclock support, drift/leap paths and upstream policy review | One time daemon, GPS/PPS selection, reach/offset/jitter and leap health, IPv4/IPv6 client service, intended restrictions and NTS behavior |
+| GPSD | Pinned source build/install manifest, supported transport, combined timeservice ownership, device access and selected NTP refclock interface | One intended GPSD instance, correct feed ownership and persistence; choose SHM or another supported interface from target evidence |
+| NTPsec | Target source build/install manifest and manuals, combined service/config paths, daemon user, refclock support, drift/leap paths and upstream policy review | One time daemon, GPS/PPS selection, reach/offset/jitter and leap health, IPv4/IPv6 client service, intended restrictions and NTS behavior |
 | Leap maintenance | Actual ntpleapfetch path/options/source, file validation and daemon reload behavior | Implement the governing four-week schedule; verify timer and successful maintenance under later authorization; no assumed restart |
 | Webmin | Approved repository/key provenance, target package, management access scope | Authenticated management test and no unintended exposure; no legacy settings to copy |
 | needrestart and mail | Reviewed common baseline policy, target versions, Mailrise endpoint and credential reference | Non-disruptive reporting and delivered test notification via msmtp/sendmail as required; no secret in Git |

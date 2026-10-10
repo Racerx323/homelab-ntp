@@ -1,0 +1,18 @@
+[Unit]
+Description=Source-built GPSD and NTPsec time service
+Wants=network-online.target
+After=network-online.target
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/python3 -I -B /usr/local/libexec/timeservice.py --config /etc/ntpsec-timeservice.json
+Restart=on-failure
+RestartSec=10
+KillMode=control-group
+TimeoutStopSec=15
+UMask=0027
+
+[Install]
+WantedBy=multi-user.target

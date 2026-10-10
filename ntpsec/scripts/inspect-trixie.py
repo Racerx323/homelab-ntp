@@ -1,6 +1,9 @@
 #!/usr/bin/python3
 """Read-only bootstrap evidence; stdout is private JSON, never an acceptance verdict."""
+import base64
+import gzip
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
@@ -32,7 +35,8 @@ COMMANDS = (
     ('units', ['systemctl', '--no-pager', 'show',
                '--property=Id,LoadState,ActiveState,SubState,FragmentPath,UnitFileState',
                'NetworkManager.service', 'systemd-networkd.service', 'dhcpcd.service',
-               'systemd-resolved.service', 'ssh.service', 'ntpsec.service', 'gpsd.service']),
+               'systemd-resolved.service', 'ssh.service', 'ntpsec.service', 'gpsd.service',
+               'gpsd.socket', 'timeservice.service']),
     ('failed_units', ['systemctl', '--no-pager', '--failed']),
     ('nm_unit', ['systemctl', '--no-pager', 'show', '--property=Id,LoadState,ActiveState',
                  'NetworkManager.service']),
@@ -280,7 +284,7 @@ def redact_policy(text):
         line) else line for line in text.splitlines())
 
 
-def policy_snapshot(paths):
+def policy_snapshot(paths, public_keyrings=(), compressed_documents=False):
     records = []
     for path in paths:
         record = {'path': str(path)}
@@ -290,8 +294,82 @@ def policy_snapshot(paths):
                 raise ValueError('symlink or nonregular policy input rejected')
             data = read_file(path)
             record.update({'uid': st.st_uid, 'gid': st.st_gid, 'mode': oct(st.st_mode & 0o7777),
-                           'sha256': hashlib.sha256(data).hexdigest(),
-                           'text': redact_policy(data.decode())})
+                           'sha256': hashlib.sha256(data).hexdigest()})
+            if str(path) in public_keyrings:
+                record['public_keyring_base64'] = base64.b64encode(data).decode('ascii')
+            else:
+                if compressed_documents and str(path).endswith('.gz'):
+                    with gzip.GzipFile(fileobj=io.BytesIO(data)) as stream:
+                        data = stream.read(262145)
+                    if len(data) > 262144:
+                        raise ValueError('expanded manual exceeds approved 256 KiB bound')
+                record['text'] = redact_policy(data.decode())
+        except FileNotFoundError:
+            record['absent'] = True
+        except (OSError, ValueError, UnicodeError, EOFError) as exc:
+            record['error'] = str(exc)
+        records.append(record)
+    return records
+
+
+BASELINE_PACKAGES = tuple(COMMANDS[0][1][3:]) + (
+    'msmtp', 'msmtp-mta', 'cron', 'coreutils', 'ca-certificates', 'util-linux',
+    'debian-archive-keyring', 'raspberrypi-archive-keyring', 'gpg', 'gpgv',
+    'perl', 'dpkg', 'gettext-base', 'libintl-perl', 'libproc-processtable-perl',
+    'libsort-naturally-perl', 'libterm-readkey-perl', 'libmodule-find-perl',
+    'procps', 'xz-utils', 'libpam-systemd', 'sysvinit-core', 'libimvirt-perl')
+
+
+def installation_input_files():
+    paths = set(policy_files())
+    paths.update(map(Path, ('/etc/apt/sources.list', '/etc/apt/listchanges.conf',
+                           '/etc/dpkg/dpkg.cfg', '/etc/crontab',
+                           '/etc/cron.d/needrestart_check')))
+    for directory, pattern in (('/etc/apt/sources.list.d', '*.list'),
+                               ('/etc/apt/sources.list.d', '*.sources'),
+                               ('/etc/dpkg/dpkg.cfg.d', '*'),
+                               ('/etc/apt/listchanges.conf.d', '*')):
+        paths.update(Path(directory).glob(pattern))
+    if len(paths) > 160:
+        raise ValueError('installation input count exceeds approved 160-file bound')
+    return sorted(paths)
+
+
+def input_metadata():
+    paths = {Path('/etc/msmtprc'), Path('/usr/sbin/sendmail'),
+             Path('/etc/aliases'), Path('/etc/apt/trusted.gpg')}
+    for directory, pattern in (('/boot', 'vmlinuz*'),
+                               ('/boot/firmware', 'kernel*.img'),
+                               ('/usr/share/keyrings', '*.gpg'),
+                               ('/usr/share/keyrings', '*.asc'),
+                               ('/usr/share/keyrings', '*.pgp'),
+                               ('/etc/apt/keyrings', '*.gpg'),
+                               ('/etc/apt/keyrings', '*.asc'),
+                               ('/etc/apt/keyrings', '*.pgp'),
+                               ('/etc/apt/trusted.gpg.d', '*.gpg'),
+                               ('/etc/apt/trusted.gpg.d', '*.asc'),
+                               ('/etc/apt/trusted.gpg.d', '*.pgp')):
+        paths.update(Path(directory).glob(pattern))
+    if len(paths) > 128:
+        raise ValueError('metadata path count exceeds approved 128-file bound')
+    records = []
+    for path in sorted(paths):
+        record = {'path': str(path)}
+        try:
+            st = path.lstat()
+            record.update({'uid': st.st_uid, 'gid': st.st_gid,
+                           'mode': oct(st.st_mode & 0o7777), 'size': st.st_size,
+                           'symlink_target': os.readlink(path) if path.is_symlink() else None})
+            if str(path) == '/etc/msmtprc':
+                if path.is_symlink() or not path.is_file():
+                    raise ValueError('symlink or nonregular relay configuration rejected')
+                record['mail_account_fields'] = mail_account_fields(read_file(path).decode())
+            # Never read or hash relay credentials. Public keyring hashes are
+            # identifiers only; their trust is not established by this query.
+            if 'keyrings' in str(path) or str(path).startswith('/etc/apt/trusted.gpg'):
+                if path.is_symlink() or not path.is_file():
+                    raise ValueError('symlink or nonregular keyring rejected')
+                record['sha256'] = hashlib.sha256(read_file(path)).hexdigest()
         except FileNotFoundError:
             record['absent'] = True
         except (OSError, ValueError, UnicodeError) as exc:
@@ -300,12 +378,29 @@ def policy_snapshot(paths):
     return records
 
 
-def package_policy():
+def mail_account_fields(text):
+    allowed = {'defaults', 'account', 'host', 'port', 'from', 'domain', 'auth', 'tls',
+               'aliases', 'set_from_header', 'allow_from_override'}
+    records = []
+    for line in text.splitlines():
+        words = line.strip().split(None, 1)
+        if not words or words[0].startswith('#'):
+            continue
+        if words[0] in allowed:
+            records.append(redact_policy(line.strip()))
+        else:
+            records.append('[unreviewed directive value omitted]')
+    return records
+
+
+def package_policy(input_review=False):
     identity = check_identity(socket.gethostname(), read_file('/etc/os-release').decode(),
                               os.uname().machine, os.geteuid())
     boot_before = read_file('/proc/sys/kernel/random/boot_id').decode().strip()
-    paths = policy_files()
+    file_list = installation_input_files if input_review else policy_files
+    paths = file_list()
     before = policy_snapshot(paths)
+    metadata_before = input_metadata() if input_review else []
     commands = (
         ('package_status', ['dpkg-query', '-W', '-f=${binary:Package}\t${Version}\t${db:Status-Abbrev}\n',
                             'needrestart', 'apt', 'libc6', 'systemd', 'openssh-server',
@@ -322,6 +417,24 @@ def package_policy():
                           'apt-daily-upgrade.service', 'unattended-upgrades.service']),
         ('local_manuals', ['man', '--where', 'needrestart', 'apt-get', 'apt-cache', 'apt.conf']),
     )
+    if input_review:
+        packages = list(dict.fromkeys(BASELINE_PACKAGES))
+        commands += (
+            ('native_architecture', ['dpkg', '--print-architecture']),
+            ('foreign_architectures', ['dpkg', '--print-foreign-architectures']),
+            ('baseline_package_status', ['dpkg-query', '-W',
+             '-f=${binary:Package}\t${Version}\t${db:Status-Abbrev}\n'] + packages),
+            ('baseline_cached_candidates', ['apt-cache', '-o', 'Dir::Cache::pkgcache=',
+             '-o', 'Dir::Cache::srcpkgcache=', 'policy'] + packages),
+            ('baseline_cached_dependencies', ['apt-cache', '-o', 'Dir::Cache::pkgcache=',
+             '-o', 'Dir::Cache::srcpkgcache=', 'depends'] + packages),
+            ('pi_fragment_owner', ['dpkg-query', '-S', '/etc/needrestart/conf.d/rpi-kernel.conf']),
+            ('mail_transport_owner', ['dpkg-query', '-S', '/usr/sbin/sendmail']),
+            ('reporting_units', ['systemctl', '--no-pager', 'show',
+             '--property=Id,LoadState,ActiveState,SubState,FragmentPath,UnitFileState',
+             'cron.service', 'msmtp.service', 'watchdog.service', 'munin-node.service',
+             'webmin.service']),
+        )
     records = []
     for label, argv in commands:
         record = run(argv)
@@ -332,7 +445,7 @@ def package_policy():
         records.append(record)
     after_error = None
     try:
-        after = policy_snapshot(policy_files())
+        after = policy_snapshot(file_list())
     except (OSError, ValueError) as exc:
         after, after_error = [], str(exc)
 
@@ -340,6 +453,8 @@ def package_policy():
         return {r['path']: {k: v for k, v in r.items() if k != 'text'} for r in items}
 
     drift = bool(after_error) or signatures(before) != signatures(after)
+    metadata_after = input_metadata() if input_review else []
+    metadata_drift = metadata_before != metadata_after
     before_by_path = {r['path']: r for r in before}
     for record in after:
         if record.get('sha256') == before_by_path.get(record['path'], {}).get('sha256'):
@@ -363,28 +478,148 @@ def package_policy():
         binaries.append(record)
     audit = next(r for r in records if r['label'] == 'dpkg_audit')
     audit_clean = audit['rc'] == 0 and not audit['stdout'].strip() and not audit['stderr'].strip()
-    gap = (drift or boot_before != boot_after or not audit_clean
+    gap = (drift or metadata_drift or boot_before != boot_after or not audit_clean
            or any('error' in r for r in before + after + binaries)
+           or any('error' in r for r in metadata_before + metadata_after)
            or any(r['rc'] != 0 or r['truncated'] for r in records))
-    return {'mode': 'package_policy', 'identity': identity, 'kernel': os.uname().release,
+    return {'mode': 'installation_inputs' if input_review else 'package_policy',
+            'identity': identity, 'kernel': os.uname().release,
             'boot_id': boot_before, 'boot_unchanged': boot_before == boot_after,
             'boot_after_error': boot_error, 'policy_before': before, 'policy_after': after,
             'policy_drift': drift, 'policy_after_error': after_error,
             'dpkg_audit_clean': audit_clean, 'commands': records, 'binary_metadata': binaries,
+            'input_metadata_before': metadata_before, 'input_metadata_after': metadata_after,
+            'input_metadata_drift': metadata_drift,
             'collection_has_gaps': gap, 'effective_policy_accepted': False,
             'package_mutation_authorized': False,
             'limitations': ['cached package candidates are not refreshed or accepted update inputs',
                             'policy captured as text, never loaded as Perl or shell',
                             'needrestart, notification scripts and apt hooks not executed',
-                            'ownership, overrides and effective policy require explicit review']}
+                            'ownership, overrides and effective policy require explicit review',
+                            'cached direct dependencies are not a fresh resolved dependency closure',
+                            'keyring metadata/hashes do not prove signatures or capture public key material',
+                            'msmtprc fields are allowlisted without credential hashes; aliases content omitted',
+                            'custom includes, keyring paths and other schedules require closure review']}
+
+
+PUBLIC_KEYRINGS = ('/usr/share/keyrings/debian-archive-keyring.pgp',
+                   '/usr/share/keyrings/raspberrypi-archive-keyring.pgp')
+HOOK_PACKAGES = ('apt', 'apt-listchanges', 'debconf', 'debian-archive-keyring',
+                 'raspberrypi-archive-keyring', 'raspberrypi-sys-mods', 'gpgv', 'sqv')
+
+
+def keyring_hook_files(package_listing):
+    paths = set(policy_files())
+    paths.update(map(Path, PUBLIC_KEYRINGS + (
+        '/etc/apt/sources.list', '/etc/apt/listchanges.conf', '/etc/dpkg/dpkg.cfg',
+        '/usr/bin/apt-listchanges', '/usr/sbin/dpkg-preconfigure',
+        '/usr/share/man/man1/apt-listchanges.1.gz',
+        '/usr/share/man/man8/dpkg-preconfigure.8.gz',
+        '/usr/share/man/man8/apt-get.8.gz', '/usr/share/man/man8/apt-secure.8.gz',
+        '/usr/share/man/man5/apt.conf.5.gz', '/usr/share/man/man5/sources.list.5.gz')))
+    for directory, pattern in (('/etc/apt/sources.list.d', '*.list'),
+                               ('/etc/apt/sources.list.d', '*.sources'),
+                               ('/etc/apt/listchanges.conf.d', '*'),
+                               ('/etc/dpkg/dpkg.cfg.d', '*')):
+        paths.update(Path(directory).glob(pattern))
+    for line in package_listing.splitlines():
+        path = Path(line)
+        if '..' in path.parts:
+            raise ValueError('parent traversal in hook package listing rejected')
+        if (((line.startswith('/usr/share/apt-listchanges/')
+              or line.startswith('/usr/lib/python3/dist-packages/apt_listchanges/'))
+             and line.endswith('.py'))
+                or (line.startswith('/usr/share/perl5/Debconf/') and line.endswith('.pm'))):
+            paths.add(path)
+    if len(paths) > 128:
+        raise ValueError('keyring/hook input count exceeds approved 128-file bound')
+    return sorted(paths)
+
+
+def keyring_hooks():
+    identity = check_identity(socket.gethostname(), read_file('/etc/os-release').decode(),
+                              os.uname().machine, os.geteuid())
+    boot_before = read_file('/proc/sys/kernel/random/boot_id').decode().strip()
+    records = []
+
+    def query(label, argv):
+        record = run(argv)
+        record['label'] = label
+        record['stdout'] = redact_policy(record['stdout'])
+        record['stderr'] = redact_policy(record['stderr'])
+        records.append(record)
+        return record
+
+    versions_argv = ['dpkg-query', '-W',
+                     '-f=${binary:Package}\t${Version}\t${db:Status-Abbrev}\n'] + list(HOOK_PACKAGES)
+    listing_argv = ['dpkg-query', '-L', 'apt-listchanges', 'debconf']
+    versions_before = query('package_versions_before', versions_argv)
+    listing_before = query('hook_package_files_before', listing_argv)
+    paths = keyring_hook_files(listing_before['stdout'])
+    before = policy_snapshot(paths, PUBLIC_KEYRINGS, compressed_documents=True)
+    query('keyring_and_hook_owners', ['dpkg-query', '-S'] + list(PUBLIC_KEYRINGS) + [
+        '/usr/bin/apt-listchanges', '/usr/sbin/dpkg-preconfigure',
+        '/etc/needrestart/conf.d/rpi-kernel.conf'])
+    verification = query('package_file_verification', ['dpkg', '--verify',
+        'debian-archive-keyring', 'raspberrypi-archive-keyring', 'apt-listchanges', 'debconf'])
+    audit = query('dpkg_audit', ['dpkg', '--audit'])
+    query('apt_version', ['apt-get', '--version'])
+    query('update_units', ['systemctl', '--no-pager', 'show',
+        '--property=Id,LoadState,ActiveState,SubState,FragmentPath,UnitFileState',
+        'apt-daily.timer', 'apt-daily-upgrade.timer', 'apt-daily.service',
+        'apt-daily-upgrade.service', 'unattended-upgrades.service'])
+    listing_after = query('hook_package_files_after', listing_argv)
+    versions_after = query('package_versions_after', versions_argv)
+    after = policy_snapshot(keyring_hook_files(listing_after['stdout']), PUBLIC_KEYRINGS,
+                            compressed_documents=True)
+    boot_after = read_file('/proc/sys/kernel/random/boot_id').decode().strip()
+
+    def signatures(items):
+        return {r['path']: {k: v for k, v in r.items()
+                            if k not in ('text', 'public_keyring_base64')} for r in items}
+
+    drift = (signatures(before) != signatures(after)
+             or versions_before['stdout'] != versions_after['stdout']
+             or listing_before['stdout'] != listing_after['stdout'])
+    previous = {r['path']: r for r in before}
+    for record in after:
+        if record.get('sha256') == previous.get(record['path'], {}).get('sha256'):
+            record.pop('text', None)
+            record.pop('public_keyring_base64', None)
+    audit_clean = audit['rc'] == 0 and not audit['stdout'].strip() and not audit['stderr'].strip()
+    verification_clean = (verification['rc'] == 0 and not verification['stdout'].strip()
+                          and not verification['stderr'].strip())
+    redaction = any('[credential-bearing line redacted]' in r.get('text', '')
+                    or '[redacted]@' in r.get('text', '') for r in before + after)
+    keyring_gaps = any(not any(r['path'] == path and 'public_keyring_base64' in r
+                              for r in before) for path in PUBLIC_KEYRINGS)
+    gap = (drift or boot_before != boot_after or keyring_gaps or redaction
+           or not audit_clean or not verification_clean
+           or any('error' in r for r in before + after)
+           or any(r['rc'] != 0 or r['truncated'] for r in records))
+    return {'mode': 'keyring_hooks', 'identity': identity, 'kernel': os.uname().release,
+            'boot_id': boot_before, 'boot_unchanged': boot_before == boot_after,
+            'inputs_before': before, 'inputs_after': after, 'input_drift': drift,
+            'commands': records, 'dpkg_audit_clean': audit_clean,
+            'package_file_verification_clean': verification_clean,
+            'redaction_present': redaction, 'collection_has_gaps': gap,
+            'package_mutation_authorized': False, 'signature_trust_accepted': False,
+            'effective_hook_policy_accepted': False,
+            'limitations': ['public keyrings are captured without importing or invoking a verifier',
+                            'package ownership/checksums do not independently establish archive trust',
+                            'hook programs, modules and manuals are data; imports/includes need review',
+                            'no metadata refresh, package solver, hooks, notifications or sudo executed']}
 
 
 def main():
-    if sys.argv[1:] not in (['--inspect'], ['--package-policy']):
-        print('usage: inspect-trixie.py --inspect | --package-policy', file=sys.stderr)
+    if sys.argv[1:] not in (['--inspect'], ['--package-policy'], ['--installation-inputs'],
+                           ['--keyring-hooks']):
+        print('usage: inspect-trixie.py --inspect | --package-policy | --installation-inputs | --keyring-hooks', file=sys.stderr)
         return 1
     try:
-        report = package_policy() if sys.argv[1:] == ['--package-policy'] else inspect()
+        report = (keyring_hooks() if sys.argv[1:] == ['--keyring-hooks'] else
+                  inspect() if sys.argv[1:] == ['--inspect'] else
+                  package_policy(input_review=sys.argv[1:] == ['--installation-inputs']))
     except (OSError, ValueError, UnicodeError) as exc:
         print(json.dumps({'inspection_error': str(exc), 'completion_verified': False}))
         return 1

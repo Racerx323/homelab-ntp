@@ -7,11 +7,11 @@ repos:
   - repo: local
     hooks:
       - id: ntp-baseline-offline
-        name: NTP baseline collector offline tests
+        name: NTP baseline and source lifecycle offline tests
         entry: ntpsec/tests/run.sh
         language: system
         files: >-
-          ^(?:ntpsec/(?:scripts/|tests/|configs/|docs/(?:inspect-node|inspect-trixie|trixie-package-stage|phase1-evidence-checklist|pre-rebuild-preflight|first-boot-authorization)\.md)|\.pre-commit-config\.yaml$|\.github/workflows/validation\.yml$)
+          ^(?:ntpsec/(?:scripts/|tests/|configs/|templates/|docs/(?:inspect-node|inspect-trixie|trixie-package-stage|source-build-maintenance|phase1-evidence-checklist|pre-rebuild-preflight|first-boot-authorization)\.md)|\.pre-commit-config\.yaml$|\.github/workflows/validation\.yml$)
         pass_filenames: false
 
       - id: shellcheck

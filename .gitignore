@@ -6,6 +6,10 @@
 *.err
 *.pid
 
+# Generated Python bytecode
+__pycache__/
+*.py[cod]
+
 # General ignores
 .DS_Store
 Thumbs.db

@@ -1,6 +1,6 @@
 # Dual-stack NTP architecture and deployment
 
-Plan version: `1.4` (stable filename retained for existing links).
+Plan version: `1.5` (stable filename retained for existing links).
 For current status, operation history, and the next gate, see
 [NTPsec history](../HISTORY.md).
 
@@ -70,10 +70,10 @@ destinations to the active local DNAT target.
 | Platform | Raspberry Pi 4B, 8 GB | Raspberry Pi 4B, 4 GB |
 | GPS | Uputronics GPS/RTC expansion board | Uputronics GPS/RTC expansion board |
 | Power | HAT model pending per-node confirmation | Working Raspberry Pi PoE HAT (2018), retained |
-| Reported current OS | Debian 11 | Debian 11 |
+| Pre-rebuild observed OS | Debian 11 | Debian 11 |
 | Target OS | Raspberry Pi OS Lite (64-bit), Trixie | Raspberry Pi OS Lite (64-bit), Trixie |
-| Reported current NTPsec | `1.2.1+82-g7abe7fba6` | `1.2.1+82-g7abe7fba6` |
-| Target NTPsec | Record installed Trixie build; do not pin the old build | Record installed Trixie build; do not pin the old build |
+| Pre-rebuild reported NTPsec | `1.2.1+82-g7abe7fba6` | `1.2.1+82-g7abe7fba6` |
+| Target NTPsec | Build pinned source on this target; record revision and installed-file manifest | Build pinned source on this target; record revision and installed-file manifest |
 | Rollout order | Second | First |
 
 Both nodes run independent NTP services. They share a GPS antenna and its
@@ -117,6 +117,60 @@ service-impact decision; do not assume holdover or upstreams meet acceptance.
 Record the final antenna-power source and mapping after maintenance.
 
 ## Locked decisions
+
+### NTPsec and GPSD source builds
+
+Aaron selected this application lifecycle on `2026-10-10`:
+
+- Build **both NTPsec and GPSD from source on each target host**, using reviewed
+  adaptations of the baseline HOWTO's `clockmaker` and `pinup` scripts.
+- Use native source installation: NTPsec through waf and GPSD through SCons,
+  with explicit installed-file manifests. A locally built Debian `.deb` is
+  not required. Do not install NTPsec or GPSD application/client packages from
+  APT, including through dependencies or recommendations.
+- Preserve and modernize the combined `timeservice` model. Its accepted
+  implementation must supervise and report the health of both GPSD and ntpd;
+  the guide's oneshot `active/exited` state alone is not service acceptance.
+  A daemon failure stops the pair; systemd restarts both with bounded retries.
+- Use the same reviewed `clockmaker` build/update/install lifecycle for later
+  application maintenance. Use `pinup` for PPS configuration/query, not as a
+  software updater. Preserve local NTP configuration during application updates.
+
+The [baseline HOWTO](https://www.ntpsec.org/white-papers/stratum-1-microserver-howto/)
+defines the starting workflow, not an executable Trixie deployment artifact.
+The [source-build audit](source-build-audit-20261010.md) records reviewed script
+bytes, defects, configuration differences and adaptation requirements. Resolve
+exact source revisions and hardware/build options before producing a deployment
+bundle; moving Git branches or freshly downloaded scripts are not approved
+inputs. Build unprivileged; install and activate only within the approved target
+stage. Upstream OS/account/purge/reboot modes are not implicit build operations.
+Use reviewed stable release tags pinned to exact commits. The
+[maintained helper workflow](source-build-maintenance.md) defines build,
+configuration staging, installation, rollback and PPS helper contracts.
+
+APT remains the mechanism for reviewed OS packages, build prerequisites and
+baseline applications such as needrestart and msmtp. Resolve those separately
+from source artifacts. Build dependency candidates must come from the selected
+revisions' build descriptions and the observed Trixie environment, not from an
+APT NTPsec/GPSD application dependency list. Reject an APT solution introducing
+conflicting application packages.
+
+Each application release manifest must bind source origin/revision and archive
+or tree integrity, upstream/adapted script hashes and diff, toolchain/dependency
+versions, build configuration/options and test logs, install prefix,
+binary/Python-module/manual paths, and installed-file hashes/owners/modes.
+Record the combined service, runtime users, devices and local configuration
+separately. Dpkg absence does not prove a source-built application is absent;
+also observe binaries, version output and process ownership.
+
+Before an update, preserve accepted application artifacts and manifests,
+configuration, combined service definition and Python environment. Define how
+to remove candidate-only files and restore the prior installed set together;
+rebuilding an old revision against new dependencies is not tested rollback.
+The original Debian 11 card remains the rebuild recovery path. Repeat GPS/PPS,
+both daemon health, dual-stack client, upstream/NTS, leapfile and monitoring
+checks after each application update. No unattended update, restart, mail or
+reboot follows from this document.
 
 ### Addressing
 
@@ -198,10 +252,14 @@ ntpsec/
 │   ├── ntp-architecture-deployment-plan-v1.0.md
 │   └── dual-node-deployment-runbook.md
 ├── scripts/
+│   ├── clockmaker.py
+│   ├── pinup.py
+│   ├── timeservice.py
 │   ├── inspect-node.sh
 │   ├── install-node-config.sh
 │   └── validate-node.sh
 ├── templates/
+│   ├── timeservice.service
 │   ├── ntpleapfetch.service
 │   └── ntpleapfetch.timer
 └── tests/
@@ -272,38 +330,47 @@ interval while `j1-svntp` remains available.
 - Identify exact GPS/RTC board revision, antenna and PPS wiring, installed PoE HAT
   revision, physical stack order, and the network switch port for each node.
   Board revision controls the RTC chip, UART settings, and boot overlay choice.
+  The Uputronics GPS HAT UART rate is fixed at **115200 baud**. For GPSD
+  3.27.5, enforce `gpsd -s 115200`; `fixed_port_speed` is not a supported SCons
+  option. The modernized timeservice supervisor must successfully initialize
+  the observed UART using checked `stty` at 115200 before starting either daemon.
+  This replaces the legacy `/etc/init.d/timeservice` initialization. Verify
+  receiver communication and persistence at this rate during target acceptance.
 
 ### Per-node baseline and acceptance
 
-For **each** Trixie node, install only from approved Raspberry Pi OS/Debian
-repositories and an explicitly approved Webmin repository. Record package
-origin and installed version. Configure and validate:
+For **each** Trixie node, install OS/build/baseline packages only from approved
+Raspberry Pi OS/Debian repositories and an explicitly approved Webmin
+repository. Build NTPsec and GPSD using the source lifecycle above. Record
+package origins/versions and application source/install manifests. Configure
+and validate:
 
 | Area | Required evidence before accepting the node |
 | --- | --- |
 | Base OS and access | Raspberry Pi OS Lite Trixie release and arm64 architecture; boot firmware and kernel; correct hostname, SSH access, package sources, updates, users and administrative access; persistent boot and root filesystems |
 | Network and DNS | Stable node IPv4 and ULA, retained Router Advertisement global IPv6 and default route, both DNS VIPs with DHCP/RA DNS replacement disabled; dual-stack reachability and reboot persistence |
 | `webmin` | Package provenance, service health, authenticated management access from an approved LAN path, intended bind/firewall scope, and no unintended External exposure; restore required settings from observed Debian 11 state only after review |
-| `needrestart` | Trixie package, non-disruptive reporting policy, actual kernel/service report, and notification through the accepted mail path; do not allow an unattended restart of `ntpsec` during acceptance |
+| `needrestart` | Trixie package, enabled kernel checks with the Pi 4 filter, list-only reporting, actual kernel/service report and notification through the accepted msmtp/Mailrise path; no unattended restart of the combined time service |
 | `msmtp` | `msmtp` plus a sendmail-compatible transport if required by the notification workflow; protected relay configuration, successful test delivery through Mailrise, and no committed credentials |
 | `munin-node` endpoint | Installed package and enabled service; observed listener and client allowlist; collection from the approved Munin poller over each intended address family; usable host metrics and no unintended External exposure. The Munin component owns endpoint configuration and plugin choices |
 | `watchdog` | Observed `/dev/watchdog` owner/driver and service configuration, reboot behavior and recovery path; enable only after the node can be recovered independently and a controlled acceptance test is approved |
 | GPS/RTC HAT | Verified board revision, antenna/fix, UART device and baud, I2C RTC identity and sane time, PPS GPIO and `/dev/pps*` pulses, `gpsd` feed and permissions, and persistence after reboot; choose boot overlays for the selected image and observed hardware |
 | Installed PoE HAT (PoE+ only if replaced) | Correct switch PoE class and power budget, boot and sustained power without undervoltage, fan detection/control and thermal behavior, and no GPIO/I2C conflict with the GPS/RTC HAT |
-| `ntpsec` | Installed Trixie package/build and actual config path, GPS/PPS and sanity-source selection, leapfile and four-week timer, no competing time daemon, IPv4/IPv6 UDP 123 listeners and client responses, NTS/IPv4/IPv6 upstream behavior as configured |
+| Source-built NTPsec/GPSD | Accepted per-target source revisions and installed-file manifests; actual config/tool/module paths and combined service ownership; GPS/PPS and sanity-source selection, leapfile and four-week timer, no competing time/GPS daemon, IPv4/IPv6 UDP 123 listeners and client responses, NTS/IPv4/IPv6 upstream behavior as configured |
 
 Use the existing NTPsec/GPSD arrangement as input evidence, not as an
 installable Trixie artifact. Keep byte-exact Debian 11 `/etc/ntp.conf`
-captures for audit. Derive a separate Trixie configuration from the installed
-package's unit, config path, default files, man pages, user/group, device
+captures for audit. Derive a separate Trixie configuration from the source
+builds' combined service, config path, default files, man pages, user/group, device
 names, and live hardware; validate it on `j2-svntp1` before reusing the design
 on `j1-svntp`. Do not copy old boot overlays, `/etc/ntp.conf`, GPSD unit
 assumptions, Webmin settings, or network-manager profiles blindly.
 
 The Uputronics datasheet describes GPS UART, PPS, I2C RTC, and different
 settings by board revision. Its Raspberry Pi OS examples are reference inputs,
-not proof of a Trixie boot configuration. The older NTPsec microserver
-HOWTO is likewise a conceptual reference, not a Trixie installation script.
+not proof of a Trixie boot configuration. The NTPsec microserver HOWTO is the
+source-build baseline; its scripts and companion files require reviewed Trixie
+adaptations under the source lifecycle above.
 Prove fan and power operation for the installed HAT on the selected image;
 a successful boot alone does not establish full HAT support. Apply the
 replacement policy above only if the working PoE HAT fails.
@@ -394,10 +461,11 @@ and post-state hashes for protected host artifacts.
 3. Mirror each live `/etc/ntp.conf` byte for byte for audit. Review GPS, PPS,
    upstream sources, NTS, restrictions, interfaces, IPv6, driftfile,
    statistics, and leapfile directives. Produce a separate Trixie candidate
-   against observed installed package paths and units.
+   against observed source-build paths and the combined service contract.
 4. Define node baseline configuration and validation for Webmin, needrestart,
    msmtp/sendmail, the Munin endpoint, watchdog, GPS/RTC/PPS, installed PoE HAT power and
-   fan, GPSD, NTPsec, dual-stack networking, and the four-week
+   fan, source-built GPSD/NTPsec through adapted clockmaker and pinup, the
+   combined timeservice, dual-stack networking, and the four-week
    `ntpleapfetch` timer. Reuse established `homelab-server-configs` baseline
    app artifacts only after checking them against Trixie and the node's actual
    package versions. Define the NTP Munin endpoint in its governing component
