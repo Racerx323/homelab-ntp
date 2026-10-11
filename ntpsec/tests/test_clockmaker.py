@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 """Offline source/staging/install rejection, rollback, PPS and pair lifecycle tests."""
+import copy
 import importlib.util
 import io
 import json
@@ -179,6 +180,7 @@ class ClockmakerTests(unittest.TestCase):
             base = Path(directory)
             profile = base / 'profile.json'
             build_profile = self.profile(base)
+            build_profile['jobs'] = 2
             build_profile['python'] = {'executable': '/usr/bin/python3',
                 'version': list(CLOCK.sys.version_info[:2]),
                 'module_directory': CLOCK.sysconfig.get_path('purelib')}
@@ -200,6 +202,10 @@ class ClockmakerTests(unittest.TestCase):
                         path.parent.mkdir(parents=True, exist_ok=True)
                         path.write_bytes(b'binary fixture')
                         path.chmod(0o755)
+                    if 'scons' in argv[0]:
+                        package = stage / build_profile['python']['module_directory'].lstrip('/') / 'gps'
+                        package.mkdir(parents=True)
+                        (package / '__init__.py').write_text('GPSD package fixture')
             with patch.object(CLOCK.os, 'geteuid', return_value=1000), \
                     patch.object(CLOCK, 'target_identity'), \
                     patch.object(CLOCK, 'require_no_package_applications'), \
@@ -210,23 +216,75 @@ class ClockmakerTests(unittest.TestCase):
             self.assertEqual(manifest['operation'], 'update')
             self.assertIn('usr/local/libexec/timeservice.py', manifest['files'])
             self.assertTrue(any('check' in c for c in commands))
+            self.assertTrue(all('-j2' in c for c in commands[3:]))
             self.assertFalse(any('git' in c[0] or 'apt' in c[0] or 'reboot' in c for c in commands))
             self.assertEqual(existing.read_text(), 'local config')
             self.assertFalse(any(p.startswith('etc/') for p in manifest['files']))
             self.assertIn('python_libdir=' + build_profile['python']['module_directory'], commands[3])
             self.assertTrue(any('--pythondir=' + build_profile['python']['module_directory'] in c for c in commands))
             self.assertIn('PYTHONPATH', environments[-1])
+            dependency = base / 'candidate/ntpsec/build/main/tests/pylib/gps'
+            self.assertTrue(dependency.is_symlink())
+
+    def test_gpsd_dependency_is_available_to_isolated_binary_tests(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            source, stage = base / 'ntpsec', base / 'stage'
+            source.mkdir()
+            module_directory = '/usr/local/lib/python3/dist-packages'
+            package = stage / module_directory.lstrip('/') / 'gps'
+            with self.assertRaisesRegex(ValueError, 'staged GPSD'):
+                CLOCK.link_gpsd_test_dependency(source, stage, module_directory)
+            package.mkdir(parents=True)
+            (package / '__init__.py').write_text('fixture = 42\n')
+            CLOCK.link_gpsd_test_dependency(source, stage, module_directory)
+            library = source / 'build/main/tests/pylib'
+            result = subprocess.run([CLOCK.sys.executable, '-B', '-c',
+                                     'import gps; print(gps.fixture)'], cwd=source,
+                                    env={'PATH': '/usr/bin:/bin', 'PYTHONPATH': str(library)},
+                                    check=True, capture_output=True, text=True)
+            self.assertEqual(result.stdout, '42\n')
+            self.assertEqual((library / 'gps').resolve(), package.resolve())
+            with self.assertRaisesRegex(ValueError, 'existing GPSD'):
+                CLOCK.link_gpsd_test_dependency(source, stage, module_directory)
+            (library / 'gps').unlink()
+            (library / 'gps').symlink_to(base / 'missing')
+            with self.assertRaisesRegex(ValueError, 'existing GPSD'):
+                CLOCK.link_gpsd_test_dependency(source, stage, module_directory)
+
+    def test_symlinked_gpsd_dependency_is_rejected(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            package = base / 'stage/usr/local/lib/gps'
+            package.parent.mkdir(parents=True)
+            package.symlink_to(base, target_is_directory=True)
+            with self.assertRaisesRegex(ValueError, 'staged GPSD'):
+                CLOCK.link_gpsd_test_dependency(base / 'ntpsec', base / 'stage', '/usr/local/lib')
+
+    def test_parallelism_is_bounded(self):
+        with tempfile.TemporaryDirectory() as directory:
+            profile = self.profile(Path(directory))
+            for jobs in (0, 5, True, '2'):
+                profile['jobs'] = jobs
+                with self.subTest(jobs=jobs), self.assertRaisesRegex(ValueError, 'build jobs'):
+                    CLOCK.validate_profile(profile)
 
     def test_publisher_profile_requires_observed_python_binding(self):
         with tempfile.TemporaryDirectory() as directory:
             profile = self.profile(Path(directory))
             profile['sources']['ntpsec'].update(archive_format='publisher-release', archive_root='release')
+            profile['packages'].update({'pps-tools':'1','bc':'1'})
             with self.assertRaisesRegex(ValueError, 'observed Python'):
                 CLOCK.validate_profile(profile)
             profile['python'] = {'executable': '/usr/bin/python3',
                 'version': list(CLOCK.sys.version_info[:2]),
                 'module_directory': CLOCK.sysconfig.get_path('purelib')}
             CLOCK.validate_profile(profile)
+            for dependency in ('bc','pps-tools'):
+                missing=copy.deepcopy(profile)
+                missing['packages'].pop(dependency)
+                with self.subTest(dependency=dependency),self.assertRaisesRegex(ValueError,'publisher builds'):
+                    CLOCK.validate_profile(missing)
             profile['sources']['ntpsec']['options'] = ['--pythondir=/usr/lib']
             with self.assertRaises(ValueError):
                 CLOCK.validate_profile(profile)

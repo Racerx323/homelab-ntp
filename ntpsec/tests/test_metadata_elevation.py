@@ -251,9 +251,9 @@ class LauncherTests(unittest.TestCase):
                        'ClearAllForwardings=yes', 'ForwardAgent=no', 'ForwardX11=no',
                        'GlobalKnownHostsFile=/dev/null', 'UserKnownHostsFile=' + str(root / 'metadata-resolution-known-hosts')):
             argv += ['-o', option]
-        argv += ['ama@10.1.0.137', 'cd / && sudo -n /usr/bin/python3 -I -B /var/lib/ntp-metadata-elevation/attempt-v4/runner.py']
+        argv += ['ama@10.1.0.137', 'cd / && sudo -n /usr/bin/python3 -I -B /var/lib/ntp-metadata-elevation/attempt-v6/runner.py']
         members = {'payload.py': payload, 'spec.json': b'{"groups":{"source_build":["scons"]}}',
-                   'sealed.json': json.dumps({'attempt_dir': '/var/lib/ntp-metadata-elevation/attempt-v4',
+                   'sealed.json': json.dumps({'attempt_dir': '/var/lib/ntp-metadata-elevation/attempt-v6',
                        'expires_epoch': 2000, 'payload_sha256': sha(payload)}).encode(),
                    'operator-paste.txt': b'@CONTROLLER_EPOCH@\n', 'known_hosts': hosts,
                    'run-sealed-package-resolution.py': Path(CLIENT.__file__).read_bytes()} if sealed else {

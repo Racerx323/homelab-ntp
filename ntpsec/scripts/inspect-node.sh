@@ -550,7 +550,7 @@ def output_path(name):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Authorized Debian 11 baseline only; see inspect-node.md")
+    parser = argparse.ArgumentParser(description="Authorized Debian 11 baseline only; see docs/OPERATIONS.md")
     parser.add_argument("--collect", action="store_true", required=True)
     parser.add_argument("--output", required=True)
     args = parser.parse_args()

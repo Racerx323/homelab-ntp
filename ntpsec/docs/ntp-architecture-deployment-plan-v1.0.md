@@ -138,14 +138,14 @@ Aaron selected this application lifecycle on `2026-10-10`:
 
 The [baseline HOWTO](https://www.ntpsec.org/white-papers/stratum-1-microserver-howto/)
 defines the starting workflow, not an executable Trixie deployment artifact.
-The [source-build audit](source-build-audit-20261010.md) records reviewed script
+The [operations recipe](OPERATIONS.md#source-build) records reviewed script
 bytes, defects, configuration differences and adaptation requirements. Resolve
 exact source revisions and hardware/build options before producing a deployment
 bundle; moving Git branches or freshly downloaded scripts are not approved
 inputs. Build unprivileged; install and activate only within the approved target
 stage. Upstream OS/account/purge/reboot modes are not implicit build operations.
 Use reviewed stable release tags pinned to exact commits. The
-[maintained helper workflow](source-build-maintenance.md) defines build,
+[maintained helper workflow](OPERATIONS.md#live-installation-and-rollback) defines build,
 configuration staging, installation, rollback and PPS helper contracts.
 
 APT remains the mechanism for reviewed OS packages, build prerequisites and
@@ -250,7 +250,7 @@ ntpsec/
 │       └── ntp.conf
 ├── docs/
 │   ├── ntp-architecture-deployment-plan-v1.0.md
-│   └── dual-node-deployment-runbook.md
+│   └── OPERATIONS.md
 ├── scripts/
 │   ├── clockmaker.py
 │   ├── pinup.py

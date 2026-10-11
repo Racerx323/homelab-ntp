@@ -1,0 +1,20 @@
+{
+  "schema": 1,
+  "needrestart.sh": {
+    "source": "homelab-server-configs/Needrestart/scripts/needrestart.sh",
+    "sha256": "c0203cc8a1609b67e5c1ad491c235042bd13b69abddf721db3dc99c303216bc0",
+    "local_adaptation": "none; byte-exact vendored reusable reporting script",
+    "target_accepted": false
+  },
+  "needrestart.cron.example": {
+    "source": "homelab-server-configs/Needrestart/scripts/needrestart_check",
+    "source_sha256": "91f30cdf4a59073d0678aa3cee96e6cf77ceac56d719deeb0e7c4e26e271803e",
+    "local_adaptation": "recipient placeholders and consolidated operations link; render/review before installation",
+    "target_accepted": false
+  },
+  "apt-listchanges-transaction.conf": {
+    "source": "accepted foundation transaction policy",
+    "sha256": "0a7b83d15239eb6c3d9a7f250f8b4f99c6d23dfe22b3f3b8c6d2b346cea496bf",
+    "purpose": "temporary transaction policy; restored after acceptance/cleanup"
+  }
+}

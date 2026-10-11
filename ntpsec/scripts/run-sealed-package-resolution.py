@@ -24,7 +24,7 @@ def prepare(bundle, expected, host_fingerprint='SHA256:yXiID8RObBoIejVpvr2KesaqI
             raise ValueError('manifest member set mismatch')
         sealed = json.load(archive.extractfile('sealed.json'))
         if (manifest['mode'] != 'sealed_source_prerequisites_metadata_resolution'
-                or sealed['attempt_dir'] != '/var/lib/ntp-metadata-elevation/attempt-v4'
+                or sealed['attempt_dir'] != '/var/lib/ntp-metadata-elevation/attempt-v6'
                 or manifest['expires_epoch'] != sealed['expires_epoch']
                 or archive.extractfile('operator-paste.txt').read() != b'@CONTROLLER_EPOCH@\n'):
             raise ValueError('unexpected sealed execution contract')
@@ -56,7 +56,7 @@ def prepare(bundle, expected, host_fingerprint='SHA256:yXiID8RObBoIejVpvr2KesaqI
     argv = manifest['transport_argv']
     if (argv[:6] != ['timeout', '--signal=TERM', '--kill-after=5s', '840s', 'ssh', '-T']
             or argv[-2] != 'ama@10.1.0.137'
-            or argv[-1] != 'cd / && sudo -n /usr/bin/python3 -I -B /var/lib/ntp-metadata-elevation/attempt-v4/runner.py'):
+            or argv[-1] != 'cd / && sudo -n /usr/bin/python3 -I -B /var/lib/ntp-metadata-elevation/attempt-v6/runner.py'):
         raise ValueError('unexpected privileged transport template')
     for option in ('BatchMode=yes', 'StrictHostKeyChecking=yes', 'HostKeyAlgorithms=ssh-ed25519',
                    'UpdateHostKeys=no', 'ProxyCommand=none', 'ProxyJump=none', 'ControlMaster=no',

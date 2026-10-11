@@ -13,7 +13,7 @@ import sys
 import time
 
 BOUND_JSON = '@BOUND_JSON@'
-ATTEMPT = '/var/lib/ntp-metadata-elevation/attempt-v4'
+ATTEMPT = '/var/lib/ntp-metadata-elevation/attempt-v6'
 
 
 def ancestors(path):

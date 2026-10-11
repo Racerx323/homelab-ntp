@@ -169,7 +169,19 @@ def stanzas(text):
     return result
 
 
-def authenticated_indexes(text, lists, spec):
+def authenticated_indexes(text, lists, spec, releases):
+    release_checksums = {r['uri']: r['package_checksums'] for r in releases}
+    expected = {}
+    for source in spec['releases']:
+        checksums = release_checksums[source['base_uri'].rstrip('/') + '/dists/' + source['suite'] + '/InRelease']
+        for arch in ('arm64', 'armhf'):
+            for component in source['components']:
+                checksum = checksums.get(component + '/binary-' + arch + '/Packages')
+                if checksum is None:
+                    raise ValueError('required Packages checksum missing from signed release')
+                if checksum['size'] == 0 and checksum['sha256'] != hashlib.sha256(b'').hexdigest():
+                    raise ValueError('invalid signed empty Packages checksum')
+                expected[(source['base_uri'], source['suite'], arch, component)] = checksum
     records = stanzas(text)
     matched = set()
     binaries = []
@@ -181,15 +193,22 @@ def authenticated_indexes(text, lists, spec):
                        if uri.startswith(s['base_uri'].rstrip('/') + '/dists/' + s['suite'] + '/')), None)
         if not source or record.get('Trusted') != 'yes' or record.get('Codename') != source['codename']:
             raise ValueError('untrusted or unexpected package index identity')
+        key = (source['base_uri'], source['suite'], record.get('Architecture'), record.get('Component'))
+        if key not in expected or key in matched:
+            raise ValueError('unexpected or duplicate package index')
+        if uri != (source['base_uri'].rstrip('/') + '/dists/' + source['suite'] + '/'
+                   + key[3] + '/binary-' + key[2] + '/Packages'):
+            raise ValueError('package index URI/identity mismatch')
         path = Path(record['Filename'])
         if path.parent != lists or path.is_symlink():
             raise ValueError('index escaped owned lists directory')
         record['sha256'] = digest(path)
-        matched.add((source['base_uri'], source['suite'], record.get('Architecture'), record.get('Component')))
+        if record['sha256'] != expected[key]['sha256'] or path.stat().st_size != expected[key]['size']:
+            raise ValueError('package index differs from signed checksum/size')
+        matched.add(key)
         binaries.append(record)
-    expected = {(s['base_uri'], s['suite'], arch, component) for s in spec['releases']
-                for arch in ('arm64', 'armhf') for component in s['components']}
-    if matched != expected:
+    empty = {key for key, checksum in expected.items() if checksum['size'] == 0}
+    if matched | empty != set(expected):
         raise ValueError('missing or unexpected architecture/component package indexes')
     return binaries
 
@@ -222,7 +241,19 @@ def release_evidence(lists, spec, now):
         if date > now + 600 or ('Valid-Until' in fields and
                                parsedate_to_datetime(fields['Valid-Until']).timestamp() < now):
             raise ValueError('release date/expiry rejected')
+        checksums = {}
+        for line in fields.get('SHA256', '').splitlines():
+            if not line.strip():
+                continue
+            checksum, size, name = line.split()
+            if not re.fullmatch(r'[0-9a-f]{64}', checksum) or not re.fullmatch(r'[0-9]{1,20}', size):
+                raise ValueError('malformed signed SHA256 entry')
+            if name.endswith('/Packages'):
+                if name in checksums:
+                    raise ValueError('duplicate signed Packages checksum')
+                checksums[name] = {'sha256': checksum, 'size': int(size)}
         records.append({'uri': url, 'sha256': hashlib.sha256(data).hexdigest(),
+                        'package_checksums': checksums,
                         'identity': {k: fields.get(k) for k in ('Origin', 'Label', 'Suite', 'Codename',
                                                               'Version', 'Date', 'Valid-Until')},
                         'signed_bytes_base64': base64.b64encode(data).decode()})
@@ -248,7 +279,7 @@ def simulated_changes(text):
     changes = set()
     for line in text.splitlines():
         if line.startswith('Inst '):
-            match = re.fullmatch(r'Inst (\S+)(?: \[[^\]]+\])? \((\S+) .*\[([a-z0-9-]+)\]\)', line)
+            match = re.fullmatch(r'Inst (\S+)(?: \[[^\]]+\])? \((\S+) .*\[([a-z0-9-]+)\]\)(?: \[\])?', line)
             if not match:
                 raise ValueError('unparsed native simulation install line')
             changes.add((match[1].split(':')[0], match[2], match[3]))
@@ -464,9 +495,11 @@ def run(spec, controller_epoch):
         refresh_started = True
         report['state'] = 'metadata_refresh'
         query('fresh_authenticated_update', ['/usr/bin/apt-get', '--error-on=any', 'update'], 240)
-        indexes = authenticated_indexes(query('index_targets', ['/usr/bin/apt-get', 'indextargets']), work / 'lists', spec)
-        report['indexes'] = indexes
+        # Successful native update authenticates these retained release bytes.
         report['releases'] = release_evidence(work / 'lists', spec, time.time())
+        indexes = authenticated_indexes(query('index_targets', ['/usr/bin/apt-get', 'indextargets']),
+                                        work / 'lists', spec, report['releases'])
+        report['indexes'] = indexes
         report['metadata_accepted'] = True
         hosts = {urlsplit(s['base_uri']).hostname for s in spec['releases']}
         for name, roots in spec['groups'].items():

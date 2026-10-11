@@ -1,0 +1,1409 @@
+{
+  "schema": 1,
+  "observed_date": "2026-10-10",
+  "scope": "pinned Raspberry Pi 4 Trixie rebuild inputs; fetching is not installation authorization",
+  "provenance": {
+    "package_metadata_sha256": "5b9a817bb678643f9c402ba223611f8bfbd1ed02a63706d16592d626c71b7bdf",
+    "selected_plan_sha256": "c2c3700beb8d1e1f6fa2f766d37f85ee63c06942bb0382821bdeb5ce12cef808",
+    "bc_signed_index_sha256": "f97011263173eaccb1a215a28a6ec7ba1f6e5cebd8bb68e8fa0475b1d4021161",
+    "source_recipe_sha256": "91465742a92100153f2c0700bc4ac678f595666fb5617451df636262c053a8ec"
+  },
+  "public_keys": {
+    "gpsd": {
+      "path": "public-keys/gpsd.gpg",
+      "sha256": "00882e3fcd10c6244976a8dff1bc4501eec0c2d4a55cb6ae08250dd63b663ccd",
+      "signing_fingerprint": "4294517B6DE2093E930EBAE3AEFDB88FB63FB83B",
+      "primary_fingerprint": "1256D5A74A01B8145593C41EADA54A78FC147EEE"
+    },
+    "ntpsec": {
+      "path": "public-keys/ntpsec.gpg",
+      "sha256": "67e297d1b05cf38185485ed3e8e23f0981812e61fafbfcbf2c5d6d03833f3503",
+      "signing_fingerprint": "E57235D22764129FA4F2F4D17F52608ED0E49D76",
+      "primary_fingerprint": "E57235D22764129FA4F2F4D17F52608ED0E49D76"
+    }
+  },
+  "assets": [
+    {
+      "id": "os-image",
+      "groups": [
+        "image"
+      ],
+      "filename": "2026-10-06-raspios-trixie-arm64-lite.img.xz",
+      "url": "https://downloads.raspberrypi.com/raspios_lite_arm64/images/raspios_lite_arm64-2026-10-06/2026-10-06-raspios-trixie-arm64-lite.img.xz",
+      "size": 550466056,
+      "sha256": "483db18a48da399b5b7022ffae9a07bc6d99daab30e593aedac09b69ff422843",
+      "expanded_size": 3078619136,
+      "expanded_sha256": "b8a393dc1c3701450b5fffbfe74368a98fb6eab7415ce456cc0cead886ea8780"
+    },
+    {
+      "id": "package-asciidoctor-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "asciidoctor",
+      "version": "2.0.23-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/a/asciidoctor/asciidoctor_2.0.23-1_all.deb",
+      "filename": "asciidoctor_2.0.23-1_all.deb",
+      "sha256": "259834037a915d97c898b90df85eeab8fc8adf8cc54497d4e237d2deff4692f7",
+      "size": 88676
+    },
+    {
+      "id": "package-bc-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "bc",
+      "version": "1.07.1-4+b1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/b/bc/bc_1.07.1-4+b1_arm64.deb",
+      "filename": "bc_1.07.1-4+b1_arm64.deb",
+      "sha256": "efd37aaf7324f2342eeae38c30009b7ebb2055ecabf1a5f7b22170360fd2bc7a",
+      "size": 101240
+    },
+    {
+      "id": "package-bison-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "bison",
+      "version": "2:3.8.2+dfsg-1+b2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/b/bison/bison_3.8.2%2bdfsg-1%2bb2_arm64.deb",
+      "filename": "bison_3.8.2+dfsg-1+b2_arm64.deb",
+      "sha256": "36b26ef0700504923089b4920e0bd704ff03de750515c90399cbc69bf43aed6d",
+      "size": 1149324
+    },
+    {
+      "id": "package-fonts-lato-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "fonts-lato",
+      "version": "2.015-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/f/fonts-lato/fonts-lato_2.015-1_all.deb",
+      "filename": "fonts-lato_2.015-1_all.deb",
+      "sha256": "0bd1c095d4646f51ce3e5c002df3cd322c0fbabf13c76a694a0360e1191221e8",
+      "size": 2780488
+    },
+    {
+      "id": "package-gawk-arm64",
+      "groups": [
+        "munin"
+      ],
+      "package": "gawk",
+      "version": "1:5.2.1-2+b2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/g/gawk/gawk_5.2.1-2%2bb2_arm64.deb",
+      "filename": "gawk_5.2.1-2+b2_arm64.deb",
+      "sha256": "0c040f686b0dd34387c0aa69848dd9f29741043821a843b480c38a1cf5956142",
+      "size": 643936
+    },
+    {
+      "id": "package-git-arm64",
+      "groups": [
+        "munin"
+      ],
+      "package": "git",
+      "version": "1:2.47.3-0+deb13u1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/g/git/git_2.47.3-0%2bdeb13u1_arm64.deb",
+      "filename": "git_2.47.3-0+deb13u1_arm64.deb",
+      "sha256": "8c6b1e96b226211260d7814472215a8a1ed38ee37400c421d454391c1807cb5a",
+      "size": 8665568
+    },
+    {
+      "id": "package-git-man-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "git-man",
+      "version": "1:2.47.3-0+deb13u1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/g/git/git-man_2.47.3-0%2bdeb13u1_all.deb",
+      "filename": "git-man_2.47.3-0+deb13u1_all.deb",
+      "sha256": "b58306b60e1dff920e1e18bc7e1e499f2ef75184190ab3d98657b165969bf7c9",
+      "size": 2204692
+    },
+    {
+      "id": "package-gsasl-common-all",
+      "groups": [
+        "mail"
+      ],
+      "package": "gsasl-common",
+      "version": "2.2.2-1.1+deb13u2",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/g/gsasl/gsasl-common_2.2.2-1.1%2bdeb13u2_all.deb",
+      "filename": "gsasl-common_2.2.2-1.1+deb13u2_all.deb",
+      "sha256": "c03956daf9182753661b4e79d93e35573a57ebd2841f99154481c71a2ab3e7fb",
+      "size": 52840
+    },
+    {
+      "id": "package-i2c-tools-arm64",
+      "groups": [
+        "hardware"
+      ],
+      "package": "i2c-tools",
+      "version": "4.4-2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/i/i2c-tools/i2c-tools_4.4-2_arm64.deb",
+      "filename": "i2c-tools_4.4-2_arm64.deb",
+      "sha256": "3123635e7da9c00d96daa24be09fda90c2f8e571702e4b515a910ee27b43d062",
+      "size": 78840
+    },
+    {
+      "id": "package-javascript-common-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "javascript-common",
+      "version": "12+nmu1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/j/javascript-common/javascript-common_12%2bnmu1_all.deb",
+      "filename": "javascript-common_12+nmu1_all.deb",
+      "sha256": "4f31d4ac39d49d2c70f9f5b8d1ee4e558b4050d716ff9e212ed7321144c1a667",
+      "size": 4864
+    },
+    {
+      "id": "package-jo-arm64",
+      "groups": [
+        "munin"
+      ],
+      "package": "jo",
+      "version": "1.9-2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/j/jo/jo_1.9-2_arm64.deb",
+      "filename": "jo_1.9-2_arm64.deb",
+      "sha256": "10896cf096acf341cd7508962cf650a38d97e241746dc0551a51ef9e5b6518da",
+      "size": 22336
+    },
+    {
+      "id": "package-jq-arm64",
+      "groups": [
+        "munin"
+      ],
+      "package": "jq",
+      "version": "1.7.1-6+deb13u4",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian-security/pool/updates/main/j/jq/jq_1.7.1-6%2bdeb13u4_arm64.deb",
+      "filename": "jq_1.7.1-6+deb13u4_arm64.deb",
+      "sha256": "5d77ae282441d3ef0560141d55b4ac562d2cba7a873eb9ad7572ccfe69471ebf",
+      "size": 78424
+    },
+    {
+      "id": "package-libcap-dev-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libcap-dev",
+      "version": "1:2.75-10+deb13u1+b3",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libc/libcap2/libcap-dev_2.75-10%2bdeb13u1%2bb3_arm64.deb",
+      "filename": "libcap-dev_2.75-10+deb13u1+b3_arm64.deb",
+      "sha256": "e3184756963ee724e0f1f06a9be05e9a5e5caf7e2255b61a224ccc9ecec19af8",
+      "size": 470732
+    },
+    {
+      "id": "package-libcgi-fast-perl-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "libcgi-fast-perl",
+      "version": "1:2.17-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libc/libcgi-fast-perl/libcgi-fast-perl_2.17-1_all.deb",
+      "filename": "libcgi-fast-perl_2.17-1_all.deb",
+      "sha256": "a7dbad1587a3747436354390ba6e6f2bb0cbc2a41a8068d6c1113fd7587e3608",
+      "size": 11836
+    },
+    {
+      "id": "package-libcgi-pm-perl-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "libcgi-pm-perl",
+      "version": "4.68-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libc/libcgi-pm-perl/libcgi-pm-perl_4.68-1_all.deb",
+      "filename": "libcgi-pm-perl_4.68-1_all.deb",
+      "sha256": "281cba6f89a9c1ed5583e5d142b106498bcf5f6b548e96447cff5c9c615aba75",
+      "size": 217396
+    },
+    {
+      "id": "package-libclone-perl-arm64",
+      "groups": [
+        "munin"
+      ],
+      "package": "libclone-perl",
+      "version": "0.47-1+b1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libc/libclone-perl/libclone-perl_0.47-1%2bb1_arm64.deb",
+      "filename": "libclone-perl_0.47-1+b1_arm64.deb",
+      "sha256": "48e3a080da34e615d64d495a8c9d0c745115a479d1f1120f2fb44b706d596e4d",
+      "size": 13708
+    },
+    {
+      "id": "package-libencode-locale-perl-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "libencode-locale-perl",
+      "version": "1.05-3",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libe/libencode-locale-perl/libencode-locale-perl_1.05-3_all.deb",
+      "filename": "libencode-locale-perl_1.05-3_all.deb",
+      "sha256": "071bff2a1d193ec1b0d71e1a1ba7e718909866874e600f19d99a6f8c5ae30bcd",
+      "size": 12896
+    },
+    {
+      "id": "package-liberror-perl-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "liberror-perl",
+      "version": "0.17030-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libe/liberror-perl/liberror-perl_0.17030-1_all.deb",
+      "filename": "liberror-perl_0.17030-1_all.deb",
+      "sha256": "06110a972bdc52f6c6d6615dddbe97f836c61d0e36c685ef4107c2eaa81f871f",
+      "size": 26872
+    },
+    {
+      "id": "package-libexpat1-dev-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libexpat1-dev",
+      "version": "2.8.3-1~deb13u1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/e/expat/libexpat1-dev_2.8.3-1%7edeb13u1_arm64.deb",
+      "filename": "libexpat1-dev_2.8.3-1~deb13u1_arm64.deb",
+      "sha256": "a9b760a2291295ab70d45123926d800f5333bbdf7da0f132fb72268a377f8c6d",
+      "size": 163280
+    },
+    {
+      "id": "package-libexporter-tiny-perl-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "libexporter-tiny-perl",
+      "version": "1.006002-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libe/libexporter-tiny-perl/libexporter-tiny-perl_1.006002-1_all.deb",
+      "filename": "libexporter-tiny-perl_1.006002-1_all.deb",
+      "sha256": "27d5eeaf052c149675df33db58f1fa650f461b1ddebe4d73ae53be88087b5b31",
+      "size": 38748
+    },
+    {
+      "id": "package-libfcgi-bin-arm64",
+      "groups": [
+        "munin"
+      ],
+      "package": "libfcgi-bin",
+      "version": "2.4.5-0.1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libf/libfcgi/libfcgi-bin_2.4.5-0.1_arm64.deb",
+      "filename": "libfcgi-bin_2.4.5-0.1_arm64.deb",
+      "sha256": "be53eb91603b9b47ecdef48f9fd5a81963ece04919572fc01b012f2fd8c078b6",
+      "size": 11908
+    },
+    {
+      "id": "package-libfcgi-perl-arm64",
+      "groups": [
+        "munin"
+      ],
+      "package": "libfcgi-perl",
+      "version": "0.82+ds-3+b2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libf/libfcgi-perl/libfcgi-perl_0.82%2bds-3%2bb2_arm64.deb",
+      "filename": "libfcgi-perl_0.82+ds-3+b2_arm64.deb",
+      "sha256": "fa5450d9690e816cf90fa1b0984cf43e2080554ff61fee9a8e885c8117335870",
+      "size": 24352
+    },
+    {
+      "id": "package-libfcgi0t64-arm64",
+      "groups": [
+        "munin"
+      ],
+      "package": "libfcgi0t64",
+      "version": "2.4.5-0.1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libf/libfcgi/libfcgi0t64_2.4.5-0.1_arm64.deb",
+      "filename": "libfcgi0t64_2.4.5-0.1_arm64.deb",
+      "sha256": "941dbba33b32c2b96ee48f14b5feed9baf3338224c5228ee120c6be7b9b7c0d5",
+      "size": 25008
+    },
+    {
+      "id": "package-libgpm2-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libgpm2",
+      "version": "1.20.7-11+b2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/g/gpm/libgpm2_1.20.7-11%2bb2_arm64.deb",
+      "filename": "libgpm2_1.20.7-11+b2_arm64.deb",
+      "sha256": "98772e064654b12f74175ab8c0cb80d77c04aeff82eb0c197076a76825d8d286",
+      "size": 14668
+    },
+    {
+      "id": "package-libgsasl18-arm64",
+      "groups": [
+        "mail"
+      ],
+      "package": "libgsasl18",
+      "version": "2.2.2-1.1+deb13u2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/g/gsasl/libgsasl18_2.2.2-1.1%2bdeb13u2_arm64.deb",
+      "filename": "libgsasl18_2.2.2-1.1+deb13u2_arm64.deb",
+      "sha256": "35daf60ca754feb3d55ebbdf41976883e31e912ab1ba50a6bd0fda94e59751c6",
+      "size": 76280
+    },
+    {
+      "id": "package-libgssglue1-arm64",
+      "groups": [
+        "mail"
+      ],
+      "package": "libgssglue1",
+      "version": "0.9-1.1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libg/libgssglue/libgssglue1_0.9-1.1_arm64.deb",
+      "filename": "libgssglue1_0.9-1.1_arm64.deb",
+      "sha256": "4103ef939c000fe691db18166ebb79e126283716fb27f3acb833921098a94b83",
+      "size": 19708
+    },
+    {
+      "id": "package-libhtml-parser-perl-arm64",
+      "groups": [
+        "munin"
+      ],
+      "package": "libhtml-parser-perl",
+      "version": "3.83-2~deb13u1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libh/libhtml-parser-perl/libhtml-parser-perl_3.83-2%7edeb13u1_arm64.deb",
+      "filename": "libhtml-parser-perl_3.83-2~deb13u1_arm64.deb",
+      "sha256": "51f1d70726daa87f762b91bc1f45ca6119a8e99d3f1952575581de3cf3d813d8",
+      "size": 97336
+    },
+    {
+      "id": "package-libhtml-tagset-perl-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "libhtml-tagset-perl",
+      "version": "3.24-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libh/libhtml-tagset-perl/libhtml-tagset-perl_3.24-1_all.deb",
+      "filename": "libhtml-tagset-perl_3.24-1_all.deb",
+      "sha256": "5efdaf433e10ce127257176d8093e41eabc642839e71f1961bc17f2e4f6169b0",
+      "size": 14704
+    },
+    {
+      "id": "package-libhttp-date-perl-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "libhttp-date-perl",
+      "version": "6.06-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libh/libhttp-date-perl/libhttp-date-perl_6.06-1_all.deb",
+      "filename": "libhttp-date-perl_6.06-1_all.deb",
+      "sha256": "b46bf28a321e344be21b3161969c613abeddc63b1ff627ee94487a0ee4b53eda",
+      "size": 10720
+    },
+    {
+      "id": "package-libhttp-message-perl-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "libhttp-message-perl",
+      "version": "7.00-2",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libh/libhttp-message-perl/libhttp-message-perl_7.00-2_all.deb",
+      "filename": "libhttp-message-perl_7.00-2_all.deb",
+      "sha256": "e55e830b16af9c2b5269000c4dd9b93fd24b304a0675aeb0ab83438c566d2ca7",
+      "size": 79808
+    },
+    {
+      "id": "package-libi2c0-arm64",
+      "groups": [
+        "hardware"
+      ],
+      "package": "libi2c0",
+      "version": "4.4-2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/i/i2c-tools/libi2c0_4.4-2_arm64.deb",
+      "filename": "libi2c0_4.4-2_arm64.deb",
+      "sha256": "ba334060dff683136ec37249675fb9b8542dec645a008f24fbfccd920abe257a",
+      "size": 9736
+    },
+    {
+      "id": "package-libidn12-arm64",
+      "groups": [
+        "mail"
+      ],
+      "package": "libidn12",
+      "version": "1.43-1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libi/libidn/libidn12_1.43-1_arm64.deb",
+      "filename": "libidn12_1.43-1_arm64.deb",
+      "sha256": "064baf9620ae19823c1fec373dddde0b68f70754e434a2ad367f50b3649dcc48",
+      "size": 47180
+    },
+    {
+      "id": "package-libintl-perl-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libintl-perl",
+      "version": "1.35-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libi/libintl-perl/libintl-perl_1.35-1_all.deb",
+      "filename": "libintl-perl_1.35-1_all.deb",
+      "sha256": "056ebe90f7ca7046f7f64e5eea8ed57d2da19a9531646bcf1f7856a5da07fb27",
+      "size": 690480
+    },
+    {
+      "id": "package-libintl-xs-perl-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libintl-xs-perl",
+      "version": "1.35-1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libi/libintl-perl/libintl-xs-perl_1.35-1_arm64.deb",
+      "filename": "libintl-xs-perl_1.35-1_arm64.deb",
+      "sha256": "1c74f28ef263c906c73feeba0a457f3f543260620f2c75692f03594fb8e49496",
+      "size": 14996
+    },
+    {
+      "id": "package-libio-compress-brotli-perl-arm64",
+      "groups": [
+        "munin"
+      ],
+      "package": "libio-compress-brotli-perl",
+      "version": "0.004001-2+b3",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libi/libio-compress-brotli-perl/libio-compress-brotli-perl_0.004001-2%2bb3_arm64.deb",
+      "filename": "libio-compress-brotli-perl_0.004001-2+b3_arm64.deb",
+      "sha256": "43233088b736c81e2d28de9310ef369bc4dad119c862090fedf4699899a4efd9",
+      "size": 16768
+    },
+    {
+      "id": "package-libio-html-perl-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "libio-html-perl",
+      "version": "1.004-3",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libi/libio-html-perl/libio-html-perl_1.004-3_all.deb",
+      "filename": "libio-html-perl_1.004-3_all.deb",
+      "sha256": "66c87e3e92460b9dcf56257fd6a48cc7fd1283790acb365a111ecb9d74e9ea43",
+      "size": 16200
+    },
+    {
+      "id": "package-libio-multiplex-perl-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "libio-multiplex-perl",
+      "version": "1.16-3",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libi/libio-multiplex-perl/libio-multiplex-perl_1.16-3_all.deb",
+      "filename": "libio-multiplex-perl_1.16-3_all.deb",
+      "sha256": "7eb52b86a6cef3e6a1f3c2569ba9fb6b3b852c4053853b3f83b58b6ba2204029",
+      "size": 20568
+    },
+    {
+      "id": "package-libio-socket-inet6-perl-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "libio-socket-inet6-perl",
+      "version": "2.73-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libi/libio-socket-inet6-perl/libio-socket-inet6-perl_2.73-1_all.deb",
+      "filename": "libio-socket-inet6-perl_2.73-1_all.deb",
+      "sha256": "e9bdf2ef7541dbc89c9035e81cbc544026f1258641b24687186bf085d3dec780",
+      "size": 17456
+    },
+    {
+      "id": "package-libio-socket-ssl-perl-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "libio-socket-ssl-perl",
+      "version": "2.089-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libi/libio-socket-ssl-perl/libio-socket-ssl-perl_2.089-1_all.deb",
+      "filename": "libio-socket-ssl-perl_2.089-1_all.deb",
+      "sha256": "9fe58e2dd2847896e380f9fb26b5344d62cab21d8390598912e485ceedb30f00",
+      "size": 223404
+    },
+    {
+      "id": "package-libjq1-arm64",
+      "groups": [
+        "munin"
+      ],
+      "package": "libjq1",
+      "version": "1.7.1-6+deb13u4",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian-security/pool/updates/main/j/jq/libjq1_1.7.1-6%2bdeb13u4_arm64.deb",
+      "filename": "libjq1_1.7.1-6+deb13u4_arm64.deb",
+      "sha256": "400a7367f8acf48d48776a877a8d08b237804546ab598affd0fe15e6e7ab84e5",
+      "size": 151980
+    },
+    {
+      "id": "package-libjs-jquery-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libjs-jquery",
+      "version": "3.6.1+dfsg+~3.5.14-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/n/node-jquery/libjs-jquery_3.6.1%2bdfsg%2b%7e3.5.14-1_all.deb",
+      "filename": "libjs-jquery_3.6.1+dfsg+~3.5.14-1_all.deb",
+      "sha256": "a58c9ff6afe96c769cb6535754c909410760e4efa1e1540236194e489adcfb25",
+      "size": 326128
+    },
+    {
+      "id": "package-libjs-sphinxdoc-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libjs-sphinxdoc",
+      "version": "8.1.3-5",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/s/sphinx/libjs-sphinxdoc_8.1.3-5_all.deb",
+      "filename": "libjs-sphinxdoc_8.1.3-5_all.deb",
+      "sha256": "ec764abfb43e5e8b86bd78ea0d5a97253131ba373e50c28c7d9c08cd1b8a8e3e",
+      "size": 30464
+    },
+    {
+      "id": "package-libjs-underscore-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libjs-underscore",
+      "version": "1.13.4~dfsg+~1.11.4-3",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/u/underscore/libjs-underscore_1.13.4%7edfsg%2b%7e1.11.4-3_all.deb",
+      "filename": "libjs-underscore_1.13.4~dfsg+~1.11.4-3_all.deb",
+      "sha256": "4a0fbc90e7f62ea50c4ac7453352721fa60bb5eac87e9f39a027908faff29015",
+      "size": 115632
+    },
+    {
+      "id": "package-liblist-moreutils-perl-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "liblist-moreutils-perl",
+      "version": "0.430-2",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libl/liblist-moreutils-perl/liblist-moreutils-perl_0.430-2_all.deb",
+      "filename": "liblist-moreutils-perl_0.430-2_all.deb",
+      "sha256": "8a3ac2cd2c995bced7449a17838005abcaecfc302b0c51739dcc326f6eb8fbde",
+      "size": 46948
+    },
+    {
+      "id": "package-liblist-moreutils-xs-perl-arm64",
+      "groups": [
+        "munin"
+      ],
+      "package": "liblist-moreutils-xs-perl",
+      "version": "0.430-4+b2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libl/liblist-moreutils-xs-perl/liblist-moreutils-xs-perl_0.430-4%2bb2_arm64.deb",
+      "filename": "liblist-moreutils-xs-perl_0.430-4+b2_arm64.deb",
+      "sha256": "8f3ced8e5c89e662a893135b4cf5d670b380aeab9a02ad40daf374be09b81860",
+      "size": 37728
+    },
+    {
+      "id": "package-liblwp-mediatypes-perl-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "liblwp-mediatypes-perl",
+      "version": "6.04-2",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libl/liblwp-mediatypes-perl/liblwp-mediatypes-perl_6.04-2_all.deb",
+      "filename": "liblwp-mediatypes-perl_6.04-2_all.deb",
+      "sha256": "c3ae8bca625ab6e16d6257698de402090135b5eca511df2c8086b0c23eefbaff",
+      "size": 20200
+    },
+    {
+      "id": "package-libmodule-find-perl-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libmodule-find-perl",
+      "version": "0.17-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libm/libmodule-find-perl/libmodule-find-perl_0.17-1_all.deb",
+      "filename": "libmodule-find-perl_0.17-1_all.deb",
+      "sha256": "42ab8a497e69ac18b0083f796cdb86313efafae045b38bb78125e9ecfe0341fe",
+      "size": 10684
+    },
+    {
+      "id": "package-libncurses-dev-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libncurses-dev",
+      "version": "6.5+20250216-2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/n/ncurses/libncurses-dev_6.5%2b20250216-2_arm64.deb",
+      "filename": "libncurses-dev_6.5+20250216-2_arm64.deb",
+      "sha256": "3fec94323267a79e04073a62deb7f022fd9b1106330537849639aabd20efc396",
+      "size": 340208
+    },
+    {
+      "id": "package-libncurses6-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libncurses6",
+      "version": "6.5+20250216-2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/n/ncurses/libncurses6_6.5%2b20250216-2_arm64.deb",
+      "filename": "libncurses6_6.5+20250216-2_arm64.deb",
+      "sha256": "259fe5736ebb105df7c6a7b5cc6231a8743666f5f57885f6c7989babe2fc0082",
+      "size": 96112
+    },
+    {
+      "id": "package-libnet-cidr-perl-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "libnet-cidr-perl",
+      "version": "0.25-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libn/libnet-cidr-perl/libnet-cidr-perl_0.25-1_all.deb",
+      "filename": "libnet-cidr-perl_0.25-1_all.deb",
+      "sha256": "54e28b30ca9267771cbd0e2c2db21193123bd84c8ace78fbc5c7d709b3a5083b",
+      "size": 14960
+    },
+    {
+      "id": "package-libnet-server-perl-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "libnet-server-perl",
+      "version": "2.014-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libn/libnet-server-perl/libnet-server-perl_2.014-1_all.deb",
+      "filename": "libnet-server-perl_2.014-1_all.deb",
+      "sha256": "a8106949d84a5bcac7277099a5e4f574baa4293775444db9433f51a5f47ffbd9",
+      "size": 184032
+    },
+    {
+      "id": "package-libnet-snmp-perl-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "libnet-snmp-perl",
+      "version": "6.0.1-8",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libn/libnet-snmp-perl/libnet-snmp-perl_6.0.1-8_all.deb",
+      "filename": "libnet-snmp-perl_6.0.1-8_all.deb",
+      "sha256": "3761fb7133c8bba02309a52835b0242a8c7dc01db5ba1c5edecc97dca82c1c49",
+      "size": 90192
+    },
+    {
+      "id": "package-libnet-ssleay-perl-arm64",
+      "groups": [
+        "munin"
+      ],
+      "package": "libnet-ssleay-perl",
+      "version": "1.94-3",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libn/libnet-ssleay-perl/libnet-ssleay-perl_1.94-3_arm64.deb",
+      "filename": "libnet-ssleay-perl_1.94-3_arm64.deb",
+      "sha256": "50622582eec91dac26bf34e19a255b4e1bfaaf9cf44431fb437f3ade9bcbb7bc",
+      "size": 322916
+    },
+    {
+      "id": "package-libntlm0-arm64",
+      "groups": [
+        "mail"
+      ],
+      "package": "libntlm0",
+      "version": "1.8-4",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libn/libntlm/libntlm0_1.8-4_arm64.deb",
+      "filename": "libntlm0_1.8-4_arm64.deb",
+      "sha256": "335d3fa0dae62e2d754bdd2974bed4e162fe70a22ff508c4daf40c824bf91ac4",
+      "size": 22812
+    },
+    {
+      "id": "package-libonig5-arm64",
+      "groups": [
+        "munin"
+      ],
+      "package": "libonig5",
+      "version": "6.9.9-1+b1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libo/libonig/libonig5_6.9.9-1%2bb1_arm64.deb",
+      "filename": "libonig5_6.9.9-1+b1_arm64.deb",
+      "sha256": "137e708575c0622d347815d19cb471a107546b16e9602805ee27afad7bba107f",
+      "size": 180512
+    },
+    {
+      "id": "package-libproc-processtable-perl-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libproc-processtable-perl",
+      "version": "0.636-1+b3",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libp/libproc-processtable-perl/libproc-processtable-perl_0.636-1%2bb3_arm64.deb",
+      "filename": "libproc-processtable-perl_0.636-1+b3_arm64.deb",
+      "sha256": "c4d463193dddc3ea1adbe3a44323adbade5f0401ac2a98660fcb81e4fb34d164",
+      "size": 41700
+    },
+    {
+      "id": "package-libpython3-dev-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libpython3-dev",
+      "version": "3.13.5-1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/p/python3-defaults/libpython3-dev_3.13.5-1_arm64.deb",
+      "filename": "libpython3-dev_3.13.5-1_arm64.deb",
+      "sha256": "c5475e33344f1f40375de63bedb02fadb532180de140d37aca9fbd69756642b5",
+      "size": 10448
+    },
+    {
+      "id": "package-libpython3.13-dev-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libpython3.13-dev",
+      "version": "3.13.5-2+deb13u5",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/p/python3.13/libpython3.13-dev_3.13.5-2%2bdeb13u5_arm64.deb",
+      "filename": "libpython3.13-dev_3.13.5-2+deb13u5_arm64.deb",
+      "sha256": "cd8e73644d319576d8cf02ab63ccd6b1fb8eb12637b5f59114b520a9b3d4741e",
+      "size": 4932808
+    },
+    {
+      "id": "package-libruby-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libruby",
+      "version": "1:3.3+b1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/r/ruby-defaults/libruby_3.3%2bb1_arm64.deb",
+      "filename": "libruby_3.3+b1_arm64.deb",
+      "sha256": "5d203892a7afea4287ac5a44d4212f7bac94414c13d7fc3b2e8f935cd39c648a",
+      "size": 5436
+    },
+    {
+      "id": "package-libruby3.3-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libruby3.3",
+      "version": "3.3.8-2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/r/ruby3.3/libruby3.3_3.3.8-2_arm64.deb",
+      "filename": "libruby3.3_3.3.8-2_arm64.deb",
+      "sha256": "f6a27358f72f41df6156208742d7466e1f408c6dbb52730bde9638e1befa7862",
+      "size": 6142156
+    },
+    {
+      "id": "package-libseccomp-dev-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libseccomp-dev",
+      "version": "2.6.0-2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libs/libseccomp/libseccomp-dev_2.6.0-2_arm64.deb",
+      "filename": "libseccomp-dev_2.6.0-2_arm64.deb",
+      "sha256": "a4b5e33f3c609e1186ed4725d380a96372bb6a4976a94f7911411b4371180450",
+      "size": 96028
+    },
+    {
+      "id": "package-libsecret-1-0-arm64",
+      "groups": [
+        "mail"
+      ],
+      "package": "libsecret-1-0",
+      "version": "0.21.7-1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libs/libsecret/libsecret-1-0_0.21.7-1_arm64.deb",
+      "filename": "libsecret-1-0_0.21.7-1_arm64.deb",
+      "sha256": "48b439ab6dcaac0ea18ad31143fc673d2c5fbdc3e4c584c96429f24a7792d829",
+      "size": 102236
+    },
+    {
+      "id": "package-libsecret-common-all",
+      "groups": [
+        "mail"
+      ],
+      "package": "libsecret-common",
+      "version": "0.21.7-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libs/libsecret/libsecret-common_0.21.7-1_all.deb",
+      "filename": "libsecret-common_0.21.7-1_all.deb",
+      "sha256": "ce336a4ea6d27bfe85c195b88ab9a8eb95ce197228648634b8ace35ddb9bd808",
+      "size": 27936
+    },
+    {
+      "id": "package-libsecret-tools-arm64",
+      "groups": [
+        "mail"
+      ],
+      "package": "libsecret-tools",
+      "version": "0.21.7-1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libs/libsecret/libsecret-tools_0.21.7-1_arm64.deb",
+      "filename": "libsecret-tools_0.21.7-1_arm64.deb",
+      "sha256": "c7c57a7bcc24aa8ab435093a0e4fcbb55eb36ae3b0b85be7c0fbdbac31a091f2",
+      "size": 13876
+    },
+    {
+      "id": "package-libsigsegv2-arm64",
+      "groups": [
+        "munin"
+      ],
+      "package": "libsigsegv2",
+      "version": "2.14-1+b2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libs/libsigsegv/libsigsegv2_2.14-1%2bb2_arm64.deb",
+      "filename": "libsigsegv2_2.14-1+b2_arm64.deb",
+      "sha256": "4fd72af654e2a72c84093cc2a38c856fba9492ecd828721117867e99c2c9cd92",
+      "size": 34332
+    },
+    {
+      "id": "package-libsocket6-perl-arm64",
+      "groups": [
+        "munin"
+      ],
+      "package": "libsocket6-perl",
+      "version": "0.29-3+b4",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libs/libsocket6-perl/libsocket6-perl_0.29-3%2bb4_arm64.deb",
+      "filename": "libsocket6-perl_0.29-3+b4_arm64.deb",
+      "sha256": "583b59a3336a5dec98322a06155d95fa5a4a0e981ac933e7e09e366ebf406d3a",
+      "size": 21220
+    },
+    {
+      "id": "package-libsort-naturally-perl-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libsort-naturally-perl",
+      "version": "1.03-4",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libs/libsort-naturally-perl/libsort-naturally-perl_1.03-4_all.deb",
+      "filename": "libsort-naturally-perl_1.03-4_all.deb",
+      "sha256": "243057b16f21fdf9f9dd3fc50ea2b7104e189b7cf35c5334606efd1941e2210e",
+      "size": 13076
+    },
+    {
+      "id": "package-libssl-dev-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libssl-dev",
+      "version": "3.5.7-1~deb13u3+rpt1",
+      "architecture": "arm64",
+      "url": "https://archive.raspberrypi.com/debian/pool/main/o/openssl/libssl-dev_3.5.7-1%7edeb13u3%2brpt1_arm64.deb",
+      "filename": "libssl-dev_3.5.7-1~deb13u3+rpt1_arm64.deb",
+      "sha256": "696b24efbcb13b3f6654709914a2449fc3c18d6d7d08f2149e2a44e38eb29e20",
+      "size": 4827224
+    },
+    {
+      "id": "package-libterm-readkey-perl-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libterm-readkey-perl",
+      "version": "2.38-2+b4",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libt/libterm-readkey-perl/libterm-readkey-perl_2.38-2%2bb4_arm64.deb",
+      "filename": "libterm-readkey-perl_2.38-2+b4_arm64.deb",
+      "sha256": "594267ef6f8bb07c997799dcbe1144df73bc004078baadff722bfeff5ab45f8b",
+      "size": 24484
+    },
+    {
+      "id": "package-libtimedate-perl-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "libtimedate-perl",
+      "version": "2.3300-2",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libt/libtimedate-perl/libtimedate-perl_2.3300-2_all.deb",
+      "filename": "libtimedate-perl_2.3300-2_all.deb",
+      "sha256": "8e36723da883c2975d83199e7f4b5331e291881372fde944b0d56660965f38bb",
+      "size": 39316
+    },
+    {
+      "id": "package-liburi-perl-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "liburi-perl",
+      "version": "5.30-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libu/liburi-perl/liburi-perl_5.30-1_all.deb",
+      "filename": "liburi-perl_5.30-1_all.deb",
+      "sha256": "33957bd8218ddd3a86cc19fdf3bf7832b0640337a4be6cf23b2714b73d220220",
+      "size": 104548
+    },
+    {
+      "id": "package-m4-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "m4",
+      "version": "1.4.19-8",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/m/m4/m4_1.4.19-8_arm64.deb",
+      "filename": "m4_1.4.19-8_arm64.deb",
+      "sha256": "6f1cd89c9f42844682e2aa8529511f53ad44d4ecb0f1df459a7302be0e1d4f85",
+      "size": 284832
+    },
+    {
+      "id": "package-msmtp-arm64",
+      "groups": [
+        "mail"
+      ],
+      "package": "msmtp",
+      "version": "1.8.28-3",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/m/msmtp/msmtp_1.8.28-3_arm64.deb",
+      "filename": "msmtp_1.8.28-3_arm64.deb",
+      "sha256": "da7fbc7704edf3772e584d0eae7d0f7da37156f194721c8be34ade9f05ab7236",
+      "size": 221128
+    },
+    {
+      "id": "package-msmtp-mta-arm64",
+      "groups": [
+        "mail"
+      ],
+      "package": "msmtp-mta",
+      "version": "1.8.28-3",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/m/msmtp/msmtp-mta_1.8.28-3_arm64.deb",
+      "filename": "msmtp-mta_1.8.28-3_arm64.deb",
+      "sha256": "a885da6c8993124b32ac9f1dc250be85daae285c63628e419628edffb71ff7ce",
+      "size": 71504
+    },
+    {
+      "id": "package-munin-common-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "munin-common",
+      "version": "2.0.76-5",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/m/munin/munin-common_2.0.76-5_all.deb",
+      "filename": "munin-common_2.0.76-5_all.deb",
+      "sha256": "880d2301c933a15cb41325112ccf00bca65549cde885ba76e9682f058d06d7d5",
+      "size": 95448
+    },
+    {
+      "id": "package-munin-node-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "munin-node",
+      "version": "2.0.76-5",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/m/munin/munin-node_2.0.76-5_all.deb",
+      "filename": "munin-node_2.0.76-5_all.deb",
+      "sha256": "3307903b4bc39ccaa1219202be9c06bd37f65d500c0748d9d817975d0a70e137",
+      "size": 137040
+    },
+    {
+      "id": "package-munin-plugins-core-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "munin-plugins-core",
+      "version": "2.0.76-5",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/m/munin/munin-plugins-core_2.0.76-5_all.deb",
+      "filename": "munin-plugins-core_2.0.76-5_all.deb",
+      "sha256": "780529a11bc9dc563bd69268b0153421923ff6ceea50b1b48bf80bca8826781c",
+      "size": 243384
+    },
+    {
+      "id": "package-munin-plugins-extra-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "munin-plugins-extra",
+      "version": "2.0.76-5",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/m/munin/munin-plugins-extra_2.0.76-5_all.deb",
+      "filename": "munin-plugins-extra_2.0.76-5_all.deb",
+      "sha256": "ced09362e2b204782c9f69bd0a55675060fb46e3c104cddb200252de1a612e3d",
+      "size": 135600
+    },
+    {
+      "id": "package-needrestart-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "needrestart",
+      "version": "3.11-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/n/needrestart/needrestart_3.11-1_all.deb",
+      "filename": "needrestart_3.11-1_all.deb",
+      "sha256": "94bae406dc3d50633a9e92e1834859d1362bb8be4485d9b466d0018083c3a177",
+      "size": 68632
+    },
+    {
+      "id": "package-perl-doc-all",
+      "groups": [
+        "munin"
+      ],
+      "package": "perl-doc",
+      "version": "5.40.1-6+deb13u1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/p/perl/perl-doc_5.40.1-6%2bdeb13u1_all.deb",
+      "filename": "perl-doc_5.40.1-6+deb13u1_all.deb",
+      "sha256": "5199f0a0432ac3fac48d6e6a9e3a216d17977a49deff77dbdb958716fbe29b0c",
+      "size": 8252940
+    },
+    {
+      "id": "package-perl-openssl-defaults-arm64",
+      "groups": [
+        "munin"
+      ],
+      "package": "perl-openssl-defaults",
+      "version": "7+b2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/p/perl-openssl-defaults/perl-openssl-defaults_7%2bb2_arm64.deb",
+      "filename": "perl-openssl-defaults_7+b2_arm64.deb",
+      "sha256": "1fa2d99f1f7d32147cd5935eb2700ac49b366c086fea21c963c73e6dc62d62b1",
+      "size": 6712
+    },
+    {
+      "id": "package-pps-tools-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "pps-tools",
+      "version": "1.0.2-2+b1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/p/pps-tools/pps-tools_1.0.2-2%2bb1_arm64.deb",
+      "filename": "pps-tools_1.0.2-2+b1_arm64.deb",
+      "sha256": "47e714ccda093a1d28af2f5009c014a7a57059cc76cde98b65e8522119e8adca",
+      "size": 13520
+    },
+    {
+      "id": "package-python3-dev-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "python3-dev",
+      "version": "3.13.5-1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/p/python3-defaults/python3-dev_3.13.5-1_arm64.deb",
+      "filename": "python3-dev_3.13.5-1_arm64.deb",
+      "sha256": "3d7ef44b68d9d9cd8b33d9f1fa9238a9a608a247e9d3d1dff66699a479825f61",
+      "size": 26072
+    },
+    {
+      "id": "package-python3-serial-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "python3-serial",
+      "version": "3.5-2",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/p/pyserial/python3-serial_3.5-2_all.deb",
+      "filename": "python3-serial_3.5-2_all.deb",
+      "sha256": "55adf00b96ef91b1d8ad935d134c341f7c3dd021a5666cd53e75f37144006a51",
+      "size": 88228
+    },
+    {
+      "id": "package-python3.13-dev-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "python3.13-dev",
+      "version": "3.13.5-2+deb13u5",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/p/python3.13/python3.13-dev_3.13.5-2%2bdeb13u5_arm64.deb",
+      "filename": "python3.13-dev_3.13.5-2+deb13u5_arm64.deb",
+      "sha256": "607bd60baca0ce82ba6fafc3bba3914a98127cd208764eb791eb6f5d4e85f107",
+      "size": 504376
+    },
+    {
+      "id": "package-rake-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "rake",
+      "version": "13.2.1-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/r/rake/rake_13.2.1-1_all.deb",
+      "filename": "rake_13.2.1-1_all.deb",
+      "sha256": "6080dff69fe4fa4f1419d2326a2004e21cc696b37a03c0c96e5e8c42c3e9e477",
+      "size": 65228
+    },
+    {
+      "id": "package-read-edid-arm64",
+      "groups": [
+        "hardware"
+      ],
+      "package": "read-edid",
+      "version": "3.0.2-1.1+b1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/r/read-edid/read-edid_3.0.2-1.1%2bb1_arm64.deb",
+      "filename": "read-edid_3.0.2-1.1+b1_arm64.deb",
+      "sha256": "354d13548a04569b6d4ad180f2c86b94d90cb63f2e0d7c381260b42dd97885a3",
+      "size": 15256
+    },
+    {
+      "id": "package-ruby-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "ruby",
+      "version": "1:3.3+b1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/r/ruby-defaults/ruby_3.3%2bb1_arm64.deb",
+      "filename": "ruby_3.3+b1_arm64.deb",
+      "sha256": "c554e8849ed9fb0dfa6e517ea9382d21acdc19b73cc2f76f0aa3b29bf7d72149",
+      "size": 6560
+    },
+    {
+      "id": "package-ruby-asciidoctor-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "ruby-asciidoctor",
+      "version": "2.0.23-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/a/asciidoctor/ruby-asciidoctor_2.0.23-1_all.deb",
+      "filename": "ruby-asciidoctor_2.0.23-1_all.deb",
+      "sha256": "d3f069fbdb6da7da2a86e8be7b6744b22d89a2dd4474a78c6daff0f41fc3f083",
+      "size": 213832
+    },
+    {
+      "id": "package-ruby-csv-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "ruby-csv",
+      "version": "3.3.4-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/r/ruby-csv/ruby-csv_3.3.4-1_all.deb",
+      "filename": "ruby-csv_3.3.4-1_all.deb",
+      "sha256": "6367f942bcffb869ba78996a2be4b4f12c93ad2b345f5750a3112a1127293125",
+      "size": 42236
+    },
+    {
+      "id": "package-ruby-did-you-mean-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "ruby-did-you-mean",
+      "version": "1.6.3-2",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/r/ruby-did-you-mean/ruby-did-you-mean_1.6.3-2_all.deb",
+      "filename": "ruby-did-you-mean_1.6.3-2_all.deb",
+      "sha256": "8c193ed0b6fa3a803b7643dd840cab1a6d1e665bcc212accce8a8ea1deeee615",
+      "size": 20904
+    },
+    {
+      "id": "package-ruby-net-telnet-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "ruby-net-telnet",
+      "version": "0.2.0-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/r/ruby-net-telnet/ruby-net-telnet_0.2.0-1_all.deb",
+      "filename": "ruby-net-telnet_0.2.0-1_all.deb",
+      "sha256": "e8a5b95e359894fbca0fa1cc70cdd349c125f43e883775491735a44ced957256",
+      "size": 13076
+    },
+    {
+      "id": "package-ruby-ruby2-keywords-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "ruby-ruby2-keywords",
+      "version": "0.0.5-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/r/ruby-ruby2-keywords/ruby-ruby2-keywords_0.0.5-1_all.deb",
+      "filename": "ruby-ruby2-keywords_0.0.5-1_all.deb",
+      "sha256": "a2806f226a72c5be7cfd33eb35fbcf1aa33c136d48802af7fcd5897f54417b8b",
+      "size": 4300
+    },
+    {
+      "id": "package-ruby-rubygems-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "ruby-rubygems",
+      "version": "3.6.7-2",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/r/rubygems/ruby-rubygems_3.6.7-2_all.deb",
+      "filename": "ruby-rubygems_3.6.7-2_all.deb",
+      "sha256": "a585dd934ffc58516c468cc06fe10141d1383f96bf1113a25397f0ac043253a1",
+      "size": 407044
+    },
+    {
+      "id": "package-ruby-sdbm-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "ruby-sdbm",
+      "version": "1.0.0-5+b7",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/r/ruby-sdbm/ruby-sdbm_1.0.0-5%2bb7_arm64.deb",
+      "filename": "ruby-sdbm_1.0.0-5+b7_arm64.deb",
+      "sha256": "6ca5ccaf301a44a3ab07899b4b5f458c81d308fa95e5027fa3d016fdf3a0f8e7",
+      "size": 14224
+    },
+    {
+      "id": "package-ruby-webrick-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "ruby-webrick",
+      "version": "1.9.1-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/r/ruby-webrick/ruby-webrick_1.9.1-1_all.deb",
+      "filename": "ruby-webrick_1.9.1-1_all.deb",
+      "sha256": "e8eff1ea6cb255ad89e4820db763c23facdad634615cab08a8fe883d9640ab7b",
+      "size": 59624
+    },
+    {
+      "id": "package-ruby-xmlrpc-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "ruby-xmlrpc",
+      "version": "0.3.3-2",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/r/ruby-xmlrpc/ruby-xmlrpc_0.3.3-2_all.deb",
+      "filename": "ruby-xmlrpc_0.3.3-2_all.deb",
+      "sha256": "c2735a4c93ea68e453108c3524506796663a74975df63fc3cffb2847e3c30b0b",
+      "size": 24428
+    },
+    {
+      "id": "package-ruby3.3-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "ruby3.3",
+      "version": "3.3.8-2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/r/ruby3.3/ruby3.3_3.3.8-2_arm64.deb",
+      "filename": "ruby3.3_3.3.8-2_arm64.deb",
+      "sha256": "a9f2660cd68c3bd72dff9136148e42f0653bbc93fbef775fec52ea778aa3b009",
+      "size": 834304
+    },
+    {
+      "id": "package-rubygems-integration-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "rubygems-integration",
+      "version": "1.19",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/r/rubygems-integration/rubygems-integration_1.19_all.deb",
+      "filename": "rubygems-integration_1.19_all.deb",
+      "sha256": "ca8c600505bd4c5046b2c60fbf964d6f4eb08db86eb77526a3de0315f1222afe",
+      "size": 5488
+    },
+    {
+      "id": "package-scons-all",
+      "groups": [
+        "foundation"
+      ],
+      "package": "scons",
+      "version": "4.8.1+dfsg-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/s/scons/scons_4.8.1%2bdfsg-1_all.deb",
+      "filename": "scons_4.8.1+dfsg-1_all.deb",
+      "sha256": "7392d12a44fee0ca04e57980506ab28829a817404250889648ef6102670c4af6",
+      "size": 548140
+    },
+    {
+      "id": "package-watchdog-arm64",
+      "groups": [
+        "watchdog"
+      ],
+      "package": "watchdog",
+      "version": "5.16-1.1+rpt1",
+      "architecture": "arm64",
+      "url": "https://archive.raspberrypi.com/debian/pool/main/w/watchdog/watchdog_5.16-1.1%2brpt1_arm64.deb",
+      "filename": "watchdog_5.16-1.1+rpt1_arm64.deb",
+      "sha256": "48ffd9ed0aa735d7714ae18d4b09ea3c6cb5c48a51792e9f5a7ed82bf65feae8",
+      "size": 91682
+    },
+    {
+      "id": "package-zlib1g-dev-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "zlib1g-dev",
+      "version": "1:1.3.dfsg+really1.3.1-1+b1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/z/zlib/zlib1g-dev_1.3.dfsg%2breally1.3.1-1%2bb1_arm64.deb",
+      "filename": "zlib1g-dev_1.3.dfsg+really1.3.1-1+b1_arm64.deb",
+      "sha256": "745ebcf1fa115e230af76216355d7290a24f1790fe3780249b519c0e4d30534f",
+      "size": 916612
+    },
+    {
+      "id": "signature-gpsd",
+      "groups": [
+        "sources"
+      ],
+      "filename": "gpsd-3.27.5.tar.gz.sig",
+      "url": "https://download.savannah.gnu.org/releases/gpsd/gpsd-3.27.5.tar.gz.sig",
+      "size": 147,
+      "sha256": "dd788d651d1d014dc5db36ff79ddbe3dc7774a57754990590167e99d4e1c700c"
+    },
+    {
+      "id": "signature-ntpsec",
+      "groups": [
+        "sources"
+      ],
+      "filename": "ntpsec-1.2.5.tar.gz.asc",
+      "url": "https://ftp.ntpsec.org/pub/releases/ntpsec-1.2.5.tar.gz.asc",
+      "size": 833,
+      "sha256": "ae1678a098bfba3375c1d3ae05dd2fa2d7bd5ac6016d86546f9668a02b274391"
+    },
+    {
+      "id": "source-gpsd",
+      "groups": [
+        "sources"
+      ],
+      "filename": "gpsd-3.27.5.tar.gz",
+      "url": "https://download.savannah.gnu.org/releases/gpsd/gpsd-3.27.5.tar.gz",
+      "size": 5995999,
+      "sha256": "409873f5048462ef1ac413a51ab35caa8b50b31be62b3347bee1cc2994e7c649",
+      "signature": "signature-gpsd",
+      "public_key": "gpsd"
+    },
+    {
+      "id": "source-ntpsec",
+      "groups": [
+        "sources"
+      ],
+      "filename": "ntpsec-1.2.5.tar.gz",
+      "url": "https://ftp.ntpsec.org/pub/releases/ntpsec-1.2.5.tar.gz",
+      "size": 2753014,
+      "sha256": "6fb191cddaf607e7754b1f6915a1a61dc4018b3e4eef3d2ffacec961c9682949",
+      "signature": "signature-ntpsec",
+      "public_key": "ntpsec"
+    }
+  ]
+}

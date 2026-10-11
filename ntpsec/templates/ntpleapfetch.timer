@@ -1,0 +1,11 @@
+[Unit]
+Description=Run leapfile maintenance at the architecture schedule
+
+[Timer]
+OnBootSec=15min
+OnUnitActiveSec=4w
+RandomizedDelaySec=30min
+Unit=ntpleapfetch.service
+
+[Install]
+WantedBy=timers.target

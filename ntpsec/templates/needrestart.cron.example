@@ -1,0 +1,15 @@
+# Install as /etc/cron.d/needrestart_check; see ntpsec/docs/OPERATIONS.md.
+
+SHELL=/bin/bash
+
+# Mailgun account
+# MAILTO=@ALERT_RECIPIENT@
+# RECIPIENT=@ALERT_RECIPIENT@
+
+# Mailrise account
+MAILTO=@CRON_RECIPIENT@
+RECIPIENT=@ALERT_RECIPIENT@
+
+# Run daily at 05:30 as root and skip overlapping executions. Capture routine
+# output, and expose it to cron only when the command exits unsuccessfully.
+30 5 * * * root needrestart_cron_output=$(/usr/bin/flock -n /run/lock/needrestart-check.lock /usr/local/sbin/needrestart.sh 2>&1); needrestart_cron_status=$?; if ((needrestart_cron_status != 0)); then if [[ -n "$needrestart_cron_output" ]]; then printf '\%s\n' "$needrestart_cron_output"; else printf 'needrestart check failed with exit status \%s (the lock may already be held).\n' "$needrestart_cron_status"; fi; fi; exit "$needrestart_cron_status"

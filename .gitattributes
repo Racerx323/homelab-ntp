@@ -1,0 +1,2 @@
+# Preserve dpkg's exact three-character status field in the accepted inventory.
+ntpsec/configs/accepted-packages.tsv whitespace=-blank-at-eol

@@ -2,7 +2,7 @@
 """Target-local source builds and manifest-bound installs; no OS/service changes.
 
 Adapted workflow from NTPsec's microserver HOWTO clockmaker. Upstream bytes and
-the deliberate departures are recorded in source-build-audit-20261010.md.
+the deliberate departures are recorded in docs/OPERATIONS.md.
 """
 import argparse
 import hashlib
@@ -80,9 +80,13 @@ def require_stopped_daemons():
 def validate_profile(profile):
     if profile['schema'] != 1 or profile['prefix'] != PREFIX:
         raise ValueError('unsupported profile/prefix')
+    if type(profile.get('jobs', 1)) is not int or not 1 <= profile.get('jobs', 1) <= 4:
+        raise ValueError('build jobs must be an integer from 1 to 4')
     if set(profile['sources']) != set(APPLICATIONS):
         raise ValueError('both source applications required')
     if any(s.get('archive_format') == 'publisher-release' for s in profile['sources'].values()):
+        if not {'pps-tools', 'bc'}.issubset({n.split(':')[0] for n in profile['packages']}):
+            raise ValueError('publisher builds require installed pps-tools and bc')
         python = profile.get('python', {})
         directory = python.get('module_directory', '')
         if (python.get('executable') != '/usr/bin/python3'
@@ -208,6 +212,20 @@ def inventory(stage):
     return files
 
 
+def link_gpsd_test_dependency(directory, stage, module_directory):
+    """Expose staged GPSD to NTPsec's isolated, upstream binary-test path."""
+    package = stage / module_directory.lstrip('/') / 'gps'
+    if package.is_symlink() or not package.is_dir():
+        raise ValueError('staged GPSD Python package required before NTPsec build')
+    regular_bytes(package / '__init__.py')
+    library = directory / 'build/main/tests/pylib'
+    library.mkdir(parents=True, exist_ok=True)
+    link = library / 'gps'
+    if link.exists() or link.is_symlink():
+        raise ValueError('existing GPSD test dependency; preserve and inspect')
+    link.symlink_to(package.resolve(), target_is_directory=True)
+
+
 def build(profile_path, expected, output, updating=False):
     if os.geteuid() == 0:
         raise ValueError('build/update must be unprivileged')
@@ -250,14 +268,14 @@ def build(profile_path, expected, output, updating=False):
         directory.mkdir()
         directory = unpack_source(sources[name], source, directory)
         if name == 'gpsd':
-            base = ['/usr/bin/scons', 'prefix=' + PREFIX] + source['options']
+            base = ['/usr/bin/scons', '-j' + str(profile.get('jobs', 1)), 'prefix=' + PREFIX] + source['options']
             if 'python' in profile:
                 base += ['target_python=' + profile['python']['executable'],
                          'python_shebang=' + profile['python']['executable'],
                          'python_libdir=' + profile['python']['module_directory']]
             commands = [base, base + ['check'], base + ['install']]
         else:
-            base = ['/usr/bin/python3', 'waf']
+            base = ['/usr/bin/python3', 'waf', '-j' + str(profile.get('jobs', 1))]
             python_options = []
             if 'python' in profile:
                 python_options = ['--pythondir=' + profile['python']['module_directory'],
@@ -269,6 +287,8 @@ def build(profile_path, expected, output, updating=False):
                         base + ['install', '--destdir=' + str(stage.resolve())]]
         for command in commands:
             env = dict(environment)
+            if name == 'ntpsec' and command[-1] == 'build' and 'python' in profile:
+                link_gpsd_test_dependency(directory, stage, profile['python']['module_directory'])
             if command[-1] == 'install':
                 env['DESTDIR'] = str(stage.resolve())
             run(command, directory, env, log)

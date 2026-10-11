@@ -1,0 +1,914 @@
+{
+  "build_log_sha256": "2e5067c226459c8468815e8a85d9246e11044ec89323a2fe089cbdfcdeca61d7",
+  "files": {
+    "usr/local/bin/cgps": {
+      "mode": 448,
+      "sha256": "cca0500e2bf108d5d039ce8fd75ccf02c65068a13953337a3f4b1b95f91cbad0",
+      "type": "file"
+    },
+    "usr/local/bin/clockmaker.py": {
+      "mode": 493,
+      "sha256": "da1f343a772c324698c98bce3f9abd0848247a97ade10f929621538c191ff03f",
+      "type": "file"
+    },
+    "usr/local/bin/gegps": {
+      "mode": 448,
+      "sha256": "ffd45ff8af6dfb60e906abdb3a52ef850b362872303d32d5ef8205f5cb4b26d1",
+      "type": "file"
+    },
+    "usr/local/bin/gps2udp": {
+      "mode": 448,
+      "sha256": "b939c7dad52d4e3b6b2d207d36ac4d363e0d54e8e105dd6fc88a6db315c7fe88",
+      "type": "file"
+    },
+    "usr/local/bin/gpscat": {
+      "mode": 448,
+      "sha256": "aaead732694997d3cee7f8b3bec4fa64e7e89860a25488938a9b8e6b45ccc90d",
+      "type": "file"
+    },
+    "usr/local/bin/gpscsv": {
+      "mode": 448,
+      "sha256": "4463a8cb792b52c94a5f6f0f6224645cf49feddb80642dbde2fe923d3aac5052",
+      "type": "file"
+    },
+    "usr/local/bin/gpsctl": {
+      "mode": 448,
+      "sha256": "95eed33b3c5b6b7af3017d754c106e044a3f93fefd8df193735b3d5baf87323b",
+      "type": "file"
+    },
+    "usr/local/bin/gpsdebuginfo": {
+      "mode": 493,
+      "sha256": "8c5be50ffdf71255803e420c255bfbabe554d283a4a9e0ffdb96bc4bf2163320",
+      "type": "file"
+    },
+    "usr/local/bin/gpsdecode": {
+      "mode": 448,
+      "sha256": "5db5978e6306632861e788aba2869dde6c89f2a2053a0cc17022d4cccb41d324",
+      "type": "file"
+    },
+    "usr/local/bin/gpsfake": {
+      "mode": 448,
+      "sha256": "213b9b38185e4367ea06b9b764f18b88cac99bebb82e68b436a9b4d94c52aadf",
+      "type": "file"
+    },
+    "usr/local/bin/gpslogntp": {
+      "mode": 448,
+      "sha256": "e917e8fcdc01f9f875d13fdf4a49dfb6983bd0e23914844ec53b9e1e463c0822",
+      "type": "file"
+    },
+    "usr/local/bin/gpsmon": {
+      "mode": 448,
+      "sha256": "eb8d0af63ca122cb47049167c7d0111215e5aaba9ac3a1f1bbb64182538b106f",
+      "type": "file"
+    },
+    "usr/local/bin/gpspipe": {
+      "mode": 448,
+      "sha256": "d8ed5731e9cb48b10a117fac5c86ebd06fc4cf142c3ea493aea5c9fa4fdd22e8",
+      "type": "file"
+    },
+    "usr/local/bin/gpsplot": {
+      "mode": 448,
+      "sha256": "57825dbc89dca99ee8b5988530d867292b66f0c4cfd2b368ad885c567dddc10b",
+      "type": "file"
+    },
+    "usr/local/bin/gpsprof": {
+      "mode": 448,
+      "sha256": "8a1074bc6c3fb13866c90ac41d0bc2f9c11975be7bc2331f3455ad77405f0e28",
+      "type": "file"
+    },
+    "usr/local/bin/gpsrinex": {
+      "mode": 448,
+      "sha256": "4b9155aa218c755790cdee43244490261ecba942c59fe59c71f48f14f9376e30",
+      "type": "file"
+    },
+    "usr/local/bin/gpssnmp": {
+      "mode": 448,
+      "sha256": "5c4f04666231f5fcce94da84aed07a0c5352bb0f95ee2bcff45820eefee194ee",
+      "type": "file"
+    },
+    "usr/local/bin/gpssubframe": {
+      "mode": 448,
+      "sha256": "0d3486bbd3493289a7b2e07f5551a00d18f7b07e9a6ef0dd8fdb86585eb7ea51",
+      "type": "file"
+    },
+    "usr/local/bin/gpxlogger": {
+      "mode": 448,
+      "sha256": "7ec6f58c861abcf495ec83ca723c098c5a3bfaa548391673af2b9af2d37fa09a",
+      "type": "file"
+    },
+    "usr/local/bin/lcdgps": {
+      "mode": 448,
+      "sha256": "def9d82742924e606c6d1f144f0469cf45009944987484d37c04f5687fafe6e2",
+      "type": "file"
+    },
+    "usr/local/bin/ntpdig": {
+      "mode": 493,
+      "sha256": "0f6e31d0cb45cd29f1fe301f442e391164879ff87c9b31ed5366ad1bf21d8428",
+      "type": "file"
+    },
+    "usr/local/bin/ntpfrob": {
+      "mode": 493,
+      "sha256": "ffb13552a9705a5c915ac34199096405db5bfd9e69ba1dead4b1d2fb58860727",
+      "type": "file"
+    },
+    "usr/local/bin/ntpkeygen": {
+      "mode": 493,
+      "sha256": "b8e4b3e056eaafe253ba488d8672beb664ed37a35382a0b9cf3b1a7878859906",
+      "type": "file"
+    },
+    "usr/local/bin/ntpleapfetch": {
+      "mode": 493,
+      "sha256": "f60015066754ff8049db5ff305dc96b725bfac4850cdc80fc6575ac8df1c6d24",
+      "type": "file"
+    },
+    "usr/local/bin/ntploggps": {
+      "mode": 493,
+      "sha256": "040b1571a283e4d5996bd95655f3c7246d6cdf9ebc9e68793618b51b03f9835c",
+      "type": "file"
+    },
+    "usr/local/bin/ntplogtemp": {
+      "mode": 493,
+      "sha256": "b066d6f41ef28a6d963191ab70c51c1440950af805fc66b822a481f965db9d5f",
+      "type": "file"
+    },
+    "usr/local/bin/ntpmon": {
+      "mode": 493,
+      "sha256": "612a868f0c1f675ee4cd934ebac3d0b64a8c2bb52ba94647ca2ad14b985d06b2",
+      "type": "file"
+    },
+    "usr/local/bin/ntpq": {
+      "mode": 493,
+      "sha256": "5ca8fd9b0652d3ab8718793a18786ca80479c560b3736c68a408196e593af941",
+      "type": "file"
+    },
+    "usr/local/bin/ntpshmmon": {
+      "mode": 448,
+      "sha256": "0846b2f45732e6546f472a6472298b09f14200ac1a19d08eaf38e66b90ac1736",
+      "type": "file"
+    },
+    "usr/local/bin/ntpsnmpd": {
+      "mode": 493,
+      "sha256": "8bc2989c0be46323492857b4a61705a2dcc243ac88936ed2231b63b1da93c44e",
+      "type": "file"
+    },
+    "usr/local/bin/ntpsweep": {
+      "mode": 493,
+      "sha256": "6ab56de7e720498ca2ea90f8ef675326888a3ad343008b511e1c8f1dca479523",
+      "type": "file"
+    },
+    "usr/local/bin/ntptime": {
+      "mode": 493,
+      "sha256": "5c9046b381a335a1cadccf04cacf8ebd5818ea6bb854884697503272852d42fe",
+      "type": "file"
+    },
+    "usr/local/bin/ntptrace": {
+      "mode": 493,
+      "sha256": "de5390c277a10c315949df2b01d213d2ea31c9b999fac9be5244ea889bf2fc7c",
+      "type": "file"
+    },
+    "usr/local/bin/ntpviz": {
+      "mode": 493,
+      "sha256": "ab239dfa7139c45380f27860afc0473f0bbfa6112d71ec09a3fcaff864cd590e",
+      "type": "file"
+    },
+    "usr/local/bin/ntpwait": {
+      "mode": 493,
+      "sha256": "fa77d88ea26f1278bdc05850ebc9cb7cd54104886ff8bfd0698d2cbc6c4dcd0f",
+      "type": "file"
+    },
+    "usr/local/bin/pinup.py": {
+      "mode": 493,
+      "sha256": "cd563ff6d937ab90313102458e514022855f3b822f7b8825d5b05fd6d9f6bcf5",
+      "type": "file"
+    },
+    "usr/local/bin/ppscheck": {
+      "mode": 448,
+      "sha256": "5b6582393a17f08d6903b764683980c8c15cae1cbb7b9ec8c29f5527a2cf0e9e",
+      "type": "file"
+    },
+    "usr/local/bin/ubxtool": {
+      "mode": 448,
+      "sha256": "1d32ea12715803cd05a2e1e28a5a283580a3a4aa0ae645a5699a1c67f3d62571",
+      "type": "file"
+    },
+    "usr/local/bin/zerk": {
+      "mode": 448,
+      "sha256": "ed6b7a3ad3b7d29ba8f050df98e5d35d41a523376e90750b27245816151f2d26",
+      "type": "file"
+    },
+    "usr/local/include/gps.h": {
+      "mode": 420,
+      "sha256": "24b7e0eda4b4b5c3f84ae7cb954b2529afc127e8da1a38f1a49d9a0b42275a68",
+      "type": "file"
+    },
+    "usr/local/include/libgpsmm.h": {
+      "mode": 420,
+      "sha256": "931d626803aac015d2ecb628f00684e038563bb07e298f2c4503818af41af1f2",
+      "type": "file"
+    },
+    "usr/local/lib/libgps.so": {
+      "target": "libgps.so.32.0.0",
+      "type": "symlink"
+    },
+    "usr/local/lib/libgps.so.32": {
+      "target": "libgps.so.32.0.0",
+      "type": "symlink"
+    },
+    "usr/local/lib/libgps.so.32.0.0": {
+      "mode": 448,
+      "sha256": "81c4871e4d3428a3a501617f148aff13647232ae6eaf01f84a90bcdf49be035f",
+      "type": "file"
+    },
+    "usr/local/lib/libgpsdpacket.so": {
+      "target": "libgpsdpacket.so.32.0.0",
+      "type": "symlink"
+    },
+    "usr/local/lib/libgpsdpacket.so.32": {
+      "target": "libgpsdpacket.so.32.0.0",
+      "type": "symlink"
+    },
+    "usr/local/lib/libgpsdpacket.so.32.0.0": {
+      "mode": 448,
+      "sha256": "29c3629cc0dab624d084620f2727c620c353df0dbf0f38e1f7547ef932304550",
+      "type": "file"
+    },
+    "usr/local/lib/pkgconfig/libgps.pc": {
+      "mode": 384,
+      "sha256": "31eabb855aa28be13bb8e513514cf9e1ba23b02236820b1e4dd897d17322ceb7",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/gps-3.27.5.egg-info": {
+      "mode": 384,
+      "sha256": "87c70d457a3a720c2d6da45b4049dc252950b5285ded0be3f318952ac079cebd",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/gps/__init__.py": {
+      "mode": 448,
+      "sha256": "25c568d3d25e4762760a50918ce093361d63fdb7b6b6b8d1792693392d73efb4",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/gps/__main__.py": {
+      "mode": 420,
+      "sha256": "7600990983bbea96a34a40ff20112eb8055ee8b81d8eecbad4f91fa322e6ae59",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/gps/__pycache__/__init__.cpython-313.pyc": {
+      "mode": 384,
+      "sha256": "2067961145c601908939466263e6dbfb09f21f4b178e01ee32de463cb41ba990",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/gps/__pycache__/client.cpython-313.pyc": {
+      "mode": 384,
+      "sha256": "a5f7eb04121e5d99bad8054606d4645b4f797f418cac83f67af3230c8e54fc81",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/gps/__pycache__/gps.cpython-313.pyc": {
+      "mode": 384,
+      "sha256": "ba45520bb8ab11970d4469b88f502d774030a4edf7c4918c6a8a4c51aed94e7b",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/gps/__pycache__/misc.cpython-313.pyc": {
+      "mode": 384,
+      "sha256": "c5656c4f1e58c1767050927603be6d0805013e1d2f440c5fdb443a4c5924f1ff",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/gps/__pycache__/watch_options.cpython-313.pyc": {
+      "mode": 384,
+      "sha256": "2ec2485ec43c6c1df8ccc506e278af22164a8ff12c19366969577428f4278d44",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/gps/aiogps.py": {
+      "mode": 420,
+      "sha256": "6529d09bcf3550fb57915a45b02b1692bec0e50f58ae05974e420d54709f21ba",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/gps/client.py": {
+      "mode": 420,
+      "sha256": "e314c812066446a8eaea0ed70a2725deb2f3c4ce49aaf67526f9e4c78622d00f",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/gps/clienthelpers.py": {
+      "mode": 420,
+      "sha256": "74b422dd88e90d8175fbcbfc10115d83b087739883a8b3b7e637a7be5fd44166",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/gps/fake.py": {
+      "mode": 420,
+      "sha256": "0c65e208dd9abafdbd6ba890bec310b0cf74b43ec600efff9480aa2b14c688c5",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/gps/gps.py": {
+      "mode": 448,
+      "sha256": "7f9048a9e7366e03dce3a5b230d7c6ccf2e5407d69873293107d7e3982886e26",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/gps/misc.py": {
+      "mode": 420,
+      "sha256": "ddfed305523afe7edfbf891b1ab6753c4c30dd9faaf7b7898fef50306c182cd0",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/gps/packet.py": {
+      "mode": 448,
+      "sha256": "27b2ab445b00f36cfbe0fb0d8f8521241c85f29709f64b9d9da3e04d2325c679",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/gps/ubx.py": {
+      "mode": 420,
+      "sha256": "ede60cb2b22a84f292c46fdafbbda582cba7d9373f5673fba18618ea7e9f79f0",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/gps/watch_options.py": {
+      "mode": 420,
+      "sha256": "57846c1acc2a2a24e35c7e52fc92180d65c0568796cf004b43e05567368cd711",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp-1.2.5.egg-info": {
+      "mode": 420,
+      "sha256": "8fe18e829f161e6d042d7a9a2259f3fd938d3156a351a29da2cbea2ddf6879d7",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/__init__.py": {
+      "mode": 420,
+      "sha256": "e408b43770f68c8adc85cbf9fc14a05a786b5fc021574ade83bab2e668422ae2",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/__init__.cpython-313.pyc": {
+      "mode": 420,
+      "sha256": "549a4b5be431bef07cadc125fbfe0178a83018c78c9197e2ba738c20ddaa576a",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/__init__.cpython-313.pyo": {
+      "mode": 420,
+      "sha256": "549a4b5be431bef07cadc125fbfe0178a83018c78c9197e2ba738c20ddaa576a",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/agentx.cpython-313.pyc": {
+      "mode": 420,
+      "sha256": "903bdae81b34d9de7044bf20950589a1b685bcb520634b589604683f7920d4df",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/agentx.cpython-313.pyo": {
+      "mode": 420,
+      "sha256": "903bdae81b34d9de7044bf20950589a1b685bcb520634b589604683f7920d4df",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/agentx_packet.cpython-313.pyc": {
+      "mode": 420,
+      "sha256": "b031d14b348c05222f5f205e17f6db774d05f3ab505fc0aed3e3d656b4c94673",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/agentx_packet.cpython-313.pyo": {
+      "mode": 420,
+      "sha256": "b031d14b348c05222f5f205e17f6db774d05f3ab505fc0aed3e3d656b4c94673",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/control.cpython-313.pyc": {
+      "mode": 420,
+      "sha256": "6830173a4d0646174f8a838b6aeac96d25aa6cd92f33a77a497076ab782052b4",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/control.cpython-313.pyo": {
+      "mode": 420,
+      "sha256": "6830173a4d0646174f8a838b6aeac96d25aa6cd92f33a77a497076ab782052b4",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/magic.cpython-313.pyc": {
+      "mode": 420,
+      "sha256": "63b92b2d01ef4216421a710b520daef882675531d0e1b6965b4d06d283c93181",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/magic.cpython-313.pyo": {
+      "mode": 420,
+      "sha256": "63b92b2d01ef4216421a710b520daef882675531d0e1b6965b4d06d283c93181",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/packet.cpython-313.pyc": {
+      "mode": 420,
+      "sha256": "b72c3e1e9409be61314d4df473411f8b2b5d05cde731995466b5bf4413ac5c74",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/packet.cpython-313.pyo": {
+      "mode": 420,
+      "sha256": "b72c3e1e9409be61314d4df473411f8b2b5d05cde731995466b5bf4413ac5c74",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/poly.cpython-313.pyc": {
+      "mode": 420,
+      "sha256": "bdf5b80d6f7b5b87d4e3e5b405de750a7ac9f01535c6144e55997726be714e97",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/poly.cpython-313.pyo": {
+      "mode": 420,
+      "sha256": "bdf5b80d6f7b5b87d4e3e5b405de750a7ac9f01535c6144e55997726be714e97",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/statfiles.cpython-313.pyc": {
+      "mode": 420,
+      "sha256": "cd67f92711ae8d73cdfc66a72a45e143fa7851d73d71a4df099a11a89e0d8c01",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/statfiles.cpython-313.pyo": {
+      "mode": 420,
+      "sha256": "cd67f92711ae8d73cdfc66a72a45e143fa7851d73d71a4df099a11a89e0d8c01",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/util.cpython-313.pyc": {
+      "mode": 420,
+      "sha256": "51649316dfa376a4072a2124d0b5210cef945528ecc27d629b45218e32549875",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/util.cpython-313.pyo": {
+      "mode": 420,
+      "sha256": "51649316dfa376a4072a2124d0b5210cef945528ecc27d629b45218e32549875",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/agentx.py": {
+      "mode": 420,
+      "sha256": "b7e3bbc092a96168e852a25ad2ad6b9e012015adc41322d0f6fb1b8703b10a61",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/agentx_packet.py": {
+      "mode": 420,
+      "sha256": "9ff84f2724ad9ecb54203ef586751be970b787482923e449bdde36b1e5d9beb9",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/control.py": {
+      "mode": 420,
+      "sha256": "3f79d015b916091882c6f6113ed97dffefa8a321e2b25e3490622a17bbe25da8",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/magic.py": {
+      "mode": 420,
+      "sha256": "04be78d6e7f61e5ffee88b5cb7b6c861521036cb0964bac920e5f4ed9e1724a2",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/ntpc.cpython-313-aarch64-linux-gnu.so": {
+      "mode": 493,
+      "sha256": "a28745d8135e2190419e92ab47e0159443a83daecda315a1c71058999a39f72c",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/packet.py": {
+      "mode": 420,
+      "sha256": "2484e24e352b80990b7cbf0ddf64b62cbde0adc87fc86824d01a81acaa8a7485",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/poly.py": {
+      "mode": 420,
+      "sha256": "8c70fc958777afdf19c37e8c4f19fe6f1921630ddd8b16c135bb833913ff0494",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/statfiles.py": {
+      "mode": 420,
+      "sha256": "56b5f8eb780f114ba7070c6973331f827173bd9090d42646d6942d3abf8da658",
+      "type": "file"
+    },
+    "usr/local/lib/python3.13/dist-packages/ntp/util.py": {
+      "mode": 420,
+      "sha256": "6172547eb8b7c1e346b49136d52dc86ca867c8459a62df1d6fb7a177cd191638",
+      "type": "file"
+    },
+    "usr/local/libexec/timeservice.py": {
+      "mode": 493,
+      "sha256": "47b55a58112267c430363704433de17f25d807d32e577f8bb79d458b86d0a46b",
+      "type": "file"
+    },
+    "usr/local/sbin/gpsd": {
+      "mode": 448,
+      "sha256": "33ce3e6975043fb08223860609d57d5ed0e7961d124caff2e26bcc81fa50ba5f",
+      "type": "file"
+    },
+    "usr/local/sbin/gpsdctl": {
+      "mode": 448,
+      "sha256": "e1cf1f746fe4730967b8fcaa8dd11904b625136e89068b12630b1c0705fdfd60",
+      "type": "file"
+    },
+    "usr/local/sbin/ntpd": {
+      "mode": 493,
+      "sha256": "ce03c8f0d7d7898424235b414f24d05b8867113706e5bb646dd273f6caf28c2a",
+      "type": "file"
+    },
+    "usr/local/share/gpsd/doc/AUTHORS": {
+      "mode": 420,
+      "sha256": "d896a36b003ae71e0eb69b11722eafff4d4b3d6c406efba8b760892f8dc8035d",
+      "type": "file"
+    },
+    "usr/local/share/gpsd/doc/COPYING": {
+      "mode": 420,
+      "sha256": "fdf339997bbca9eaf507476b82fbcac608fc39a3d89b86b51e16db4c9f933716",
+      "type": "file"
+    },
+    "usr/local/share/gpsd/doc/NEWS": {
+      "mode": 420,
+      "sha256": "4d1871c75fa4c3cff225cd55d0f4ebe465e08a929fbc031ee4e0cb2d35257cad",
+      "type": "file"
+    },
+    "usr/local/share/gpsd/doc/README.adoc": {
+      "mode": 420,
+      "sha256": "d59dcd67081297a58979b93e3b37989a3d01e85493e8960370c4aca6ce00df46",
+      "type": "file"
+    },
+    "usr/local/share/gpsd/doc/SECURITY.md": {
+      "mode": 420,
+      "sha256": "f2b5b88d762278d7e1962226b25a1439062671d3cad7c8a232bec89081ea232b",
+      "type": "file"
+    },
+    "usr/local/share/gpsd/doc/SUPPORT.adoc": {
+      "mode": 420,
+      "sha256": "e26ac2969e9b27ff5e15a47423f0f60a9e0aa2794f10d120626d2b624df5c503",
+      "type": "file"
+    },
+    "usr/local/share/gpsd/doc/build.adoc": {
+      "mode": 420,
+      "sha256": "7ab27f58a70c421f76d5e820aef29fae33638e89b86f65ed153f816b61c31cd2",
+      "type": "file"
+    },
+    "usr/local/share/gpsd/doc/example1.c.txt": {
+      "mode": 420,
+      "sha256": "1aacd50c4d26acd7edc6811e3f5f5c1815c13d11dec05c2815b9c2c519926349",
+      "type": "file"
+    },
+    "usr/local/share/gpsd/doc/example2.py.txt": {
+      "mode": 420,
+      "sha256": "0c9ad4195cd567a42d6886b49f3064dd0128f54a49a2204ebe23ed5a362c5cf2",
+      "type": "file"
+    },
+    "usr/local/share/gpsd/icons/gpsd-logo.png": {
+      "mode": 420,
+      "sha256": "448bdb95a43ede4e94ef7da4040c96e0c355ccf9b037e6fa8702e579218aa92e",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/cgps.1": {
+      "mode": 384,
+      "sha256": "c8b5d28696521c5ebce41c98f2195910f8cf94ea85e0f731d4875d3ef120e0e4",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/gegps.1": {
+      "mode": 384,
+      "sha256": "82a5b7249b15312d55216322ebb4250844983c7cb6b3e6d1a18db965f1c61f85",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/gps.1": {
+      "mode": 384,
+      "sha256": "318f508de897f9102cbdf5a8b60dbb1a86aa6e6dd6dba02e87b9986c35258cc7",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/gps2udp.1": {
+      "mode": 384,
+      "sha256": "18a783bc67aa2fafeb6a64073574f4ee414f43c556771e4a5ab88c097573a8fa",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/gpscat.1": {
+      "mode": 384,
+      "sha256": "9397ef7db9bb44205c66decc1ec97364eed0b6520961740445722aa769e17eec",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/gpscsv.1": {
+      "mode": 384,
+      "sha256": "e692e804a93ef18080044c5b9e318b046520f9b6ffff5706f64fbc07648036cf",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/gpsctl.1": {
+      "mode": 384,
+      "sha256": "be597de030e846cdaf2ec74c725f6afc68b01a01c50c36c765dd251a018fd300",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/gpsdebuginfo.1": {
+      "mode": 384,
+      "sha256": "b2a1b83942c814ce4d7dbeb5e7de4b094a9489373e824ceab626fbba992758d9",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/gpsdecode.1": {
+      "mode": 384,
+      "sha256": "3b38c08d9687e33a15b00062eee478ba97a86a6cb8d3ed30cdd26bc779f50541",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/gpsfake.1": {
+      "mode": 384,
+      "sha256": "7f589a0f322068d4292d01847b5c5529f69e3ce2d8f0b93424501c8711ad4c3f",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/gpslogntp.1": {
+      "mode": 384,
+      "sha256": "1a5a3072566866cc6af6e18e223a19b3247e4d890935ac3ab4778ca3fc81bedc",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/gpsmon.1": {
+      "mode": 384,
+      "sha256": "99a56a9bc783d3e2daabf7a068f217b65359bfe25816f00fd22531e20a1bbf25",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/gpspipe.1": {
+      "mode": 384,
+      "sha256": "69c5e9209983480456ca67502bb327d3eda2476ec4710e653398ad8179e9d2c6",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/gpsplot.1": {
+      "mode": 384,
+      "sha256": "b304d453d442210f6fbee68f7141465b73eb0949bb5085ec1d1de6624c78d0ef",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/gpsprof.1": {
+      "mode": 384,
+      "sha256": "dcdf49db4408227349fae7bc8af2ee62806c13ecddf1874f7e70b09fcfc0794d",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/gpsrinex.1": {
+      "mode": 384,
+      "sha256": "4660b81f647b5248ec3f0604eb0a474b449c4f62b6dc7433c89ae8cdd6836e32",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/gpssnmp.1": {
+      "mode": 384,
+      "sha256": "cee33572242e7b62020001f184fe1d1a5d9c3c4c8b0e8cf06d9f6ceb96ed4358",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/gpssubframe.1": {
+      "mode": 384,
+      "sha256": "5663fbd42f10fe4e1fe86ba4483d92f663f177ee755c84b67623715e44ce4ef0",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/gpxlogger.1": {
+      "mode": 384,
+      "sha256": "382910a70153a257e2e31580f83040e628ca2f30214313928432a57574fbd630",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/lcdgps.1": {
+      "mode": 384,
+      "sha256": "95d4164289ca9aa065041115f4e3eafdf239a01207148c3f2f7b545e7b082020",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/ntpdig.1": {
+      "mode": 420,
+      "sha256": "c7e52ceb59a3d2db910b4ef9607244a47b9b340c473b9cbd0f166e6666f81641",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/ntploggps.1": {
+      "mode": 420,
+      "sha256": "54f8f22fa1e0de1bdf8bc358df1ffd2020a78a82a7dced9eb4a7d6cf704f8590",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/ntplogtemp.1": {
+      "mode": 420,
+      "sha256": "b37e5ce2accab5b380b7679551ec5cb389e973e149066a7abf44c92174168d37",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/ntpmon.1": {
+      "mode": 420,
+      "sha256": "9ce008f6ece83609f9a8d0b9beb949291443094b09f203d93f5f303c13706535",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/ntpq.1": {
+      "mode": 420,
+      "sha256": "decbc423bbf9d7026b867247c6cd8492b061e8d10431137841ffc9e13a195e23",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/ntpshmmon.1": {
+      "mode": 384,
+      "sha256": "12b8f799a05f88a216cf6b2fa153a8ba66e8960a477266533af38a419ffd0300",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/ntpsweep.1": {
+      "mode": 420,
+      "sha256": "2a16148d11c62bba821e2eb9a279282c47ad066bf57a28e6b49970e45e48e29b",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/ntptrace.1": {
+      "mode": 420,
+      "sha256": "a7e3e7ab4e254b9c7187f87d64e10db72c6f40b49207f1c93c9b05f09c13bd8c",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/ntpviz.1": {
+      "mode": 420,
+      "sha256": "e5856e9bbb57d01310c36cc7a40d026a99049b0761257ed5b261a8dbde8bcd0f",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/ubxtool.1": {
+      "mode": 384,
+      "sha256": "fb33aa995596d370f6b2e2856c350492d819754c64cd5ce92d9b08afedab5152",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/xgps.1": {
+      "mode": 384,
+      "sha256": "d81d33669a717817b1b4f505166a6399a40f0b883ef2f102d682a0b142caa0d3",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/xgpsspeed.1": {
+      "mode": 384,
+      "sha256": "f1fe6bdc8c810b1eb335614832ecbe158d011223fb682ef7a36551d1cfb276d7",
+      "type": "file"
+    },
+    "usr/local/share/man/man1/zerk.1": {
+      "mode": 384,
+      "sha256": "d71cf9166a80d2de201200bf9daf5ccb0a1ed798b3e489e4a6b6c5e5e58c3bdf",
+      "type": "file"
+    },
+    "usr/local/share/man/man3/libQgpsmm.3": {
+      "mode": 384,
+      "sha256": "7b43b09202b1ce003ddf2ca9531025530fb3390cfbf93c777c2605e6f7675312",
+      "type": "file"
+    },
+    "usr/local/share/man/man3/libgps.3": {
+      "mode": 384,
+      "sha256": "0e040b169a2c6a2a7479f24f180d5a47cf52ae8e0f29718cb494612b5afab1a6",
+      "type": "file"
+    },
+    "usr/local/share/man/man3/libgpsmm.3": {
+      "mode": 384,
+      "sha256": "7b43b09202b1ce003ddf2ca9531025530fb3390cfbf93c777c2605e6f7675312",
+      "type": "file"
+    },
+    "usr/local/share/man/man5/gpsd_json.5": {
+      "mode": 384,
+      "sha256": "d38723548cdf83639f5ebcd45f96346d4cedfaf33588f2205243c8f989414e69",
+      "type": "file"
+    },
+    "usr/local/share/man/man5/ntp.conf.5": {
+      "mode": 420,
+      "sha256": "36307a8c8af94a3145f17459292f7f47d45b13d9b0d0d76cf4b9b4563d6e4023",
+      "type": "file"
+    },
+    "usr/local/share/man/man5/ntp.keys.5": {
+      "mode": 420,
+      "sha256": "f3caf30bf0ea583b574a214d08373c84d0d04634a634cd51026f524cba8d3bfd",
+      "type": "file"
+    },
+    "usr/local/share/man/man8/gpsd.8": {
+      "mode": 384,
+      "sha256": "c10b55fe73f7a5576af12112ba512e8ce3d4baa53e24ab828bb4bb44d013365c",
+      "type": "file"
+    },
+    "usr/local/share/man/man8/gpsdctl.8": {
+      "mode": 384,
+      "sha256": "17fa3a4a77c03b8c82a77ba5ec3439f453406a95ea7330dc09ee854244985127",
+      "type": "file"
+    },
+    "usr/local/share/man/man8/gpsinit.8": {
+      "mode": 384,
+      "sha256": "39313772475f0649b90f1659e9d37054bcf2f1da505be843d8904546c828c69d",
+      "type": "file"
+    },
+    "usr/local/share/man/man8/ntpd.8": {
+      "mode": 420,
+      "sha256": "c7a38a7a0186562a03808010d4a8d0a4d091f439caa41949fda741d422a3ff51",
+      "type": "file"
+    },
+    "usr/local/share/man/man8/ntpfrob.8": {
+      "mode": 420,
+      "sha256": "163fa1f26528908a19e549097ecafe0d22b700016808682b7bbccc8731154e76",
+      "type": "file"
+    },
+    "usr/local/share/man/man8/ntpkeygen.8": {
+      "mode": 420,
+      "sha256": "e793798a1e9372d41ad59e0de47e8b4bc0aedef1e059b47b3646fa5b5bb91a23",
+      "type": "file"
+    },
+    "usr/local/share/man/man8/ntpleapfetch.8": {
+      "mode": 420,
+      "sha256": "cbe69a52bff3476962e116ec7e670bdd133204db9699ce3e35f153c0d1b841d0",
+      "type": "file"
+    },
+    "usr/local/share/man/man8/ntpsnmpd.8": {
+      "mode": 420,
+      "sha256": "b7a2498e748774305b0b3906bf7332c332637ef789315608afe25cc1ebe07713",
+      "type": "file"
+    },
+    "usr/local/share/man/man8/ntptime.8": {
+      "mode": 420,
+      "sha256": "7b5ec4b2172140ff45681a23b90497c0ceeb0ff10cf29d1f6efce179d200ccea",
+      "type": "file"
+    },
+    "usr/local/share/man/man8/ntpwait.8": {
+      "mode": 420,
+      "sha256": "f5ff90a3d3a5f6cedb36beb4a2812b0d2c725a3bc44fb27223e53506cca1349a",
+      "type": "file"
+    },
+    "usr/local/share/man/man8/ppscheck.8": {
+      "mode": 384,
+      "sha256": "014b4b74eae903728abab9ba0b4cc63131fb924d721022fd2be869dc3d2ffec6",
+      "type": "file"
+    },
+    "usr/local/share/snmp/mibs/gpsd/GPSD-MIB": {
+      "mode": 420,
+      "sha256": "cd0c40a488d3bb78d0cf718914dd58e1b2029f37aefe53fe2f003973326bf6f6",
+      "type": "file"
+    }
+  },
+  "helpers": {
+    "clockmaker.py": "da1f343a772c324698c98bce3f9abd0848247a97ade10f929621538c191ff03f",
+    "pinup.py": "cd563ff6d937ab90313102458e514022855f3b822f7b8825d5b05fd6d9f6bcf5",
+    "timeservice.py": "47b55a58112267c430363704433de17f25d807d32e577f8bb79d458b86d0a46b"
+  },
+  "hostname": "j2-svntp1",
+  "kernel": "6.18.50+rpt-rpi-v8",
+  "operation": "build",
+  "packages": {
+    "asciidoctor": "2.0.23-1",
+    "bc": "1.07.1-4+b1",
+    "binutils": "2.44-3",
+    "bison": "2:3.8.2+dfsg-1+b2",
+    "build-essential": "12.12",
+    "g++": "4:14.2.0-1",
+    "gcc": "4:14.2.0-1",
+    "libc6:arm64": "2.41-12+rpt1+deb13u4",
+    "libcap-dev:arm64": "1:2.75-10+deb13u1+b3",
+    "libncurses-dev:arm64": "6.5+20250216-2",
+    "libseccomp-dev:arm64": "2.6.0-2",
+    "libssl-dev:arm64": "3.5.7-1~deb13u3+rpt1",
+    "m4": "1.4.19-8",
+    "make": "4.4.1-2",
+    "pkg-config:arm64": "1.8.1-4",
+    "pps-tools": "1.0.2-2+b1",
+    "python3": "3.13.5-1",
+    "python3-dev": "3.13.5-1",
+    "python3-serial": "3.5-2",
+    "scons": "4.8.1+dfsg-1"
+  },
+  "profile_sha256": "8f4527efed9e4c7f912994f89fa537d4f4f75145b1c477c5d076b7114af12077",
+  "python": {
+    "executable": "/usr/bin/python3",
+    "module_directory": "/usr/local/lib/python3.13/dist-packages",
+    "version": [
+      3,
+      13
+    ]
+  },
+  "schema": 1,
+  "sources": {
+    "gpsd": {
+      "archive": "gpsd-3.27.5.tar.gz",
+      "archive_format": "publisher-release",
+      "archive_root": "gpsd-3.27.5",
+      "commit": "1d622f5b2c7bf79fc117185be10048e7d4e73c66",
+      "options": [
+        "magic_hat=yes",
+        "shm_export=yes",
+        "gpsdclients=yes",
+        "python=yes",
+        "ncurses=yes",
+        "qt=no",
+        "xgps=no",
+        "systemd=no",
+        "dbus_export=no",
+        "usb=no",
+        "bluez=no",
+        "manbuild=yes",
+        "shared=yes",
+        "control_socket=yes",
+        "libgpsmm=no",
+        "timeservice=yes",
+        "ashtech=yes",
+        "earthmate=yes",
+        "evermore=yes",
+        "fury=yes",
+        "fv18=yes",
+        "garmin=yes",
+        "garmintxt=yes",
+        "geostar=yes",
+        "greis=yes",
+        "itrax=yes",
+        "navcom=yes",
+        "nmea2000=yes",
+        "oncore=yes",
+        "sirf=yes",
+        "skytraq=yes",
+        "superstar2=yes",
+        "tnt=yes",
+        "tripmate=yes",
+        "tsip=yes",
+        "aivdm=yes",
+        "gpsclock=yes",
+        "isync=yes",
+        "clientdebug=yes",
+        "implicit_link=yes"
+      ],
+      "origin": "https://download.savannah.gnu.org/releases/gpsd/gpsd-3.27.5.tar.gz",
+      "primary_fingerprint": "1256D5A74A01B8145593C41EADA54A78FC147EEE",
+      "release_tag": "release-3.27.5",
+      "sha256": "409873f5048462ef1ac413a51ab35caa8b50b31be62b3347bee1cc2994e7c649",
+      "signing_fingerprint": "4294517B6DE2093E930EBAE3AEFDB88FB63FB83B",
+      "tag_object": "3314b31c14f04ab2bd205cdd264fb4a514d69847",
+      "version": "3.27.5"
+    },
+    "ntpsec": {
+      "archive": "ntpsec-1.2.5.tar.gz",
+      "archive_format": "publisher-release",
+      "archive_root": "ntpsec-1.2.5",
+      "commit": "42b5703303c8c7e6513f3a119cfab670924dd7be",
+      "options": [
+        "--refclock=shm",
+        "--disable-doc",
+        "--enable-manpage",
+        "--enable-pylib=ext",
+        "--enable-seccomp",
+        "--disable-mdns-registration"
+      ],
+      "origin": "https://ftp.ntpsec.org/pub/releases/ntpsec-1.2.5.tar.gz",
+      "primary_fingerprint": "E57235D22764129FA4F2F4D17F52608ED0E49D76",
+      "release_tag": "NTPsec_1_2_5",
+      "sha256": "6fb191cddaf607e7754b1f6915a1a61dc4018b3e4eef3d2ffacec961c9682949",
+      "signing_fingerprint": "E57235D22764129FA4F2F4D17F52608ED0E49D76",
+      "tag_object": "02640b93d44a71da8ad313ff6a8c147e7938dc31",
+      "version": "1.2.5"
+    }
+  }
+}

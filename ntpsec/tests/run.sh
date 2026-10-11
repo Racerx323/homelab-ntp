@@ -2,11 +2,21 @@
 set -Eeuo pipefail
 test_dir=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)
 export PYTHONDONTWRITEBYTECODE=1
+python3 -I -B "$test_dir/test_installation_assets.py"
 python3 -I -B "$test_dir/test_inspect_node.py"
 python3 -I -B "$test_dir/test_pre_rebuild.py"
 python3 -I -B "$test_dir/test_inspect_trixie.py"
 python3 -I -B "$test_dir/test_resolve_trixie_packages.py"
 python3 -I -B "$test_dir/test_metadata_elevation.py"
+python3 -I -B "$test_dir/test_hook_closure.py"
+python3 -I -B "$test_dir/test_debconf_answers.py"
+python3 -I -B "$test_dir/test_foundation_install.py"
+python3 -I -B "$test_dir/test_foundation_continuation.py"
+python3 -I -B "$test_dir/test_source_build_stage.py"
+python3 -I -B "$test_dir/test_source_acceptance_continuation.py"
+python3 -I -B "$test_dir/test_prepare_source_acceptance.py"
+python3 -I -B "$test_dir/test_prepare_foundation.py"
+python3 -I -B "$test_dir/test_prepare_source_build.py"
 if command -v systemd-analyze >/dev/null 2>&1; then
     systemd-analyze verify "$test_dir/../templates/timeservice.service"
 fi

@@ -1,0 +1,16 @@
+# Render reviewed values; install /etc/msmtprc as root:root 0600.
+# This LAN Mailrise model has no authentication/TLS; approve its network scope.
+defaults
+aliases /etc/aliases
+
+account apprise
+host @MAILRISE_HOST@
+port @MAILRISE_PORT@
+from %H@@MAIL_DOMAIN@
+domain %H
+set_from_header on
+allow_from_override off
+auth off
+tls off
+
+account default: apprise

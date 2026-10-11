@@ -13,8 +13,8 @@ import time
 
 BOUND_JSON = '@BOUND_JSON@'
 DATA_JSON = '@DATA_JSON@'
-ATTEMPT = '/var/lib/ntp-metadata-elevation/attempt-v4'
-POLICY = '/etc/sudoers.d/ntp-metadata-attempt-v4'
+ATTEMPT = '/var/lib/ntp-metadata-elevation/attempt-v6'
+POLICY = '/etc/sudoers.d/ntp-metadata-attempt-v6'
 
 
 def sha(data):

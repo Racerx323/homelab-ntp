@@ -102,28 +102,107 @@ class ResolutionTests(unittest.TestCase):
             spec = {'releases': [{'base_uri': 'http://repo.test/debian', 'suite': 'trixie',
                                  'codename': 'trixie', 'components': ['main']}]}
             blocks = []
+            checksums = {}
             for arch in ('arm64', 'armhf'):
                 path = lists / ('Packages-' + arch)
                 path.write_bytes(b'authenticated-index-fixture')
+                checksums['main/binary-' + arch + '/Packages'] = {
+                    'size': path.stat().st_size, 'sha256': ENGINE.digest(path)}
                 blocks.append('Identifier: Packages\nTrusted: yes\nCodename: trixie\n'
                               'Component: main\nArchitecture: ' + arch + '\nFilename: ' + str(path) +
                               '\nURI: http://repo.test/debian/dists/trixie/main/binary-' + arch + '/Packages')
             text = '\n\n'.join(blocks)
-            self.assertEqual(len(ENGINE.authenticated_indexes(text, lists, spec)), 2)
+            releases = [{'uri': 'http://repo.test/debian/dists/trixie/InRelease',
+                         'package_checksums': checksums}]
+            self.assertEqual(len(ENGINE.authenticated_indexes(text, lists, spec, releases)), 2)
             for invalid in (blocks[0], text.replace('Trusted: yes', 'Trusted: no'),
                             text.replace('Codename: trixie', 'Codename: other'),
-                            text.replace(str(lists), directory)):
+                            text.replace(str(lists), directory), text + '\n\n' + blocks[0],
+                            text.replace('Component: main', 'Component: unknown'),
+                            text.replace('/main/binary-', '/other/binary-')):
                 with self.assertRaises(ValueError):
-                    ENGINE.authenticated_indexes(invalid, lists, spec)
+                    ENGINE.authenticated_indexes(invalid, lists, spec, releases)
+            checksums['main/binary-armhf/Packages']['size'] += 1
+            with self.assertRaisesRegex(ValueError, 'signed checksum/size'):
+                ENGINE.authenticated_indexes(text, lists, spec, releases)
+            checksums['main/binary-armhf/Packages']['size'] -= 1
+            path.write_bytes(b'changed-after-acquisition')
+            with self.assertRaisesRegex(ValueError, 'signed checksum/size'):
+                ENGINE.authenticated_indexes(text, lists, spec, releases)
+
+    def test_absent_indexes_require_exact_signed_empty_entries(self):
+        with tempfile.TemporaryDirectory() as directory:
+            lists = Path(directory)
+            spec = {'releases': [{'base_uri': 'http://repo.test/debian', 'suite': 'trixie',
+                                 'codename': 'trixie', 'components': ['main', 'contrib']}]}
+            data = b'nonempty-main-index'
+            checksums = {}
+            blocks = []
+            for component in ('main', 'contrib'):
+                for arch in ('arm64', 'armhf'):
+                    content = data if component == 'main' else b''
+                    checksums[component + '/binary-' + arch + '/Packages'] = {
+                        'size': len(content), 'sha256': hashlib.sha256(content).hexdigest()}
+                    if component == 'main':
+                        path = lists / ('Packages-' + arch)
+                        path.write_bytes(content)
+                        blocks.append('Identifier: Packages\nTrusted: yes\nCodename: trixie\n'
+                                      'Component: main\nArchitecture: ' + arch + '\nFilename: ' + str(path) +
+                                      '\nURI: http://repo.test/debian/dists/trixie/main/binary-' + arch + '/Packages')
+            releases = [{'uri': 'http://repo.test/debian/dists/trixie/InRelease',
+                         'package_checksums': checksums}]
+            text = '\n\n'.join(blocks)
+            self.assertEqual(len(ENGINE.authenticated_indexes(text, lists, spec, releases)), 2)
+            # Empty targets may also be present, but their bytes must match.
+            empty = lists / 'Empty'
+            empty.write_bytes(b'')
+            empty_block = blocks[0].replace('Component: main', 'Component: contrib').replace(
+                '/main/binary-', '/contrib/binary-').replace(str(lists / 'Packages-arm64'), str(empty))
+            self.assertEqual(len(ENGINE.authenticated_indexes(text + '\n\n' + empty_block, lists, spec, releases)), 3)
+            for bad in ({'size': 1, 'sha256': hashlib.sha256(b'x').hexdigest()},
+                        {'size': 0, 'sha256': 'a' * 64}, None):
+                with self.subTest(checksum=bad):
+                    key = 'contrib/binary-arm64/Packages'
+                    if bad is None:
+                        checksums.pop(key)
+                    else:
+                        checksums[key] = bad
+                    with self.assertRaises(ValueError):
+                        ENGINE.authenticated_indexes(text, lists, spec, releases)
+            checksums[key] = {'size': 0, 'sha256': hashlib.sha256(b'').hexdigest()}
+            with self.assertRaises(ValueError):
+                ENGINE.authenticated_indexes(blocks[0], lists, spec, releases)
 
     def test_native_simulation_rejects_removals_and_unknown_shapes(self):
         self.assertEqual(ENGINE.simulated_changes('Inst seed (1.0 Debian:13/stable [all])\n'),
                          {('seed', '1.0', 'all')})
         self.assertEqual(ENGINE.simulated_changes('Inst libx:arm64 [0.9] (1.0 Debian:13/stable [arm64])'),
                          {('libx', '1.0', 'arm64')})
-        for text in ('Remv time-daemon\n', 'Inst unparsed\n'):
+        self.assertEqual(ENGINE.simulated_changes('Inst libx:arm64 [0.9] (1.0 Debian:13/stable [arm64]) []'),
+                         {('libx', '1.0', 'arm64')})
+        for text in ('Remv time-daemon\n', 'Inst unparsed\n',
+                     'Inst seed (1.0 Debian:13/stable [all]) [broken-package]',
+                     'Inst seed (1.0 Debian:13/stable [all]) [ ]',
+                     'Inst seed (1.0 Debian:13/stable [all]) [] extra',
+                     'Inst seed (1.0 Debian:13/stable [all]) [] []'):
             with self.assertRaises(ValueError):
                 ENGINE.simulated_changes(text)
+
+    def test_retained_native_simulations_all_groups(self):
+        fixture = Path(__file__).parent / 'fixtures/native-simulations-v5.json'
+        groups = json.loads(fixture.read_text())
+        self.assertEqual({g['group']: len(g['install_lines']) for g in groups},
+                         {'hardware': 4, 'mail': 10, 'munin': 42, 'needrestart': 7,
+                          'source_build': 37, 'watchdog': 1})
+        for group in groups:
+            with self.subTest(group=group['group']):
+                changes = ENGINE.simulated_changes('\n'.join(group['install_lines']))
+                self.assertEqual(len(changes), len(group['install_lines']))
+                for line in group['install_lines']:
+                    package, version, architecture = next(iter(ENGINE.simulated_changes(line)))
+                    self.assertEqual(package, line.split()[1].split(':')[0])
+                    self.assertIn('(' + version + ' ', line)
+                    self.assertIn('[' + architecture + '])', line)
 
     def test_signed_release_shape_identity_and_expiry(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -136,13 +215,20 @@ class ResolutionTests(unittest.TestCase):
                     'Origin: Debian\nSuite: stable\nCodename: trixie\n'
                     'Date: Sat, 10 Oct 2026 00:00:00 UTC\n'
                     'Valid-Until: Sat, 17 Oct 2026 00:00:00 UTC\n'
+                    'SHA256:\n ' + hashlib.sha256(b'').hexdigest() + ' 0 main/binary-arm64/Packages\n'
                     '-----BEGIN PGP SIGNATURE-----\nfixture\n-----END PGP SIGNATURE-----\n')
             path.write_text(body)
             now = ENGINE.parsedate_to_datetime('Sat, 10 Oct 2026 12:00:00 UTC').timestamp()
-            self.assertEqual(len(ENGINE.release_evidence(lists, spec, now)), 1)
+            releases = ENGINE.release_evidence(lists, spec, now)
+            self.assertEqual(releases[0]['package_checksums']['main/binary-arm64/Packages'],
+                             {'sha256': hashlib.sha256(b'').hexdigest(), 'size': 0})
+            entry = ' ' + hashlib.sha256(b'').hexdigest() + ' 0 main/binary-arm64/Packages\n'
             for invalid in (body.replace('Origin: Debian', 'Origin: other'),
                             body.replace('Codename: trixie', 'Codename: other'),
-                            body.replace('17 Oct', '09 Oct'), body.replace('PGP SIGNED MESSAGE', 'unsigned')):
+                            body.replace('17 Oct', '09 Oct'), body.replace('PGP SIGNED MESSAGE', 'unsigned'),
+                            body.replace(entry, entry + entry),
+                            body.replace(entry, entry.replace(' 0 ', ' -1 ')),
+                            body.replace(entry, entry.replace(hashlib.sha256(b'').hexdigest(), 'bad-hash'))):
                 path.write_text(invalid)
                 with self.assertRaises(ValueError):
                     ENGINE.release_evidence(lists, spec, now)
@@ -188,9 +274,13 @@ class ResolutionTests(unittest.TestCase):
         self.assertEqual(plan['changes'], [['seed', '1.0', 'all']])
         self.assertTrue(plan['recommends_enabled'])
         self.assertFalse(next(v for v in plan['versions'] if v['package'] == 'leaf')['changed'])
+        suffixed = ENGINE.dependency_plan(self.make_cache(), ['seed'],
+                                         'Inst seed (1.0 Debian:13/stable [all]) []', {'repo.test'})
+        self.assertEqual(suffixed, plan)
 
     def test_solver_disagreement_untrusted_archive_and_missing_dependencies_fail(self):
         for cache, native in ((self.make_cache(), 'Inst seed (2.0 Debian:13/stable [all])'),
+                              (self.make_cache(), 'Inst seed (2.0 Debian:13/stable [all]) []'),
                               (self.make_cache(trusted=False), 'Inst seed (1.0 Debian:13/stable [all])'),
                               (self.make_cache(missing=True), 'Inst seed (1.0 Debian:13/stable [all])')):
             with self.assertRaises(ValueError):
