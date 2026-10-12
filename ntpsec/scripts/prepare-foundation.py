@@ -1,9 +1,9 @@
 #!/usr/bin/python3
-"""Prepare the 46-package foundation and bounded PPS/bc supplements offline."""
+"""Prepare a foundation transaction from a repo recipe and fresh bound evidence."""
 import argparse
-import base64
 import copy
 import hashlib
+import importlib.util
 import io
 import json
 import os
@@ -11,9 +11,9 @@ from pathlib import Path
 import re
 import subprocess
 import tarfile
+import tempfile
 import time
 
-ORIGIN_SHA = '5d93117ed7433099b296325f4229d6efde4e02b7344176030552007cc65767a4'
 REPO = Path(__file__).resolve().parents[2]
 
 
@@ -21,205 +21,401 @@ def sha(data):
     return hashlib.sha256(data).hexdigest()
 
 
+def module(name, filename):
+    definition = importlib.util.spec_from_file_location(name, REPO / 'ntpsec/scripts' / filename)
+    result = importlib.util.module_from_spec(definition)
+    definition.loader.exec_module(result)
+    return result
+
+
+worker = module('foundation_worker', 'foundation-install.py')
+fetcher = module('foundation_assets', 'fetch-installation-assets.py')
+answers = module('foundation_answers', 'read-debconf-answers.py')
+
+
+def read_bytes(path, limit=4 * 1024 * 1024):
+    if any(p.is_symlink() for p in (path, *path.parents)) or not path.is_file():
+        raise ValueError('regular input without symlink ancestors required')
+    with path.open('rb') as stream:
+        data = stream.read(limit + 1)
+    if len(data) > limit:
+        raise ValueError('preparation input exceeds bound')
+    return data
+
+
+def bound_json(path, expected):
+    raw = read_bytes(path)
+    if not re.fullmatch(r'[0-9a-f]{64}', expected) or sha(raw) != expected:
+        raise ValueError('reviewed evidence hash mismatch')
+    return json.loads(raw)
+
+
+def validate_snapshot(snapshot, recipe, recipe_sha, epoch):
+    if (snapshot['schema'] != 1 or snapshot['recipe_sha256'] != recipe_sha
+            or type(snapshot['collected_epoch']) is not int
+            or not -300 <= epoch - snapshot['collected_epoch'] <= recipe['maximum_snapshot_age_seconds']
+            or snapshot['os'] != recipe['os'] or snapshot['architecture'] != recipe['architecture']
+            or snapshot['machine'] != recipe['machine'] or snapshot['caller'] != recipe['caller']
+            or not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,62}', snapshot['hostname'])
+            or not re.fullmatch(r'[A-Za-z0-9.+_-]+-v8', snapshot['kernel'])
+            or not re.fullmatch(r'[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}', snapshot['boot_id'])
+            or snapshot['dpkg_audit'] != '' or snapshot['active_time_daemons'] != []):
+        raise ValueError('fresh reviewed Pi 4 Trixie snapshot required')
+    if (not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9.-]*', snapshot['ssh']['host'])
+            or not re.fullmatch(r'SHA256:[A-Za-z0-9+/]{43}', snapshot['ssh']['fingerprint'])):
+        raise ValueError('observed SSH endpoint/key identity required')
+    baseline = snapshot['baseline']
+    if not isinstance(baseline, dict) or not baseline:
+        raise ValueError('observed package inventory required')
+    for name, value in baseline.items():
+        if (not re.fullmatch(r'[a-z0-9][a-z0-9+.-]+(?::arm64|:armhf)?', name)
+                or not isinstance(value, list) or len(value) != 2
+                or not re.fullmatch(r'[A-Za-z0-9.+:~_-]+', value[0])
+                or value[1] not in ('ii ', 'rc ')
+                or name.split(':')[0] in recipe['prohibited_packages']
+                or name.split(':')[0].startswith('ntpsec')):
+            raise ValueError('unsupported, conflicting or unresolved package inventory')
+    records = snapshot['inputs']
+    inputs = {r['path']: r for r in records}
+    if len(records) > 512 or len(inputs) != len(records) or not set(recipe['required_inputs']).issubset(inputs):
+        raise ValueError('missing/duplicate protected observation')
+    for path, record in inputs.items():
+        if (not path.startswith('/') or str(Path(path)) != path or '..' in Path(path).parts
+                or Path(path) == Path('/var/cache/debconf/passwords.dat')):
+            raise ValueError('unsafe or password-database input')
+        if record.get('absent') is True:
+            if set(record) != {'path', 'absent'}:
+                raise ValueError('ambiguous absent input')
+        elif (set(record) != {'path', 'sha256', 'uid', 'gid', 'mode'}
+              or record['uid'] != 0 or record['gid'] != 0
+              or not re.fullmatch(r'[0-9a-f]{64}', record['sha256'])
+              or not re.fullmatch(r'0o[0-7]{3,4}', record['mode'])
+              or int(record['mode'], 8) & 0o022):
+            raise ValueError('unprotected observed input')
+    if any(inputs[p].get('absent') is not True for p in recipe['required_absent_inputs']):
+        raise ValueError('unreviewed policy/helper present')
+    for p in ('/etc/apt/listchanges.conf', '/var/lib/dpkg/status', '/etc/debconf.conf',
+              '/usr/share/debconf/debconf.conf'):
+        if inputs[p].get('absent'):
+            raise ValueError('required protected state missing')
+    directories = snapshot['directories']
+    if set(directories) != set(recipe['required_directories']):
+        raise ValueError('configuration directory coverage mismatch')
+    for path, names in directories.items():
+        if (not isinstance(names, list) or names != sorted(set(names))
+                or any(not re.fullmatch(r'[A-Za-z0-9_.+~-]+', n) or n in ('.', '..') for n in names)
+                or any(path + '/' + n not in inputs or inputs[path + '/' + n].get('absent') for n in names)):
+            raise ValueError('configuration directory member lacks protected observation')
+    coverage = snapshot['coverage']
+    for key, prefixes in (('debconf_modules', ('/usr/share/perl5/Debconf/',)),
+                          ('listchanges_modules', ('/usr/share/apt-listchanges/', '/usr/lib/python3/dist-packages/apt_listchanges/')),
+                          ('keyrings', ('/usr/share/keyrings/', '/etc/apt/keyrings/', '/etc/apt/trusted.gpg')),
+                          ('source_files', ('/etc/apt/sources.list',))):
+        paths = coverage[key]
+        if (not isinstance(paths, list) or not paths or len(set(paths)) != len(paths)
+                or any(p not in inputs or inputs[p].get('absent') or not p.startswith(prefixes) for p in paths)):
+            raise ValueError('hook/source/key coverage incomplete')
+    source_paths = {'/etc/apt/sources.list.d/' + n for n in directories['/etc/apt/sources.list.d']}
+    if not inputs['/etc/apt/sources.list'].get('absent'):
+        source_paths.add('/etc/apt/sources.list')
+    if set(coverage['source_files']) != source_paths:
+        raise ValueError('source coverage differs from observed file set')
+    answers.normal_database(snapshot['answers']['structure'])
+    structure = snapshot['answers']['structure']
+    template = {'driver': 'File', 'name': 'templatedb', 'filename': '/var/cache/debconf/templates.dat',
+                'mode': '644', 'omitted_fields': []}
+    if len(structure) != 5 or template not in structure:
+        raise ValueError('reviewed normal template File backend required')
+    if set(snapshot['answers']['expected']) != {'watchdog/run', 'watchdog/restart',
+            'watchdog/run_keepalive', 'watchdog/module', 'msmtp/apparmor'}:
+        raise ValueError('five reviewed non-secret Debconf answers required')
+    if (snapshot['network']['boot'] != snapshot['boot_id']
+            or set(snapshot['network']) != {'boot', 'units', 'addresses', 'routes'}
+            or set(snapshot['automatic_updates']) != set((*worker.TIMERS, *worker.SERVICES))
+            or not isinstance(snapshot['foreign_architectures'], list)
+            or snapshot['foreign_architectures'] != sorted(set(snapshot['foreign_architectures']))
+            or set(snapshot['foreign_architectures']) - {'armhf'}):
+        raise ValueError('observed network/update/architecture state required')
+    return inputs
+
+
+def package_requirements(recipe, manifest):
+    fetcher.validate_manifest(manifest)
+    assets = [r for r in manifest['assets'] if recipe['asset_group'] in r['groups']]
+    rows = []
+    for asset in assets:
+        row = {k: asset[k] for k in ('package', 'version', 'architecture', 'size', 'sha256')}
+        row['binary_package'] = row['package']
+        row['file'] = worker.archive_file(row)
+        rows.append(row)
+    if (not assets or len({r['package'] for r in rows}) != len(rows)
+            or not set(recipe['roots']).issubset(r['package'] for r in rows)
+            or any(r['package'] in recipe['prohibited_packages'] or r['package'].startswith('ntpsec')
+                   or r['architecture'] not in ('arm64', 'all') for r in rows)):
+        raise ValueError('complete pinned foundation requirement set required')
+    return rows, {r['package']: r for r in assets}
+
+
+def delta(requirements, baseline):
+    missing = []
+    for row in requirements:
+        matches = [(n, v) for n, v in baseline.items()
+                   if n in (row['package'], row['package']+':'+row['architecture'])]
+        if not matches:
+            missing.append(row)
+        elif len(matches) != 1 or matches[0][1] != [row['version'], 'ii ']:
+            raise ValueError('installed prerequisite version/status conflict; no implicit upgrade')
+    return missing
+
+
+def package_fields(text):
+    fields = {}
+    for line in text.splitlines():
+        name, separator, value = line.partition(':')
+        if separator and name in ('Package', 'Version', 'Architecture', 'Multi-Arch'):
+            if name in fields:
+                raise ValueError('duplicate package control field')
+            fields[name] = value.strip()
+    if not {'Package', 'Version', 'Architecture'}.issubset(fields):
+        raise ValueError('complete package control identity required')
+    if fields.get('Multi-Arch', 'no') not in ('no', 'same', 'foreign', 'allowed'):
+        raise ValueError('unsupported Multi-Arch field')
+    return fields
+
+
+def validate_resolution(resolution, snapshot_sha, manifest_sha, snapshot, recipe, requirements, missing):
+    report = resolution['report']
+    if (resolution['schema'] != 1 or resolution['snapshot_sha256'] != snapshot_sha
+            or resolution['asset_manifest_sha256'] != manifest_sha
+            or report['snapshot_sha256'] != snapshot_sha
+            or report['identity']['hostname'] != snapshot['hostname']
+            or type(report['controller_epoch']) is not int
+            or not snapshot['collected_epoch'] - 300 <= report['controller_epoch'] < snapshot['collected_epoch'] + recipe['maximum_snapshot_age_seconds']
+            or report['state'] != 'completed'
+            or any(report.get(k) is not True for k in ('metadata_accepted', 'metadata_unchanged',
+                'installed_state_unchanged', 'boot_unchanged', 'approved_inputs_unchanged'))
+            or report['groups']['foundation']['accepted'] is not True):
+        raise ValueError('accepted fresh signed-resolution/continuity evidence required')
+    plan = report['groups']['foundation']['plan']
+    expected = {(r['package'], r['version'], r['architecture']) for r in missing}
+    changes = [tuple(r) for r in plan['changes']]
+    if (set(plan['roots']) != set(recipe['roots']) or len(plan['roots']) != len(set(plan['roots']))
+            or plan['recommends_enabled'] is not True or len(changes) != len(set(changes))
+            or set(changes) != expected):
+        raise ValueError('resolved changes differ from exact missing prerequisites')
+    versions = {(r['package'], r['version'], r['architecture']): r for r in plan['versions']}
+    if len(versions) != len(plan['versions']) or not 0 < len(versions) <= 1024:
+        raise ValueError('duplicate or unbounded selected dependency graph')
+    pins = {r['package']: r for r in requirements}
+    for identity, row in versions.items():
+        name, version, architecture = identity
+        if name in recipe['prohibited_packages'] or name.startswith('ntpsec'):
+            raise ValueError('source application selected as dependency')
+        if row['changed'] is not (identity in expected):
+            raise ValueError('selected dependency change flag mismatch')
+        if name in pins:
+            fields = package_fields(row['record'])
+            if (fields['Package'], fields['Version'], fields['Architecture']) != identity:
+                raise ValueError('selected Packages record identity mismatch')
+            binary = name+':'+architecture if fields.get('Multi-Arch') == 'same' else name
+            if fields.get('Multi-Arch') == 'same' and architecture != 'arm64':
+                raise ValueError('unsupported Multi-Arch prerequisite')
+            pins[name]['binary_package'] = binary
+        if identity in expected:
+            if row['archive_sha256'] != pins[name]['sha256']:
+                raise ValueError('resolved archive digest differs from pinned asset')
+        else:
+            matches = [v for n, v in snapshot['baseline'].items() if n in (name, name+':'+architecture)]
+            if matches != [[version, 'ii ']]:
+                raise ValueError('dependency not satisfied by exact observed inventory')
+        for edge in row['dependencies']:
+            selected = [tuple(v) for v in edge['selected_satisfiers']]
+            if (edge['type'] not in ('PreDepends', 'Depends', 'Recommends')
+                    or any(v not in versions for v in selected)
+                    or (not selected and edge['type'] != 'Recommends')):
+                raise ValueError('incomplete selected dependency closure')
+    if any((r['package'], r['version'], r['architecture']) not in versions for r in requirements):
+        raise ValueError('required pinned prerequisite absent from selected closure')
+    commands = [r for r in report['commands'] if r.get('label') == 'simulate_foundation']
+    if len(commands) != 1 or commands[0]['rc'] != 0 or commands[0].get('error') is not None:
+        raise ValueError('one successful combined native simulation required')
+    worker.validate_simulation(commands[0]['output'], {'packages': missing, 'baseline': snapshot['baseline']})
+
+
 def candidate_effects(archives, paths):
     found = {}
     for filename in archives:
-        raw = subprocess.check_output(['/usr/bin/dpkg-deb', '--fsys-tarfile', str(filename)])
-        with tarfile.open(fileobj=io.BytesIO(raw)) as t:
-            for m in t.getmembers():
-                name = '/' + m.name.removeprefix('./')
+        raw = subprocess.check_output(['/usr/bin/dpkg-deb', '--fsys-tarfile', str(filename)], timeout=30)
+        with tarfile.open(fileobj=io.BytesIO(raw)) as archive:
+            for entry in archive.getmembers():
+                name = '/' + entry.name.removeprefix('./')
                 if name in paths:
-                    if not m.isfile() or m.uid != 0 or m.gid != 0:
-                        raise ValueError('protected candidate file required')
-                    found[name] = {'path': name, 'sha256': sha(t.extractfile(m).read()),
-                                   'uid': 0, 'gid': 0, 'mode': oct(m.mode)}
+                    if (name in found or not entry.isfile() or entry.uid != 0 or entry.gid != 0
+                            or entry.mode & 0o022):
+                        raise ValueError('unique protected candidate file required')
+                    found[name] = sha(archive.extractfile(entry).read())
     if set(found) != set(paths):
         raise ValueError('declared package effects missing from verified archives')
     return found
 
 
-def construct(origin, pps, pps_data, repo_files, effects, scope, epoch, inventory=None,
-              bc=None, bc_data=None):
-    spec = copy.deepcopy(origin)
-    row = dict(pps)
-    row.pop('archive_file', None)
-    row.update(binary_package='pps-tools', file='archives/pps-tools_' + row['version'] + '_arm64.deb')
-    if row['architecture'] != 'arm64' or sha(pps_data) != row['sha256'] or len(pps_data) != row['size']:
-        raise ValueError('bound PPS archive mismatch')
-    if row['version'] != '1.0.2-2+b1':
-        raise ValueError('reviewed PPS version required')
-    bc_row = None
-    if scope in ('foundation', 'bc-supplement'):
-        if (bc is None or bc_data is None or bc['package'] != 'bc' or bc['architecture'] != 'arm64'
-                or not re.fullmatch(r'[A-Za-z0-9.+:~_-]+', bc['version'])
-                or sha(bc_data) != bc['sha256'] or len(bc_data) != bc['size']):
-            raise ValueError('bound bc archive required')
-        bc_row = {k:bc[k] for k in ('package', 'version', 'architecture', 'sha256', 'size')}
-        bc_row.update(binary_package='bc', file='archives/bc_' + bc['version'].replace(':', '%3a') + '_arm64.deb')
-    spec.update(scope=scope, prepared_epoch=epoch, expires_epoch=epoch + 86400)
-    stages = {'foundation': '/var/lib/ntp-foundation-v6', 'pps-supplement': '/var/lib/ntp-foundation-pps-v3',
-              'bc-supplement': '/var/lib/ntp-foundation-bc-v1'}
-    if scope not in stages:
-        raise ValueError('foundation, PPS supplement or bc supplement only')
-    stage = stages[scope]
-    spec['stage'] = stage
-    data = dict(repo_files)
-    expected = b"STAGE = Path('/var/lib/ntp-foundation-v6')"
-    if data['worker.py'].count(expected) != 1:
-        raise ValueError('canonical stage marker missing')
-    data['worker.py'] = data['worker.py'].replace(expected, ('STAGE = Path(' + repr(stage) + ')').encode())
-    if scope == 'foundation':
-        if len(spec['packages']) != 44 or {'pps-tools', 'bc'} & {r['package'] for r in spec['packages']}:
-            raise ValueError('fixed historical foundation required')
-        spec['packages'].extend((row, bc_row))
-        for path, info in effects.items():
-            spec['package_created_inputs'][path] = info['sha256']
-    else:
-        count = 677 if scope == 'pps-supplement' else 678
-        names = {n.split(':')[0] for n in inventory or {}}
-        if (inventory is None or len(inventory) != count
-                or ('pps-tools' in names if scope == 'pps-supplement' else 'bc' in names or 'pps-tools' not in names)):
-            raise ValueError('accepted foundation inventory required for supplement')
-        spec['baseline'] = inventory
-        spec['packages'] = [row if scope == 'pps-supplement' else bc_row]
-        spec['prior_needrestart_sha256'] = sha(repo_files['prior-needrestart.conf'])
-        data.pop('prior-needrestart.conf')
-        # Expected package effects become protected pre-state, without changing
-        # the immutable original specification or its executed artifacts.
-        new_path = '/usr/include/sys/timepps.h' if scope == 'pps-supplement' else '/usr/bin/bc'
-        additions = {p:r for p,r in effects.items() if p not in (new_path, '/usr/bin/bc')}
-        inputs = {r['path']:r for r in spec['inputs']}
-        inputs.update(additions)
-        # Dpkg inventory/status cleanliness binds the post-foundation database;
-        # no original pre-install database hash is reused as current evidence.
-        inputs['/var/lib/dpkg/status'].pop('sha256', None)
-        spec['inputs'] = list(inputs.values())
-        for directory in spec['directories']:
-            names = set(spec['directories'][directory])
-            names.update(Path(p).name for p in additions if str(Path(p).parent) == directory)
-            if directory == '/etc/needrestart/conf.d':
-                names.add('zz-ntp-policy.conf')
-            spec['directories'][directory] = sorted(names)
-        spec['package_created_inputs'] = {new_path: effects[new_path]['sha256']}
-    if scope != 'pps-supplement':
-        # bc's generated postinst/postrm calls update-menus if present. That
-        # helper is outside this transaction; reject it before changing controls.
-        for directory in ('/usr/bin', '/usr/sbin', '/bin', '/sbin'):
-            spec['inputs'].append({'path': directory + '/update-menus', 'absent': True})
-    data.pop('prior-needrestart.conf', None)
-    if scope != 'bc-supplement':
-        data[row['file']] = pps_data
-    if bc_row is not None:
-        data[bc_row['file']] = bc_data
-    spec['members'] = {name:sha(value) for name,value in data.items()}
-    return spec, data
+def render(source, replacements):
+    for before, after in replacements:
+        if source.count(before) != 1:
+            raise ValueError('canonical template binding missing or ambiguous')
+        source = source.replace(before, after)
+    return source
+
+
+def prepare(recipe_path, manifest_path, snapshot_path, snapshot_sha, resolution_path, resolution_sha,
+            cache, known_hosts, output, operation_id, epoch=None):
+    epoch = int(time.time()) if epoch is None else epoch
+    recipe_raw, manifest_raw = read_bytes(recipe_path), read_bytes(manifest_path)
+    recipe, manifest = json.loads(recipe_raw), json.loads(manifest_raw)
+    if (recipe['schema'] != 1 or not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,47}', operation_id)
+            or type(recipe['approval_window_seconds']) is not int
+            or not 0 < recipe['approval_window_seconds'] <= 86400
+            or type(recipe['maximum_snapshot_age_seconds']) is not int
+            or not 0 < recipe['maximum_snapshot_age_seconds'] <= 86400
+            or recipe['architecture'] != 'arm64' or recipe['machine'] != 'aarch64'
+            or not set(worker.PROHIBITED).issubset(recipe['prohibited_packages'])
+            or recipe['caller'] != {'user': 'ama', 'uid': 1000}):
+        raise ValueError('reviewed recipe and safe exclusive operation ID required')
+    snapshot = bound_json(snapshot_path, snapshot_sha)
+    inputs = validate_snapshot(snapshot, recipe, sha(recipe_raw), epoch)
+    requirements, assets = package_requirements(recipe, manifest)
+    missing = delta(requirements, snapshot['baseline'])
+    resolution = bound_json(resolution_path, resolution_sha)
+    validate_resolution(resolution, snapshot_sha, sha(manifest_raw), snapshot, recipe, requirements, missing)
+    host_data = read_bytes(known_hosts, 4096)
+    fields = host_data.decode('ascii').split()
+    if len(fields) != 3 or fields[:2] != [snapshot['ssh']['host'], 'ssh-ed25519']:
+        raise ValueError('observed single SSH host key required')
+    import base64
+    fingerprint = 'SHA256:' + base64.b64encode(hashlib.sha256(base64.b64decode(fields[2], validate=True)).digest()).decode().rstrip('=')
+    if fingerprint != snapshot['ssh']['fingerprint']:
+        raise ValueError('observed SSH key fingerprint mismatch')
+    stage = '/var/lib/ntp-foundation-' + operation_id
+    data = {'worker.py': render(read_bytes(REPO/'ntpsec/scripts/foundation-install.py'), [
+        (b"STAGE = Path('/var/lib/ntp-foundation-v6')", ('STAGE = Path(' + repr(stage) + ')').encode()),
+        (b"APPROVED_HOSTNAME = 'j2-svntp1'", ('APPROVED_HOSTNAME = ' + repr(snapshot['hostname'])).encode())]),
+        'hook-helper.py': read_bytes(REPO/'ntpsec/scripts/hook-closure-preflight.py'),
+        'answer-helper.py': read_bytes(REPO/'ntpsec/scripts/read-debconf-answers.py'),
+        'listchanges.conf': read_bytes(REPO/'ntpsec/templates/apt-listchanges-transaction.conf'),
+        'needrestart.conf': read_bytes(REPO/'ntpsec/templates/needrestart-pi4.conf')}
+    for row in missing:
+        asset = assets[row['package']]
+        path = cache / asset['filename']
+        if any(p.is_symlink() for p in (path, *path.parents)):
+            raise ValueError('symlink archive/cache rejected')
+        fetcher.verify_file(path, asset)
+        value = read_bytes(path, 40 * 1024 * 1024)
+        if sha(value) != row['sha256'] or len(value) != row['size']:
+            raise ValueError('archive changed during preparation')
+        data[row['file']] = value
+    effect_paths = {p for row in missing for p in recipe['package_effects'].get(row['package'], [])}
+    # Declare both existing and absent effect destinations in the reviewed snapshot.
+    all_effects = {p for paths in recipe['package_effects'].values() for p in paths}
+    if not all_effects.issubset(inputs):
+        raise ValueError('package effect pre-state coverage missing')
+    # Native inspection uses the verified bytes that will be bundled, never a
+    # reopened mutable cache. The private temporary copies are always removed.
+    with tempfile.TemporaryDirectory(prefix='ntp-foundation-inspection-') as directory:
+        archives = []
+        for row in missing:
+            path = Path(directory)/Path(row['file']).name
+            fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+            with os.fdopen(fd, 'wb') as stream:
+                stream.write(data[row['file']])
+            fields = package_fields(subprocess.check_output(['/usr/bin/dpkg-deb', '--field', str(path),
+                'Package', 'Version', 'Architecture', 'Multi-Arch'], timeout=30).decode())
+            binary = fields['Package']+':'+fields['Architecture'] if fields.get('Multi-Arch') == 'same' else fields['Package']
+            if ((fields['Package'], fields['Version'], fields['Architecture']) !=
+                    (row['package'], row['version'], row['architecture']) or binary != row['binary_package']):
+                raise ValueError('verified archive control differs from signed package record')
+            archives.append(path)
+        effects = candidate_effects(archives, effect_paths)
+    missing_names = {r['package'] for r in missing}
+    for name, paths in recipe['package_effects'].items():
+        if name not in missing_names and name in assets and any(inputs[p].get('absent') for p in paths):
+            raise ValueError('installed prerequisite packaged input missing')
+    for path, checksum in effects.items():
+        if not inputs[path].get('absent') and inputs[path]['sha256'] != checksum:
+            raise ValueError('new package would replace an unreviewed existing input')
+    expected = copy.deepcopy(snapshot['baseline'])
+    expected.update({r['binary_package']: [r['version'], 'ii '] for r in missing})
+    spec = {'schema': 2, 'scope': 'foundation', 'stage': stage,
+        'hostname': snapshot['hostname'], 'kernel': snapshot['kernel'], 'boot_id': snapshot['boot_id'],
+        'prepared_epoch': epoch, 'expires_epoch': min(epoch + recipe['approval_window_seconds'],
+            snapshot['collected_epoch'] + recipe['maximum_snapshot_age_seconds']),
+        'baseline': snapshot['baseline'], 'requirements': requirements, 'packages': missing,
+        'expected_inventory': expected, 'inputs': snapshot['inputs'], 'directories': snapshot['directories'],
+        'answers': snapshot['answers'], 'foreign_architectures': snapshot['foreign_architectures'],
+        'network': snapshot['network'], 'automatic_updates': snapshot['automatic_updates'],
+        'minimum_free_bytes': recipe['minimum_free_bytes'], 'package_created_inputs': effects,
+        'needrestart_version': recipe['needrestart_report_version'],
+        'members': {name: sha(value) for name, value in data.items()}}
+    policy = inputs[str(worker.NRPOLICY)]
+    if not policy.get('absent'):
+        spec['prior_needrestart_sha256'] = policy['sha256']
+    validation = {'__name__': 'prepared_foundation'}
+    exec(compile(data['worker.py'], 'prepared-worker.py', 'exec'), validation)
+    validation['validate_spec'](spec)
+    launcher = render(read_bytes(REPO/'ntpsec/scripts/run-foundation-install.py'), [
+        (b"FINGERPRINT = 'SHA256:yXiID8RObBoIejVpvr2KesaqIlocbSORyemD5dKrEys'", ('FINGERPRINT = ' + repr(fingerprint)).encode()),
+        (b"TARGET = 'ama@10.1.0.137'", ('TARGET = ' + repr('ama@' + snapshot['ssh']['host'])).encode()),
+        (b"['10.1.0.137', 'ssh-ed25519']", repr([snapshot['ssh']['host'], 'ssh-ed25519']).encode())])
+    for name, value in data.items():
+        if name.endswith('.py'):
+            compile(value, name, 'exec')
+    compile(launcher, 'launcher.py', 'exec')
+    provenance = {'recipe_sha256': sha(recipe_raw), 'asset_manifest_sha256': sha(manifest_raw),
+        'snapshot_sha256': snapshot_sha, 'resolution_sha256': resolution_sha,
+        'preparation_script_sha256': sha(Path(__file__).read_bytes()), 'target_contact': False,
+        'required_packages': len(requirements), 'package_changes': len(missing)}
+    spec['preparation'] = {k: provenance[k] for k in ('recipe_sha256', 'asset_manifest_sha256',
+                                                   'snapshot_sha256', 'resolution_sha256')}
+    data.update({'spec.json': (json.dumps(spec, sort_keys=True) + '\n').encode(),
+        'known_hosts': host_data, 'launcher.py': launcher,
+        'recipe.json': recipe_raw, 'installation-assets.json': manifest_raw,
+        'snapshot.json': read_bytes(snapshot_path), 'resolution.json': read_bytes(resolution_path),
+        'tests.py': read_bytes(REPO/'ntpsec/tests/test_foundation_install.py'),
+        'native-protocol.txt': read_bytes(REPO/'ntpsec/tests/fixtures/native-foundation-protocol-v1.txt'),
+        'provenance.json': (json.dumps(provenance, sort_keys=True, indent=2) + '\n').encode()})
+    if sha(data['snapshot.json']) != snapshot_sha or sha(data['resolution.json']) != resolution_sha:
+        raise ValueError('evidence changed during preparation')
+    data['manifest.json'] = (json.dumps({n: sha(v) for n, v in data.items()}, sort_keys=True) + '\n').encode()
+    if any(p.is_symlink() for p in (output, *output.parents)):
+        raise ValueError('symlink output path rejected')
+    output.mkdir(mode=0o700)  # Validation completes before the first persistent write.
+    for name, value in data.items():
+        path = output / name
+        path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_NOFOLLOW, 0o600)
+        with os.fdopen(fd, 'wb') as stream:
+            stream.write(value)
+    return {'output': str(output), 'stage': stage, 'packages': len(missing),
+            'state': 'prepared_for_review', 'target_contact': False, 'execution_authorized': False}
 
 
 def main():
     os.umask(0o077)
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--evidence', type=Path, required=True)
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument('--recipe', type=Path, default=REPO/'ntpsec/configs/foundation-recipe.json')
+    parser.add_argument('--asset-manifest', type=Path, default=REPO/'ntpsec/configs/installation-assets.json')
+    parser.add_argument('--snapshot', type=Path, required=True)
+    parser.add_argument('--snapshot-sha256', required=True)
+    parser.add_argument('--resolution', type=Path, required=True)
+    parser.add_argument('--resolution-sha256', required=True)
+    parser.add_argument('--asset-cache', type=Path, required=True)
+    parser.add_argument('--known-hosts', type=Path, required=True)
+    parser.add_argument('--operation-id', required=True)
     parser.add_argument('--output', type=Path, required=True)
-    parser.add_argument('--scope', choices=('foundation', 'pps-supplement', 'bc-supplement'), required=True)
-    parser.add_argument('--bc-manifest', type=Path)
-    parser.add_argument('--bc-manifest-sha256')
     args = parser.parse_args()
-    base = args.evidence
-    original = base / 'foundation-install-v4'
-    raw = (original / 'foundation-install.tar').read_bytes()
-    if sha(raw) != ORIGIN_SHA:
-        raise ValueError('original sealed foundation drift')
-    with tarfile.open(fileobj=io.BytesIO(raw)) as t:
-        files = {m.name:t.extractfile(m).read() for m in t.getmembers()}
-    manifest = json.loads(files['manifest.json'])
-    if set(manifest) != set(files) - {'manifest.json'} or any(sha(files[n]) != h for n,h in manifest.items()):
-        raise ValueError('original sealed member mismatch')
-    origin = json.loads(files['spec.json'])
-    plan = json.loads((base/'installation-plan-v1/plan.json').read_text())
-    pps = next(r for p in plan['phase_candidates'] for r in p.get('changed_packages',[]) if r['package']=='pps-tools')
-    pps_data = Path(pps['archive_file']).read_bytes()
-    if sha(pps_data) != pps['sha256']:
-        raise ValueError('retained PPS archive drift')
-    bc = bc_data = None
-    if args.scope != 'pps-supplement':
-        if args.bc_manifest is None or args.bc_manifest_sha256 is None:
-            raise ValueError('authenticated bc package manifest required')
-        raw_bc = args.bc_manifest.read_bytes()
-        if sha(raw_bc) != args.bc_manifest_sha256:
-            raise ValueError('bc package manifest drift')
-        bc = json.loads(raw_bc)
-        bc_data = Path(bc['archive_file']).read_bytes()
-        if sha(bc_data) != bc['sha256'] or len(bc_data) != bc['size']:
-            raise ValueError('retained bc archive drift')
-    candidate_paths = set(origin['package_created_inputs']) | {'/etc/dpkg/dpkg.cfg.d/needrestart',
-                       '/usr/lib/needrestart/dpkg-status', '/usr/include/sys/timepps.h'}
-    archives = [original/r['file'] for r in origin['packages']] + [Path(pps['archive_file'])]
-    if bc is not None:
-        archives.append(Path(bc['archive_file']))
-        candidate_paths.add('/usr/bin/bc')
-    effects = candidate_effects(archives, candidate_paths)
-    common = {'hook-helper.py': (REPO/'ntpsec/scripts/hook-closure-preflight.py').read_bytes(),
-              'answer-helper.py': (REPO/'ntpsec/scripts/read-debconf-answers.py').read_bytes(),
-              'listchanges.conf': (REPO/'ntpsec/templates/apt-listchanges-transaction.conf').read_bytes()}
-    common.update({'worker.py':(REPO/'ntpsec/scripts/foundation-install.py').read_bytes(),
-                   'needrestart.conf':(REPO/'ntpsec/templates/needrestart-pi4.conf').read_bytes(),
-                   'prior-needrestart.conf':files['needrestart.conf']})
-    current = None
-    if args.scope == 'foundation':
-        common.update({r['file']:files[r['file']] for r in origin['packages']})
-    else:
-        result = json.loads((base/'foundation-acceptance-v1/recover-result.json').read_text())
-        if result['worker_status'] != 0 or result['report']['state'] != 'foundation_accepted_after_continuation':
-            raise ValueError('accepted original completion required')
-        ev = result['report']['evidence']['acceptance-continuation-v1-packages.stdout']
-        inventory = base64.b64decode(ev['base64'], validate=True)
-        if sha(inventory) != ev['sha256']:
-            raise ValueError('accepted inventory evidence drift')
-        current = {n:[v,s] for n,v,s in (line.split('\t') for line in inventory.decode().splitlines())}
-        expected = dict(origin['baseline'])
-        expected.update({r['binary_package']:[r['version'],'ii '] for r in origin['packages']})
-        if current != expected:
-            raise ValueError('accepted original package delta mismatch')
-        if args.scope == 'bc-supplement':
-            accepted = base / 'foundation-pps-v2'
-            result = json.loads((accepted / 'install-result.json').read_text())
-            if (result['worker_status'] != 0 or result['transport_exit_status'] != 0
-                    or result['report']['state'] != 'foundation_accepted'):
-                raise ValueError('accepted PPS completion required')
-            ev = result['report']['evidence']
-            cleanup = ev['installation-cleanup.json']
-            raw_cleanup = base64.b64decode(cleanup['base64'], validate=True)
-            if sha(raw_cleanup) != cleanup['sha256'] or not all(json.loads(raw_cleanup).values()):
-                raise ValueError('accepted PPS cleanup required')
-            captured = ev['installation-packages.stdout']
-            raw_inventory = base64.b64decode(captured['base64'], validate=True)
-            if sha(raw_inventory) != captured['sha256']:
-                raise ValueError('accepted PPS inventory drift')
-            current = {n:[v,s] for n,v,s in (l.split('\t') for l in raw_inventory.decode().splitlines())}
-            expected[pps['package']] = [pps['version'], 'ii ']
-            if current != expected:
-                raise ValueError('accepted PPS package delta mismatch')
-            common['prior-needrestart.conf'] = (accepted/'needrestart.conf').read_bytes()
-    spec,data = construct(origin,pps,pps_data,common,effects,args.scope,int(time.time()),current,bc,bc_data)
-    args.output.mkdir(mode=0o700)  # Never overwrite a prepared or executed candidate.
-    for name,value in data.items():
-        path=args.output/name
-        path.parent.mkdir(parents=True,exist_ok=True)
-        path.write_bytes(value)
-    (args.output/'spec.json').write_text(json.dumps(spec,sort_keys=True)+'\n')
-    for name in ('known_hosts','native-alcapt.py'):
-        (args.output/name).write_bytes(files[name])
-    (args.output/'launcher.py').write_bytes(files['launcher.py'])
-    (args.output/'provenance.json').write_text(json.dumps({'origin_bundle_sha256':ORIGIN_SHA,'scope':args.scope,
-         'package_count':len(spec['packages']),'pps_archive_sha256':pps['sha256'],
-         'bc_archive_sha256':bc['sha256'] if bc else None,'package_effects':effects,
-         'bc_manifest_sha256':args.bc_manifest_sha256,
-         'preparation_script_sha256':sha(Path(__file__).read_bytes()),
-         'target_contact':False},sort_keys=True,indent=2)+'\n')
-    names = [*data, 'spec.json', 'known_hosts', 'native-alcapt.py', 'launcher.py', 'provenance.json']
-    (args.output/'manifest.json').write_text(json.dumps(
-        {n:sha((args.output/n).read_bytes()) for n in names}, sort_keys=True)+'\n')
-    print(json.dumps({'output':str(args.output),'scope':args.scope,'packages':len(spec['packages'])}))
+    print(json.dumps(prepare(args.recipe, args.asset_manifest, args.snapshot, args.snapshot_sha256,
+        args.resolution, args.resolution_sha256, args.asset_cache, args.known_hosts,
+        args.output, args.operation_id), sort_keys=True))
 
 
-if __name__=='__main__':main()
+if __name__ == '__main__':
+    main()

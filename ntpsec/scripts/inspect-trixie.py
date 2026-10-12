@@ -62,7 +62,7 @@ COMMANDS = (
 )
 
 
-def check_identity(hostname, release, machine, euid):
+def check_identity(hostname, release, machine, euid, expected_hostname='j2-svntp1'):
     values = {}
     for line in release.splitlines():
         key, separator, value = line.partition('=')
@@ -73,9 +73,9 @@ def check_identity(hostname, release, machine, euid):
             if len(parts) != 1:
                 raise ValueError('malformed OS identity field')
             values[key] = parts[0]
-    if (hostname != 'j2-svntp1' or machine != 'aarch64' or euid == 0
+    if (hostname != expected_hostname or machine != 'aarch64' or euid == 0
             or values != {'ID': 'debian', 'VERSION_ID': '13', 'VERSION_CODENAME': 'trixie'}):
-        raise ValueError('requires non-root j2-svntp1, Debian 13/trixie, aarch64')
+        raise ValueError('requires approved non-root hostname, Debian 13/trixie, aarch64')
     return {'hostname': hostname, 'machine': machine, 'euid': euid, 'os': values}
 
 

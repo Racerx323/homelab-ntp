@@ -16,6 +16,12 @@ UUID = 'c531566d-83b0-4fe1-9582-9a4588f05916'
 
 
 class InspectionTests(unittest.TestCase):
+    def test_explicit_fresh_target_identity_remains_bound(self):
+        self.assertEqual(ENGINE.check_identity('fresh-node', RELEASE, 'aarch64', 1000,
+                                             expected_hostname='fresh-node')['hostname'], 'fresh-node')
+        with self.assertRaises(ValueError):
+            ENGINE.check_identity('other-node', RELEASE, 'aarch64', 1000, expected_hostname='fresh-node')
+
     def test_identity_success_and_rejections(self):
         self.assertEqual(ENGINE.check_identity('j2-svntp1', RELEASE, 'aarch64', 1000)['os']['ID'], 'debian')
         for host, release, arch, uid in (

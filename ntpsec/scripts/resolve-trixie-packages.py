@@ -363,7 +363,10 @@ def run(spec, controller_epoch):
     for roots in spec['groups'].values():
         reject_package_applications(roots)
     identity = inspection.check_identity(socket.gethostname(), inspection.read_file('/etc/os-release').decode(),
-                                         os.uname().machine, spec['caller_uid'])
+                                         os.uname().machine, spec['caller_uid'],
+                                         expected_hostname=spec.get('hostname', 'j2-svntp1'))
+    if 'snapshot_sha256' in spec and not re.fullmatch(r'[0-9a-f]{64}', spec['snapshot_sha256']):
+        raise ValueError('fresh snapshot digest required')
     if abs(time.time() - controller_epoch) > 300 or os.uname().release != spec['kernel']:
         raise ValueError('clock/kernel preflight mismatch')
     if not sys.dont_write_bytecode:
@@ -382,6 +385,7 @@ def run(spec, controller_epoch):
         raise ValueError('configuration file-set drift')
     deadline = time.monotonic() + 660
     report = {'identity': identity, 'controller_epoch': controller_epoch, 'state': 'preflight',
+              'snapshot_sha256': spec.get('snapshot_sha256'),
               'commands': [], 'groups': {}, 'metadata_accepted': False, 'package_mutation_authorized': False}
     baseline = state_hashes()
     boot = inspection.read_file('/proc/sys/kernel/random/boot_id').decode().strip()

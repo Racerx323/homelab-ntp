@@ -42,7 +42,7 @@ def prepare(bundle, expected):
     with tarfile.open(fileobj=io.BytesIO(data), mode='r:') as archive:
         members = archive.getmembers()
         names = [m.name for m in members]
-        if (len(names) != len(set(names)) or len(names) > 60
+        if (len(names) != len(set(names)) or len(names) > 80
                 or any(not m.isfile() or m.size > 40 * 1024 * 1024
                        or not re.fullmatch(r'(?:archives/)?[a-zA-Z0-9_.+%~-]+', m.name) for m in members)
                 or sum(m.size for m in members) > 75 * 1024 * 1024):
@@ -60,7 +60,17 @@ def prepare(bundle, expected):
     if fp != FINGERPRINT or private_file(directory / 'known_hosts', 4096) != files['known_hosts']:
         raise ValueError('pinned host key mismatch')
     spec = json.loads(files['spec.json'])
-    if set(files) != set(spec['members']) | {'spec.json', 'launcher.py', 'known_hosts', 'manifest.json', 'tests.py', 'native-protocol.txt', 'native-alcapt.py', 'review.md'}:
+    extra = {'spec.json', 'launcher.py', 'known_hosts', 'manifest.json', 'tests.py', 'native-protocol.txt', 'review.md'}
+    if spec.get('schema') == 2:
+        extra |= {'recipe.json', 'installation-assets.json', 'snapshot.json', 'resolution.json', 'provenance.json'}
+        provenance = json.loads(files['provenance.json'])
+        for name, field in (('recipe.json', 'recipe_sha256'), ('installation-assets.json', 'asset_manifest_sha256'),
+                            ('snapshot.json', 'snapshot_sha256'), ('resolution.json', 'resolution_sha256')):
+            if digest(files[name]) != provenance[field] or spec['preparation'][field] != provenance[field]:
+                raise ValueError('fresh preparation evidence binding mismatch')
+    else:
+        extra.add('native-alcapt.py')
+    if set(files) != set(spec['members']) | extra:
         raise ValueError('unexpected bundle input set')
     if any(digest(files[n]) != checksum for n, checksum in spec['members'].items()):
         raise ValueError('target input manifest mismatch')

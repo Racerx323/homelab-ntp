@@ -33,7 +33,7 @@ l = load('launcher', 'run-foundation-install.py')
 
 
 def specification():
-    return {'stage': str(w.STAGE), 'hostname': 'j2-svntp1',
+    return {'stage': str(w.STAGE), 'hostname': w.APPROVED_HOSTNAME,
             'expires_epoch': int(time.time()) + 3600,
             'baseline': {'base': ['1', 'ii ']},
             'packages': [{'package': 'pkg' + str(i), 'version': '2:1.0-1',
@@ -161,6 +161,36 @@ class Protocol(unittest.TestCase):
             with self.assertRaises(ValueError):
                 w.package_rows(text)
 
+    def test_fresh_requirements_allow_partial_inventory_and_reject_delta_tampering(self):
+        spec = copy.deepcopy(self.spec)
+        needrestart = dict(spec['packages'][-1], package='needrestart', binary_package='needrestart',
+                          version='3.11-1', file='archives/needrestart_3.11-1_arm64.deb')
+        spec.update(schema=2, requirements=copy.deepcopy(spec['packages'])+[needrestart])
+        spec['baseline']['needrestart'] = ['3.11-1', 'ii ']
+        pps = next(r for r in spec['packages'] if r['package'] == 'pps-tools')
+        spec['baseline']['pps-tools'] = [pps['version'], 'ii ']
+        spec['packages'] = [r for r in spec['packages'] if r['package'] != 'pps-tools']
+        spec['expected_inventory'] = w.expected_inventory(spec)
+        w.validate_spec(spec)
+        changed = copy.deepcopy(spec)
+        changed['packages'].pop()
+        with self.assertRaisesRegex(ValueError, 'delta'): w.validate_spec(changed)
+        changed = copy.deepcopy(spec)
+        changed['expected_inventory']['unplanned'] = ['1', 'ii ']
+        with self.assertRaisesRegex(ValueError, 'inventory'): w.validate_spec(changed)
+
+    def test_fresh_boot_change_rejected_before_mutation(self):
+        spec = dict(self.spec, schema=2, kernel='6.18.50+rpt-rpi-v8',
+                    prepared_epoch=int(time.time()), boot_id='observed-boot')
+        with patch.object(w.os, 'geteuid', return_value=0), patch.object(w.os, 'getegid', return_value=0), \
+             patch.dict(w.os.environ, {'SUDO_USER': 'ama', 'SUDO_UID': '1000'}), \
+             patch.object(w.socket, 'gethostname', return_value=w.APPROVED_HOSTNAME), \
+             patch.object(w.os, 'uname', return_value=type('Uname', (), {'machine': 'aarch64', 'release': spec['kernel']})()), \
+             patch.object(w, 'read', return_value=b'ID=debian\nVERSION_ID="13"\nVERSION_CODENAME=trixie\n'), \
+             patch.object(w, 'boot', return_value='different-boot'):
+            with self.assertRaisesRegex(ValueError, 'boot drift'):
+                w.identity(spec, int(time.time()))
+
 
 class Transaction(unittest.TestCase):
     def setUp(self):
@@ -193,6 +223,21 @@ class Transaction(unittest.TestCase):
         self.assertLess(names.index('acceptance'), names.index('restore_controls'))
         self.assertEqual(self.events[-1][0], 'complete')
         w.check_inputs.assert_called_once_with(self.spec, controls=True)
+
+    def test_satisfied_requirements_do_not_invoke_apt(self):
+        spec = dict(self.spec, schema=2, packages=[], automatic_updates={})
+        with patch.object(w, 'inventory', return_value=spec['baseline']), \
+             patch.object(w, 'run', side_effect=AssertionError('APT must not run without package changes')):
+            w.install(spec)
+        self.assertIn('no-package-changes', [event[0] for event in self.events])
+        self.assertEqual(self.events[-1][0], 'complete')
+
+    def test_fresh_automatic_update_state_drift_precedes_controls(self):
+        spec = dict(self.spec, schema=2, automatic_updates={'observed': 'different'})
+        with self.assertRaisesRegex(ValueError, 'automatic-update state drift'):
+            w.install(spec)
+        w.backup_policies.assert_not_called()
+        self.assertNotIn('pause_updates', [event[0] for event in self.events])
 
     def test_real_validator_hook_checks_the_controlled_input_phase(self):
         data = actions(self.spec)

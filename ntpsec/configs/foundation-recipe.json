@@ -1,0 +1,149 @@
+{
+  "schema": 1,
+  "asset_group": "foundation",
+  "roots": [
+    "build-essential",
+    "bison",
+    "m4",
+    "pkg-config",
+    "python3-dev",
+    "scons",
+    "libssl-dev",
+    "libcap-dev",
+    "libseccomp-dev",
+    "libncurses-dev",
+    "asciidoctor",
+    "python3-serial",
+    "pps-tools",
+    "bc",
+    "needrestart"
+  ],
+  "os": {
+    "ID": "debian",
+    "VERSION_ID": "13",
+    "VERSION_CODENAME": "trixie"
+  },
+  "architecture": "arm64",
+  "machine": "aarch64",
+  "caller": {
+    "user": "ama",
+    "uid": 1000
+  },
+  "maximum_snapshot_age_seconds": 86400,
+  "approval_window_seconds": 86400,
+  "minimum_free_bytes": 1073741824,
+  "prohibited_packages": [
+    "ntp",
+    "ntpsec",
+    "gpsd",
+    "gpsd-clients",
+    "python3-gps"
+  ],
+  "required_directories": [
+    "/etc/apt/apt.conf.d",
+    "/etc/apt/listchanges.conf.d",
+    "/etc/apt/sources.list.d",
+    "/etc/apt/preferences.d",
+    "/etc/dpkg/dpkg.cfg.d",
+    "/etc/needrestart/conf.d",
+    "/etc/apt/keyrings",
+    "/etc/apt/trusted.gpg.d"
+  ],
+  "required_inputs": [
+    "/etc/apt/apt.conf",
+    "/etc/apt/apt.conf.d/01autoremove",
+    "/etc/apt/apt.conf.d/20listchanges",
+    "/etc/apt/apt.conf.d/70debconf",
+    "/etc/apt/listchanges.conf",
+    "/etc/apt/preferences",
+    "/etc/apt/sources.list",
+    "/etc/dpkg/dpkg.cfg",
+    "/etc/needrestart/needrestart.conf",
+    "/usr/lib/needrestart/apt-pinvoke",
+    "/usr/bin/apt-listchanges",
+    "/usr/sbin/dpkg-preconfigure",
+    "/usr/share/debconf/confmodule",
+    "/usr/share/debconf/frontend",
+    "/usr/bin/debconf",
+    "/usr/bin/debconf-apt-progress",
+    "/usr/bin/debconf-copydb",
+    "/usr/bin/debconf-get-selections",
+    "/usr/sbin/invoke-rc.d",
+    "/usr/bin/deb-systemd-invoke",
+    "/usr/bin/deb-systemd-helper",
+    "/usr/sbin/policy-rc.d",
+    "/etc/init.d/watchdog",
+    "/usr/share/watchdog/init.d",
+    "/usr/lib/watchdog/watchdog.sh",
+    "/usr/share/lighttpd/create-mime.assign.pl",
+    "/usr/share/javascript-common/lighttpd.conf",
+    "/usr/share/javascript-common/javascript-common.conf",
+    "/usr/share/apache2/apache2-maintscript-helper",
+    "/usr/sbin/a2enconf",
+    "/usr/sbin/lighty-enable-mod",
+    "/etc/default/watchdog",
+    "/etc/default/wd_keepalive",
+    "/etc/default/msmtpd",
+    "/usr/bin/dpkg",
+    "/usr/bin/dpkg-query",
+    "/usr/bin/systemctl",
+    "/usr/lib/apt/apt-extracttemplates",
+    "/var/lib/dpkg/status",
+    "/var/lib/dpkg/triggers/Unincorp",
+    "/root/.debconfrc",
+    "/etc/debconf.conf",
+    "/usr/share/debconf/debconf.conf",
+    "/usr/lib/systemd/system/apparmor.service",
+    "/usr/lib/systemd/system/apt-daily-upgrade.service",
+    "/usr/lib/systemd/system/apt-daily-upgrade.timer",
+    "/usr/lib/systemd/system/apt-daily.service",
+    "/usr/lib/systemd/system/apt-daily.timer",
+    "/etc/needrestart/conf.d/zz-ntp-policy.conf",
+    "/usr/bin/update-menus",
+    "/usr/sbin/update-menus",
+    "/bin/update-menus",
+    "/sbin/update-menus",
+    "/etc/apt/trusted.gpg"
+  ],
+  "required_absent_inputs": [
+    "/usr/sbin/policy-rc.d",
+    "/root/.debconfrc",
+    "/usr/bin/update-menus",
+    "/usr/sbin/update-menus",
+    "/bin/update-menus",
+    "/sbin/update-menus",
+    "/usr/sbin/a2enconf",
+    "/usr/sbin/lighty-enable-mod"
+  ],
+  "package_effects": {
+    "javascript-common": [
+      "/etc/apache2/conf-available/javascript-common.conf",
+      "/etc/lighttpd/conf-available/90-javascript-alias.conf"
+    ],
+    "needrestart": [
+      "/etc/apt/apt.conf.d/99needrestart",
+      "/etc/needrestart/conf.d/README.needrestart",
+      "/etc/needrestart/needrestart.conf",
+      "/usr/lib/needrestart/apt-pinvoke",
+      "/etc/dpkg/dpkg.cfg.d/needrestart",
+      "/usr/lib/needrestart/dpkg-status"
+    ],
+    "pps-tools": [
+      "/usr/include/sys/timepps.h"
+    ],
+    "bc": [
+      "/usr/bin/bc"
+    ]
+  },
+  "acceptance": [
+    "exact package delta",
+    "clean dpkg audit",
+    "protected inputs and declared package effects",
+    "hook terminal status",
+    "effective list-only Pi 4 needrestart policy with kernel checks and microcode checks disabled",
+    "boot/access/network and listchanges continuity",
+    "temporary policy and automatic-update restoration"
+  ],
+  "recovery": "Inspect terminal state; configure only the exact permitted partial package delta; preserve controls on unresolved package changes; restore controls after accepted recovery; never replay installation.",
+  "needrestart_report_version": "3.11"
+}

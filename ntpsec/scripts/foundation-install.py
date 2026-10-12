@@ -17,6 +17,7 @@ import time
 import types
 
 STAGE = Path('/var/lib/ntp-foundation-v6')
+APPROVED_HOSTNAME = 'j2-svntp1'
 OWNER = 0
 DEADLINE = float('inf')
 TIMERS = ('apt-daily.timer', 'apt-daily-upgrade.timer')
@@ -214,15 +215,32 @@ def validate_spec(spec):
     rows = spec['packages']
     names = [r['package'] for r in rows]
     scope = spec.get('scope', 'foundation')
-    required_count = 46 if scope == 'foundation' else 1
     required = {'pps-tools', 'bc'} if scope == 'foundation' else {
         'pps-supplement': {'pps-tools'}, 'bc-supplement': {'bc'}}.get(scope, set())
-    if (spec['stage'] != str(STAGE) or spec['hostname'] != 'j2-svntp1'
+    if (spec['stage'] != str(STAGE) or spec['hostname'] != APPROVED_HOSTNAME
             or scope not in ('foundation', 'pps-supplement', 'bc-supplement')
-            or len(rows) != required_count or len(set(names)) != required_count
-            or not required.issubset(names)
+            or len(set(names)) != len(rows)
+            or (spec.get('schema') != 2 and (not rows or not required.issubset(names)))
+            or (scope != 'foundation' and (len(rows) != 1 or set(names) != required))
             or any(n in PROHIBITED or n.startswith('ntpsec') for n in names)):
         raise ValueError('fixed foundation scope required')
+    if spec.get('schema') == 2:
+        requirements = spec['requirements']
+        if (not {'pps-tools', 'bc', 'needrestart'}.issubset(r['package'] for r in requirements)
+                or len({r['package'] for r in requirements}) != len(requirements)):
+            raise ValueError('complete foundation requirements required')
+        missing = {}
+        for requirement in requirements:
+            matches = [v for n, v in spec['baseline'].items()
+                       if n in (requirement['package'], requirement['package']+':'+requirement['architecture'])]
+            if not matches:
+                missing[requirement['package']] = requirement
+            elif matches != [[requirement['version'], 'ii ']]:
+                raise ValueError('installed prerequisite version/status conflict')
+        if {r['package']: r for r in rows} != missing:
+            raise ValueError('package delta differs from unsatisfied requirements')
+        if spec['expected_inventory'] != expected_inventory(spec):
+            raise ValueError('expected inventory binding mismatch')
     for row in rows:
         if (not re.fullmatch(r'[a-z0-9][a-z0-9+.-]+', row['package'])
                 or row['architecture'] not in ('arm64', 'all')
@@ -230,7 +248,7 @@ def validate_spec(spec):
                 or not re.fullmatch(r'[0-9a-f]{64}', row['sha256'])
                 or row['file'] != archive_file(row)
                 or row['binary_package'] not in (row['package'], row['package'] + ':arm64')
-                or any(n.split(':')[0] == row['package'] for n in spec['baseline'])):
+                or row['binary_package'] in spec['baseline'] or row['package'] in spec['baseline']):
             raise ValueError('invalid package binding')
 
 
@@ -246,6 +264,8 @@ def identity(spec, epoch):
     if (not spec['prepared_epoch'] - 300 <= time.time() < spec['expires_epoch']
             or abs(time.time() - epoch) > 300):
         raise ValueError('approval clock/window mismatch')
+    if spec.get('schema') == 2 and boot() != spec['boot_id']:
+        raise ValueError('snapshot boot drift')
 
 
 def package_rows(text):
@@ -341,6 +361,11 @@ def check_inputs(spec, after=False, controls=False):
         allowed |= set(spec['package_created_inputs']) | {'/var/lib/dpkg/status'}
     for item in spec['inputs']:
         path = Path(item['path'])
+        if spec.get('schema') == 2:
+            parent = path.parent
+            while not os.path.lexists(parent):
+                parent = parent.parent
+            ancestors(parent)
         if str(path) in allowed:
             continue
         if item.get('absent'):
@@ -360,6 +385,8 @@ def check_inputs(spec, after=False, controls=False):
         path = Path(directory)
         if path.is_symlink():
             raise ValueError('config directory link')
+        if spec.get('schema') == 2 and path.exists():
+            ancestors(path)
         observed = sorted(p.name for p in path.iterdir()) if path.exists() else []
         if directory == str(NRPOLICY.parent):
             names = [*names, *([NRPOLICY.name] if controls or after else []),
@@ -455,7 +482,7 @@ def pause_updates(before):
 def backup_policies(spec):
     states = {}
     for path in (LISTCHANGES, POLICY, NRPOLICY):
-        if path == LISTCHANGES or (path == NRPOLICY and spec.get('scope') in ('pps-supplement', 'bc-supplement')):
+        if path == LISTCHANGES or (path == NRPOLICY and spec.get('prior_needrestart_sha256') is not None):
             data = read(path)
             expected = (spec['prior_needrestart_sha256'] if path == NRPOLICY else
                         next(x['sha256'] for x in spec['inputs'] if x['path'] == str(path)))
@@ -608,7 +635,7 @@ def effective_needrestart(label):
 def forbidden_units(label):
     text = run(['/usr/bin/systemctl', 'show', '--property=Id,LoadState,ActiveState',
                 *[u + '.service' for u in ('ntpsec', 'gpsd', 'watchdog', 'wd_keepalive',
-                                           'munin-node', 'msmtpd', 'apache2', 'lighttpd')],
+                                           'munin-node', 'msmtpd', 'apache2', 'lighttpd', 'timeservice')],
                 'gpsd.socket', 'apparmor.service'], label)
     for block in text.strip().split('\n\n'):
         fields = dict(line.split('=', 1) for line in block.splitlines())
@@ -635,7 +662,7 @@ def validate_needrestart_report(text, spec):
             if key in fields:
                 raise ValueError('duplicate needrestart acceptance field')
             fields[key] = value
-    if (fields.get('NEEDRESTART-VER') != '3.11' or fields.get('NEEDRESTART-KCUR') != spec['kernel']
+    if (fields.get('NEEDRESTART-VER') != spec.get('needrestart_version', '3.11') or fields.get('NEEDRESTART-KCUR') != spec['kernel']
             or fields.get('NEEDRESTART-KEXP') != spec['kernel'] or fields.get('NEEDRESTART-KSTA') != '1'):
         raise ValueError('needrestart kernel/report gap; preserve controls for review')
     return fields
@@ -705,7 +732,8 @@ def preflight(spec):
         raise ValueError('package baseline drift')
     if run(['/usr/bin/dpkg', '--print-architecture'], 'native-architecture').strip() != 'arm64':
         raise ValueError('architecture drift')
-    if run(['/usr/bin/dpkg', '--print-foreign-architectures'], 'foreign-architectures').strip() != 'armhf':
+    foreign = run(['/usr/bin/dpkg', '--print-foreign-architectures'], 'foreign-architectures').splitlines()
+    if sorted(foreign) != spec.get('foreign_architectures', ['armhf']):
         raise ValueError('foreign architecture drift')
     clean_dpkg('preflight-audit')
     if run(['/usr/bin/id', '-u', 'ama'], 'caller-uid').strip() != '1000':
@@ -735,13 +763,16 @@ def preflight(spec):
     record('tools-before', tools)
     forbidden_units('preflight-forbidden')
     for directory in ('/etc/apache2', '/etc/lighttpd'):
-        if spec.get('scope', 'foundation') == 'foundation' and os.path.lexists(directory):
+        if spec.get('schema') != 2 and spec.get('scope', 'foundation') == 'foundation' and os.path.lexists(directory):
             raise ValueError('web integration no longer absent')
     for directory in ('/var', '/usr', '/boot'):
         usage = os.statvfs(directory)
         if usage.f_bavail * usage.f_frsize < spec['minimum_free_bytes']:
             raise ValueError('insufficient free space: ' + directory)
-    record('network-before', network('preflight-network'))
+    before_network = network('preflight-network')
+    if spec.get('schema') == 2 and before_network != spec['network']:
+        raise ValueError('snapshot boot/access/network drift')
+    record('network-before', before_network)
     record('seen-before', seen_snapshot())
     verify_archives(spec, 'preflight-archive')
 
@@ -750,6 +781,8 @@ def install(spec):
     global DEADLINE
     preflight(spec)
     before = auto_snapshot()
+    if spec.get('schema') == 2 and before != spec['automatic_updates']:
+        raise ValueError('snapshot automatic-update state drift')
     states = backup_policies(spec)
     try:
         pause_updates(before)
@@ -762,17 +795,21 @@ def install(spec):
                 '--install-recommends', '-y', 'install',
                 *[str(STAGE / row['file']) for row in spec['packages']]]
         environment = dict(ENV, APT_CONFIG=str(STAGE / 'apt.conf'))
-        simulated = run([*args[:1], '--simulate', *args[1:]], 'combined-simulation', env=environment)
-        validate_simulation(simulated, spec)
+        if spec['packages']:
+            simulated = run([*args[:1], '--simulate', *args[1:]], 'combined-simulation', env=environment)
+            validate_simulation(simulated, spec)
         if time.time() >= spec['expires_epoch']:
             raise ValueError('approval expired before unpack')
         record('unpack-authorized', {'packages': len(spec['packages']), 'boot': boot()})
-        run(args, 'apt-install', seconds=900, env=environment)
-        for mode in ('listchanges', 'debconf', 'needrestart'):
-            terminal = json.loads(read(STAGE / ('hook-' + mode + '-terminal.json')))
-            if terminal['exit_status'] != 0 or terminal['failure']:
-                raise ValueError('hook terminal status failed')
-        read(STAGE / 'hook-validate-accepted.json')
+        if spec['packages']:
+            run(args, 'apt-install', seconds=900, env=environment)
+            for mode in ('listchanges', 'debconf', 'needrestart'):
+                terminal = json.loads(read(STAGE / ('hook-' + mode + '-terminal.json')))
+                if terminal['exit_status'] != 0 or terminal['failure']:
+                    raise ValueError('hook terminal status failed')
+            read(STAGE / 'hook-validate-accepted.json')
+        else:
+            record('no-package-changes', {'requirements_already_installed': True})
         acceptance(spec, 'installation')
         restore_controls(spec, True, 'installation')
         record('complete', {'state': 'foundation_accepted', 'packages': len(spec['packages']), 'build_performed': False})

@@ -26,18 +26,19 @@ The applications have not been installed live or configured on the new image.
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Pending | Hardware, time, dual-stack clients, monitoring and reboot evidence |
 
-There is no completed unattended end-to-end installer yet. Current package
-preparation includes compatibility inputs from the accepted foundation seed;
-it must not apply the old 633-record pre-install baseline to the current node.
-Some transport workers are bound to j2-svntp1 and consumed stage names. Render
-fresh target identities, dates and exclusive stage names before a new operation.
-Do not describe those historical specifications as a portable fresh-node recipe.
+There is no completed unattended end-to-end installer yet. Foundation preparation
+now uses a checked-in recipe, fresh target snapshot and accepted combined
+resolution report; it reads no historical bundle or acceptance receipt.
+The source-stage transport still needs fresh target identities and exclusive
+stage names before another operation. Live installation/runtime profiles and
+hardware/network acceptance remain pending.
 
 ## Repository assets and private evidence
 
 | Asset | Purpose |
 | --- | --- |
 | [source-build-recipe.json](../configs/source-build-recipe.json) | Source revisions, archive integrity, build roots/options, prefix and jobs |
+| [foundation-recipe.json](../configs/foundation-recipe.json) | Fresh foundation requirements, observation coverage, package effects, acceptance and recovery |
 | [installation-assets.json](../configs/installation-assets.json) | Exact image/source/package download URLs, sizes, hashes and source signing keys |
 | [public-keys](../configs/public-keys) | Public source verification keyrings; no private keys |
 | [accepted-source-release.json](../configs/accepted-source-release.json) | Byte-exact accepted target candidate file/link manifest |
@@ -159,16 +160,71 @@ restore automatic-update disposition. Account/device/service effects remain
 reviewed package effects. Reject unreviewed update-menus execution.
 
 The preparer takes both hook/answer helpers and the temporary
-apt-listchanges-transaction.conf policy from this repo. Historical seed data
-provides compatibility observations/package inputs, not the maintained helpers.
+apt-listchanges-transaction.conf policy from this repo. The
+[foundation recipe](../configs/foundation-recipe.json) declares requirements,
+protected observation coverage, package effects, acceptance and recovery.
 
-prepare-foundation.py prepares a full foundation or bounded supplement from
-authenticated evidence; foundation-install.py and run-foundation-install.py
-enforce exact inputs, exclusive claim, pre-state and recovery/cleanup. The
-current preparer's compatibility seed is the accepted original foundation
-bundle plus package plan/accepted receipts; do not delete these while code
-still reads them. A fresh node needs freshly captured baseline/closure and a
-new full transaction, not reuse of a prior supplement or its expiry.
+prepare-foundation.py prepares a foundation from fresh evidence and verified
+cached assets. foundation-install.py and run-foundation-install.py enforce exact
+inputs, exclusive claim, pre-state and recovery/cleanup. Historical supplements
+remain consumed execution records; they are not preparation inputs.
+
+Fresh preparation follows this sequence:
+
+1. Review the recipe and pinned manifest for the selected image. Fetch/verify
+   the foundation group using the checked-in assets tool. Preparation itself
+   performs no network access.
+2. Separately approve root-owned staging and one read-only snapshot capture.
+   capture-foundation-snapshot.py and its peer worker/inspection/hook/answer
+   modules must be staged as protected root-owned files. Do not invoke the
+   collector as root from the user-owned repository. Bind the recipe hash,
+   observed hostname/kernel, SSH endpoint and controller epoch. The collector
+   reads the normal Debconf database's five approved answers; it never reads
+   the password database. Retain complete output/status and review the snapshot.
+3. Resolve one combined foundation group using the recipe's roots, freshly
+   authenticated metadata and native simulation. The resolver specification
+   must bind hostname, kernel, snapshot_sha256 and the snapshot's protected
+   input state. Review origins, dependency closure, recommendations, hooks and
+   continuity before accepting its report. A pinned-version conflict requires
+   a reviewed recipe/manifest correction; never silently upgrade or substitute.
+4. Wrap the unchanged accepted report in resolution.json with schema=1,
+   snapshot_sha256, asset_manifest_sha256 and report. Hash-bind both evidence
+   files in the offline preparation command below.
+
+The snapshot contract is schema=1, recipe_sha256 and collected_epoch; observed
+hostname/kernel/boot_id/os/architecture/machine/caller/ssh; complete baseline
+package/version/status mapping; inputs with path/hash/owner/group/mode or explicit
+absence; directory membership and discovered Debconf/listchanges/keyring/source coverage;
+five answers plus their static database structure; foreign architectures,
+network and automatic-update state; empty dpkg audit and no active time daemons.
+The recipe defines required observations. Source/key/hook snippets alone are
+insufficient. The collector rechecks packages, files, directory membership,
+boot, network and update state before returning.
+
+```bash
+python3 -I -B ntpsec/scripts/prepare-foundation.py \
+    --snapshot "$snapshot" --snapshot-sha256 "$snapshot_sha" \
+    --resolution "$resolution" --resolution-sha256 "$resolution_sha" \
+    --asset-cache "$verified_cache" --known-hosts "$pinned_known_hosts" \
+    --operation-id "$new_operation_id" --output "$new_preparation"
+```
+
+The preparer computes missing packages from exact pinned requirements and the
+observed inventory, including Multi-Arch names from matching Packages/archive
+control metadata. It rejects existing-version/status conflicts, incomplete
+closure, unexpected native deltas, cache drift, unsafe paths and stale snapshots
+before creating output. Expected inventory is the exact baseline plus that delta;
+there is no fixed baseline or addition count. Already satisfied prerequisites
+stay untouched. Zero additions produce no APT install call; any policy application
+still requires a reviewed execution bundle and approval.
+
+The rendered worker/launcher bind the snapshot's hostname, endpoint/key, kernel,
+boot and unique stage. They recheck package/input/network/update state before
+controls or unpacking. Preparation includes recipe, pins, snapshot, resolution,
+provenance, member hashes and standalone regressions. Add the exact review, run
+the sealed tests and regenerate the complete manifest/archive before requesting
+execution approval. Prepared data alone cannot pass the launcher's sealed-review
+input-set check. Old operation approvals never authorize this new bundle.
 
 Installation acceptance requires exact package delta/status, clean dpkg,
 protected new inputs, effective needrestart policy, expected hook completion,

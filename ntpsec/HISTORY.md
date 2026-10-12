@@ -167,6 +167,16 @@ removed 14,763 generated/unexecuted-workspace files and the unused September
 image, totaling 1,339,399,784 bytes. Executed bundles/terminal records, accepted
 inputs and the selected October image remain. No target contact occurred.
 
+### October 10: fresh foundation preparation implemented offline
+
+Foundation preparation now uses a checked-in recipe and fresh hash-bound snapshot
+and resolution evidence. The approved offline refactor removed historical bundle,
+plan, receipt and package-count dependencies. It renders target/key/stage bindings,
+calculates exact additions, preserves Multi-Arch identities and handles satisfied
+requirements without an APT install call. Tests include preparation in an isolated
+repository with no historical evidence, different inventory sizes, partial/zero
+additions, dependency/control conflicts, drift and exclusive output.
+
 ## Exact resume point
 
 Prepare a separately approved destination/collision inspection and live source
@@ -176,8 +186,9 @@ mail/cron, hardware, dual-stack/DNS/UniFi and reboot acceptance follow their
 reviewed stages. Earlier approvals have been consumed; further target contact
 requires a scoped approval.
 
-Fresh-node reproducibility still needs the foundation preparer's historical seed
-inputs replaced with a freshly observed baseline and resolved manifest, fresh
-transport identities/stage names, and complete rendered installation/runtime
-profiles. OPERATIONS identifies these gaps; this history does not certify an
-unattended end-to-end installer or a completed deployment.
+The read-only snapshot collector is implemented and tested offline; no target
+capture, metadata refresh or new transaction was executed. Fresh source-stage
+transport bindings and complete live installation/runtime profiles remain pending.
+OPERATIONS identifies these gaps; this history does not certify an unattended
+end-to-end installer or a completed deployment. No new live action is authorized
+by this offline implementation approval.
