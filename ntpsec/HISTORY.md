@@ -14,9 +14,9 @@ live inspection.
 | --- | --- | --- |
 | Rebuilt node | Former j1-svntp1 renamed j2-svntp1; spare-card first boot accepted | Full hardware/time/network acceptance |
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; Ethernet DHCP 10.1.0.137; matching console/SSH key | Fixed dual-stack service addresses; Wi-Fi disablement |
-| Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before live installation |
-| Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Destination inspection accepted; native installation bundle sealed; execution approval pending |
-| Runtime | Candidate only; no new ntp.conf or live application deployment | GPS/PPS/RTC, accounts, combined service, leap maintenance |
+| Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
+| Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation/readback/payload cleanup accepted; runtime discovery and configuration pending |
+| Runtime | Native files installed, copied_not_activated; no new ntp.conf or activation | GPS/PPS/RTC, accounts, combined service, leap maintenance |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -340,49 +340,26 @@ its own sealed review and approval.
 
 ## Exact resume point
 
-The October 12 mDNS requirement is implemented in repository recipes,
-runtime argument validation and source acceptance. The source recipe no longer
-disables registration; acceptance requires `HAVE_DNS_SD_H`, and the runtime
-template requires `-m`. The optional `ntp.conf` directive `mdnstries` controls
-retries, not enablement. NTPsec retains only SHM because GPSD owns serial/PPS
-devices and exports both signals. No live package/build/runtime changes were
-performed for this requirement; the accepted v5 candidate remains unchanged.
+The current recipe requires mDNS support and runtime `-m`; NTPsec retains SHM
+because GPSD owns UART/PPS and exports both signals. The revised foundation
+snapshot, metadata resolution, seven-package supplement and mDNS-enabled source
+build are accepted. The exact accepted foundation contains 686 package records.
+Earlier 679-package snapshots/resolutions are execution records only; future
+foundation transactions require a fresh accepted snapshot.
 
-Eight Avahi/DNS-SD development/runtime requirements were pinned from the
-retained signature-verified Trixie index, bringing the foundation manifest to
-56 requirements. Fresh dependency resolution must confirm their closure and
-calculate the exact delta; the prior zero-delta expectation no longer applies.
-The v2 snapshot and earlier sealed resolution bind the previous recipe and must
-not be used to satisfy this revised requirement. Preserve those records.
+The destination inspection supplied the accepted absent pre-state. Native
+GPSD/NTPsec installation, terminal readback and payload cleanup now passed:
+all 159 release entries are installed with verified hashes/links and ownership.
+The result is `copied_not_activated`. Preserve both source workspaces and all
+executed privileged code, baseline records, native journal/backups and receipts.
+Do not replay the consumed inspection or installation.
 
-The revised-recipe v3 snapshot is accepted and its verified stage removed.
-Resolution v3 was held at final continuity and cleaned up; corrected v4 has passed
-acceptance and cleanup. The seven-package installation passed acceptance and
-control cleanup, yielding 686 package records. The new mDNS-enabled source build
-passed full acceptance against this inventory and the current recipe. Further
-execution requires separate hash-bound approval; the consumed installation
-bundle and pre-installation baseline must not be replayed.
-
-The destination/collision inspection passed acceptance and verified staging
-cleanup. All 159 destinations are absent with zero collisions. The next stage
-is separate approval for the sealed native source installation, readback,
-conditional recovery and payload cleanup. The bundle binds explicit metadata,
-accepted pre-state, baseline/journal/backups, rollback and acceptance. Preserve
-the accepted v5 stage and receipts. Runtime configuration,
-mail/cron, hardware, dual-stack/DNS/UniFi and reboot acceptance follow their
-reviewed stages. Earlier approvals have been consumed; further target contact
-requires a scoped approval.
-
-The earlier v2 capture remains a retained record for its previous recipe.
-The accepted v3 snapshot/v4 resolution and seven-package installation are
-completed preparation records; their 679-package baseline no longer describes
-the target. Future foundation transactions require a fresh accepted snapshot.
-The native source installation bundle is sealed against the accepted 686-package
-state and destination inspection. Execution and complete runtime profiles
-remain pending.
-OPERATIONS identifies these gaps; this history does not certify an unattended
-end-to-end installer or a completed deployment. No new live action is authorized
-by this history entry.
+Next prepare a separately reviewed runtime discovery/configuration stage bound
+to the accepted installation receipt. Establish library/Python/PATH discovery,
+UART/PPS/RTC, accounts and service/configuration inputs before activation.
+Fixed dual-stack networking, mail/cron, leap maintenance, hardware/time/client,
+DNS/UniFi and reboot acceptance remain pending under the governing plan.
+No further target contact or mutation is authorized by this history entry.
 
 ### October 12: revised snapshot-bound metadata resolution sealed
 
@@ -714,3 +691,24 @@ contact, package change, application installation, configuration or activation
 occurred. Next obtain separate hash-bound execution approval. Library-cache and
 Python/runtime discovery, configuration, services, hardware, networking and
 maintenance acceptance remain subsequent reviewed stages.
+
+### October 12: native GPSD/NTPsec installation accepted
+
+Executed the approved bundle once for j2-svntp1:
+`cda87986ec9ab35499356f8dda1258d558a247db755debedbc212059bf752f32`.
+Installation, conditional terminal readback and payload cleanup each completed
+with worker and transport status 0. Controller acceptance verified all 159
+installed entries, release hashes/links, root ownership, explicit modes, new
+parent metadata and exact package/boot/Python/service/process continuity.
+Terminal SHA-256:
+`504e2afc82d926f0e02c461c547e3a536527b58a7cb0d2cad82554755fd90b72`.
+
+The installed release remains `copied_not_activated`. No library-cache change,
+runtime configuration, service activation or reboot occurred. Recovery was not
+needed. Verified temporary payload was removed; root-owned executed code,
+baseline, journal/backups and receipts remain at
+`/var/lib/ntp-preflight-source-install-20261012-v1`.
+Controller execution registrations, full streams/statuses and acceptance remain
+in the private [operation directory](/home/aaron/code/.local-evidence/homelab-ntp/current/source-install-20261012-v1).
+The plan's separate installation/runtime acceptance boundary remains unchanged.
+Next prepare runtime discovery/configuration for its own hash-bound approval.

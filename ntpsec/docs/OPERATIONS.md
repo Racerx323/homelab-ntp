@@ -14,14 +14,15 @@ j2-svntp1 is the renamed former j1-svntp1 physical node, now running Raspberry
 Pi OS Lite Trixie on the spare card. Its accepted foundation contains 686 package
 records. The retained NTPsec/GPSD source candidate has 159 manifest entries;
 both upstream suites, native staging and mDNS feature acceptance passed.
-The applications have not been installed live or configured on the new image.
+The 159 native file/link entries are installed and accepted; runtime
+configuration and activation remain pending.
 
 | Stage | State | Next requirement |
 | --- | --- | --- |
 | Media and bootstrap | Accepted | Preserve original Debian 11 card and primary/antenna power |
-| Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before live installation |
-| Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Prepare native installation using the accepted destination pre-state |
-| Live installation | Native first-install bundle prepared and sealed; execution pending | Separate approval for installation, terminal readback, conditional recovery and payload cleanup |
+| Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
+| Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
+| Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Prepare library/Python runtime discovery and host configuration for separate approval |
 | Runtime configuration | Pending | Observed UART/PPS/RTC, accounts, NTP configuration and combined-service cutover |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Pending | Hardware, time, dual-stack clients, monitoring and reboot evidence |
@@ -442,8 +443,8 @@ validation: all 159 destinations are absent, with zero collisions, 27 ancestor
 records and no active ntpd/GPSD processes. Exact 686-package inventory, boot,
 Python and service/process continuity passed. Verified root-owned staging
 cleanup completed; the accepted inspection and canonical pre-state remain private.
-Live source installation and activation require a new reviewed bundle; the
-consumed inspection must not be replayed.
+The native installation consumed this pre-state and passed acceptance. Activation
+requires a separate reviewed bundle; the consumed inspection must not be replayed.
 
 For future inspection bundles, use exclusive root-owned 0700 staging with
 0600 hash-verified inputs. Submit once with the same
@@ -458,9 +459,12 @@ active daemon observation is input to installation review, not replacement or
 service-change authorization. HISTORY records the exact bundle hash and expiry.
 
 The [native first-install review](/home/aaron/code/.local-evidence/homelab-ntp/current/source-install-20261012-v1/review.md)
-is sealed for j2-svntp1 and awaits separate execution approval. Preparation used
+was approved and executed once for j2-svntp1. Installation, terminal readback
+and payload cleanup passed; all 159 native entries are accepted. Preparation used
 only the accepted release/build evidence and destination inspection; no target
-contact occurred. Use `run-source-install.py seal` with private input files,
+contact occurred during preparation. Executed journals, receipts and privileged
+code remain retained; only the verified temporary payload was removed. For
+future nodes, use `run-source-install.py seal` with private input files,
 explicit `--input-hashes`, pinned known_hosts and a unique operation ID/output.
 The archive binds the current source recipe, pinned assets, transport, root
 helpers, tests, release, build receipt/specification and accepted inspection
