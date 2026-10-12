@@ -552,7 +552,7 @@ statistics ownership, retention/rotation and compatible off-host plotting
 before deploying logging; no logging or receiver access is authorized here.
 
 For calibration, establish a repeatable bias and a reference of known quality.
-time1 is in seconds; do not copy 0.130 or center a transient ntpq offset.
+Document any time1 correction in seconds using sustained measurements.
 Serial calibration and PPS/antenna-cable timing corrections are separate paths.
 An offset against a PPS-disciplined system can characterize serial timing but
 does not independently validate that PPS source's absolute UTC accuracy.
@@ -560,16 +560,15 @@ Document correction sign/uncertainty and compare after convergence.
 
 The governed configuration path is `/etc/ntp.conf`. mindist/maxdist are global
 selection controls, not receiver sensitivity or loss-of-fix settings. Decide
-whether serial SHM is diagnostic-only (noselect) or selectable at its measured
-precision; noselect cannot provide an NTP selection fallback. Define accepted
-GPS/PPS loss, network fallback, stale-sample rejection and recovery behavior in
-the runtime acceptance bundle. Preserve truthful leap/stratum reporting and
+the serial SHM role and precision from the accepted source-selection profile.
+Define accepted GPS/PPS loss, network fallback, stale-sample rejection and
+recovery behavior in the runtime acceptance bundle. Preserve truthful leap/stratum reporting and
 do not force invalid GPS time to remain selected.
 
 ### Serial latency and scheduler experiments
 
-[OPT-003](ntp-architecture-deployment-plan-v1.0.md#opt-003-serial-latency-scheduling-irq-affinity-and-offset-arithmetic)
-reviews setserial, FIFO priority, IRQ affinity and the quoted offset arithmetic.
+[OPT-003](ntp-architecture-deployment-plan-v1.0.md#opt-003-serial-latency-scheduling-and-irq-affinity)
+reviews setserial, FIFO priority and IRQ affinity.
 No tuning or restart is selected. Capture actual UART/driver, receiver message
 schedule, SHM mappings and full association status before inferring a scheduling
 problem. Do not apply an 8250 recipe to PL011 or use rc.local to persist an
@@ -583,15 +582,6 @@ substitute a stock gpsd.service override for the combined lifecycle. Test one
 change with explicit access/starvation recovery and exact restoration; inspect
 the actual Raspberry Pi kernel and any irqbalance policy. An accepted IRQ
 setting must identify the device dynamically, not preserve an example IRQ ID.
-
-For the supplied arithmetic only, additive SHM calibration gives
-`new_time1 = old_time1 - measured_offset_seconds`. If the old value really is
-0.125 and the stable mean really is -0.0490437 seconds against an unchanged
-reference, the calculated trial is 0.1740437, not 0.076. Do not render that
-number into a host profile without the OPT-002 calibration evidence and
-separately approved trial. A noselect association remains diagnostic-only.
-Read the '-' versus 'x' tally correctly and preserve the governed /etc/ntp.conf
-path. Do not equate reach 377 or a few minutes after restart with convergence.
 
 Any necessary restart belongs to the reviewed timeservice transaction with
 before/after state and both daemons' acceptance. Do not restart stock GPSD or

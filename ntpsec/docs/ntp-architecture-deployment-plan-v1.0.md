@@ -653,8 +653,7 @@ as an isolated software experiment on the standby.
 | OPT-002-01: window placement and small antenna moves | Assess actual sky visibility, obstructions/glazing, antenna mounting/orientation, interference and cable/splitter health. A small move may help, but two inches is not a guaranteed remedy. Compare candidate locations using reception and timing records over representative satellite geometry, not a single snapshot; preserve shared antenna power. | Phase 3 hardware acceptance; Phase 3A comparison for later moves |
 | OPT-002-02: tos mindist 0.002 | Conditional selection experiment, not an indoor-GPS preset. The pinned default is 0.001 seconds; 0.002 doubles the global minimum distance to 2 ms. It affects selection/intersection and anticlockhop behavior for all sources, not just PPS jitter. A measured high-jitter association can justify investigation, but this does not restore invalid GPS data or repair multipath. Keep the reviewed baseline unless selection logs demonstrate a need. | Phase 3A; accepted host ntp.conf only after comparison |
 | OPT-002-03: tos maxdist 1.5 | No new optimization: 1.5 seconds is already the pinned default synchronization-distance threshold. It is not a GPS fade timer or a guarantee of bridging loss of fix. Preserve validity/aging checks and accepted network fallback rather than increasing tolerances to retain a bad reference. | Phase 3 runtime configuration and loss/recovery acceptance |
-| OPT-002-04: serial SHM time1 0.130 | Do not adopt this value without calibration. time1 is a signed correction in seconds, so the example applies 130 ms; its default is zero. Determine the actual serial SHM unit, protocol/message schedule, baud, GPSD timing behavior and stable bias. It can correct a repeatable serial timestamp bias, not RF reception or variable multipath error. Document reference, sign, uncertainty and before/after results; calibrate serial and PPS paths separately. | Phase 3A; per-node host configuration if justified |
-| OPT-002-05: noselect serial source as fallback | Correct the contradiction: noselect excludes that association from clock selection. It can support diagnostic observation, but is not a selectable fallback. GPSD still uses receiver data to form its timing measurements. Decide explicitly whether serial SHM is diagnostic-only or an accepted lower-precision source; do not remove noselect merely to force GPS selection. | Phase 3 source-selection design and GPS/PPS loss tests |
+| OPT-002-04: serial SHM calibration | Determine the actual serial SHM unit, protocol/message schedule, baud, GPSD timing behavior and stable bias. Document the calibration reference, sign, uncertainty and before/after results; calibrate serial and PPS paths separately. | Phase 3A; per-node host configuration if justified |
 | OPT-002-06: center SHM offset using ntpq -p | Useful initial diagnosis, not sufficient calibration evidence. Serial offset is relative to the already disciplined system clock and may reflect UART/receiver message latency. A PPS-disciplined local clock can help compare the serial path, but it does not independently prove GPS/PPS UTC accuracy. Use sustained statistics, receiver time-validity/accuracy reports where available and an independent reference of known uncertainty for absolute claims. | Phase 3A measurement |
 | OPT-002-07: gpsmon and four satellites above SNR 30 | Monitor through the reviewed running GPSD endpoint without opening the live UART independently or issuing receiver-control commands. Use observed versus used satellites, signal-strength units, geometry/fix status, UTC validity and reported time accuracy. Four satellites above 30 is a screening heuristic, not a universal timing/PPS criterion. Verify the exact M8 model/firmware and available timing mode; do not assume every M8 supports survey-in or needs a continuous 3D fix for valid time. | Phase 3 hardware/time acceptance; Phase 3A observation |
 | OPT-002-08: logging versus immediate tuning | First prepare bounded receiver/SHM/NTP logging and a placement baseline, with explicit capture/retention scope. Correlate receiver quality with PPS gaps, SHM freshness, source selection, frequency and client offsets before choosing any calibration or selection change. Accept valid failover/recovery; never count forced GPS selection as success. | Phase 3 baseline logging; Phase 3A evaluation |
@@ -665,23 +664,18 @@ threshold change, receiver-mode change or antenna move is adopted by this
 evaluation. Preserve GPS/PPS, leap/stratum and failover checks when comparing
 any later candidate.
 
-Primary evidence is the pinned NTPsec [tos documentation](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/miscopt.adoc),
-[noselect semantics](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/includes/assoc-options.adoc)
-and SHM driver above, plus pinned GPSD [gpsmon](https://gitlab.com/gpsd/gpsd/-/blob/1d622f5b2c7bf79fc117185be10048e7d4e73c66/man/gpsmon.adoc)
+Primary evidence is the pinned NTPsec [tos documentation](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/miscopt.adoc)
+and the SHM driver above, plus pinned GPSD [gpsmon](https://gitlab.com/gpsd/gpsd/-/blob/1d622f5b2c7bf79fc117185be10048e7d4e73c66/man/gpsmon.adoc)
 and [timing guidance](https://gitlab.com/gpsd/gpsd/-/blob/1d622f5b2c7bf79fc117185be10048e7d4e73c66/www/gpsd-time-service-howto.adoc).
 Receiver-specific validity and timepulse behavior must be checked against the
 identified module's u-blox documentation and actual configuration; generic
 M8 or older LEA examples do not select a mode for this hardware.
 
-#### OPT-003: serial latency, scheduling, IRQ affinity and offset arithmetic
+#### OPT-003: serial latency, scheduling and IRQ affinity
 
-Evaluated on October 12, 2026. The supplied text quotes serial jitter
-1.8181 ms, serial offset -49.0437 ms, PPS offset -0.0208 ms and PPS jitter
-0.0011 ms without a bound ntpq capture, configuration, timestamps or history.
-Treat these as reported inputs, not accepted measurements of the current node.
-The assumed time1 0.125 is also unverified. Serial/coarse GPS timing is a
-different path from PPS; its jitter alone does not diagnose an IRQ/scheduler
-problem or show that selected PPS time is inaccurate.
+Evaluated on October 12, 2026. Establish a bound capture and actual configuration
+before diagnosing the serial pipeline. Measure serial/coarse GPS timing and
+PPS timing separately, then identify any driver or scheduling contribution.
 
 | Item | Disposition and reason | Placement |
 | --- | --- | --- |
@@ -691,20 +685,13 @@ problem or show that selected PPS time is inaccurate.
 | OPT-003-04: FIFO 45 and Nice=-20 guarantee instant processing | Unadopted experiment with no guaranteed latency or jitter result. FIFO can preempt normal runnable work but does not eliminate IRQ, I/O, locks or throttling delays and can starve other work. Nice is not the FIFO priority control. Inspect actual thread policy, privileges, RT limits/budget and built-in behavior: pinned GPSD attempts nice(-10) as root; NTPsec can request FIFO with -N/-P. Do not infer effective policy from a unit file alone or add arbitrary priority 45. | Phase 3A; explicit starvation/access recovery and measured benefit required |
 | OPT-003-05: serial IRQ on CPU 2 adjacent to isolated CPU 3 | Conditional experiment, not a selected configuration. OPT-001 did not adopt CPU 3 isolation. CPU numbering does not establish an optimal cache placement; IRQ affinity does not pin GPSD/ntpd tasks or the separate GPIO PPS path. Identify the IRQ from the actual driver/sysfs mapping and counters, not a presumed tty name or IRQ 35. Check routability/shared users, allowed/effective affinity and any active irqbalance. Hex mask 4 denotes CPU 2; verify delivery and persistence without hard-coding a boot-dependent IRQ number. | Phase 3A |
 | OPT-003-06: restart gpsd/ntpsec to clear SHM and compile calibration | Reject the commands for this source deployment. Use the reviewed combined service transaction if a restart is needed; do not activate competing stock units. Restarting does not prove SysV SHM resources were removed and is not a compilation step for ntp.conf. Do not delete/reset shared memory as an optimization; preserve ownership/state and define any recovery separately. | Phase 3 lifecycle; approved Phase 3A transaction if needed |
-| OPT-003-07: reach 377 / 5-10 minutes / jitter under 0.5000 ms | Reject these guarantees. Octal reach 377 represents eight successful recent reachability bits, not settled clock discipline or demonstrated accuracy. Poll timing, receiver state and convergence determine the observation window. Define a measured improvement over comparable baseline data; neither sub-ms serial jitter nor an offset below 5 ms is promised by these changes. | Phase 3A comparison and acceptance |
-| OPT-003-08: '-' means falseticker; small PPS figures prove accuracy | Correct the status interpretation: '-' is a clustering outlier; 'x' is the intersection/falseticker marker. Read full association status and source configuration before attributing exclusion to a 50 ms bias. The quoted PPS offset/jitter are relative to the local clock and do not independently prove absolute UTC accuracy. | Phase 3 source acceptance; Phase 3A diagnosis |
-| OPT-003-09: change time1 from 0.125 to 0.076 | The proposed subtraction has the wrong sign for the supplied negative offset. Pinned SHM passes time1 to the additive refclock offset calculation. With stable reference/bias and all assumptions verified, new_time1 = old_time1 - measured_offset_seconds: 0.125 - (-0.0490437) = 0.1740437 seconds. Decreasing to 0.076 would move this model's offset further negative. This is conditional arithmetic, not an adopted calibration; verify the actual value, mean, sign and uncertainty before any trial. | Phase 3A; OPT-002 calibration workflow |
-| OPT-003-10: noselect as fallback and distro configuration paths | OPT-002 still applies: noselect prevents selection, so the example is diagnostic-only rather than an NTP fallback. The governed path is /etc/ntp.conf; both /etc/ntpsec/ntp.conf and the doubled /etc/etc/ntpsec/ntp.conf are wrong for this lifecycle. Decide fallback role separately from calibration and preserve valid upstream selection. | Phase 3 runtime design; OPT-002 |
 | OPT-003-11: next-day logging | Recommended measurement approach after baseline service acceptance. Scope receiver/SHM/NTP/client records, polling/retention and comparable load/thermal conditions; a 24-hour window can sample a daily cycle but does not alone prove convergence or absolute accuracy. Logging, receiver access and any scheduled plot generation still need the defined execution approval. | Phase 3 baseline instrumentation; Phase 3A |
 
-No serial flag, RT priority, CPU/IRQ placement, calibration value, IPC reset
+No serial flag, RT priority, CPU/IRQ placement, IPC reset
 or restart is adopted. Inspect effective behavior before testing one justified
 change; retain a conservative source-selection and restoration path.
 
-Evidence: pinned NTPsec [SHM input](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/ntpd/refclock_shm.c),
-[additive calibration](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/ntpd/ntp_refclock.c),
-[peer tally codes](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/includes/peerfmt.adoc)
-and [priority options](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/ntpd/ntpd.c);
+Evidence: pinned NTPsec [priority options](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/ntpd/ntpd.c);
 pinned GPSD [priority handling](https://gitlab.com/gpsd/gpsd/-/blob/1d622f5b2c7bf79fc117185be10048e7d4e73c66/gpsd/gpsd.c);
 upstream Linux 6.18 [PL011](https://github.com/torvalds/linux/blob/v6.18/drivers/tty/serial/amba-pl011.c)
 and [serial core](https://github.com/torvalds/linux/blob/v6.18/drivers/tty/serial/serial_core.c);

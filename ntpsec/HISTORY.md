@@ -229,9 +229,8 @@ Added OPT-002 to the governing register and the antenna/SHM/fallback workflow
 to OPERATIONS. Indoor placement is an unverified scenario, not a new target
 observation. The shared antenna makes relocation a common physical change.
 Selection thresholds are global: mindist 0.002 is a conditional experiment;
-maxdist 1.5 is already the pinned default. No time1 0.130 calibration is
-adopted. A noselect association cannot serve as a selectable fallback, and
-four satellites above a signal-strength threshold do not establish valid PPS.
+maxdist 1.5 is already the pinned default. No calibration value is adopted.
+Receiver time validity and PPS measurements remain required.
 
 The first recommended stage is scoped receiver/SHM/NTP logging and placement
 assessment, followed by evidence-based calibration only if a stable bias is
@@ -242,8 +241,7 @@ snapshot/mDNS prerequisite and build gates remain pending.
 
 ### October 12: serial latency and scheduling proposal evaluated
 
-Added OPT-003 and the corresponding operations workflow. The supplied jitter,
-offset and assumed time1 values are unverified reported inputs. Rejected the
+Added OPT-003 and the corresponding operations workflow. Rejected the
 8250/ttyAMA0 explanation and stock GPSD/NTPsec overrides/restarts for this
 combined service. Real-time scheduling and IRQ placement remain conditional
 experiments, with actual driver, per-thread policy, inheritance and recovery
@@ -251,12 +249,8 @@ evidence required. Upstream Linux 6.18 PL011/serial-core and systemd 257 policy
 sources were inspected; they do not establish the effective downstream kernel
 or live scheduler state.
 
-Corrected '-' to clustering outlier rather than the 'x' falseticker marker.
-Pinned SHM calibration is additive: with verified old time1 0.125 and stable
-offset -0.0490437 seconds, the conditional result is 0.1740437, not 0.076.
-No value is adopted; noselect remains diagnostic-only, and reach 377 is not a
-convergence/accuracy guarantee. No target access, package, serial flag, IRQ,
-scheduler, calibration, IPC or restart change was performed. The existing
+No target access, package, serial flag, IRQ, scheduler, calibration, IPC or
+restart change was performed. The existing
 fresh snapshot/mDNS prerequisite and build gates remain unchanged.
 
 ## Exact resume point
