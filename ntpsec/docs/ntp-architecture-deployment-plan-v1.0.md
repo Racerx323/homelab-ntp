@@ -150,8 +150,19 @@ Aaron added these source/runtime requirements on `2026-10-12`:
   read devices directly and are unnecessary for this GPSD-mediated path.
   Observe SHM unit assignments and accept GPS/PPS selection on each target.
 
-The earlier accepted candidate has mDNS disabled. Preserve its evidence and
-prepare a newly approved dependency/build stage before live installation.
+Before source installation, seal a read-only inspection bound to the accepted
+release, build receipt/specification and target identity. Inspect every intended
+destination and protected ancestor; retain complete file/link pre-state and
+collision classifications. Recheck package, boot, Python and service/process
+continuity. Use exclusive root-owned staging, one capture, conditional terminal
+readback and verified cleanup; preserve executed build evidence. An accepted
+inspection authorizes no replacement or activation. Unsafe paths, bounds or
+state drift hold the next installation gate for separately reviewed recovery.
+
+The earlier accepted candidate has mDNS disabled; preserve its evidence.
+The replacement dependency/build stage has passed acceptance, as recorded in
+HISTORY. Live installation still requires separately approved destination
+inspection and a reviewed installation/recovery bundle.
 First seal a fresh foundation snapshot against the revised recipe and current
 pinned asset manifest, verify its target identity during the approved capture,
 and accept its terminal readback/cleanup. Metadata resolution is a subsequent

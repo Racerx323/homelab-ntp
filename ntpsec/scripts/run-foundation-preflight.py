@@ -19,6 +19,8 @@ INPUTS = {'capture-foundation-snapshot.py', 'foundation-install.py', 'inspect-tr
           'hook-closure-preflight.py', 'read-debconf-answers.py', 'recipe.json'}
 RESOLUTION_INPUTS = {'resolver.py', 'resolver-spec.json', 'snapshot.json',
                      'installation-assets.json', 'resolution-policy.json'}
+DESTINATION_INPUTS = {'inspect-source-destinations.py', 'clockmaker.py', 'release.json',
+                      'build-spec.json', 'build-acceptance.json'}
 EXTRAS = {'spec.json', 'stage.py', 'launcher.py', 'validator.py', 'asset-validator.py',
           'known_hosts', 'review.md', 'tests.py', 'installation-assets.json'}
 
@@ -50,7 +52,7 @@ def host_key(data, host):
 
 
 def validate_spec(spec):
-    if (spec['schema'] != 1 or spec['operation'] not in ('foundation-snapshot', 'foundation-resolution')
+    if (spec['schema'] != 1 or spec['operation'] not in ('foundation-snapshot', 'foundation-resolution', 'source-destinations')
             or not re.fullmatch(r'[a-z][a-z0-9-]{0,63}', spec['operation_id'])
             or spec['stage'] != '/var/lib/ntp-preflight-' + spec['operation_id']
             or not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,62}', spec['hostname'])
@@ -73,7 +75,7 @@ def payload(spec, files, epoch, mode, terminal_sha=None):
         '),"sealed-preflight-stage.py","exec"),ns)\n'
         'status=0\ntry:\n'
         '    result=ns["entry"](spec,files,' + repr(epoch) + ',' + repr(mode) + ',' + repr(terminal_sha) + ')\n'
-        '    if result.get("state") in ("snapshot_held","resolution_held"): status=2\n'
+        '    if result.get("state") in ("snapshot_held","resolution_held","inspection_held"): status=2\n'
         'except BaseException as error:\n'
         '    status=2\n'
         '    result={"state":"held","error":type(error).__name__+": "+str(error)}\n'
@@ -90,7 +92,8 @@ def prepare(bundle, checksum):
         members = archive.getmembers()
         names = [m.name for m in members]
         if (len(names) != len(set(names)) or set(names) not in (INPUTS | EXTRAS | {'manifest.json'},
-                INPUTS | RESOLUTION_INPUTS | EXTRAS | {'manifest.json'})
+                INPUTS | RESOLUTION_INPUTS | EXTRAS | {'manifest.json'},
+                INPUTS | DESTINATION_INPUTS | EXTRAS | {'manifest.json'})
                 or any(not m.isfile() or m.size > 2 * 1024 * 1024 for m in members)):
             raise ValueError('unexpected bundle input set/type/size')
         files = {m.name: archive.extractfile(m).read() for m in members}
@@ -103,7 +106,8 @@ def prepare(bundle, checksum):
     validate_spec(spec)
     if spec['asset_manifest_sha256'] != sha(files['installation-assets.json']):
         raise ValueError('pinned asset manifest binding mismatch')
-    required = INPUTS | (RESOLUTION_INPUTS if spec['operation'] == 'foundation-resolution' else set())
+    required = INPUTS | (RESOLUTION_INPUTS if spec['operation'] == 'foundation-resolution' else
+                        DESTINATION_INPUTS if spec['operation'] == 'source-destinations' else set())
     if (set(files) != required | EXTRAS | {'manifest.json'} or set(spec['members']) != required
             or any(sha(files[n]) != h for n, h in spec['members'].items())
             or host_key(files['known_hosts'], spec['ssh']['host']) != spec['ssh']['fingerprint']
@@ -174,6 +178,7 @@ def seal(args):
     checker = validator(files)
     checker.package_requirements(json.loads(files['recipe.json']), json.loads(files['installation-assets.json']))
     resolution_mode = getattr(args, 'action', 'seal') == 'seal-resolution'
+    destination_mode = getattr(args, 'action', 'seal') == 'seal-destinations'
     required = INPUTS
     expires = prepared + 86400
     if resolution_mode:
@@ -192,6 +197,36 @@ def seal(args):
         files['resolver-spec.json'] = encoded(rspec)
         required = INPUTS | RESOLUTION_INPUTS
         expires = min(expires, snapshot['collected_epoch'] + recipe['maximum_snapshot_age_seconds'])
+    if destination_mode:
+        for member, path, checksum in (
+                ('release.json', args.release, args.release_sha256),
+                ('build-spec.json', args.build_spec, args.build_spec_sha256),
+                ('build-acceptance.json', args.build_acceptance, args.build_acceptance_sha256)):
+            raw = private_file(path)
+            if sha(raw) != checksum:
+                raise ValueError('accepted source input hash mismatch: ' + member)
+            files[member] = raw
+        files['clockmaker.py'] = (ROOT / 'scripts/clockmaker.py').read_bytes()
+        files['inspect-source-destinations.py'] = (ROOT / 'scripts/inspect-source-destinations.py').read_bytes()
+        files['tests.py'] = (ROOT / 'tests/test_source_destinations.py').read_bytes()
+        definition = importlib.util.spec_from_file_location('destination_validator', ROOT / 'scripts/inspect-source-destinations.py')
+        inspector = importlib.util.module_from_spec(definition)
+        definition.loader.exec_module(inspector)
+        release, build = inspector.accepted_inputs(files)
+        # The checked-in helper validates every manifest record without target contact.
+        inspector.load(ROOT / 'scripts/clockmaker.py').read_release(args.release, sha(files['release.json']))
+        inventory = {}
+        for line in (ROOT / 'configs/accepted-packages.tsv').read_text().splitlines():
+            name, version, status = line.split('\t')
+            if name in inventory:
+                raise ValueError('duplicate accepted inventory mirror record')
+            inventory[name] = [version, status]
+        if inventory != build['inventory']:
+            raise ValueError('accepted inventory mirror mismatch')
+        args.hostname, args.kernel = release['hostname'], release['kernel']
+        args.ssh_host = files['known_hosts'].decode('ascii').split()[0]
+        args.fingerprint = host_key(files['known_hosts'], args.ssh_host)
+        required = INPUTS | DESTINATION_INPUTS
     spec = {'schema': 1, 'operation': 'foundation-snapshot', 'operation_id': args.operation_id,
         'stage': '/var/lib/ntp-preflight-' + args.operation_id, 'hostname': args.hostname,
         'kernel': args.kernel, 'ssh': {'host': args.ssh_host, 'fingerprint': args.fingerprint},
@@ -200,6 +235,8 @@ def seal(args):
         'members': {n: sha(files[n]) for n in sorted(required)}}
     if resolution_mode:
         spec['operation'] = 'foundation-resolution'
+    if destination_mode:
+        spec['operation'] = 'source-destinations'
     validate_spec(spec)
     if host_key(files['known_hosts'], args.ssh_host) != args.fingerprint:
         raise ValueError('console-confirmed key mismatch')
@@ -279,12 +316,57 @@ def seal(args):
             '--bundle <absolute foundation-resolution.tar> --sha256 <approved archive SHA256>\n'
             '--mode collect, then the same bound command with readback and conditional cleanup.\n'
             'Readback/cleanup remain available after the collection expiry.\n').encode()
+    if destination_mode:
+        files['review.md'] = (f'# Source destination/collision inspection review\n\n'
+            f'Target: {args.hostname}, ama UID 1000, {args.ssh_host}; kernel {args.kernel}.\n'
+            f'Pinned ED25519: {args.fingerprint}.\n'
+            f'Operation: {args.operation_id}.\n'
+            f'Release SHA-256: {sha(files["release.json"])}.\n'
+            f'Accepted build specification SHA-256: {sha(files["build-spec.json"])}.\n'
+            f'Accepted build receipt SHA-256: {sha(files["build-acceptance.json"])}.\n'
+            f'Collection expires: {datetime.fromtimestamp(expires, timezone.utc).isoformat()}.\n\n'
+            f'One capture in exclusive root-owned 0700 staging `{spec["stage"]}`.\n'
+            'Isolated Python -I -B through existing operator-managed sudo; stage inputs are\n'
+            '0600 and hash-verified before privileged imports. Only target writes are this\n'
+            'new stage and its observation records; cleanup removes only that stage.\n'
+            'Preserve both accepted source workspaces and every prior executed record.\n\n'
+            f'Inspect exactly {len(release["files"])} manifest destinations under /usr/local.\n'
+            'Validate root-owned, non-writable, non-symlink ancestors before reading destinations.\n'
+            'Record absent files, file hashes/ownership/modes, link text without following final\n'
+            'links, parent identity and identical/different collisions. Hash at most 64 MiB per\n'
+            'file and 512 MiB per pass; compare two passes within this single capture.\n'
+            'Unsafe parents/files, special-file collisions, state drift or bounds hold acceptance.\n'
+            'No earlier installed release is supplied; no obsolete-file removal scope.\n\n'
+            'Read-only commands: dpkg-query inventory, dpkg --audit and systemctl show\n'
+            'safe service/socket properties. Observe ntpd/gpsd PIDs/executable links in /proc;\n'
+            'read OS/boot identity and stdlib Python ABI. Recheck exact accepted inventory,\n'
+            'boot, Python and stable service/process state. Do not execute/import installed\n'
+            'application code, collect credentials or inspect files outside manifest/identity scope.\n'
+            'Foundation collectors retained in the bundle are not invoked in this mode.\n'
+            'No refresh, build, install, replacement, service/configuration/update/policy change,\n'
+            'sudoers installation or reboot. Observed collisions/daemons authorize no mutation.\n\n'
+            'Accept transport/worker agreement, terminal/spec/report hashes, complete destination\n'
+            'coverage, collision classification, protected ancestors and unchanged bound target state.\n'
+            'Retain inspection.json, canonical installation-state.json and acceptance receipt privately.\n'
+            'Acceptance is an observation gate; live installation requires a new reviewed bundle.\n\n'
+            'One conditional terminal readback without recollection, then conditional verified cleanup.\n'
+            'Cleanup requires retained terminal readback and exact terminal hash; verify all stage\n'
+            'inputs/files first. Busy locks, unexpected entries, drift or missing terminal hold cleanup.\n'
+            'Lost transport: preserve complete original logs and attempt bound readback once; never\n'
+            'replay capture or reset the claim. Incomplete staging requires separate recovery review.\n'
+            'Readback/cleanup remain available after expiry. No application rollback is needed because\n'
+            'application state is unchanged; recovery is confined to retained observation staging.\n\n'
+            'Strict pinned SSH, no forwarding/proxy/multiplexing/local command; timeout 420s.\n'
+            'Execute the repository launcher with `execute --bundle /absolute/source-destinations.tar`\n'
+            'and `--sha256 APPROVED_SHA256 --mode collect`; then the same bound command\n'
+            'with --mode readback and conditional --mode cleanup. Separate execution approval required.\n').encode()
     files['manifest.json'] = encoded({n: sha(d) for n, d in sorted(files.items())})
     os.umask(0o077)
     args.output.mkdir(mode=0o700)
     for n in ('known_hosts', 'review.md', 'spec.json'):
         (args.output / n).write_bytes(files[n])
-    bundle = args.output / ('foundation-resolution.tar' if resolution_mode else 'foundation-preflight.tar')
+    bundle = args.output / ('source-destinations.tar' if destination_mode else
+                            'foundation-resolution.tar' if resolution_mode else 'foundation-preflight.tar')
     with tarfile.open(bundle, 'w', format=tarfile.USTAR_FORMAT) as archive:
         for n, d in sorted(files.items()):
             member = tarfile.TarInfo(n)
@@ -329,7 +411,8 @@ def execute(args):
     if mode == 'cleanup':
         retained = json.loads(private_file(directory / 'readback-result.json'))
         if (retained['bundle_sha256'] != args.sha256 or retained['transport_exit_status'] != retained['worker_status']
-                or retained['report']['state'] not in ('snapshot_completed', 'snapshot_held', 'resolution_completed', 'resolution_held')):
+                or retained['report']['state'] not in ('snapshot_completed', 'snapshot_held', 'resolution_completed', 'resolution_held',
+                                                       'inspection_completed', 'inspection_held')):
             raise ValueError('bound terminal readback required before cleanup')
         terminal_sha = retained['report']['terminal_sha256']
     agent = os.environ.get('SSH_AUTH_SOCK')
@@ -378,6 +461,26 @@ def execute(args):
             stream.write(raw)
         write_new(directory / 'acceptance.json', {'state': 'resolution_accepted', 'bundle_sha256': args.sha256,
                                                  'resolution_sha256': sha(raw), 'snapshot_sha256': sha(files['snapshot.json'])})
+    if mode == 'readback' and report.get('state') == 'inspection_completed' and status == 0:
+        raw = base64.b64decode(report['inspection_base64'], validate=True)
+        if sha(raw) != report['inspection_sha256'] or report['spec_sha256'] != sha(files['spec.json']):
+            raise ValueError('retained inspection/spec hash mismatch')
+        import types
+        inspector = types.ModuleType('sealed_destination_validator')
+        exec(compile(files['inspect-source-destinations.py'], 'sealed-destination-validator.py', 'exec'), inspector.__dict__)
+        release, build = inspector.accepted_inputs(files)
+        observed = json.loads(raw)
+        inspector.validate(observed, spec, release, build)
+        with (directory / 'inspection.json').open('xb') as stream:
+            stream.write(raw)
+        state = encoded(observed['installation_state'])
+        with (directory / 'installation-state.json').open('xb') as stream:
+            stream.write(state)
+        write_new(directory / 'acceptance.json', {'state': 'source_destinations_accepted',
+            'bundle_sha256': args.sha256, 'inspection_sha256': sha(raw),
+            'installation_state_sha256': sha(state), 'release_sha256': sha(files['release.json']),
+            'destination_count': len(release['files']), 'collision_count': len(observed['collisions']),
+            'live_installed': False, 'services_activated': False})
     return {'mode': mode, 'state': report.get('state'), 'worker_status': status, 'result': str(directory / (mode + '-result.json'))}
 
 
@@ -396,6 +499,13 @@ def main():
     resolution_parser.add_argument('--known-hosts', type=Path, required=True)
     resolution_parser.add_argument('--operation-id', required=True)
     resolution_parser.add_argument('--output', type=Path, required=True)
+    destinations = sub.add_parser('seal-destinations')
+    for name in ('release', 'build-spec', 'build-acceptance'):
+        destinations.add_argument('--' + name, type=Path, required=True)
+        destinations.add_argument('--' + name + '-sha256', required=True)
+    destinations.add_argument('--known-hosts', type=Path, required=True)
+    destinations.add_argument('--operation-id', required=True)
+    destinations.add_argument('--output', type=Path, required=True)
     running = sub.add_parser('execute')
     running.add_argument('--bundle', type=Path, required=True)
     running.add_argument('--sha256', required=True)

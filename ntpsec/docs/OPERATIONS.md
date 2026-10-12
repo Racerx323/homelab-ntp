@@ -20,7 +20,7 @@ The applications have not been installed live or configured on the new image.
 | --- | --- | --- |
 | Media and bootstrap | Accepted | Preserve original Debian 11 card and primary/antenna power |
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before live installation |
-| Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Prepare a separately approved destination/collision inspection |
+| Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Read-only destination/collision bundle sealed; separate execution approval pending |
 | Live installation | Pending; new build accepted | Reviewed destination pre-state, explicit metadata, journal, recovery and scoped execution |
 | Runtime configuration | Pending | Observed UART/PPS/RTC, accounts, NTP configuration and combined-service cutover |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
@@ -58,9 +58,9 @@ The installation review includes the Avahi libraries' ldconfig triggers and
 libdbus-1-dev's generated XML catalog maintenance. Successful cleanup restores
 temporary controls and the original automatic-update disposition; it retains
 the executed privileged stage, claim, backups and logs as recovery evidence.
-No source build or mDNS runtime activation occurred. Prepare the next source
-build against the newly accepted inventory and current recipe; it requires its
-own execution approval.
+At the package-installation gate no source build or mDNS runtime activation
+had occurred. The subsequent source build was separately approved and accepted
+against this inventory; runtime activation remains pending.
 
 Resolution v3 performed its isolated refresh and simulation but final continuity
 was held: the resolver left its temporary APT_CONFIG in the worker environment.
@@ -421,9 +421,33 @@ kernel, build log and every staged hash/mode. Acceptance is not live deployment.
 
 First inspect all intended destinations/collisions under a separately approved
 read-only scope. Source-built files may exist even when dpkg has no application
-record. Capture destination types, bytes/hashes, links, ownership and modes.
+record. Capture destination types, hashes, links, ownership and modes.
 For updates, also compare the previously accepted installed release and include
 obsolete destinations that need removal.
+
+Use `run-foundation-preflight.py seal-destinations` to prepare an offline bundle
+from private copies of the accepted release, build specification and acceptance
+receipt, each with an explicit SHA-256, the pinned known_hosts and a unique
+operation ID/output directory. The checked-in helper must match the accepted
+release; the build inventory must match the repository's accepted package records.
+This first-install scope covers only manifest destinations and their protected
+ancestors, OS/boot/Python identity, package inventory/audit and safe service/process
+observations. It runs no installed application code. Bound each file hash to
+64 MiB and each of two comparison passes to 512 MiB within one capture; reject
+unsafe parents, special files or continuity drift. No existing files are replaced.
+
+The [current inspection review](/home/aaron/code/.local-evidence/homelab-ntp/current/source-destinations-20261012-v1/review.md)
+is sealed for j2-svntp1 and awaits execution approval. The root-owned stage is
+exclusive, 0700, with 0600 hash-verified inputs. Submit once with the same
+launcher/bundle/hash using `execute --mode collect`, conditionally read the same
+terminal record with `--mode readback`, and clean only the verified stage with
+`--mode cleanup` after retaining that readback. Readback saves `inspection.json`,
+canonical `installation-state.json` and a bound acceptance receipt. Held states,
+missing receipts, busy locks, changed inputs or unexpected stage entries prohibit
+recollection and require separately reviewed recovery. Historical execution
+records and both accepted source workspaces remain preserved. A collision or
+active daemon observation is input to installation review, not replacement or
+service-change authorization. HISTORY records the exact bundle hash and expiry.
 
 Invocation shapes use separately reviewed inputs:
 

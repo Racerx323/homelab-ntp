@@ -19,6 +19,13 @@ INPUTS = {'capture-foundation-snapshot.py', 'foundation-install.py', 'inspect-tr
           'hook-closure-preflight.py', 'read-debconf-answers.py', 'recipe.json'}
 RESOLUTION_INPUTS = {'resolver.py', 'resolver-spec.json', 'snapshot.json',
                      'installation-assets.json', 'resolution-policy.json'}
+DESTINATION_INPUTS = {'inspect-source-destinations.py', 'clockmaker.py', 'release.json',
+                      'build-spec.json', 'build-acceptance.json'}
+
+
+def required_inputs(operation):
+    return INPUTS | (RESOLUTION_INPUTS if operation == 'foundation-resolution' else
+                    DESTINATION_INPUTS if operation == 'source-destinations' else set())
 
 
 def sha(data):
@@ -30,7 +37,7 @@ def encoded(value):
 
 
 def identity(spec, epoch, mode):
-    if (spec['schema'] != 1 or spec['operation'] not in ('foundation-snapshot', 'foundation-resolution')
+    if (spec['schema'] != 1 or spec['operation'] not in ('foundation-snapshot', 'foundation-resolution', 'source-destinations')
             or not re.fullmatch(r'[a-z][a-z0-9-]{0,63}', spec['operation_id'])
             or spec['stage'] != '/var/lib/ntp-preflight-' + spec['operation_id']
             or os.geteuid() != 0 or os.getegid() != 0
@@ -56,7 +63,8 @@ def terminal(worker, root, spec):
     raw_result = worker.read(root / 'terminal.json')
     result = json.loads(raw_result)
     if (claim['spec_sha256'] != sha(encoded(spec)) or result['spec_sha256'] != claim['spec_sha256']
-            or result['state'] not in ('snapshot_completed', 'snapshot_held', 'resolution_completed', 'resolution_held')):
+            or result['state'] not in ('snapshot_completed', 'snapshot_held', 'resolution_completed', 'resolution_held',
+                                      'inspection_completed', 'inspection_held')):
         raise ValueError('bound terminal receipt required; preserve unresolved stage')
     result['terminal_sha256'] = sha(raw_result)
     if result['state'] == 'snapshot_completed':
@@ -75,6 +83,11 @@ def terminal(worker, root, spec):
         if sha(raw) != result['resolution_sha256']:
             raise ValueError('resolution receipt hash mismatch')
         result['resolution_base64'] = base64.b64encode(raw).decode()
+    if result['state'] in ('inspection_completed', 'inspection_held') and 'inspection_sha256' in result:
+        raw = worker.read(root / 'inspection.json')
+        if sha(raw) != result['inspection_sha256']:
+            raise ValueError('inspection receipt hash mismatch')
+        result['inspection_base64'] = base64.b64encode(raw).decode()
     return result
 
 
@@ -130,7 +143,7 @@ def resolution(collector, root, spec, worker, epoch):
 
 def entry(spec, files, epoch, mode, terminal_sha=None):
     os.umask(0o077)
-    required = INPUTS | (RESOLUTION_INPUTS if spec['operation'] == 'foundation-resolution' else set())
+    required = required_inputs(spec['operation'])
     if mode not in ('collect', 'readback', 'cleanup') or set(files) != required:
         raise ValueError('fixed preflight operation and inputs required')
     if set(spec['members']) != required or any(sha(files[n]) != h for n, h in spec['members'].items()):
@@ -162,10 +175,19 @@ def entry(spec, files, epoch, mode, terminal_sha=None):
                 signal.signal(signum, interrupted)
             result = {'spec_sha256': sha(encoded(spec)), 'package_mutation_authorized': False}
             try:
-                definition = importlib.util.spec_from_file_location('protected_snapshot', root / 'capture-foundation-snapshot.py')
+                member = ('inspect-source-destinations.py' if spec['operation'] == 'source-destinations'
+                          else 'capture-foundation-snapshot.py')
+                definition = importlib.util.spec_from_file_location('protected_snapshot', root / member)
                 collector = importlib.util.module_from_spec(definition)
                 definition.loader.exec_module(collector)
-                if spec['operation'] == 'foundation-resolution':
+                if spec['operation'] == 'source-destinations':
+                    report = collector.collect(root, spec, worker, epoch)
+                    collector.validate(report, spec, json.loads(worker.read(root / 'release.json')),
+                                       json.loads(worker.read(root / 'build-spec.json')))
+                    raw = encoded(report)
+                    worker.create(root / 'inspection.json', raw)
+                    result.update(state='inspection_completed', inspection_sha256=sha(raw))
+                elif spec['operation'] == 'foundation-resolution':
                     result.update(resolution(collector, root, spec, worker, epoch))
                 else:
                     snapshot = collector.collect(root / 'recipe.json', spec['members']['recipe.json'],
@@ -177,7 +199,9 @@ def entry(spec, files, epoch, mode, terminal_sha=None):
                     result.update(state='snapshot_completed', snapshot_sha256=sha(raw))
                 verify_inputs(worker, root, spec, files)
             except BaseException as error:
-                result.update(state='resolution_held' if spec['operation'] == 'foundation-resolution' else 'snapshot_held',
+                held = {'foundation-resolution': 'resolution_held', 'source-destinations': 'inspection_held'}.get(
+                    spec['operation'], 'snapshot_held')
+                result.update(state=held,
                               error=type(error).__name__ + ': ' + str(error))
             result['finished_epoch'] = int(time.time())
             worker.create(root / 'terminal.json', encoded(result))
@@ -192,6 +216,8 @@ def entry(spec, files, epoch, mode, terminal_sha=None):
             expected.add('snapshot.json')
         if 'resolution_sha256' in result:
             expected.add('resolution.json')
+        if 'inspection_sha256' in result:
+            expected.add('inspection.json')
         if (root / 'workspace.json').exists():
             expected.add('workspace.json')
         if set(p.name for p in root.iterdir()) != expected:

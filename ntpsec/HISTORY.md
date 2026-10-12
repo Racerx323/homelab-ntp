@@ -15,7 +15,7 @@ live inspection.
 | Rebuilt node | Former j1-svntp1 renamed j2-svntp1; spare-card first boot accepted | Full hardware/time/network acceptance |
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; Ethernet DHCP 10.1.0.137; matching console/SSH key | Fixed dual-stack service addresses; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before live installation |
-| Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Separate destination/collision inspection, then live installation and activation |
+| Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Destination/collision bundle sealed; execution approval pending, then live installation and activation |
 | Runtime | Candidate only; no new ntp.conf or live application deployment | GPS/PPS/RTC, accounts, combined service, leap maintenance |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
@@ -363,8 +363,8 @@ passed full acceptance against this inventory and the current recipe. Further
 execution requires separate hash-bound approval; the consumed installation
 bundle and pre-installation baseline must not be replayed.
 
-The next stage is a separately approved destination/collision inspection and
-preparation of live source
+The next stage is execution of the sealed destination/collision inspection
+after separate hash-bound approval, then preparation of a live source
 installation bundle with explicit metadata, pre-state, backups, rollback and
 acceptance. Preserve the accepted v5 stage and receipts. Runtime configuration,
 mail/cron, hardware, dual-stack/DNS/UniFi and reboot acceptance follow their
@@ -602,3 +602,39 @@ modes, journal, backups, obsolete-file handling, acceptance and recovery for its
 own approval. Source-build approval has been consumed; it authorizes no further
 target contact or application deployment. Runtime mDNS policy/activation follows
 the governed runtime stage.
+
+### October 12: destination/collision inspection prepared and sealed
+
+Prepared the [read-only inspection review](/home/aaron/code/.local-evidence/homelab-ntp/current/source-destinations-20261012-v1/review.md)
+for j2-svntp1, operation `source-destinations-20261012-v1`, without target contact.
+Bundle SHA-256:
+`efa5fc69df7f9dce63bbace722c7961a95541e2b5d4e163f34c80d4105c94775`.
+Collection expires `2026-10-13T22:05:56+00:00`; readback/cleanup remain available
+after expiry.
+
+It binds the accepted 159-entry release
+`7ea41e51c571744776c2d4563b0da42eb03ce7a237c45922ddc976ee726390f6`,
+build specification
+`a3b1eb9a19f01ac504c074afd124c73b6d3e2a540f6a21b9471c04a74bad9679`,
+acceptance receipt
+`9e077154a1abf40bb8a7363d9d92b45559e7402b291f11498773711b6e6483fe`,
+exact 686 package records, accepted boot/Python identity and pinned SSH key.
+
+Extended the existing protected preflight transport with a destination mode
+and bounded manifest collector. One capture compares two hash passes, records
+absent/identical/different destinations and root-safe parent metadata, and checks
+package/boot/Python plus service/process continuity. It executes no installed
+application code and changes no package, application, runtime, service or update
+policy. Only the new exclusive root-owned observation stage and its records are
+written. Conditional terminal readback validates full coverage and saves the
+canonical installation pre-state; cleanup verifies terminal/input/file bindings
+before removing only this stage. Drift, missing receipts or unknown entries hold
+cleanup/replay for a separately reviewed recovery. Prior executed evidence and
+accepted candidate workspaces are preserved.
+
+Offline bounds, ancestor rejection, file/link handling, mutation detection,
+receipt/hash binding, readback/acceptance and completed/held cleanup regression
+checks passed. Plan, operations and history now agree: obtain separate approval
+for capture/readback/cleanup, accept the retained observation, then prepare a
+new live installation bundle with explicit metadata, backups and rollback.
+No inspection execution or live installation has occurred.
