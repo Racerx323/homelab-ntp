@@ -52,7 +52,7 @@ def host_key(data, host):
 
 
 def validate_spec(spec):
-    if (spec['schema'] != 1 or spec['operation'] not in ('foundation-snapshot', 'foundation-resolution', 'source-destinations')
+    if (spec['schema'] != 1 or spec['operation'] not in ('foundation-snapshot', 'foundation-resolution', 'source-destinations', 'source-installation')
             or not re.fullmatch(r'[a-z][a-z0-9-]{0,63}', spec['operation_id'])
             or spec['stage'] != '/var/lib/ntp-preflight-' + spec['operation_id']
             or not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,62}', spec['hostname'])
@@ -75,7 +75,7 @@ def payload(spec, files, epoch, mode, terminal_sha=None):
         '),"sealed-preflight-stage.py","exec"),ns)\n'
         'status=0\ntry:\n'
         '    result=ns["entry"](spec,files,' + repr(epoch) + ',' + repr(mode) + ',' + repr(terminal_sha) + ')\n'
-        '    if result.get("state") in ("snapshot_held","resolution_held","inspection_held"): status=2\n'
+        '    if result.get("state") in ("snapshot_held","resolution_held","inspection_held","installation_held"): status=2\n'
         'except BaseException as error:\n'
         '    status=2\n'
         '    result={"state":"held","error":type(error).__name__+": "+str(error)}\n'

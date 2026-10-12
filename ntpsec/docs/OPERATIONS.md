@@ -21,7 +21,7 @@ The applications have not been installed live or configured on the new image.
 | Media and bootstrap | Accepted | Preserve original Debian 11 card and primary/antenna power |
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before live installation |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Prepare native installation using the accepted destination pre-state |
-| Live installation | Pending; new build and destination pre-state accepted | Prepare and seal native installation with explicit metadata, journal, recovery and scoped execution |
+| Live installation | Native first-install bundle prepared and sealed; execution pending | Separate approval for installation, terminal readback, conditional recovery and payload cleanup |
 | Runtime configuration | Pending | Observed UART/PPS/RTC, accounts, NTP configuration and combined-service cutover |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Pending | Hardware, time, dual-stack clients, monitoring and reboot evidence |
@@ -457,7 +457,39 @@ records and both accepted source workspaces remain preserved. A collision or
 active daemon observation is input to installation review, not replacement or
 service-change authorization. HISTORY records the exact bundle hash and expiry.
 
-Invocation shapes use separately reviewed inputs:
+The [native first-install review](/home/aaron/code/.local-evidence/homelab-ntp/current/source-install-20261012-v1/review.md)
+is sealed for j2-svntp1 and awaits separate execution approval. Preparation used
+only the accepted release/build evidence and destination inspection; no target
+contact occurred. Use `run-source-install.py seal` with private input files,
+explicit `--input-hashes`, pinned known_hosts and a unique operation ID/output.
+The archive binds the current source recipe, pinned assets, transport, root
+helpers, tests, release, build receipt/specification and accepted inspection
+receipt/specification/pre-state. Future nodes require their own accepted inputs.
+
+The wrapper walks the accepted target staging tree with no-follow directory
+descriptors, verifies bounded bytes/links and copies them into protected root
+staging before calling the accepted native clockmaker installer. Revalidate
+absent destinations, protected ancestors, exact packages, boot, Python and
+service/process state. Install manifest modes with root:root ownership; retain
+existing directories and create missing parents as root:root 0755 with recorded
+identities. The root-owned journal keeps baseline metadata and native backups;
+this first-install transaction has no prior files to back up. It accepts only
+complete installed hashes/links/ownership/modes and target continuity, with
+terminal readback revalidation. The result is `copied_not_activated`.
+
+Submit once using `execute --mode collect`, then conditional `readback` with the
+same bundle/hash. A held installation may use conditional `rollback` only when
+all current destinations are absent or proved accepted installed artifacts,
+parent identities match, created-directory contents contain no unrelated data,
+and the baseline/target state is intact. Restore absent files and remove only
+proved new empty directories. Missing records or ambiguous/interrupted state
+require separate recovery review; never replay installation or recovery.
+After retained terminal readback and completed installation or verified recovery,
+`cleanup` removes only the verified temporary payload. Executed privileged code,
+journals, backups and receipts remain private on target and controller. Runtime
+linkage/cache discovery, configuration and activation are later reviewed gates.
+
+Invocation shapes for the underlying helper use separately reviewed inputs:
 
 ```bash
 python3 -I -B ntpsec/scripts/clockmaker.py inspect \

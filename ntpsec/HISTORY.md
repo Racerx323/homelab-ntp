@@ -15,7 +15,7 @@ live inspection.
 | Rebuilt node | Former j1-svntp1 renamed j2-svntp1; spare-card first boot accepted | Full hardware/time/network acceptance |
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; Ethernet DHCP 10.1.0.137; matching console/SSH key | Fixed dual-stack service addresses; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before live installation |
-| Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Destination inspection accepted; zero collisions; next prepare scoped native installation and recovery |
+| Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Destination inspection accepted; native installation bundle sealed; execution approval pending |
 | Runtime | Candidate only; no new ntp.conf or live application deployment | GPS/PPS/RTC, accounts, combined service, leap maintenance |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
@@ -365,18 +365,21 @@ bundle and pre-installation baseline must not be replayed.
 
 The destination/collision inspection passed acceptance and verified staging
 cleanup. All 159 destinations are absent with zero collisions. The next stage
-is preparation of a live source installation bundle with explicit metadata, pre-state, backups, rollback and
-acceptance. Preserve the accepted v5 stage and receipts. Runtime configuration,
+is separate approval for the sealed native source installation, readback,
+conditional recovery and payload cleanup. The bundle binds explicit metadata,
+accepted pre-state, baseline/journal/backups, rollback and acceptance. Preserve
+the accepted v5 stage and receipts. Runtime configuration,
 mail/cron, hardware, dual-stack/DNS/UniFi and reboot acceptance follow their
 reviewed stages. Earlier approvals have been consumed; further target contact
 requires a scoped approval.
 
 The earlier v2 capture remains a retained record for its previous recipe.
-Use the accepted v3 snapshot for the current foundation requirements, within
-its freshness window and with the bound target inputs rechecked by resolution.
-Fresh resolution v4 and its seven-package installation are accepted.
-The new source-stage transport bindings are rendered and sealed. Complete live
-installation/runtime profiles remain pending.
+The accepted v3 snapshot/v4 resolution and seven-package installation are
+completed preparation records; their 679-package baseline no longer describes
+the target. Future foundation transactions require a fresh accepted snapshot.
+The native source installation bundle is sealed against the accepted 686-package
+state and destination inspection. Execution and complete runtime profiles
+remain pending.
 OPERATIONS identifies these gaps; this history does not certify an unattended
 end-to-end installer or a completed deployment. No new live action is authorized
 by this history entry.
@@ -672,3 +675,38 @@ rollback and post-install acceptance before requesting separate execution
 approval. Runtime configuration/activation and hardware/network/maintenance
 acceptance remain later scoped gates. The consumed inspection must not be
 replayed; its acceptance does not authorize installation.
+
+### October 12: native GPSD/NTPsec first installation prepared and sealed
+
+Prepared the [native installation review](/home/aaron/code/.local-evidence/homelab-ntp/current/source-install-20261012-v1/review.md)
+for j2-svntp1, operation `source-install-20261012-v1`, entirely offline.
+Bundle SHA-256:
+`d2c57f3f4348c0edf3130af5b21603377e4a0115cbcb2e035be062195430c527`.
+Installation window expires `2026-10-13T17:12:58-05:00` (America/Chicago).
+It binds the accepted mDNS-enabled 159-entry release, build receipt/specification,
+exact 686-package/boot/Python state and accepted absent destination pre-state
+`d6fa64c51c3a08a112219556700912bed71995b1ef1451ace7d48450e43ca75f`.
+
+Added a sealed controller and protected first-install wrapper. Verified native
+payload is copied from the accepted target staging tree through no-follow,
+bounded reads into root-owned staging. Recheck the exact pre-state and target
+continuity before invoking the accepted clockmaker installer. Explicit ownership
+and modes, parent identities and complete installed hashes/links govern acceptance;
+terminal readback rechecks installed state. Existing directories remain intact;
+new parents are root:root 0755. Baseline metadata and native journal/backups remain
+protected. The prior-file backup set is empty because all destinations are absent.
+
+Conditional recovery verifies every current artifact, parent identity and new
+directory contents before removing anything; then restores absent paths and
+removes only proved new empty directories. Missing/interrupted journal records,
+unrelated data or drift hold recovery for a new review. Exclusive registrations
+prevent replay. Conditional cleanup removes only verified temporary payload;
+executed privileged code, journals and recovery evidence remain retained.
+
+Offline native-copy/link/mode checks, injected partial failure and recovery,
+unknown-data/drift rejection, bounded source reads, replay/expiry rejection,
+terminal acceptance and payload-only cleanup regressions passed. No target
+contact, package change, application installation, configuration or activation
+occurred. Next obtain separate hash-bound execution approval. Library-cache and
+Python/runtime discovery, configuration, services, hardware, networking and
+maintenance acceptance remain subsequent reviewed stages.

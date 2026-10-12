@@ -160,6 +160,16 @@ readback and verified cleanup; preserve executed build evidence. An accepted
 inspection authorizes no replacement or activation. Unsafe paths, bounds or
 state drift hold the next installation gate for separately reviewed recovery.
 
+For native first installation, verify accepted staged bytes/links into protected
+root staging before invoking the accepted installer; never execute user-owned
+build code as root. Require stopped application daemons, no conflicting APT
+application packages, exact destination pre-state and target continuity. Use
+explicit file/directory ownership/modes and retain baseline, journal and backups.
+Accept complete installed-file verification separately from runtime activation.
+Recovery must prove every removal and created-directory identity/content before
+restoring the baseline; ambiguous partial state requires a new recovery review.
+Payload cleanup preserves executed privileged artifacts and recovery evidence.
+
 The earlier accepted candidate has mDNS disabled; preserve its evidence.
 The replacement dependency/build stage has passed acceptance, as recorded in
 HISTORY. Live installation still requires separately approved destination

@@ -37,7 +37,7 @@ def encoded(value):
 
 
 def identity(spec, epoch, mode):
-    if (spec['schema'] != 1 or spec['operation'] not in ('foundation-snapshot', 'foundation-resolution', 'source-destinations')
+    if (spec['schema'] != 1 or spec['operation'] not in ('foundation-snapshot', 'foundation-resolution', 'source-destinations', 'source-installation')
             or not re.fullmatch(r'[a-z][a-z0-9-]{0,63}', spec['operation_id'])
             or spec['stage'] != '/var/lib/ntp-preflight-' + spec['operation_id']
             or os.geteuid() != 0 or os.getegid() != 0
