@@ -151,8 +151,13 @@ libatopology2t64:arm64	1.2.14-1+rpt1+deb13u1	ii
 libattr1:arm64	1:2.5.2-3	ii 
 libaudit-common	1:4.0.2-2+deb13u1	ii 
 libaudit1:arm64	1:4.0.2-2+deb13u1	ii 
+libavahi-client-dev:arm64	0.8-16	ii 
+libavahi-client3:arm64	0.8-16	ii 
 libavahi-common-data:arm64	0.8-16	ii 
+libavahi-common-dev:arm64	0.8-16	ii 
 libavahi-common3:arm64	0.8-16	ii 
+libavahi-compat-libdnssd-dev:arm64	0.8-16	ii 
+libavahi-compat-libdnssd1:arm64	0.8-16	ii 
 libavahi-core7:arm64	0.8-16	ii 
 libb2-1:arm64	0.98.1-1.1+b2	ii 
 libbabeltrace1:arm64	1.5.11-4+b2	ii 
@@ -203,6 +208,7 @@ libcurl4t64:arm64	8.14.1-2+deb13u5	ii
 libdaemon0:arm64	0.14-7.1+b3	ii 
 libdb5.3t64:arm64	5.3.28+dfsg2-9	ii 
 libdbus-1-3:arm64	1.16.2-2	ii 
+libdbus-1-dev:arm64	1.16.2-2	ii 
 libdconf1:arm64	0.40.0-5	ii 
 libdebconfclient0:arm64	0.280	ii 
 libdebuginfod-common	0.192-4	ii 
@@ -404,6 +410,7 @@ libssl-dev:arm64	3.5.7-1~deb13u3+rpt1	ii
 libssl3t64:arm64	3.5.7-1~deb13u3+rpt1	ii 
 libstdc++-14-dev:arm64	14.2.0-19	ii 
 libstdc++6:arm64	14.2.0-19	ii 
+libsystemd-dev:arm64	257.13-1~deb13u1	ii 
 libsystemd-shared:arm64	257.13-1~deb13u1	ii 
 libsystemd0:arm64	257.13-1~deb13u1	ii 
 libtalloc2:arm64	2:2.4.3+samba4.22.11+dfsg-0+deb13u1	ii 

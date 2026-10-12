@@ -11,7 +11,7 @@ to contact a node, deploy files, send a notification or reboot it.
 ## Current state and remaining work
 
 j2-svntp1 is the renamed former j1-svntp1 physical node, now running Raspberry
-Pi OS Lite Trixie on the spare card. Its accepted foundation contains 679 package
+Pi OS Lite Trixie on the spare card. Its accepted foundation contains 686 package
 records. The retained NTPsec/GPSD source candidate has 159 manifest entries;
 both upstream suites, native staging and corrected standalone acceptance passed.
 The applications have not been installed live or configured on the new image.
@@ -19,8 +19,8 @@ The applications have not been installed live or configured on the new image.
 | Stage | State | Next requirement |
 | --- | --- | --- |
 | Media and bootstrap | Accepted | Preserve original Debian 11 card and primary/antenna power |
-| Foundation | Original foundation, pps-tools and bc accepted; revised-recipe v3 snapshot and resolution v4 accepted; cleanup complete; seven-package mDNS installation sealed | Obtain separate installation approval, then accept the exact delta and restored controls/update disposition |
-| Source candidate | v5 accepted with mDNS disabled | Accept mDNS prerequisites, then a new mDNS-enabled build/acceptance and destination/collision review |
+| Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Prepare and separately approve a new mDNS-enabled source build against the accepted inventory |
+| Source candidate | v5 accepted with mDNS disabled; new prerequisites accepted | New mDNS-enabled build/acceptance, then destination/collision review |
 | Live installation | Pending | New accepted build, reviewed pre-state, explicit metadata, journal and scoped execution |
 | Runtime configuration | Pending | Observed UART/PPS/RTC, accounts, NTP configuration and combined-service cutover |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
@@ -47,16 +47,20 @@ agreement and full target continuity. Verified workspace/stage cleanup completed
 The accepted delta is seven additions, with no upgrades or removals. HISTORY
 records the bundle/report hashes and receipts. The
 [seven-package installation review](/home/aaron/code/.local-evidence/homelab-ntp/current/foundation-mdns-install-20261012-v1/review.md)
-is sealed from accepted v4 evidence and verified pinned archives; execution is
-pending separate approval. The snapshot remains fresh until October 13, 2026
-at 20:30:41 UTC; recheck freshness and target inputs before execution.
-Resolution approval does not authorize package installation.
+was approved and executed once. Exact package, dpkg, protected-input, hook,
+needrestart and boot/access/network acceptance passed. Controls and the original
+automatic-update disposition were restored. The accepted inventory is now
+686 records and is mirrored in accepted-packages.tsv from hash-verified terminal
+evidence. The old 679-record snapshot/resolution remain executed preparation
+records; their baseline no longer describes the target after installation.
 
 The installation review includes the Avahi libraries' ldconfig triggers and
 libdbus-1-dev's generated XML catalog maintenance. Successful cleanup restores
 temporary controls and the original automatic-update disposition; it retains
 the executed privileged stage, claim, backups and logs as recovery evidence.
-No source build or mDNS runtime activation is included in this installation gate.
+No source build or mDNS runtime activation occurred. Prepare the next source
+build against the newly accepted inventory and current recipe; it requires its
+own execution approval.
 
 Resolution v3 performed its isolated refresh and simulation but final continuity
 was held: the resolver left its temporary APT_CONFIG in the worker environment.

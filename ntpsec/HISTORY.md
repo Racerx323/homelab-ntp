@@ -14,7 +14,7 @@ live inspection.
 | --- | --- | --- |
 | Rebuilt node | Former j1-svntp1 renamed j2-svntp1; spare-card first boot accepted | Full hardware/time/network acceptance |
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; Ethernet DHCP 10.1.0.137; matching console/SSH key | Fixed dual-stack service addresses; Wi-Fi disablement |
-| Foundation | 679 package records; original foundation plus pps-tools and bc accepted; revised-recipe v3 snapshot accepted and capture stage removed | Metadata resolution and exact mDNS prerequisite delta before additional installation |
+| Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | New mDNS-enabled source build/acceptance |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; upstream tests/native staging and 159-entry manifest accepted with mDNS disabled | New mDNS-enabled build/acceptance, then live installation and activation |
 | Runtime | Candidate only; no new ntp.conf or live application deployment | GPS/PPS/RTC, accounts, combined service, leap maintenance |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
@@ -356,12 +356,11 @@ not be used to satisfy this revised requirement. Preserve those records.
 
 The revised-recipe v3 snapshot is accepted and its verified stage removed.
 Resolution v3 was held at final continuity and cleaned up; corrected v4 has passed
-acceptance and cleanup. The seven-package installation delta is prepared and
-sealed offline using the checked-in recipe, verified pinned assets and accepted
-snapshot/resolution; recheck freshness and bound
-target inputs before installation. Separate hash-bound installation approval is
-required. This does not authorize reinstalling the accepted
-foundation or changing the live APT lists.
+acceptance and cleanup. The seven-package installation passed acceptance and
+control cleanup, yielding 686 package records. Prepare the new mDNS-enabled
+source build against this accepted inventory and the current recipe. Further
+execution requires separate hash-bound approval; the consumed installation
+bundle and pre-installation baseline must not be replayed.
 
 After accepted mDNS prerequisites, prepare a new unprivileged source build and
 acceptance, then a separately approved destination/collision inspection and live source
@@ -374,7 +373,7 @@ requires a scoped approval.
 The earlier v2 capture remains a retained record for its previous recipe.
 Use the accepted v3 snapshot for the current foundation requirements, within
 its freshness window and with the bound target inputs rechecked by resolution.
-Fresh resolution v4 is accepted; no new package transaction has been executed.
+Fresh resolution v4 and its seven-package installation are accepted.
 Fresh source-stage
 transport bindings and complete live installation/runtime profiles remain pending.
 OPERATIONS identifies these gaps; this history does not certify an unattended
@@ -499,3 +498,33 @@ evidence is preserved. Separate hash-bound execution approval is the next gate.
 No packages were installed and no target contact occurred during preparation.
 Only after package acceptance may a separately reviewed mDNS-enabled source
 build and acceptance proceed; this bundle does not authorize that build.
+
+### October 12: mDNS prerequisite installation accepted; controls restored
+
+Executed the approved seven-package installation once on j2-svntp1 under bundle
+SHA-256 `c6629e7ac07c452bf5da006f77706faf6ad211116860b5e81467243c05d94672`.
+Transport and worker both returned 0. Hash-verified 395 returned evidence records,
+including complete, acceptance and cleanup receipts. Exact inventory, clean dpkg,
+protected inputs, hook/protocol completion, effective needrestart policy,
+unchanged listchanges seen state and boot/access/network continuity all passed.
+Needrestart reported version 3.11, current and expected kernel
+6.18.50+rpt-rpi-v8, and kernel status 1.
+
+All seven exact pinned packages are installed. The accepted inventory now contains
+686 records, with no upgrades, removals or unrelated additions. Mirrored the
+observed terminal inventory byte-for-byte in configs/accepted-packages.tsv;
+its SHA-256 is
+`009fa317306e75c70b7f4cbbb8a6cc651cafddf689eb1fc32fbb3a6a4997176c`.
+[Acceptance receipt](/home/aaron/code/.local-evidence/homelab-ntp/current/foundation-mdns-install-20261012-v1/acceptance.json)
+and complete private evidence are retained. Temporary policies and runtime masks
+were restored/removed, original automatic updates restored, and the approved
+final needrestart policy retained with microcode checking disabled.
+
+Conditional readback/recovery were unnecessary because complete terminal evidence
+and acceptance/cleanup succeeded. The root-owned stage, claim, backups and logs
+remain preserved as reviewed mutation evidence. No source build, daemon activation,
+hardware/network configuration, notification delivery or reboot occurred.
+Next prepare and review a new mDNS-enabled GPSD/NTPsec source build against the
+accepted 686-record inventory. The old 679-record snapshot/resolution and consumed
+installation approval are execution records, not a current baseline or permission
+for further execution.
