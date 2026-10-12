@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; Ethernet DHCP 10.1.0.137; matching console/SSH key | Fixed dual-stack service addresses; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation/readback/payload cleanup accepted; runtime discovery and configuration pending |
-| Runtime | Native files installed, copied_not_activated; read-only discovery prepared | Execute/accept discovery, then render GPS/PPS/RTC, accounts, configuration and combined-service inputs |
+| Runtime | Native files installed, copied_not_activated; corrected v2 discovery prepared after v1 held | Execute/accept discovery, then render GPS/PPS/RTC, accounts, configuration and combined-service inputs |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -354,7 +354,8 @@ The result is `copied_not_activated`. Preserve both source workspaces and all
 executed privileged code, baseline records, native journal/backups and receipts.
 Do not replay the consumed inspection or installation.
 
-The read-only runtime discovery bundle is prepared and awaits separate approval,
+The corrected v2 read-only runtime discovery is prepared and awaits separate
+approval; v1 held on an inspector schema mismatch and its stage was removed,
 bound to the accepted installation receipt. Establish library/Python/PATH discovery,
 UART/PPS/RTC, accounts and service/configuration inputs before activation.
 Fixed dual-stack networking, mail/cron, leap maintenance, hardware/time/client,
@@ -742,3 +743,29 @@ Local lifecycle/binding/bounds/coverage/replay/drift regressions and repository
 pre-commit passed. No target contact occurred; the native installation stage,
 journals and all executed evidence remain preserved. Next obtain separate
 approval for one discovery capture with conditional readback and cleanup.
+
+### October 12: runtime discovery held; canonical receipt comparison corrected
+
+Executed the approved v1 capture once for j2-svntp1. It held before runtime
+queries with `installed release drift`; capture and terminal readback each
+returned matching worker/transport status 2. Scoped observation-stage cleanup
+completed with status 0. No runtime discovery acceptance was issued. Prior native
+installation code/journals, source workspaces and all controller evidence remain
+preserved. No configuration, daemon, account, package or network change occurred.
+
+Offline diagnosis found a deterministic schema mismatch: the native journal's
+`after` contains only hostname/files, while the inspector's canonical state also
+contains release hash, previous hash and obsolete entries. The comparison could
+never succeed and does not establish live file drift. Corrected the projection
+using the bound release hash, no previous release and no obsolete files; exact
+file/link/owner/mode and parent/target continuity checks remain required.
+Removed synthetic fixture fields that had concealed the discrepancy and added
+an explicit real-receipt-shape regression. The offline suite now has 14 tests.
+
+Prepared a new operation `runtime-discovery-20261012-v2` for separate approval;
+do not replay consumed v1. Host configuration remains gated on accepted fresh
+discovery and review of unresolved inputs. The three-document architecture
+and runtime activation boundary are unchanged. Replacement discovery bundle:
+`a19d107c37368c60bb952d191a98d07e882303be07bd371cf4db77a0d04f5df4`.
+Capture expires `2026-10-13T18:41:54-05:00`
+(America/Chicago).

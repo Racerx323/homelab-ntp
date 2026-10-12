@@ -32,10 +32,6 @@ class RuntimeDiscovery(unittest.TestCase):
         self.installation=Path(result['bundle']).parent
         previous,files=fixtures.c.prepare(Path(result['bundle']),result['sha256'])
         report=self.native.completed_report(previous,files)
-        receipt=report['evidence']['journal/receipt.json']
-        data=json.loads(base64.b64decode(receipt['base64']))
-        data['after'].update(release_sha256=c.c.sha(files['release.json']),previous_sha256=None,obsolete=[])
-        raw=c.c.encoded(data);receipt.update(sha256=c.c.sha(raw),base64=base64.b64encode(raw).decode())
         evidence=fixtures.c.validate_acceptance(report,files,previous)
         acceptance={'state':'native_installation_accepted','bundle_sha256':result['sha256'],
             'release_sha256':c.c.sha(files['release.json']),'installed_files':report['installed_files'],
@@ -108,6 +104,16 @@ class RuntimeDiscovery(unittest.TestCase):
                        lambda r:r['protected_files'].append('/etc/shadow')):
             changed=copy.deepcopy(value);mutate(changed)
             with self.assertRaisesRegex(ValueError,'fixed read-only'):i.recipe(c.c.encoded(changed))
+
+    def test_real_native_receipt_shape_projects_to_canonical_inspection_state(self):
+        _,spec,files=self.seal()
+        native=json.loads(files['installation-acceptance.json'])['evidence']['journal/receipt.json']['after']
+        self.assertEqual(set(native),{'hostname','files'})
+        release,_,_,state=c.validate_bindings(files,spec)
+        self.assertEqual(set(state),{'release_sha256','previous_sha256','hostname','obsolete','files'})
+        self.assertEqual(state['files'],native['files']);self.assertEqual(state['hostname'],native['hostname'])
+        self.assertEqual(state['release_sha256'],c.c.sha(files['release.json']))
+        self.assertIsNone(state['previous_sha256']);self.assertEqual(state['obsolete'],[])
 
     def test_accepted_parent_identity_and_created_directory_coverage(self):
         _,spec,files=self.seal();expected=i.native_parents(files)

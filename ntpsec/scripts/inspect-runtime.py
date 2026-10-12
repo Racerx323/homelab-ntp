@@ -114,7 +114,9 @@ def accepted_inputs(files, inspector):
             raise ValueError('native installed entry mismatch')
     native_parents(files)
     recipe(files['runtime-recipe.json'])
-    return release, build, before['observation'], receipt['after']
+    installed = {'release_sha256': sha(files['release.json']), 'previous_sha256': None,
+        'hostname': receipt['after']['hostname'], 'obsolete': [], 'files': receipt['after']['files']}
+    return release, build, before['observation'], installed
 
 
 def native_parents(files):

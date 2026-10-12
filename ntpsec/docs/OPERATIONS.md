@@ -23,7 +23,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Prepare library/Python runtime discovery and host configuration for separate approval |
-| Runtime configuration | Read-only discovery bundle prepared; execution and acceptance pending | Accept current device/account/loader/network observations before rendering host configuration and reviewing cutover |
+| Runtime configuration | Corrected v2 read-only discovery prepared; v1 held and observation stage removed | Accept current device/account/loader/network observations before rendering host configuration and reviewing cutover |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Pending | Hardware, time, dual-stack clients, monitoring and reboot evidence |
 
@@ -529,8 +529,12 @@ be rebuilt against changed dependencies.
 
 ## Configuration and combined service
 
-First accept the [runtime discovery review](/home/aaron/code/.local-evidence/homelab-ntp/current/runtime-discovery-20261012-v1/review.md)
-for j2-svntp1. Preparation is offline and does not authorize target contact.
+First accept the [runtime discovery review](/home/aaron/code/.local-evidence/homelab-ntp/current/runtime-discovery-20261012-v2/review.md)
+for j2-svntp1. The first capture held on a receipt/state schema comparison; its
+terminal readback and scoped cleanup completed. Corrected v2 projects native
+receipt file/host metadata into the canonical inspection state and tests the
+actual receipt shape. Prior execution evidence remains preserved. Preparation
+is offline and does not authorize target contact.
 The checked-in controller binds the accepted native installation archive,
 readback/acceptance and successful payload cleanup, current recipes, pinned
 assets, templates and snapshots of the three governing documents. Exact receipt
