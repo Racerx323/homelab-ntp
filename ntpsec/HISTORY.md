@@ -18,6 +18,7 @@ live inspection.
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; upstream tests/native staging and 159-entry manifest accepted with mDNS disabled | New mDNS-enabled build/acceptance, then live installation and activation |
 | Runtime | Candidate only; no new ntp.conf or live application deployment | GPS/PPS/RTC, accounts, combined service, leap maintenance |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
+| Optimizations | OPT-001 reviewed offline; Phase 3A and proposal register added | Accepted live timing baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
 
 The accepted source stage remains `/home/ama/.ntp-source-build-v5`.
@@ -35,6 +36,7 @@ end-of-project operator action. No cleanup here changes it.
 | Receiver/profile | 2026-10-10 | Uputronics u-blox M8, timeservice=yes and magic_hat=yes; runtime UART 115200 |
 | Installation assets | 2026-10-10 | Checked-in verified fetch tool and pinned manifests; large publisher binaries stay out of Git |
 | NTP discovery | 2026-10-12 | Require NTPsec mDNS build support, runtime -m and Avahi; keep GPSD serial/PPS delivery through SHM |
+| Optimization lifecycle | 2026-10-12 | Review proposals in Phase 3A; place required setup in existing phases; adopt optional tuning only after per-node measurements |
 
 ## Accepted milestones and retained observations
 
@@ -204,6 +206,22 @@ and no password-database read. The snapshot SHA-256 is
 Conditional cleanup verified and removed the root-owned stage. Accepted snapshot,
 archive and terminal records remain in the private current evidence directory.
 No package, service, policy or user-managed sudo configuration changed.
+
+### October 12: first optimization proposal evaluated
+
+Added Phase 3A and the OPT-001 register to the governing plan, with the
+measurement/recovery workflow in OPERATIONS. Reviewed package selection, CPU
+isolation, governor/CPU frequency, GPU allocation, UART/Bluetooth/PPS overlays,
+competing time services, NetworkManager and PPS verification. Baseline setup
+stays in its existing phases. Optional tuning has no demonstrated benefit yet
+and was not added to package manifests or persistent host settings.
+
+Pinned-source ntpviz is already in the accepted staged file manifest; optional
+plotting dependencies and statistics deployment remain unapproved. Exact PPS
+GPIO/edge and current hardware/driver mapping need verification. The proposal
+does not establish zero jitter or absolute accuracy. No target contact,
+packages, boot configuration, affinity, governor, service or reboot changes
+were performed during this documentation evaluation.
 
 ## Exact resume point
 

@@ -533,6 +533,11 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    GPSD, and NTPsec with the Trixie candidate configuration. Activate the
    leapfile timer after verifying its command and path. Do not enable watchdog
    resets until recovery is proven.
+   Verify UART aliases, serial-console ownership, Bluetooth use, PPS GPIO and
+   edge from the actual board and device tree before rendering boot overlays.
+   Use PL011 for the GPS UART where supported; apply `disable-bt`, `enable_uart`
+   and hciuart changes only as required by the observed mapping. Reject a
+   competing clock-discipline process before activating source-built ntpd.
 6. Query `j2-svntp1` directly from controlled clients over IPv4 and IPv6;
    confirm GPS/PPS selection, upstream reachability, leap state, Webmin
    management scope, approved Munin polling, delivered mail, needrestart
@@ -542,15 +547,94 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
 7. Only if the rebuilt node passes all gates, observe it for an agreed interval
    and finish its inventory record. Keep the existing primary DNAT active; do
    not switch DNAT merely to prove the standby rebuild.
+   Review Phase 3A before promoting this configuration to the other node.
 
 If boot, network, GPS/PPS, or client acceptance fails, remove the new card and
 reinstall that node's preserved Debian 11 card. Validate the old node's NTP
 health and client responses. A media swap is the recovery action; copying the
 old network profile or NTP config onto the new image is not a rollback.
 
+### Phase 3A: evaluate and accept measured optimizations
+
+Evaluate host, system, NTPsec and GPSD proposals here. Required hardware,
+networking and dependency corrections belong in their existing phases; tuning
+is evaluated after Phase 3 has established a working, accepted baseline. Run
+this phase on the rebuilt standby first and repeat adopted changes on the
+primary only after its own rebuild. A decision to retain defaults is valid;
+deferred optional experiments do not block deployment.
+
+The goals are measured GPS/PPS accuracy, stable clock discipline, low client
+offset/jitter and reliable service. Four GB of RAM does not justify CPU
+isolation, and no configuration guarantees deterministic interrupt latency,
+zero jitter or absolute UTC accuracy. Absolute accuracy claims require an
+independent reference with known uncertainty.
+
+1. Register each proposal with a stable ID, disposition, affected phase,
+   evidence and unresolved prerequisites. Evaluation does not authorize live
+   collection, packages, boot edits, service changes or reboot.
+2. Bind a fresh target baseline: board/firmware/kernel, kernel configuration,
+   clocksource, CPU frequency driver/governors/limits, boot arguments, task and
+   IRQ placement, software/configuration hashes, receiver/PPS mapping, network
+   state, temperature, fan and throttling/undervoltage history. Confirm existing
+   recovery and peer/shared-antenna continuity.
+3. Define metrics and pass/fail limits before approving an experiment. Compare
+   PPS sequence gaps and timestamp variation, SHM samples, source offset/jitter,
+   clock frequency/wander, client offsets and response loss, CPU/IRQ activity,
+   temperature and power faults. Keep load, sampling, receiver state and
+   observation windows comparable. Allow thermal stabilization and NTP
+   convergence; the pinned SHM documentation warns that tuning can need several
+   hours to converge. A few one-second samples are insufficient.
+4. Seal one change with its collection, acceptance, restoration and, where
+   necessary, reboot/console recovery. Prefer a reversible runtime experiment
+   before boot/kernel changes. Obtain scoped approval and operate on one node
+   while the peer serves. Capture before/change/restore comparisons; isolate
+   confounding changes rather than applying the proposed tuning block at once.
+5. Adopt only repeatable improvements without regressions in GPS/PPS selection,
+   service/access, IPv4/IPv6/NTS/mDNS, thermal/power health or reboot persistence.
+   Restore the exact baseline if results fail or are inconclusive. Mirror
+   accepted settings into the repo's recipes/templates and installed manifests;
+   record outcomes in HISTORY with bounded private evidence. Do not leave
+   accepted settings dependent on manual commands or historical trial bundles.
+
+#### OPT-001: dedicated Pi 4 timing and telemetry proposal
+
+Evaluated on October 12, 2026 against the pinned GPSD 3.27.5/NTPsec 1.2.5
+sources and Raspberry Pi OS Lite Trixie architecture. These are design
+dispositions, not measured performance results or live-action approvals.
+
+| Item | Disposition and reason | Placement |
+| --- | --- | --- |
+| OPT-001-01: APT ntpsec, gpsd, gpsd-clients | Reject this installation command. Both applications and their clients come from pinned source; distro packages would conflict with that lifecycle. | Source lifecycle; Phases 2/3 |
+| OPT-001-02: pps-tools | Required and already in the foundation recipe/pins. Provides kernel PPS diagnostics; it is not an additional optimization. | Foundation; Phase 3 hardware acceptance |
+| OPT-001-03: setserial | Omit unless a verified serial-driver need emerges. The maintained GPSD supervisor initializes its selected UART with stty and GPSD at 115200; setserial is not a demonstrated prerequisite. | Phase 3 hardware review if needed |
+| OPT-001-04: ntpsec-ntpviz | Optional telemetry using pinned-source ntpviz, already in the accepted staged manifest. Do not install the distro package: its python3-ntp dependency mixes another release's modules with the source stack. Prefer plotting on the operator workstation; review compatible modules, gnuplot dependencies, statistics, retention and exposure before adoption. | Phase 3A; routine monitoring |
+| OPT-001-05: isolcpus=3 nohz_full=3 rcu_nocbs=3 | Experimental, not a baseline requirement. These flags neither pin ntpd to CPU 3 nor reserve that CPU for PPS IRQs. Check kernel support, task/IRQ/workqueue placement and housekeeping; boot-time scheduler-domain isolation is inflexible. Prefer a reversible affinity/cpuset trial. Full dynticks targets mostly-userspace workloads and can increase kernel-entry/exit overhead; ntpd/GPSD perform kernel I/O. | Phase 3A |
+| OPT-001-06: performance governor / cpufrequtils | Experimental. The governor requests the highest permitted policy frequency; it does not prevent thermal/firmware throttling or guarantee clock stability. Measure power/temperature and frequency wander. Inspect the actual driver and persistent policy mechanism; cpufrequtils is absent from the retained Trixie arm64 main index and is not an assumed prerequisite. | Phase 3A; resolve any selected tool separately |
+| OPT-001-07: arm_freq=1500 | Do not impose this as a timing requirement. It sets a CPU frequency parameter, not a fixed NTP timebase; the supported default depends on board/firmware and a forced value can reduce performance. Preserve supported defaults unless a separate measured experiment justifies a change. | Phase 3A |
+| OPT-001-08: gpu_mem=16 | Optional memory saving with no demonstrated timing benefit on this 4 GB host. It affects legacy GPU allocation and disables some GPU features; verify firmware and console/recovery requirements before changing it. It is not a replacement for checking actual graphics/CMA use. | Phase 3A |
+| OPT-001-09: disable-bt / hciuart | Conditional hardware configuration, not general latency tuning. On Pi 4 the overlay can make PL011 UART0 primary; verify aliases, serial-console settings, actual device and enable_uart need. Disable an observed hciuart service only when Bluetooth is intentionally disabled. Do not assume the device name from a sample. | Phase 3 step 5 |
+| OPT-001-10: pps-gpio on GPIO 4 or 18 | PPS input setup is required; either example pin is unapproved until wiring is verified. The receiver is Uputronics u-blox M8; history records HAT rev 5.9, but exact BCM PPS GPIO/edge and the target mapping still need confirmation. Use the existing hash-bound pinup workflow and check RTC/PoE conflicts. | Phase 3 step 5 |
+| OPT-001-11: disable systemd-timesyncd | The existing requirement is one clock-discipline daemon. Inspect services/processes and inhibit any actual competitor, including timesyncd, within the activation bundle; do not assume it exists or blindly purge packages. GPSD remains the measurement provider. | Phase 3 step 5 |
+| OPT-001-12: static network / remove NetworkManager | Static addressing is already required. Use the observed supported manager and preserve RA global IPv6/default route plus explicit DNS VIPs. No evidence supports removing NetworkManager for timing precision. Preserve required Avahi/mDNS and management services. | Phase 3 step 4; Phase 8 validation |
+| OPT-001-13: ppswatch -a /dev/pps0 and zero jitter | Correct the acceptance claim. The pinned pps-tools includes ppswatch and ppstest, but identify the actual PPS device first. Observe edge, increasing sequences, missing pulses and timestamp/interval distributions under representative load, then prove GPSD SHM and ntpd PPS selection. One-second pulses do not prove zero jitter, UTC accuracy or a healthy end-to-end service. | Phase 3 steps 5/6; Phase 3A measurement |
+
+The proposal's root-domain/Reddit/YouTube references do not identify specific
+evidence for its timing claims. Use these primary references and the selected
+build's local manuals; inspect kernel/firmware differences before applying
+current upstream guidance to the pinned target:
+
+- [Linux CPU isolation](https://www.kernel.org/doc/html/latest/admin-guide/cpu-isolation.html),
+  [CPUFreq](https://www.kernel.org/doc/html/latest/admin-guide/pm/cpufreq.html)
+  and [PPS API](https://www.kernel.org/doc/html/latest/driver-api/pps.html).
+- Raspberry Pi [UART mapping](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/configuration/interfaces.adoc),
+  [frequency/thermal management](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/raspberry-pi/frequency-management.adoc)
+  and [legacy GPU memory](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/legacy_config_txt/memory.adoc).
+- Pinned NTPsec [SHM driver](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/driver_shm.adoc)
+  and [ntpviz](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/includes/ntpviz-body.adoc).
+
 ### Phase 4: rebuild and accept `j1-svntp`
 
-Repeat the Phase 3 controls with `10.1.0.50` and
+Repeat the Phase 3 controls and Phase 3A review with `10.1.0.50` and
 `fd36:5aa8:6971:1::50`. First prove that rebuilt `j2-svntp1` serves clients
 independently. Complete the shared-antenna power-continuity gate above before
 any primary power-off; DNAT failover does not preserve antenna power. For each
@@ -640,6 +724,8 @@ In `homelab-server-configs/inventory/prod`:
 
 Acceptance requires:
 
+- Adopted Phase 3A optimizations have per-node comparison, recovery and
+  persistence evidence; deferred optional proposals are recorded explicitly.
 - Both nodes boot the selected Trixie arm64 image from separately
   identified replacement media, and their labelled Debian 11 cards remain
   available for recovery through the agreed retention period.

@@ -491,6 +491,45 @@ restarts of the combined time service. No notification test was sent during
 repository consolidation. Final user-managed passwordless sudo removal is a
 separate end-of-project action, not an installer side effect.
 
+## Optimization evaluation and measurement
+
+[Phase 3A and the proposal register](ntp-architecture-deployment-plan-v1.0.md#phase-3a-evaluate-and-accept-measured-optimizations)
+own optimization decisions. Add each future proposal there with a stable ID,
+evidence, disposition and owning phase. Keep operational outcomes in HISTORY;
+do not create a separate tuning runbook for each experiment.
+
+OPT-001 does not change the current package/build recipe. pps-tools, source-built
+GPSD/NTPsec, static network settings, verified UART/PPS overlays and exclusion
+of competing time daemons are baseline work in their existing phases. CPU
+isolation, performance-governor policy, arm_freq and GPU allocation remain
+unadopted candidates until measured on an accepted node. Do not paste the
+proposal's APT command or boot/config.txt block onto a target.
+
+For an experiment, prepare a fresh scoped collection and a hash-bound bundle
+with exact settings, comparison metrics/window, baseline backups, acceptance,
+restoration and any reboot/console recovery. Verify active clocksource, kernel
+options, CPU policies, task/IRQ placement and hardware mapping before choosing
+controls. Keep the peer and shared antenna power available. Run one change at
+a time; allow clock convergence and representative load/thermal cycles. Use
+identical logging/sampling for baseline and candidate so instrumentation does
+not become the apparent optimization. Preserve GPS/PPS sequence, SHM, source
+and client timing evidence separately; they measure different parts of the
+path. A kernel PPS pulse report alone is not end-to-end acceptance.
+
+The accepted staged manifest already includes pinned-source ntpviz and its
+manual. Plotting is optional and does not authorize deploying that candidate.
+Prefer collecting bounded NTP statistics on the node and generating graphs on
+the operator workstation. Review statistics paths, permissions, rotation,
+retention and transfer; review compatible Python modules and pinned gnuplot
+dependencies on the analysis host. Do not install distro ntpsec-ntpviz or copy
+ARM binaries/extensions onto a workstation of another architecture. Plot
+generation must not add an unreviewed public web service or unbounded log load.
+
+After accepted tuning, mirror the actual persistent settings and metadata into
+the maintained repo assets, update HISTORY and repeat affected service/network,
+thermal/power and reboot checks. Restore ineffective or inconclusive changes;
+record deferred candidates without treating them as incomplete mandatory work.
+
 ## Leapfile, monitoring and routine maintenance
 
 ntpleapfetch.service.in is intentionally unresolved until the installed command,
