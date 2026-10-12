@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; Ethernet DHCP 10.1.0.137; matching console/SSH key | Fixed dual-stack service addresses; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation/readback/payload cleanup accepted; runtime discovery and configuration pending |
-| Runtime | Native files installed, copied_not_activated; no new ntp.conf or activation | GPS/PPS/RTC, accounts, combined service, leap maintenance |
+| Runtime | Native files installed, copied_not_activated; read-only discovery prepared | Execute/accept discovery, then render GPS/PPS/RTC, accounts, configuration and combined-service inputs |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -354,8 +354,8 @@ The result is `copied_not_activated`. Preserve both source workspaces and all
 executed privileged code, baseline records, native journal/backups and receipts.
 Do not replay the consumed inspection or installation.
 
-Next prepare a separately reviewed runtime discovery/configuration stage bound
-to the accepted installation receipt. Establish library/Python/PATH discovery,
+The read-only runtime discovery bundle is prepared and awaits separate approval,
+bound to the accepted installation receipt. Establish library/Python/PATH discovery,
 UART/PPS/RTC, accounts and service/configuration inputs before activation.
 Fixed dual-stack networking, mail/cron, leap maintenance, hardware/time/client,
 DNS/UniFi and reboot acceptance remain pending under the governing plan.
@@ -712,3 +712,33 @@ Controller execution registrations, full streams/statuses and acceptance remain
 in the private [operation directory](/home/aaron/code/.local-evidence/homelab-ntp/current/source-install-20261012-v1).
 The plan's separate installation/runtime acceptance boundary remains unchanged.
 Next prepare runtime discovery/configuration for its own hash-bound approval.
+
+### October 12: read-only runtime discovery and configuration inputs prepared
+
+Prepared the [runtime discovery review](/home/aaron/code/.local-evidence/homelab-ntp/current/runtime-discovery-20261012-v1/review.md)
+for j2-svntp1 entirely offline. Operation `runtime-discovery-20261012-v1` binds
+accepted native installation bundle
+`cda87986ec9ab35499356f8dda1258d558a247db755debedbc212059bf752f32`,
+its acceptance/readback and completed payload cleanup, target identity/key,
+current recipes/assets/templates and snapshots of the three governing documents.
+Discovery bundle SHA-256:
+`7758bddb17f1e69066b262ca060d01297ac997c3e95492f3914cff4e2ee4c76d`.
+Capture window expires `2026-10-13T18:31:25-05:00` (America/Chicago).
+
+Added a checked-in fixed read-only runtime recipe, inspector/controller and
+13 offline regressions. The capture verifies installed files and accepted parent
+identities, enforces target continuity and gathers bounded configuration/device,
+account/group, loader and network inputs. It executes only fixed OS read-only
+queries, never installed applications or receiver I/O. Root staging, exclusive
+capture, conditional terminal readback and verified scoped cleanup reuse the
+protected preflight lifecycle. Drift, query failures, missing terminal records
+and unknown cleanup entries hold the operation without repairing live state.
+
+Configuration requirements and current combined-service templates are sealed;
+no deployable host ntp.conf, accounts, overlays or listener/upstream choices were
+invented. Accepted discovery and review of unresolved inputs precede configuration
+rendering and separate loader/runtime/configuration/activation approvals.
+Local lifecycle/binding/bounds/coverage/replay/drift regressions and repository
+pre-commit passed. No target contact occurred; the native installation stage,
+journals and all executed evidence remain preserved. Next obtain separate
+approval for one discovery capture with conditional readback and cleanup.

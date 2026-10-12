@@ -52,7 +52,7 @@ def host_key(data, host):
 
 
 def validate_spec(spec):
-    if (spec['schema'] != 1 or spec['operation'] not in ('foundation-snapshot', 'foundation-resolution', 'source-destinations', 'source-installation')
+    if (spec['schema'] != 1 or spec['operation'] not in ('foundation-snapshot', 'foundation-resolution', 'source-destinations', 'source-installation', 'runtime-discovery')
             or not re.fullmatch(r'[a-z][a-z0-9-]{0,63}', spec['operation_id'])
             or spec['stage'] != '/var/lib/ntp-preflight-' + spec['operation_id']
             or not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,62}', spec['hostname'])

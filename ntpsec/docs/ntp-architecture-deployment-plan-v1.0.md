@@ -170,6 +170,17 @@ Recovery must prove every removal and created-directory identity/content before
 restoring the baseline; ambiguous partial state requires a new recovery review.
 Payload cleanup preserves executed privileged artifacts and recovery evidence.
 
+Before runtime configuration, accept a separately sealed read-only discovery
+bound to the native installation receipt. Verify installed bytes, parent identity
+and package/boot/Python/service continuity. Observe UART/PPS/RTC metadata, boot
+and time configuration, local account/group identifiers, loader metadata and
+network profiles without executing installed applications or opening receiver
+devices. Retain unknowns explicitly; static discovery does not prove runtime
+linkage, receiver health or configuration readiness. Bind configuration rendering
+to the accepted report, current templates and reviewed host choices. Library-cache
+changes, runtime validation, accounts, network/configuration installation and
+activation require explicit scope in subsequent hash-bound approvals.
+
 The earlier accepted candidate has mDNS disabled; preserve its evidence.
 The replacement dependency/build stage has passed acceptance, as recorded in
 HISTORY. Live installation still requires separately approved destination

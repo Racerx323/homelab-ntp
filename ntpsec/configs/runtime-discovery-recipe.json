@@ -1,0 +1,9 @@
+{
+  "schema": 1,
+  "queries": ["addresses", "ipv4_routes", "ipv6_routes", "connections", "network_devices", "linker_cache", "time_units", "accounts", "groups"],
+  "protected_files": ["/boot/firmware/config.txt", "/boot/firmware/cmdline.txt", "/boot/firmware/usercfg.txt", "/boot/firmware/syscfg.txt", "/etc/ntp.conf", "/etc/ntpsec/ntp.conf", "/etc/default/gpsd", "/etc/ntpsec-timeservice.json", "/etc/ld.so.conf", "/etc/systemd/system/timeservice.service"],
+  "protected_globs": ["/etc/ld.so.conf.d/*.conf", "/etc/systemd/system/timeservice.service.d/*.conf"],
+  "configuration_requirements": ["observed_uart_pps_rtc_and_boot_includes", "verified_native_loader_python_and_path", "explicit_runtime_accounts_and_device_access", "fixed_dual_stack_network_profile_and_dns", "reviewed_ntp_shm_nts_restrictions_drift_and_leap_paths", "ntpd_foreground_mdns_and_avahi_scope", "gpsd_foreground_115200_and_listener_scope", "combined_service_and_recovery", "leap_maintenance_and_needrestart_mail_cron_acceptance"],
+  "activation_authorized": false,
+  "receiver_io_authorized": false
+}

@@ -21,11 +21,15 @@ RESOLUTION_INPUTS = {'resolver.py', 'resolver-spec.json', 'snapshot.json',
                      'installation-assets.json', 'resolution-policy.json'}
 DESTINATION_INPUTS = {'inspect-source-destinations.py', 'clockmaker.py', 'release.json',
                       'build-spec.json', 'build-acceptance.json'}
+RUNTIME_INPUTS = DESTINATION_INPUTS | {'inspect-runtime.py', 'runtime-recipe.json',
+    'installation-acceptance.json', 'installation-readback.json', 'installation-spec.json',
+    'installation-bundle-sha256.json', 'timeservice.py', 'timeservice.service', 'timeservice.json.example'}
 
 
 def required_inputs(operation):
     return INPUTS | (RESOLUTION_INPUTS if operation == 'foundation-resolution' else
-                    DESTINATION_INPUTS if operation == 'source-destinations' else set())
+                    DESTINATION_INPUTS if operation == 'source-destinations' else
+                    RUNTIME_INPUTS if operation == 'runtime-discovery' else set())
 
 
 def sha(data):
@@ -37,7 +41,7 @@ def encoded(value):
 
 
 def identity(spec, epoch, mode):
-    if (spec['schema'] != 1 or spec['operation'] not in ('foundation-snapshot', 'foundation-resolution', 'source-destinations', 'source-installation')
+    if (spec['schema'] != 1 or spec['operation'] not in ('foundation-snapshot', 'foundation-resolution', 'source-destinations', 'source-installation', 'runtime-discovery')
             or not re.fullmatch(r'[a-z][a-z0-9-]{0,63}', spec['operation_id'])
             or spec['stage'] != '/var/lib/ntp-preflight-' + spec['operation_id']
             or os.geteuid() != 0 or os.getegid() != 0
@@ -175,12 +179,13 @@ def entry(spec, files, epoch, mode, terminal_sha=None):
                 signal.signal(signum, interrupted)
             result = {'spec_sha256': sha(encoded(spec)), 'package_mutation_authorized': False}
             try:
-                member = ('inspect-source-destinations.py' if spec['operation'] == 'source-destinations'
+                member = ('inspect-runtime.py' if spec['operation'] == 'runtime-discovery' else
+                          'inspect-source-destinations.py' if spec['operation'] == 'source-destinations'
                           else 'capture-foundation-snapshot.py')
                 definition = importlib.util.spec_from_file_location('protected_snapshot', root / member)
                 collector = importlib.util.module_from_spec(definition)
                 definition.loader.exec_module(collector)
-                if spec['operation'] == 'source-destinations':
+                if spec['operation'] in ('source-destinations', 'runtime-discovery'):
                     report = collector.collect(root, spec, worker, epoch)
                     collector.validate(report, spec, json.loads(worker.read(root / 'release.json')),
                                        json.loads(worker.read(root / 'build-spec.json')))
@@ -199,7 +204,8 @@ def entry(spec, files, epoch, mode, terminal_sha=None):
                     result.update(state='snapshot_completed', snapshot_sha256=sha(raw))
                 verify_inputs(worker, root, spec, files)
             except BaseException as error:
-                held = {'foundation-resolution': 'resolution_held', 'source-destinations': 'inspection_held'}.get(
+                held = {'foundation-resolution': 'resolution_held', 'source-destinations': 'inspection_held',
+                        'runtime-discovery': 'inspection_held'}.get(
                     spec['operation'], 'snapshot_held')
                 result.update(state=held,
                               error=type(error).__name__ + ': ' + str(error))

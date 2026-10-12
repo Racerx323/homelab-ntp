@@ -23,7 +23,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Prepare library/Python runtime discovery and host configuration for separate approval |
-| Runtime configuration | Pending | Observed UART/PPS/RTC, accounts, NTP configuration and combined-service cutover |
+| Runtime configuration | Read-only discovery bundle prepared; execution and acceptance pending | Accept current device/account/loader/network observations before rendering host configuration and reviewing cutover |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Pending | Hardware, time, dual-stack clients, monitoring and reboot evidence |
 
@@ -90,6 +90,7 @@ hardware/network acceptance remain pending.
 | --- | --- |
 | [source-build-recipe.json](../configs/source-build-recipe.json) | Source revisions, archive integrity, build roots/options, prefix and jobs |
 | [foundation-recipe.json](../configs/foundation-recipe.json) | Fresh foundation requirements, observation coverage, package effects, acceptance and recovery |
+| [runtime-discovery-recipe.json](../configs/runtime-discovery-recipe.json) | Fixed read-only runtime queries, bounded configuration/device inputs and configuration requirements |
 | [installation-assets.json](../configs/installation-assets.json) | Exact image/source/package download URLs, sizes, hashes and source signing keys |
 | [public-keys](../configs/public-keys) | Public source verification keyrings; no private keys |
 | [accepted-source-release.json](../configs/accepted-source-release.json) | Byte-exact accepted target candidate file/link manifest |
@@ -527,6 +528,52 @@ Retain a tested rollback artifact, not merely an old source revision that must
 be rebuilt against changed dependencies.
 
 ## Configuration and combined service
+
+First accept the [runtime discovery review](/home/aaron/code/.local-evidence/homelab-ntp/current/runtime-discovery-20261012-v1/review.md)
+for j2-svntp1. Preparation is offline and does not authorize target contact.
+The checked-in controller binds the accepted native installation archive,
+readback/acceptance and successful payload cleanup, current recipes, pinned
+assets, templates and snapshots of the three governing documents. Exact receipt
+and bundle hashes are required; a historical node's receipt is not a fresh-node
+baseline. Preserve the accepted installation stage and both source workspaces.
+
+```bash
+python3 -I -B ntpsec/scripts/run-runtime-discovery.py seal \
+    --installation-dir "$accepted_installation_directory" \
+    --installation-sha256 "$accepted_installation_bundle_sha256" \
+    --operation-id "$unique_operation_id" --output "$new_private_output"
+```
+
+One root-owned 0700 observation stage holds only sealed 0600 inputs. The capture
+verifies installed files/links twice, protected parent identities and exact
+package/boot/Python/service continuity. It reads bounded boot/time/loader files,
+approved drop-ins, UART/PPS/RTC metadata and sysfs names/paths/drivers; local
+account/group identifiers omit password fields. Fixed read-only queries gather
+addresses/routes, NetworkManager profile identifiers/device state and service
+properties. `ldconfig -p` observes cache contents; `readelf -d` inspects native
+ELF dependencies. It imports no installed application/Python extension and opens
+no serial/PPS/RTC device. It does not query Wi-Fi secrets or `/etc/shadow`.
+The recorded isolated root Python search/scheme paths and effective PATH are
+that capture context; runtime account/operator environments still need review.
+
+Use the reviewed bundle/hash with `run-runtime-discovery.py execute --mode collect`,
+then conditional `readback` and `cleanup`. Each mode registers once before SSH;
+full streams/statuses remain private. Readback checks the terminal/report/spec
+hashes, complete installed coverage and scope before writing `runtime.json` and
+its acceptance receipt. Recovery is readback only; a lost terminal requires a
+separately reviewed state inspection. Cleanup validates the retained terminal
+hash and every expected staging entry before removing this observation stage.
+Unknown entries hold cleanup; prior installation journals/evidence remain intact.
+
+Review accepted `runtime.json` before rendering the configuration profile with
+the existing `clockmaker configure` workflow below. Missing devices/accounts,
+unresolved boot includes and provider/listener/access choices remain explicit
+inputs requiring resolution. Static metadata does not prove dynamic linkage,
+Python imports, GNSS firmware/fix, PPS health or physical wiring. Configuration
+readiness remains false until these requirements and the reviewed host choices
+are satisfied. Runtime execution tests, library-cache changes, account/device
+setup, fixed dual-stack networking, file deployment and activation require later
+explicit approval, backups and acceptance under Phase 3.
 
 Do not create a deployable ntp.conf or select UART/PPS/RTC overlays without
 observed target inputs. The approved Uputronics revision on the rebuilt node
