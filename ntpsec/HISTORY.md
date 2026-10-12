@@ -356,8 +356,9 @@ not be used to satisfy this revised requirement. Preserve those records.
 
 The revised-recipe v3 snapshot is accepted and its verified stage removed.
 Resolution v3 was held at final continuity and cleaned up; corrected v4 has passed
-acceptance and cleanup. Prepare the seven-package delta offline using the checked-in
-recipe, pinned assets and accepted snapshot/resolution; recheck freshness and bound
+acceptance and cleanup. The seven-package installation delta is prepared and
+sealed offline using the checked-in recipe, verified pinned assets and accepted
+snapshot/resolution; recheck freshness and bound
 target inputs before installation. Separate hash-bound installation approval is
 required. This does not authorize reinstalling the accepted
 foundation or changing the live APT lists.
@@ -461,3 +462,40 @@ offline from accepted v4 evidence, fetch and verify exact pinned archives as
 separately authorized, and seal installation with acceptance, recovery and cleanup
 for separate execution approval. Snapshot freshness ends October 13, 2026 at
 20:30:41 UTC; preparation and execution must reject stale evidence or state drift.
+
+### October 12: mDNS prerequisite installation prepared and sealed
+
+Prepared the [installation review](/home/aaron/code/.local-evidence/homelab-ntp/current/foundation-mdns-install-20261012-v1/review.md)
+for j2-svntp1, ama UID 1000, 10.1.0.137, kernel 6.18.50+rpt-rpi-v8.
+Operation ID: `mdns-20261012-v1`; exclusive target stage:
+`/var/lib/ntp-foundation-mdns-20261012-v1`.
+Bundle SHA-256:
+`c6629e7ac07c452bf5da006f77706faf6ad211116860b5e81467243c05d94672`.
+It binds the accepted v3 snapshot, accepted v4 resolution, current recipe/pinned
+manifest, target boot/identity/SSH key and every non-secret execution input.
+The install/readback/recovery window ends October 13, 2026 at 20:30:41 UTC.
+
+Fetched only the seven missing archives on the workstation through the checked-in
+verified fetcher, checking pinned sizes/hashes against the authenticated accepted
+resolution. The [fetch receipt](/home/aaron/code/.local-evidence/homelab-ntp/current/foundation-mdns-install-20261012-v1-assets/fetch-receipt.json)
+and native archive-control inspection remain private. The preparer used no
+historical baseline/bundle and contacted no target. It derived the exact expected
+inventory of 686 records from the accepted 679-record baseline plus seven
+additions. There are no upgrades, removals or newly installed daemon packages.
+
+Archive inspection found ldconfig triggers in libavahi-client3 and
+libavahi-compat-libdnssd1, and generated XML catalog maintenance in libdbus-1-dev.
+These normal package effects are explicitly covered by the review. The other
+four archives have no maintainer scripts/triggers; none declares conffiles.
+The rendered worker's 48 offline regressions passed. Bundle/member/provenance
+verification and all three generated payloads passed offline validation.
+
+The review covers one root-owned staged installation, local-archive simulation
+and protocol checks, full acceptance, temporary-control/update-disposition
+cleanup, one conditional terminal readback and bounded configuration recovery.
+The executed stage/backups/claims/logs are retained as mutation evidence;
+cleanup restores controls rather than deleting that evidence. Prior executed
+evidence is preserved. Separate hash-bound execution approval is the next gate.
+No packages were installed and no target contact occurred during preparation.
+Only after package acceptance may a separately reviewed mDNS-enabled source
+build and acceptance proceed; this bundle does not authorize that build.
