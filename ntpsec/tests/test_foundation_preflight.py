@@ -75,6 +75,20 @@ class Preflight(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, 'input set'):
             c.prepare(self.bundle, checksum)
 
+    def test_snapshot_binds_pins_without_expanding_remote_collector_inputs(self):
+        raw = (ROOT / 'configs/installation-assets.json').read_bytes()
+        self.assertEqual(self.files['installation-assets.json'], raw)
+        self.assertEqual(self.spec['asset_manifest_sha256'], c.sha(raw))
+        self.assertNotIn('installation-assets.json', self.spec['members'])
+        def drift(entries):
+            entries['installation-assets.json'] += b'\n'
+            manifest = json.loads(entries['manifest.json'])
+            manifest['installation-assets.json'] = c.sha(entries['installation-assets.json'])
+            entries['manifest.json'] = c.encoded(manifest)
+        checksum = self.rewrite(drift)
+        with self.assertRaisesRegex(ValueError, 'asset manifest binding'):
+            c.prepare(self.bundle, checksum)
+
     def test_member_manifest_and_external_key_are_both_enforced(self):
         self.output.joinpath('known_hosts').write_bytes(b'changed')
         with self.assertRaisesRegex(ValueError, 'key binding'):

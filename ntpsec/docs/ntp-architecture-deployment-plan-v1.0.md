@@ -152,6 +152,12 @@ Aaron added these source/runtime requirements on `2026-10-12`:
 
 The earlier accepted candidate has mDNS disabled. Preserve its evidence and
 prepare a newly approved dependency/build stage before live installation.
+First seal a fresh foundation snapshot against the revised recipe and current
+pinned asset manifest, verify its target identity during the approved capture,
+and accept its terminal readback/cleanup. Metadata resolution is a subsequent
+approved operation bound to that accepted snapshot; package and source-build
+execution require their own reviews. Optimization trials remain after baseline
+hardware/time/network acceptance in Phase 3A.
 
 The [baseline HOWTO](https://www.ntpsec.org/white-papers/stratum-1-microserver-howto/)
 defines the starting workflow, not an executable Trixie deployment artifact.

@@ -19,9 +19,9 @@ The applications have not been installed live or configured on the new image.
 | Stage | State | Next requirement |
 | --- | --- | --- |
 | Media and bootstrap | Accepted | Preserve original Debian 11 card and primary/antenna power |
-| Foundation | Accepted, including pps-tools and bc | Fresh observations and resolution before another node's installation |
-| Source candidate | Accepted | Destination/collision inspection and deployment/rollback review |
-| Live installation | Pending | Reviewed pre-state, explicit metadata, journal and scoped execution |
+| Foundation | Original foundation, pps-tools and bc accepted; mDNS prerequisites pending | Fresh snapshot bound to the revised recipe/pins, metadata resolution and exact dependency delta before additional installation |
+| Source candidate | v5 accepted with mDNS disabled | Accept mDNS prerequisites, then a new mDNS-enabled build/acceptance and destination/collision review |
+| Live installation | Pending | New accepted build, reviewed pre-state, explicit metadata, journal and scoped execution |
 | Runtime configuration | Pending | Observed UART/PPS/RTC, accounts, NTP configuration and combined-service cutover |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Pending | Hardware, time, dual-stack clients, monitoring and reboot evidence |
@@ -33,6 +33,12 @@ changes the foundation recipe: prepare a new hash-bound capture, then metadata
 resolution. The previous capture authorizes no package changes and cannot bind
 the revised recipe.
 The exact snapshot hash and retained execution outcome are recorded in HISTORY.
+
+The [v3 capture review](/home/aaron/code/.local-evidence/homelab-ntp/current/fresh-foundation-preflight-20261012-v3/review.md)
+is prepared and validated offline against the revised recipe and pinned manifest.
+Execution approval is pending for one collection with conditional terminal
+readback and cleanup. Expected identity/key values come from retained evidence;
+the live identity checks must pass before collection. No new snapshot is accepted.
 
 There is no completed unattended end-to-end installer yet. Foundation preparation
 now uses a checked-in recipe, fresh target snapshot and accepted combined
@@ -207,6 +213,10 @@ Fresh preparation follows this sequence:
 Use `run-foundation-preflight.py seal` to prepare the capture bundle from repository
 inputs, a pinned `known_hosts`, target identity and a unique operation ID. Its
 private output contains the complete review, member manifest and archive hash.
+The archive retains the current installation-assets manifest controller-side;
+its hash is also bound in the operation specification. Sealing validates the
+recipe's pinned requirements offline and does not fetch packages or metadata.
+Snapshot staging/collection still uses only the reviewed collector inputs.
 After hash-bound approval, `execute --mode collect` creates an exclusive root-owned
 stage and collects once. `--mode readback` retrieves the same terminal snapshot;
 the checked-in validator must pass before accepting it. `--mode cleanup` requires

@@ -20,7 +20,7 @@ INPUTS = {'capture-foundation-snapshot.py', 'foundation-install.py', 'inspect-tr
 RESOLUTION_INPUTS = {'resolver.py', 'resolver-spec.json', 'snapshot.json',
                      'installation-assets.json', 'resolution-policy.json'}
 EXTRAS = {'spec.json', 'stage.py', 'launcher.py', 'validator.py', 'asset-validator.py',
-          'known_hosts', 'review.md', 'tests.py'}
+          'known_hosts', 'review.md', 'tests.py', 'installation-assets.json'}
 
 
 def sha(data):
@@ -57,6 +57,7 @@ def validate_spec(spec):
             or not re.fullmatch(r'[A-Za-z0-9.+_-]+-v8', spec['kernel'])
             or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9.-]*', spec['ssh']['host'])
             or not re.fullmatch(r'SHA256:[A-Za-z0-9+/]{43}', spec['ssh']['fingerprint'])
+            or not re.fullmatch(r'[a-f0-9]{64}', spec['asset_manifest_sha256'])
             or type(spec['prepared_epoch']) is not int or type(spec['expires_epoch']) is not int
             or not 0 < spec['expires_epoch'] - spec['prepared_epoch'] <= 86400):
         raise ValueError('invalid fresh preflight specification')
@@ -100,6 +101,8 @@ def prepare(bundle, checksum):
         raise ValueError('launcher differs from reviewed input')
     spec = json.loads(files['spec.json'])
     validate_spec(spec)
+    if spec['asset_manifest_sha256'] != sha(files['installation-assets.json']):
+        raise ValueError('pinned asset manifest binding mismatch')
     required = INPUTS | (RESOLUTION_INPUTS if spec['operation'] == 'foundation-resolution' else set())
     if (set(files) != required | EXTRAS | {'manifest.json'} or set(spec['members']) != required
             or any(sha(files[n]) != h for n, h in spec['members'].items())
@@ -161,12 +164,15 @@ def seal(args):
     prepared = int(time.time())
     files = {n: (ROOT / 'scripts' / n).read_bytes() for n in INPUTS - {'recipe.json'}}
     files.update({'recipe.json': (ROOT / 'configs/foundation-recipe.json').read_bytes(),
+        'installation-assets.json': (ROOT / 'configs/installation-assets.json').read_bytes(),
         'stage.py': (ROOT / 'scripts/foundation-preflight-stage.py').read_bytes(),
         'launcher.py': Path(__file__).read_bytes(),
         'validator.py': (ROOT / 'scripts/prepare-foundation.py').read_bytes(),
         'asset-validator.py': (ROOT / 'scripts/fetch-installation-assets.py').read_bytes(),
         'tests.py': (ROOT / 'tests/test_foundation_preflight.py').read_bytes(),
         'known_hosts': private_file(args.known_hosts, 4096)})
+    checker = validator(files)
+    checker.package_requirements(json.loads(files['recipe.json']), json.loads(files['installation-assets.json']))
     resolution_mode = getattr(args, 'action', 'seal') == 'seal-resolution'
     required = INPUTS
     expires = prepared + 86400
@@ -176,12 +182,10 @@ def seal(args):
             raise ValueError('accepted snapshot hash mismatch')
         snapshot = json.loads(raw)
         recipe = json.loads(files['recipe.json'])
-        checker = validator(files)
         checker.validate_snapshot(snapshot, recipe, sha(files['recipe.json']), prepared)
         args.hostname, args.kernel = snapshot['hostname'], snapshot['kernel']
         args.ssh_host, args.fingerprint = snapshot['ssh']['host'], snapshot['ssh']['fingerprint']
         files.update({'snapshot.json': raw, 'resolver.py': (ROOT / 'scripts/resolve-trixie-packages.py').read_bytes(),
-            'installation-assets.json': (ROOT / 'configs/installation-assets.json').read_bytes(),
             'resolution-policy.json': (ROOT / 'configs/foundation-resolution-policy.json').read_bytes()})
         rspec, missing = resolution_spec(snapshot, sha(raw), recipe, json.loads(files['installation-assets.json']),
             json.loads(files['resolution-policy.json']), args.operation_id, checker)
@@ -191,6 +195,7 @@ def seal(args):
     spec = {'schema': 1, 'operation': 'foundation-snapshot', 'operation_id': args.operation_id,
         'stage': '/var/lib/ntp-preflight-' + args.operation_id, 'hostname': args.hostname,
         'kernel': args.kernel, 'ssh': {'host': args.ssh_host, 'fingerprint': args.fingerprint},
+        'asset_manifest_sha256': sha(files['installation-assets.json']),
         'prepared_epoch': prepared, 'expires_epoch': expires,
         'members': {n: sha(files[n]) for n in sorted(required)}}
     if resolution_mode:
@@ -202,6 +207,9 @@ def seal(args):
     files['review.md'] = (f'# Fresh foundation snapshot review\n\n'
         f'Target: {args.hostname}, ama UID 1000, {args.ssh_host}; kernel {args.kernel}.\n'
         f'Pinned ED25519: {args.fingerprint}.\n\n'
+        f'Recipe SHA-256: {sha(files["recipe.json"])}.\n'
+        f'Pinned asset manifest SHA-256: {spec["asset_manifest_sha256"]}.\n'
+        'The pinned manifest is retained controller-side; snapshot collection does not fetch assets.\n\n'
         f'Collection expires: {datetime.fromtimestamp(spec["expires_epoch"], timezone.utc).isoformat()}.\n\n'
         f'One collection in exclusive root-owned 0700 staging `{spec["stage"]}`.\n'
         'Root uses isolated Python -I -B through existing passwordless sudo.\n'
