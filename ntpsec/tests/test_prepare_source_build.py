@@ -75,6 +75,21 @@ class PrepareSource(unittest.TestCase):
             recipe=copy.deepcopy(self.recipe);recipe['build_roots'].remove(name)
             with self.assertRaises(ValueError):w.profile_inputs(recipe,self.foundation,self.python,self.helpers)
 
+    def test_mdns_and_gpsd_shm_requirements_cannot_be_disabled(self):
+        for name in ('libavahi-compat-libdnssd-dev', 'avahi-daemon'):
+            recipe=copy.deepcopy(self.recipe);recipe['build_roots'].remove(name)
+            with self.subTest(name=name),self.assertRaisesRegex(ValueError,'mDNS'):
+                w.profile_inputs(recipe,self.foundation,self.python,self.helpers)
+            foundation=copy.deepcopy(self.foundation);foundation['baseline'].pop(name)
+            with self.subTest(missing=name),self.assertRaisesRegex(ValueError,'prerequisite'):
+                w.profile_inputs(self.recipe,foundation,self.python,self.helpers)
+        for options in (['--refclock=shm', '--disable-mdns-registration'],
+                        ['--refclock=nmea,pps'], ['--refclock=shm,nmea,pps'],
+                        ['--refclock=shm', '--refclock=pps']):
+            recipe=copy.deepcopy(self.recipe);recipe['sources']['ntpsec']['options']=options
+            with self.subTest(options=options),self.assertRaisesRegex(ValueError,'SHM'):
+                w.profile_inputs(recipe,self.foundation,self.python,self.helpers)
+
     def test_time_service_and_packet_test_drivers_required(self):
         for name in ('timeservice','sirf','earthmate','evermore','control_socket'):
             recipe=copy.deepcopy(self.recipe)

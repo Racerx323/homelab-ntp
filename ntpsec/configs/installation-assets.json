@@ -6,10 +6,25 @@
     "package_metadata_sha256": "5b9a817bb678643f9c402ba223611f8bfbd1ed02a63706d16592d626c71b7bdf",
     "selected_plan_sha256": "c2c3700beb8d1e1f6fa2f766d37f85ee63c06942bb0382821bdeb5ce12cef808",
     "bc_signed_index_sha256": "f97011263173eaccb1a215a28a6ec7ba1f6e5cebd8bb68e8fa0475b1d4021161",
-    "source_recipe_sha256": "91465742a92100153f2c0700bc4ac678f595666fb5617451df636262c053a8ec",
+    "source_recipe_sha256": "4155dc49472a2ad1a41848d9964e5b934775c7b877d207163f3688da467f3811",
     "foundation_root_records": {
       "build-essential": "ce113bdd28bc89a49dc13dab51de6950c5bb277aa712a7526a4b4dd9e0a68796",
       "pkgconf": "7054b72a275daefd42f8aa206307e2f8df92af3b9d141ef8b4112dde851f5cf1"
+    },
+    "mdns_requirements": {
+      "release_sha256": "0584fba32e13e0ab8285fb16c27adea1ec03a73669c18702821094fd6ca86675",
+      "signed_index_sha256": "f97011263173eaccb1a215a28a6ec7ba1f6e5cebd8bb68e8fa0475b1d4021161",
+      "package_records_sha256": {
+        "avahi-daemon": "201adecbc153c10b90e8c3a22103ffcd6dcec0d55ed3a980e5a73bf7fdedaf90",
+        "libavahi-compat-libdnssd-dev": "f5ce37658c577589b8af0ca3d1ca77fa646f22b60acdc90435274b1982f6b781",
+        "libavahi-compat-libdnssd1": "c2ae19d69f58ef5ed650e2b5dfcf3a33e9389f5b21d311080f5f9704189bfadb",
+        "libavahi-client-dev": "1c47da5583edc66de395314548cc8ed26074dc2dd56f43de57254df2d28f88d8",
+        "libavahi-client3": "ea9043278a24fdaed5add947339a23d31df4998567cec0863b0dcdd0c80e75d7",
+        "libavahi-common-dev": "8d1e6194324aebdcc78bf55c0f09b7656833f1713f371e6a0d1c06894b4381c5",
+        "libdbus-1-dev": "1c68f5e84de76e426b459be5919c4eca50aa37c8907694cf0cab57246159fa3d",
+        "libsystemd-dev": "164b4bb93f6921f399da15dc43656011234f408e2c0e82c24cb740cb0e04eddc"
+      },
+      "selection": "retained authenticated Trixie arm64 index; fresh snapshot-bound resolution remains required"
     }
   },
   "public_keys": {
@@ -1434,6 +1449,110 @@
       "package": "pkgconf",
       "version": "1.8.1-4",
       "architecture": "arm64"
+    },
+    {
+      "id": "package-avahi-daemon-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "avahi-daemon",
+      "version": "0.8-16",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/a/avahi/avahi-daemon_0.8-16_arm64.deb",
+      "filename": "avahi-daemon_0.8-16_arm64.deb",
+      "sha256": "c88a5d29eefafecdfe52f1357898e0f44e9c0b0a88b62df8311fe3c836b836cd",
+      "size": 80636
+    },
+    {
+      "id": "package-libavahi-compat-libdnssd-dev-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libavahi-compat-libdnssd-dev",
+      "version": "0.8-16",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/a/avahi/libavahi-compat-libdnssd-dev_0.8-16_arm64.deb",
+      "filename": "libavahi-compat-libdnssd-dev_0.8-16_arm64.deb",
+      "sha256": "4d2f246c499238922befdd6a786db5d048b39d9be5c027f63f276550e5b1cf14",
+      "size": 54052
+    },
+    {
+      "id": "package-libavahi-compat-libdnssd1-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libavahi-compat-libdnssd1",
+      "version": "0.8-16",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/a/avahi/libavahi-compat-libdnssd1_0.8-16_arm64.deb",
+      "filename": "libavahi-compat-libdnssd1_0.8-16_arm64.deb",
+      "sha256": "b64710e34b7cf30d7d446e6bbceed20e8c2b24d387f2cbd21af17947d087ba17",
+      "size": 37860
+    },
+    {
+      "id": "package-libavahi-client-dev-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libavahi-client-dev",
+      "version": "0.8-16",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/a/avahi/libavahi-client-dev_0.8-16_arm64.deb",
+      "filename": "libavahi-client-dev_0.8-16_arm64.deb",
+      "sha256": "e4b342ccfd017b2f4c489b2508969039c303a5e3f30a46785e58dca2ec312bb1",
+      "size": 57516
+    },
+    {
+      "id": "package-libavahi-client3-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libavahi-client3",
+      "version": "0.8-16",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/a/avahi/libavahi-client3_0.8-16_arm64.deb",
+      "filename": "libavahi-client3_0.8-16_arm64.deb",
+      "sha256": "aad7c1a4f0e8b9131881ebdd61150bb9e15f11534aafe4877e61fefc266f1586",
+      "size": 46740
+    },
+    {
+      "id": "package-libavahi-common-dev-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libavahi-common-dev",
+      "version": "0.8-16",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/a/avahi/libavahi-common-dev_0.8-16_arm64.deb",
+      "filename": "libavahi-common-dev_0.8-16_arm64.deb",
+      "sha256": "99734b91e56a549967ae90380da77dab39201cedef6a20f82dfdbd9dbda5d07f",
+      "size": 60048
+    },
+    {
+      "id": "package-libdbus-1-dev-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libdbus-1-dev",
+      "version": "1.16.2-2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/d/dbus/libdbus-1-dev_1.16.2-2_arm64.deb",
+      "filename": "libdbus-1-dev_1.16.2-2_arm64.deb",
+      "sha256": "305788b468ae2daba9074e59906a26df34d3f6f347d3191f13043f5a9224f90b",
+      "size": 215912
+    },
+    {
+      "id": "package-libsystemd-dev-arm64",
+      "groups": [
+        "foundation"
+      ],
+      "package": "libsystemd-dev",
+      "version": "257.13-1~deb13u1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/s/systemd/libsystemd-dev_257.13-1~deb13u1_arm64.deb",
+      "filename": "libsystemd-dev_257.13-1~deb13u1_arm64.deb",
+      "sha256": "06239173236c0cfee4ee4310ddeb428b094d3b4e34a80b173587da277d9a1199",
+      "size": 1372824
     }
   ],
   "root_providers": {

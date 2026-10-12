@@ -2,5 +2,9 @@
 useDefault = true
 
 [allowlist]
-description = "Ignore generated vexp index metadata"
+description = "Ignore generated vexp metadata and exact public package-record hashes"
 paths = ['''^\.vexp/''']
+regexes = [
+    '''1c47da5583edc66de395314548cc8ed26074dc2dd56f43de57254df2d28f88d8''',
+    '''ea9043278a24fdaed5add947339a23d31df4998567cec0863b0dcdd0c80e75d7''',
+]

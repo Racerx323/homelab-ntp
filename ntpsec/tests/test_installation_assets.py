@@ -27,7 +27,10 @@ class Assets(unittest.TestCase):
         manifest = json.loads((ROOT / 'configs/installation-assets.json').read_text())
         f.validate_manifest(manifest)
         foundation = [r for r in manifest['assets'] if 'foundation' in r['groups']]
-        self.assertEqual(len(foundation), 48)
+        self.assertEqual(len(foundation), 56)
+        self.assertTrue({'libavahi-compat-libdnssd-dev', 'avahi-daemon', 'libavahi-compat-libdnssd1',
+                         'libavahi-client-dev', 'libavahi-client3', 'libavahi-common-dev',
+                         'libdbus-1-dev', 'libsystemd-dev'}.issubset({r['package'] for r in foundation}))
         self.assertTrue({'pps-tools', 'bc'}.issubset({r['package'] for r in foundation}))
         self.assertTrue({'build-essential', 'pkgconf'}.issubset({r['package'] for r in foundation}))
         self.assertEqual(manifest['root_providers'], {'pkg-config': 'pkgconf'})

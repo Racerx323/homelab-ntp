@@ -28,8 +28,10 @@ The applications have not been installed live or configured on the new image.
 
 On October 12, the fresh foundation snapshot passed validation with the same
 679 package records, 197 protected inputs and eight configuration directories.
-Its root-owned capture stage was cleaned up. Snapshot-bound metadata resolution
-is the next preparation gate; capture acceptance authorizes no package changes.
+Its root-owned capture stage was cleaned up. The subsequent mDNS requirement
+changes the foundation recipe: prepare a new hash-bound capture, then metadata
+resolution. The previous capture authorizes no package changes and cannot bind
+the revised recipe.
 The exact snapshot hash and retained execution outcome are recorded in HISTORY.
 
 There is no completed unattended end-to-end installer yet. Foundation preparation
@@ -138,8 +140,10 @@ device ownership, boot configuration and recovery access.
 
 The source recipe includes build-essential, bison, m4, pkg-config, python3-dev,
 scons, libssl-dev, libcap-dev, libseccomp-dev, libncurses-dev, asciidoctor,
-python3-serial, pps-tools and bc. The original deployment added 46 packages;
-the fresh preparation manifest now pins 48 requirements, including the two
+python3-serial, pps-tools, bc, libavahi-compat-libdnssd-dev and avahi-daemon.
+The mDNS headers/library use Avahi's DNS-SD compatibility API; Avahi supplies
+the runtime responder. The original deployment added 46 packages;
+the fresh preparation manifest now pins 56 requirements, including the two
 prerequisite roots supplied by that image's baseline. `build-essential` is pinned
 directly; the explicit `root_providers` mapping selects Trixie's `pkgconf` for
 the `pkg-config` capability. Additions are calculated from the fresh snapshot.
@@ -309,10 +313,20 @@ baud rate. Receiver suffix/firmware, active wire protocol and device paths
 remain target evidence. control_socket support is needed by gpsfake; it does
 not select or activate a production socket.
 
-NTPsec uses SHM refclock, NTS, seccomp, native Python extension and manual pages;
-HTML docs/mDNS are disabled. Bind observed target Python module/shebang paths.
+NTPsec uses SHM refclock, NTS, seccomp, native Python extension, manual pages
+and mDNS registration; HTML docs remain disabled. Remove the mDNS-disable
+option and require `HAVE_DNS_SD_H` in generated `build/config.h`: waf's
+header/library detection is optional and can otherwise omit support silently.
+The pinned manifest includes the Avahi compatibility library and development
+dependency closure. Resolve them against a fresh snapshot before installation.
+Bind observed target Python module/shebang paths.
 Prefix is `/usr/local`, with two jobs for both native build systems. Do not
 replace selected source descriptions with APT application dependency lists.
+
+Keep `--refclock=shm`. GPSD reads the receiver's serial data and PPS, exporting
+each through SHM; NTPsec consumes those segments. `nmea` and `pps` enable direct
+device drivers in ntpd and are not required to receive PPS through GPSD.
+Verify the observed segment assignments before rendering host `ntp.conf`.
 
 Offline source preparation invocation shape:
 
@@ -410,12 +424,22 @@ python3 -I -B ntpsec/scripts/clockmaker.py configure \
 ```
 
 GPSD requires foreground -N and exactly one -s 115200 matching the observed
-UART. ntpd requires foreground -n, -c /etc/ntp.conf and a reviewed -u account.
+UART. ntpd requires foreground -n, -m, -c /etc/ntp.conf and a reviewed -u account.
 Use timeservice.json.example only as a schema example; unresolved @...@ values
 must be rendered/reviewed, not installed. Select GPSD listener/socket scope,
 export and privilege/device access explicitly. Validate NTP restrictions,
 upstreams/NTS, drift/leap paths and SHM GPS/PPS configuration against the pinned
 build's manuals and actual device/service evidence.
+
+In NTPsec 1.2.5, mDNS is enabled by ntpd's `-m`/`--mdns` startup option,
+not by an `ntp.conf` enable directive. The optional `mdnstries 5` entry in
+`ntp.conf` sets registration retries and is already the default. Once ntpd
+synchronizes, verify its registration journal and browse `_ntp._udp` from
+another client on the intended network; verify the advertised host/port and
+IPv4/IPv6 reachability. Registration alone does not establish time-service
+acceptance. Inspect Avahi service state, interface policy and UDP 5353
+multicast permissions; do not enable reflection implicitly. Retain NTP
+restrictions and the governed unicast DNS/SRV records.
 
 The proposed timeservice.service runs `/usr/local/libexec/timeservice.py` with
 root-protected `/etc/ntpsec-timeservice.json`. The supervisor checks stty

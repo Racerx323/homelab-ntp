@@ -19,6 +19,8 @@ def validate(config):
             raise ValueError('source-built absolute daemon path required')
     if '-N' not in config['gpsd'][1:] or '-n' not in config['ntpd'][1:]:
         raise ValueError('both daemons must remain in foreground')
+    if not any(a in ('-m', '--mdns') for a in config['ntpd'][1:]):
+        raise ValueError('NTPsec mDNS registration requires -m or --mdns')
     device = config['uart_device']
     if not isinstance(device, str) or not device.startswith('/dev/') or '..' in Path(device).parts:
         raise ValueError('explicit observed UART device required')

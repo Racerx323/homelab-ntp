@@ -15,7 +15,7 @@ live inspection.
 | Rebuilt node | Former j1-svntp1 renamed j2-svntp1; spare-card first boot accepted | Full hardware/time/network acceptance |
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; Ethernet DHCP 10.1.0.137; matching console/SSH key | Fixed dual-stack service addresses; Wi-Fi disablement |
 | Foundation | 679 package records; original foundation plus pps-tools and bc accepted; controls cleaned up | Fresh-node preparation must use a fresh baseline |
-| Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; upstream tests/native staging and 159-entry manifest accepted | Live file installation and activation |
+| Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; upstream tests/native staging and 159-entry manifest accepted with mDNS disabled | New mDNS-enabled build/acceptance, then live installation and activation |
 | Runtime | Candidate only; no new ntp.conf or live application deployment | GPS/PPS/RTC, accounts, combined service, leap maintenance |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -34,6 +34,7 @@ end-of-project operator action. No cleanup here changes it.
 | Source lifecycle | 2026-10-10 | Signed, pinned GPSD/NTPsec source builds; retain combined timeservice supervision; exclude APT application packages |
 | Receiver/profile | 2026-10-10 | Uputronics u-blox M8, timeservice=yes and magic_hat=yes; runtime UART 115200 |
 | Installation assets | 2026-10-10 | Checked-in verified fetch tool and pinned manifests; large publisher binaries stay out of Git |
+| NTP discovery | 2026-10-12 | Require NTPsec mDNS build support, runtime -m and Avahi; keep GPSD serial/PPS delivery through SHM |
 
 ## Accepted milestones and retained observations
 
@@ -206,21 +207,31 @@ No package, service, policy or user-managed sudo configuration changed.
 
 ## Exact resume point
 
-Metadata resolution preparation is now implemented offline against the accepted
-fresh snapshot. The manifest also pins build-essential and the concrete pkgconf
-provider, bringing requirements to 48 without changing the accepted 679-record
-inventory. The expected delta on this node is zero. Resolution uses exact root
-pins, observed architectures, isolated APT state and full snapshot continuity;
-no live metadata refresh or simulation has been run under this new stage.
+The October 12 mDNS requirement is implemented in repository recipes,
+runtime argument validation and source acceptance. The source recipe no longer
+disables registration; acceptance requires `HAVE_DNS_SD_H`, and the runtime
+template requires `-m`. The optional `ntp.conf` directive `mdnstries` controls
+retries, not enablement. NTPsec retains only SHM because GPSD owns serial/PPS
+devices and exports both signals. No live package/build/runtime changes were
+performed for this requirement; the accepted v5 candidate remains unchanged.
 
-Seal and obtain hash-bound approval for metadata resolution against the
-accepted fresh j2-svntp1 snapshot. Use the checked-in recipe and pinned assets;
+Eight Avahi/DNS-SD development/runtime requirements were pinned from the
+retained signature-verified Trixie index, bringing the foundation manifest to
+56 requirements. Fresh dependency resolution must confirm their closure and
+calculate the exact delta; the prior zero-delta expectation no longer applies.
+The earlier snapshot and sealed resolution bind the previous recipe and must
+not be used to satisfy this revised requirement. Preserve those records.
+
+Prepare and obtain hash-bound approval for a fresh snapshot capture bound to
+the revised foundation recipe, then seal metadata resolution against that
+accepted snapshot. Use the checked-in recipe and pinned assets;
 recheck snapshot freshness and bound target inputs before resolution. Review
 dependency closure, exact native simulation delta and continuity before offline
 foundation preparation. This does not authorize reinstalling the accepted
 foundation or changing the live APT lists.
 
-Prepare a separately approved destination/collision inspection and live source
+After accepted mDNS prerequisites, prepare a new unprivileged source build and
+acceptance, then a separately approved destination/collision inspection and live source
 installation bundle with explicit metadata, pre-state, backups, rollback and
 acceptance. Preserve the accepted v5 stage and receipts. Runtime configuration,
 mail/cron, hardware, dual-stack/DNS/UniFi and reboot acceptance follow their

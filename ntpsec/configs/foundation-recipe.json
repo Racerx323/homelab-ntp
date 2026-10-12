@@ -16,7 +16,9 @@
     "python3-serial",
     "pps-tools",
     "bc",
-    "needrestart"
+    "needrestart",
+    "libavahi-compat-libdnssd-dev",
+    "avahi-daemon"
   ],
   "os": {
     "ID": "debian",

@@ -40,6 +40,12 @@ def profile_inputs(recipe, foundation, python, helpers):
         raise ValueError('time-service GPSD and explicit test protocols required')
     if not {'pps-tools', 'bc'}.issubset(recipe['build_roots']):
         raise ValueError('PPS and bc prerequisites required')
+    ntp_options = recipe['sources']['ntpsec']['options']
+    if ('--refclock=shm' not in ntp_options
+            or sum(a.startswith('--refclock=') for a in ntp_options) != 1
+            or '--disable-mdns-registration' in ntp_options
+            or not {'libavahi-compat-libdnssd-dev', 'avahi-daemon'}.issubset(recipe['build_roots'])):
+        raise ValueError('GPSD SHM refclock and mDNS build/runtime prerequisites required')
     inventory = copy.deepcopy(foundation['baseline'])
     for row in foundation['packages']:
         inventory[row['binary_package']] = [row['version'], 'ii ']

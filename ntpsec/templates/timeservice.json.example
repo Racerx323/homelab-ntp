@@ -1,5 +1,5 @@
 {
   "gpsd": ["/usr/local/sbin/gpsd", "-N", "-s", "115200", "@UART_DEVICE@"],
-  "ntpd": ["/usr/local/sbin/ntpd", "-n", "-c", "/etc/ntp.conf", "-u", "@NTP_USER@:@NTP_GROUP@"],
+  "ntpd": ["/usr/local/sbin/ntpd", "-n", "-m", "-c", "/etc/ntp.conf", "-u", "@NTP_USER@:@NTP_GROUP@"],
   "uart_device": "@UART_DEVICE@"
 }

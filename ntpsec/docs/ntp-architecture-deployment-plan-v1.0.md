@@ -136,6 +136,23 @@ Aaron selected this application lifecycle on `2026-10-10`:
   application maintenance. Use `pinup` for PPS configuration/query, not as a
   software updater. Preserve local NTP configuration during application updates.
 
+Aaron added these source/runtime requirements on `2026-10-12`:
+
+- Enable NTPsec mDNS registration. Build with DNS-SD headers/libraries, start
+  ntpd with `-m`, and provide a working Avahi responder. Require the generated
+  `HAVE_DNS_SD_H` feature and successful `_ntp._udp` advertisement on UDP 123
+  after synchronization, independently observed by a client on the intended
+  local network. Scope Avahi interfaces and firewall permissions in the reviewed
+  host profile; cross-VLAN reflection is a separate network decision. mDNS does
+  not replace the governed unicast DNS/SRV records or NTP access restrictions.
+- Keep `--refclock=shm`: GPSD owns the UART/PPS inputs and exports serial time
+  and PPS time through separate SHM units. NTPsec's `nmea` and `pps` refclocks
+  read devices directly and are unnecessary for this GPSD-mediated path.
+  Observe SHM unit assignments and accept GPS/PPS selection on each target.
+
+The earlier accepted candidate has mDNS disabled. Preserve its evidence and
+prepare a newly approved dependency/build stage before live installation.
+
 The [baseline HOWTO](https://www.ntpsec.org/white-papers/stratum-1-microserver-howto/)
 defines the starting workflow, not an executable Trixie deployment artifact.
 The [operations recipe](OPERATIONS.md#source-build) records reviewed script

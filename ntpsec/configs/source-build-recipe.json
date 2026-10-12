@@ -16,7 +16,9 @@
     "asciidoctor",
     "python3-serial",
     "pps-tools",
-    "bc"
+    "bc",
+    "libavahi-compat-libdnssd-dev",
+    "avahi-daemon"
   ],
   "sources": {
     "gpsd": {
@@ -84,8 +86,7 @@
         "--disable-doc",
         "--enable-manpage",
         "--enable-pylib=ext",
-        "--enable-seccomp",
-        "--disable-mdns-registration"
+        "--enable-seccomp"
       ],
       "origin": "https://ftp.ntpsec.org/pub/releases/ntpsec-1.2.5.tar.gz",
       "primary_fingerprint": "E57235D22764129FA4F2F4D17F52608ED0E49D76",

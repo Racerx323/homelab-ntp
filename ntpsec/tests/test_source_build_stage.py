@@ -30,6 +30,18 @@ l = load('launcher', 'launcher.py' if SEALED else 'run-source-build.py')
 
 
 class SourceStage(unittest.TestCase):
+    def test_mdns_optional_configure_detection_must_succeed(self):
+        header='#define CLOCK_SHM 1\n#define HAVE_SECCOMP_H 1\n#define HAVE_DNS_SD_H 1\n'
+        w.validate_ntpsec_features(header, True)
+        without_mdns=header.replace('#define HAVE_DNS_SD_H 1\n', '')
+        with self.assertRaisesRegex(ValueError,'mDNS'):
+            w.validate_ntpsec_features(without_mdns, True)
+        # Historical disabled candidates remain inspectable using their bound profile.
+        w.validate_ntpsec_features(without_mdns, False)
+        for missing in ('CLOCK_SHM', 'HAVE_SECCOMP_H'):
+            with self.subTest(missing=missing),self.assertRaises(ValueError):
+                w.validate_ntpsec_features(header.replace('#define '+missing+' 1\n', ''), True)
+
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory()
         self.addCleanup(self.temp.cleanup)
@@ -73,7 +85,7 @@ class SourceStage(unittest.TestCase):
         profile['sources']['ntpsec']['archive_root']='release'
         profile['sources']['gpsd'].update(archive_root='release',version='1')
         ntpheader=candidate/'ntpsec/release/build/config.h'
-        ntpheader.parent.mkdir(parents=True);ntpheader.write_text('#define CLOCK_SHM 1\n#define HAVE_SECCOMP_H 1\n')
+        ntpheader.parent.mkdir(parents=True);ntpheader.write_text('#define CLOCK_SHM 1\n#define HAVE_SECCOMP_H 1\n#define HAVE_DNS_SD_H 1\n')
         gpsheader=candidate/'gpsd/release/gpsd-1/include/gpsd_config.h'
         gpsheader.parent.mkdir(parents=True);gpsheader.write_text('fixture')
         real_run=subprocess.run
@@ -95,6 +107,7 @@ class SourceStage(unittest.TestCase):
                 accepted=w.staged_acceptance(clock,candidate,profile,self.spec,
                     {'manifest':'fixture','sha256':'a'*64},'acceptance-continuation-v1.log')
             self.assertTrue(accepted['manuals_modules_versions_linkage'])
+            self.assertTrue(accepted['ntpsec_mdns_registration'])
             self.assertEqual((self.stage/'acceptance.log').read_text(),'original failure')
             self.assertTrue((self.stage/'acceptance-continuation-v1.log').is_file())
         finally:w.STAGE=old

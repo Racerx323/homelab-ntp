@@ -41,6 +41,9 @@ class Prepare(unittest.TestCase):
         for name in ('pps-tools', 'bc', 'needrestart', 'extra-tool'):
             root = Path(cls.archive_root.name)/name
             (root/'DEBIAN').mkdir(parents=True)
+            # dpkg requires a traversable control directory even under umask 077.
+            # The enclosing TemporaryDirectory remains owner-private.
+            (root/'DEBIAN').chmod(0o755)
             version = '3.11' if name == 'needrestart' else '1'
             architecture = 'all' if name == 'needrestart' else 'arm64'
             (root/'DEBIAN/control').write_text('Package: '+name+'\nVersion: '+version+
@@ -52,7 +55,9 @@ class Prepare(unittest.TestCase):
                 target.write_bytes(('fixture '+name).encode())
             filename = name+'_'+version+'_'+architecture+'.deb'
             result = subprocess.run(['/usr/bin/dpkg-deb', '--root-owner-group', '--build', str(root),
-                                     str(cls.cache/filename)], capture_output=True, check=True)
+                                     str(cls.cache/filename)], capture_output=True, check=False)
+            if result.returncode:
+                raise RuntimeError('fixture package build failed: ' + result.stderr.decode(errors='replace'))
             data = (cls.cache/filename).read_bytes()
             cls.assets.append({'id': 'package-'+name, 'groups': ['foundation'], 'package': name,
                 'version': version, 'architecture': architecture, 'size': len(data),

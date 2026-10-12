@@ -143,6 +143,13 @@ def validate_gpsd_drivers(text):
         raise ValueError('selected u-blox receiver driver missing')
 
 
+def validate_ntpsec_features(header, mdns_required):
+    if '#define CLOCK_SHM 1' not in header or '#define DISABLE_NTS 1' in header or '#define HAVE_SECCOMP_H 1' not in header:
+        raise ValueError('selected NTPsec SHM/NTS/seccomp feature mismatch')
+    if mdns_required and '#define HAVE_DNS_SD_H 1' not in header:
+        raise ValueError('selected NTPsec mDNS registration support missing')
+
+
 def staged_acceptance(clock, candidate, profile, spec, result, log_name='acceptance.log'):
     manifest = clock.bound_json(Path(result['manifest']), result['sha256'])
     if clock.inventory(candidate / 'stage') != manifest['files']:
@@ -178,8 +185,8 @@ def staged_acceptance(clock, candidate, profile, spec, result, log_name='accepta
               candidate, environment, log)
     ntpheader = candidate / 'ntpsec' / profile['sources']['ntpsec']['archive_root'] / 'build/config.h'
     header = ntpheader.read_text()
-    if '#define CLOCK_SHM 1' not in header or '#define DISABLE_NTS 1' in header or '#define HAVE_SECCOMP_H 1' not in header:
-        raise ValueError('selected NTPsec SHM/NTS/seccomp feature mismatch')
+    mdns_required = '--disable-mdns-registration' not in profile['sources']['ntpsec']['options']
+    validate_ntpsec_features(header, mdns_required)
     gpssource = profile['sources']['gpsd']
     gpsheader = candidate / 'gpsd' / gpssource['archive_root'] / ('gpsd-' + gpssource['version']) / 'include/gpsd_config.h'
     gpsfeatures = gpsheader.read_text()
@@ -188,7 +195,8 @@ def staged_acceptance(clock, candidate, profile, spec, result, log_name='accepta
         raise ValueError('staged smoke checks changed candidate bytes')
     return {'release_sha256': result['sha256'], 'staged_files': len(manifest['files']),
             'manuals_modules_versions_linkage': True, 'source_tests_passed': True,
-            'ntpsec_shm_nts_seccomp': True, 'gpsd_selected_features': True,
+            'ntpsec_shm_nts_seccomp': True, 'ntpsec_mdns_registration': mdns_required,
+            'gpsd_selected_features': True,
             'gpsd_ublox_driver': True}
 
 

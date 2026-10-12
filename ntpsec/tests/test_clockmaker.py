@@ -314,7 +314,7 @@ class ClockmakerTests(unittest.TestCase):
                 'unit': {'path': unit.name, 'sha256': CLOCK.digest(unit.read_bytes())},
                 'timeservice': {'uart_device': '/dev/observed-gps',
                     'gpsd': ['/usr/local/sbin/gpsd', '-N', '-s', '115200', '/dev/observed-gps'],
-                    'ntpd': ['/usr/local/sbin/ntpd', '-n', '-u', '123:123', '-c', '/etc/ntp.conf']}})
+                    'ntpd': ['/usr/local/sbin/ntpd', '-n', '-m', '-u', '123:123', '-c', '/etc/ntp.conf']}})
             result = CLOCK.configure(profile, sha, base / 'configuration')
             self.assertEqual(ntp.read_text(), 'refclock shm unit 1\n')
             self.assertEqual(CLOCK.bound_json(Path(result['manifest']), result['sha256'])['state'],
@@ -475,11 +475,20 @@ class PinupTests(unittest.TestCase):
 
 class TimeserviceTests(unittest.TestCase):
     def test_foreground_and_absolute_source_paths_required(self):
-        SERVICE.validate({'uart_device': '/dev/observed-gps', 'gpsd': ['/usr/local/sbin/gpsd', '-N', '-s', '115200', '/dev/observed-gps'], 'ntpd': ['/usr/local/sbin/ntpd', '-n']})
-        for config in ({'gpsd': ['/usr/sbin/gpsd', '-N'], 'ntpd': ['/usr/local/sbin/ntpd', '-n']},
-                       {'gpsd': ['/usr/local/sbin/gpsd'], 'ntpd': ['/usr/local/sbin/ntpd', '-n']}):
+        SERVICE.validate({'uart_device': '/dev/observed-gps', 'gpsd': ['/usr/local/sbin/gpsd', '-N', '-s', '115200', '/dev/observed-gps'], 'ntpd': ['/usr/local/sbin/ntpd', '-n', '-m']})
+        for config in ({'gpsd': ['/usr/sbin/gpsd', '-N'], 'ntpd': ['/usr/local/sbin/ntpd', '-n', '-m']},
+                       {'gpsd': ['/usr/local/sbin/gpsd'], 'ntpd': ['/usr/local/sbin/ntpd', '-n', '-m']}):
             with self.assertRaises(ValueError):
                 SERVICE.validate(config)
+
+    def test_ntpsec_runtime_mdns_is_required(self):
+        config={'uart_device': '/dev/observed-gps',
+                'gpsd': ['/usr/local/sbin/gpsd', '-N', '-s', '115200', '/dev/observed-gps'],
+                'ntpd': ['/usr/local/sbin/ntpd', '-n']}
+        with self.assertRaisesRegex(ValueError,'mDNS'):
+            SERVICE.validate(config)
+        for flag in ('-m', '--mdns'):
+            SERVICE.validate(dict(config, ntpd=[*config['ntpd'], flag]))
 
     def test_uart_speed_is_required_and_conflicting_overrides_rejected(self):
         for argv in (['-N', '/dev/observed-gps'],
@@ -490,12 +499,12 @@ class TimeserviceTests(unittest.TestCase):
             with self.subTest(argv=argv), self.assertRaises(ValueError):
                 SERVICE.validate({'uart_device': '/dev/observed-gps',
                                   'gpsd': ['/usr/local/sbin/gpsd', *argv],
-                                  'ntpd': ['/usr/local/sbin/ntpd', '-n']})
+                                  'ntpd': ['/usr/local/sbin/ntpd', '-n', '-m']})
 
     def test_uart_initialization_failure_prevents_both_daemons(self):
         config = {'uart_device': '/dev/observed-gps',
                   'gpsd': ['/usr/local/sbin/gpsd', '-N', '-s', '115200', '/dev/observed-gps'],
-                  'ntpd': ['/usr/local/sbin/ntpd', '-n']}
+                  'ntpd': ['/usr/local/sbin/ntpd', '-n', '-m']}
         for error in (subprocess.CalledProcessError(1, 'stty'),
                       subprocess.TimeoutExpired('stty', 10)):
             with patch.object(SERVICE.subprocess, 'run', side_effect=error) as stty, \
@@ -515,7 +524,7 @@ class TimeserviceTests(unittest.TestCase):
             def terminate(self): self.stopped = True; self.exited = True
             def wait(self, timeout=None): return 0
         first, second = Process(False), Process(True)
-        config = {'uart_device': '/dev/observed-gps', 'gpsd': ['/usr/local/sbin/gpsd', '-N', '-s', '115200', '/dev/observed-gps'], 'ntpd': ['/usr/local/sbin/ntpd', '-n']}
+        config = {'uart_device': '/dev/observed-gps', 'gpsd': ['/usr/local/sbin/gpsd', '-N', '-s', '115200', '/dev/observed-gps'], 'ntpd': ['/usr/local/sbin/ntpd', '-n', '-m']}
         with patch.object(SERVICE.subprocess, 'run') as stty:
             def launch(argv, **kwargs):
                 stty.assert_called_once()
@@ -529,7 +538,7 @@ class TimeserviceTests(unittest.TestCase):
         process.poll.return_value = None
         with patch.object(SERVICE.subprocess, 'run'), patch.object(SERVICE.subprocess, 'Popen', side_effect=[process, OSError('launch failed')]):
             with self.assertRaises(OSError):
-                SERVICE.supervise({'uart_device': '/dev/observed-gps', 'gpsd': ['/usr/local/sbin/gpsd', '-N', '-s', '115200', '/dev/observed-gps'], 'ntpd': ['/usr/local/sbin/ntpd', '-n']})
+                SERVICE.supervise({'uart_device': '/dev/observed-gps', 'gpsd': ['/usr/local/sbin/gpsd', '-N', '-s', '115200', '/dev/observed-gps'], 'ntpd': ['/usr/local/sbin/ntpd', '-n', '-m']})
         process.terminate.assert_called_once()
 
 
