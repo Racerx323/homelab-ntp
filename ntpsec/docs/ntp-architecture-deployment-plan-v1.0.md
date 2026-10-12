@@ -151,8 +151,9 @@ Aaron added these source/runtime requirements on `2026-10-12`:
   Observe SHM unit assignments and accept GPS/PPS selection on each target.
 
 Before source installation, seal a read-only inspection bound to the accepted
-release, build receipt/specification and target identity. Inspect every intended
-destination and protected ancestor; retain complete file/link pre-state and
+release, build receipt/specification and target identity. Require accepted
+canonical destination pre-state before preparing live installation. Inspect every
+intended destination and protected ancestor; retain complete file/link pre-state and
 collision classifications. Recheck package, boot, Python and service/process
 continuity. Use exclusive root-owned staging, one capture, conditional terminal
 readback and verified cleanup; preserve executed build evidence. An accepted

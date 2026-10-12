@@ -20,8 +20,8 @@ The applications have not been installed live or configured on the new image.
 | --- | --- | --- |
 | Media and bootstrap | Accepted | Preserve original Debian 11 card and primary/antenna power |
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before live installation |
-| Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Read-only destination/collision bundle sealed; separate execution approval pending |
-| Live installation | Pending; new build accepted | Reviewed destination pre-state, explicit metadata, journal, recovery and scoped execution |
+| Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Prepare native installation using the accepted destination pre-state |
+| Live installation | Pending; new build and destination pre-state accepted | Prepare and seal native installation with explicit metadata, journal, recovery and scoped execution |
 | Runtime configuration | Pending | Observed UART/PPS/RTC, accounts, NTP configuration and combined-service cutover |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Pending | Hardware, time, dual-stack clients, monitoring and reboot evidence |
@@ -437,8 +437,16 @@ observations. It runs no installed application code. Bound each file hash to
 unsafe parents, special files or continuity drift. No existing files are replaced.
 
 The [current inspection review](/home/aaron/code/.local-evidence/homelab-ntp/current/source-destinations-20261012-v1/review.md)
-is sealed for j2-svntp1 and awaits execution approval. The root-owned stage is
-exclusive, 0700, with 0600 hash-verified inputs. Submit once with the same
+was approved and executed once on j2-svntp1. Terminal readback passed full
+validation: all 159 destinations are absent, with zero collisions, 27 ancestor
+records and no active ntpd/GPSD processes. Exact 686-package inventory, boot,
+Python and service/process continuity passed. Verified root-owned staging
+cleanup completed; the accepted inspection and canonical pre-state remain private.
+Live source installation and activation require a new reviewed bundle; the
+consumed inspection must not be replayed.
+
+For future inspection bundles, use exclusive root-owned 0700 staging with
+0600 hash-verified inputs. Submit once with the same
 launcher/bundle/hash using `execute --mode collect`, conditionally read the same
 terminal record with `--mode readback`, and clean only the verified stage with
 `--mode cleanup` after retaining that readback. Readback saves `inspection.json`,

@@ -15,7 +15,7 @@ live inspection.
 | Rebuilt node | Former j1-svntp1 renamed j2-svntp1; spare-card first boot accepted | Full hardware/time/network acceptance |
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; Ethernet DHCP 10.1.0.137; matching console/SSH key | Fixed dual-stack service addresses; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before live installation |
-| Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Destination/collision bundle sealed; execution approval pending, then live installation and activation |
+| Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Destination inspection accepted; zero collisions; next prepare scoped native installation and recovery |
 | Runtime | Candidate only; no new ntp.conf or live application deployment | GPS/PPS/RTC, accounts, combined service, leap maintenance |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
@@ -363,9 +363,9 @@ passed full acceptance against this inventory and the current recipe. Further
 execution requires separate hash-bound approval; the consumed installation
 bundle and pre-installation baseline must not be replayed.
 
-The next stage is execution of the sealed destination/collision inspection
-after separate hash-bound approval, then preparation of a live source
-installation bundle with explicit metadata, pre-state, backups, rollback and
+The destination/collision inspection passed acceptance and verified staging
+cleanup. All 159 destinations are absent with zero collisions. The next stage
+is preparation of a live source installation bundle with explicit metadata, pre-state, backups, rollback and
 acceptance. Preserve the accepted v5 stage and receipts. Runtime configuration,
 mail/cron, hardware, dual-stack/DNS/UniFi and reboot acceptance follow their
 reviewed stages. Earlier approvals have been consumed; further target contact
@@ -638,3 +638,37 @@ checks passed. Plan, operations and history now agree: obtain separate approval
 for capture/readback/cleanup, accept the retained observation, then prepare a
 new live installation bundle with explicit metadata, backups and rollback.
 No inspection execution or live installation has occurred.
+
+### October 12: destination/collision inspection accepted; staging removed
+
+Executed the separately approved [inspection review](/home/aaron/code/.local-evidence/homelab-ntp/current/source-destinations-20261012-v1/review.md)
+once on j2-svntp1, bound to bundle
+`efa5fc69df7f9dce63bbace722c7961a95541e2b5d4e163f34c80d4105c94775`.
+Capture, conditional terminal readback and verified cleanup each completed with
+matching zero transport/worker status. Full controller-side acceptance passed.
+
+All 159 accepted-release destinations are absent; there are no collisions.
+Captured 27 parent records, including missing directories, and verified existing
+ancestors are protected root-owned directories. No ntpd/GPSD processes were
+active; inspected time-service units were absent/inactive. SSH and NetworkManager
+remained active/running. Exact 686 package records, dpkg audit, accepted boot,
+Python ABI and service/process state passed continuity checks across both
+manifest observation passes.
+
+Accepted inspection SHA-256:
+`44efbdb8928b2f6d6182e49936340fbe40797d53421d8ce399010da12c5ddc40`.
+Canonical installation pre-state SHA-256:
+`d6fa64c51c3a08a112219556700912bed71995b1ef1451ace7d48450e43ca75f`.
+Both files and their acceptance receipt, registrations, terminal records and
+complete transport logs remain in the private inspection directory. Verified
+cleanup removed only `/var/lib/ntp-preflight-source-destinations-20261012-v1`.
+Prior executed evidence and accepted source workspaces were preserved. No
+application installation, configuration, service change or reboot occurred.
+
+Next prepare and seal the native GPSD/NTPsec installation bundle using the
+accepted release and this canonical pre-state. Define explicit metadata,
+destination revalidation, root-owned backups/journal, failure readback,
+rollback and post-install acceptance before requesting separate execution
+approval. Runtime configuration/activation and hardware/network/maintenance
+acceptance remain later scoped gates. The consumed inspection must not be
+replayed; its acceptance does not authorize installation.
