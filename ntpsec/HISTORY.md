@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; Ethernet DHCP 10.1.0.137; matching console/SSH key | Fixed dual-stack service addresses; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation/readback/payload cleanup accepted; runtime discovery and configuration pending |
-| Runtime | Native files installed, copied_not_activated; corrected v2 discovery prepared after v1 held | Execute/accept discovery, then render GPS/PPS/RTC, accounts, configuration and combined-service inputs |
+| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Prepare networking/hardware/accounts, loader validation and combined-service configuration from accepted observations |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -354,13 +354,22 @@ The result is `copied_not_activated`. Preserve both source workspaces and all
 executed privileged code, baseline records, native journal/backups and receipts.
 Do not replay the consumed inspection or installation.
 
-The corrected v2 read-only runtime discovery is prepared and awaits separate
-approval; v1 held on an inspector schema mismatch and its stage was removed,
-bound to the accepted installation receipt. Establish library/Python/PATH discovery,
-UART/PPS/RTC, accounts and service/configuration inputs before activation.
-Fixed dual-stack networking, mail/cron, leap maintenance, hardware/time/client,
-DNS/UniFi and reboot acceptance remain pending under the governing plan.
-No further target contact or mutation is authorized by this history entry.
+V2 runtime discovery, terminal acceptance and observation-stage cleanup passed.
+All installed release entries and parent/target continuity were verified.
+No matching UART/PPS/RTC device nodes were observed; the serial console is still
+requested and GPS UART/PPS/RTC overlays are absent. Runtime ntp/ntpd/gpsd accounts and
+groups are absent. Native Python package roots are on the isolated root search
+path, and /usr/local/lib is configured, but libgps is absent from the loader cache.
+Avahi and systemd-timesyncd are active; application time-service units are absent.
+
+Next prepare host networking, verified UART/PPS/RTC bring-up, runtime accounts and
+bounded loader/runtime validation from this accepted report. Review remaining
+physical wiring, privilege/access, listener/upstream/configuration and recovery
+choices before rendering host configuration and combined-service cutover.
+Fixed dual-stack networking precedes service activation under Phase 3. Mail/cron,
+leap maintenance, hardware/time/client, DNS/UniFi and reboot acceptance remain
+pending. No further target contact, cache refresh, deployment or activation is
+authorized by this history entry.
 
 ### October 12: revised snapshot-bound metadata resolution sealed
 
@@ -769,3 +778,31 @@ and runtime activation boundary are unchanged. Replacement discovery bundle:
 `a19d107c37368c60bb952d191a98d07e882303be07bd371cf4db77a0d04f5df4`.
 Capture expires `2026-10-13T18:41:54-05:00`
 (America/Chicago).
+
+### October 12: v2 runtime discovery accepted and observation stage removed
+
+Executed approved discovery bundle once for j2-svntp1:
+`a19d107c37368c60bb952d191a98d07e882303be07bd371cf4db77a0d04f5df4`.
+Capture, conditional terminal readback and scoped cleanup each completed with
+worker/transport status 0. Controller acceptance verified report/spec hashes,
+all 159 installed entries, parent identities, package/boot/Python/service/process
+continuity and the read-only scope. Accepted runtime report SHA-256:
+`d60fca2ad170d6318d16cde9d24da102cefdebaa8c6b6b194ec87f8e0586f22d`.
+
+Removed only `/var/lib/ntp-preflight-runtime-discovery-20261012-v2`; native
+installation code, baseline/journal/backups and both source workspaces remain
+preserved. Raw report, acceptance, registered executions and full streams/statuses
+remain in the private [operation directory](/home/aaron/code/.local-evidence/homelab-ntp/current/runtime-discovery-20261012-v2).
+
+No UART/PPS/RTC nodes or matching sysfs entries were observed. Boot lacks the
+GPS UART/PPS/RTC overlays and retains the serial-console request. Runtime accounts/groups
+are absent. Native Python roots match the isolated root search path; local library
+path is configured but libgps is not cached. These are static observations, not
+successful daemon/client imports or receiver/clock acceptance. Avahi and bootstrap
+systemd-timesyncd are running; application service units are absent. Configuration
+readiness remains false. No application/device execution, loader/cache change,
+configuration, account, service, network mutation or reboot occurred.
+
+Next prepare reviewed host networking/hardware/account and runtime configuration
+inputs with recovery and bounded loader/runtime validation. Further execution and
+combined-service activation require separately approved hash-bound stages.

@@ -23,7 +23,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Prepare library/Python runtime discovery and host configuration for separate approval |
-| Runtime configuration | Corrected v2 read-only discovery prepared; v1 held and observation stage removed | Accept current device/account/loader/network observations before rendering host configuration and reviewing cutover |
+| Runtime configuration | V2 discovery, terminal acceptance and observation-stage cleanup accepted; configuration pending | Prepare host networking, UART/PPS/RTC, runtime accounts and loader validation from the accepted report before reviewing cutover |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Pending | Hardware, time, dual-stack clients, monitoring and reboot evidence |
 
@@ -529,12 +529,30 @@ be rebuilt against changed dependencies.
 
 ## Configuration and combined service
 
-First accept the [runtime discovery review](/home/aaron/code/.local-evidence/homelab-ntp/current/runtime-discovery-20261012-v2/review.md)
-for j2-svntp1. The first capture held on a receipt/state schema comparison; its
-terminal readback and scoped cleanup completed. Corrected v2 projects native
-receipt file/host metadata into the canonical inspection state and tests the
-actual receipt shape. Prior execution evidence remains preserved. Preparation
-is offline and does not authorize target contact.
+Accepted v2 observations: no matching UART/PPS/RTC device nodes or sysfs entries;
+boot command line requests a serial console, while GPS UART/PPS/RTC overlays
+are absent. Local ntp/ntpd/gpsd accounts and groups are absent. Ethernet uses a
+NetworkManager profile; fixed dual-stack configuration remains pending. Avahi
+and systemd-timesyncd are active, while application time-service units are absent.
+Disable the conflicting time writer only in the reviewed NTPsec cutover.
+
+Both installed Python package roots match the isolated root search path's
+`/usr/local/lib/python3.13/dist-packages`; this does not prove runtime-user imports
+or access. `/usr/local/lib` is already in loader configuration, but installed
+libgps libraries are absent from the cache. Review cache refresh and bounded
+runtime-user/library validation separately; do not add an unnecessary loader
+path or Python bridge. Resolve hardware wiring/boot includes, daemon account and
+device access, listener/upstream/restriction choices and service recovery before
+rendering a deployable host configuration. Phase 3's fixed networking and hardware
+bring-up precede service activation.
+
+The [v2 runtime discovery review](/home/aaron/code/.local-evidence/homelab-ntp/current/runtime-discovery-20261012-v2/review.md)
+was executed once and accepted for j2-svntp1. Capture, terminal readback and
+observation-stage cleanup completed with status 0. All 159 installed entries,
+parent identities and target continuity passed. Prior native journals, source
+workspaces and executed evidence remain preserved. No configuration or activation
+was performed. For future nodes, prepare their own discovery offline and obtain
+separate execution approval.
 The checked-in controller binds the accepted native installation archive,
 readback/acceptance and successful payload cleanup, current recipes, pinned
 assets, templates and snapshots of the three governing documents. Exact receipt
