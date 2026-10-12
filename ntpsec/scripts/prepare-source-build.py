@@ -2,6 +2,7 @@
 """Prepare a pinned source profile from reviewed foundation and Python evidence."""
 import argparse
 import ast
+import base64
 import copy
 import hashlib
 import importlib.util
@@ -9,6 +10,7 @@ import io
 import json
 import os
 from pathlib import Path
+import re
 import tarfile
 import time
 
@@ -24,6 +26,37 @@ def bound_json(path, checksum):
     if sha(data) != checksum:
         raise ValueError('reviewed input hash mismatch: ' + str(path))
     return json.loads(data)
+
+
+def render_transport(stage, launcher, foundation, known_hosts, operation_id):
+    if (not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,62}', operation_id)
+            or not re.fullmatch(r'[a-z0-9][a-z0-9-]{0,62}', foundation['hostname'])
+            or not re.fullmatch(r'[A-Za-z0-9.+_-]+-v8', foundation['kernel'])):
+        raise ValueError('safe unique operation and target identity required')
+    fields = known_hosts.decode('ascii').split()
+    if (len(fields) != 3 or fields[1] != 'ssh-ed25519'
+            or not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9.-]*', fields[0])):
+        raise ValueError('single observed SSH host key required')
+    fingerprint = 'SHA256:' + base64.b64encode(hashlib.sha256(
+        base64.b64decode(fields[2], validate=True)).digest()).decode().rstrip('=')
+    stage_name = '.ntp-source-build-' + operation_id
+    replacements = ((stage, (
+        ("STAGE_NAME = '.ntp-source-build-v5'", 'STAGE_NAME = ' + repr(stage_name)),
+        ("HOSTNAME = 'j2-svntp1'", 'HOSTNAME = ' + repr(foundation['hostname'])),
+        ("KERNEL = '6.18.50+rpt-rpi-v8'", 'KERNEL = ' + repr(foundation['kernel'])))),
+        (launcher, (
+        ("FINGERPRINT = 'SHA256:yXiID8RObBoIejVpvr2KesaqIlocbSORyemD5dKrEys'", 'FINGERPRINT = ' + repr(fingerprint)),
+        ("TARGET = 'ama@10.1.0.137'", 'TARGET = ' + repr('ama@' + fields[0])),
+        ("['10.1.0.137', 'ssh-ed25519']", repr(fields[:2])))))
+    rendered = []
+    for source, bindings in replacements:
+        for before, after in bindings:
+            if source.count(before.encode()) != 1:
+                raise ValueError('canonical source template binding missing or ambiguous')
+            source = source.replace(before.encode(), after.encode())
+        compile(source, 'rendered-source-input.py', 'exec')
+        rendered.append(source)
+    return stage_name, rendered[0], rendered[1]
 
 
 def profile_inputs(recipe, foundation, python, helpers):
@@ -132,9 +165,13 @@ def main():
     parser.add_argument('--python-evidence-sha256', required=True)
     parser.add_argument('--sources', type=Path, required=True)
     parser.add_argument('--known-hosts', type=Path, required=True)
+    parser.add_argument('--operation-id', required=True)
     parser.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
     foundation = bound_json(args.foundation, args.foundation_sha256)
+    epoch = int(time.time())
+    if not foundation['prepared_epoch'] - 300 <= epoch < foundation['expires_epoch']:
+        raise ValueError('accepted foundation preparation window expired')
     observed = bound_json(args.python_evidence, args.python_evidence_sha256)
     python = observed['collector_report']['python_environment']
     recipe_data = args.recipe.read_bytes()
@@ -153,7 +190,11 @@ def main():
         verify_options(data, source, application)
         files[name] = data
     files['profile.json'] = (json.dumps(profile, sort_keys=True)+'\n').encode()
-    files['source-build-stage.py'] = (REPO/'ntpsec/scripts/source-build-stage.py').read_bytes()
+    known_hosts = args.known_hosts.read_bytes()
+    stage_name, stage, launcher = render_transport(
+        (REPO/'ntpsec/scripts/source-build-stage.py').read_bytes(),
+        (REPO/'ntpsec/scripts/run-source-build.py').read_bytes(), foundation, known_hosts, args.operation_id)
+    files['source-build-stage.py'] = stage
     header = '/usr/include/sys/timepps.h'
     expected_header = foundation.get('package_created_inputs', {}).get(header)
     if expected_header is None:
@@ -161,8 +202,10 @@ def main():
     if expected_header is None:
         raise ValueError('installed PPS header binding required')
     spec = {'schema':1, 'hostname':foundation['hostname'], 'kernel':foundation['kernel'],
-            'prepared_epoch':int(time.time()), 'expires_epoch':foundation['expires_epoch'],
+            'operation_id':args.operation_id, 'stage_name':stage_name, 'boot_id':foundation['boot_id'],
+            'prepared_epoch':epoch, 'expires_epoch':foundation['expires_epoch'],
             'inventory':inventory, 'foundation_spec_sha256':args.foundation_sha256,
+            'python_evidence_sha256':args.python_evidence_sha256,
             'python': {'version':python['version'], 'module_directory':python['purelib'],
                        'extension_suffix':python['extension_suffix']},
             'pps_header_sha256':expected_header, 'members':{n:sha(b) for n,b in files.items()}}
@@ -175,8 +218,8 @@ def main():
         destination.mkdir(mode=0o700)
         clock.unpack_source(files[source['archive']], source, destination)
     files.update({'spec.json':(json.dumps(spec, sort_keys=True)+'\n').encode(),
-                  'launcher.py':(REPO/'ntpsec/scripts/run-source-build.py').read_bytes(),
-                  'known_hosts':args.known_hosts.read_bytes(),
+                  'launcher.py':launcher,
+                  'known_hosts':known_hosts,
                   'tests.py':(REPO/'ntpsec/tests/test_source_build_stage.py').read_bytes()})
     for name, data in files.items():
         with (args.output/name).open('xb') as stream:
@@ -185,6 +228,7 @@ def main():
     (args.output/'provenance.json').write_text(json.dumps({
         'recipe_sha256':sha(recipe_data), 'foundation_spec_sha256':args.foundation_sha256,
         'python_evidence_sha256':args.python_evidence_sha256, 'inventory_records':len(inventory),
+        'operation_id':args.operation_id, 'stage_name':stage_name,
         'native_options_declared':True, 'archives_safely_unpacked':True,
         'target_contact':False, 'execution_authorized':False}, indent=2)+'\n')
     print(json.dumps({'output':str(args.output), 'inventory_records':len(inventory), 'target_contact':False}))

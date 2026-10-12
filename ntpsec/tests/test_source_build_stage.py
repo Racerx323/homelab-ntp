@@ -71,6 +71,22 @@ class SourceStage(unittest.TestCase):
         for files in (dict(self.files, extra=b'drift'), dict(self.files, **{'gpsd.tar.gz':b'drift'})):
             with self.assertRaises(ValueError): w.verify_files(self.spec,files)
 
+    def test_identity_rejects_operation_stage_and_foundation_boot_drift(self):
+        with patch.object(w.os,'getuid',return_value=1000), patch.object(w.os,'geteuid',return_value=1000), \
+                patch.object(w.pwd,'getpwuid',return_value=SimpleNamespace(pw_name='ama')), \
+                patch.object(w.sys,'flags',SimpleNamespace(isolated=True)), \
+                patch.object(w.sys,'dont_write_bytecode',True), \
+                patch.object(w.socket,'gethostname',return_value=w.HOSTNAME), \
+                patch.object(w.os,'uname',return_value=SimpleNamespace(machine='aarch64',release=w.KERNEL)), \
+                patch.object(w.sys,'version_info',(3,13,5)), \
+                patch.object(w.sysconfig,'get_path',return_value=self.spec['python']['module_directory']), \
+                patch.object(w.sysconfig,'get_config_var',return_value=self.spec['python']['extension_suffix']):
+            with self.assertRaisesRegex(ValueError,'stage binding'):
+                w.identity(dict(self.spec,stage_name='.ntp-source-build-other'),int(time.time()))
+            with patch.object(w.Path,'read_text',return_value='changed-boot'), \
+                    self.assertRaisesRegex(ValueError,'boot drift'):
+                w.identity(dict(self.spec,stage_name=w.STAGE_NAME,boot_id='accepted-boot'),int(time.time()))
+
     def test_staged_acceptance_imports_only_candidate_python_modules(self):
         candidate=self.home/'candidate';stage=candidate/'stage'
         module=stage/self.spec['python']['module_directory'].lstrip('/')

@@ -19,8 +19,8 @@ The applications have not been installed live or configured on the new image.
 | Stage | State | Next requirement |
 | --- | --- | --- |
 | Media and bootstrap | Accepted | Preserve original Debian 11 card and primary/antenna power |
-| Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Prepare and separately approve a new mDNS-enabled source build against the accepted inventory |
-| Source candidate | v5 accepted with mDNS disabled; new prerequisites accepted | New mDNS-enabled build/acceptance, then destination/collision review |
+| Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and verify it during the source build |
+| Source candidate | v5 accepted with mDNS disabled; new mDNS-enabled build sealed against accepted prerequisites | Approve the new build and accept its mDNS feature/tests/staging, then destination/collision review |
 | Live installation | Pending | New accepted build, reviewed pre-state, explicit metadata, journal and scoped execution |
 | Runtime configuration | Pending | Observed UART/PPS/RTC, accounts, NTP configuration and combined-service cutover |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
@@ -72,8 +72,10 @@ installation input. Accepted v4 supplies the current preparation evidence.
 There is no completed unattended end-to-end installer yet. Foundation preparation
 now uses a checked-in recipe, fresh target snapshot and accepted combined
 resolution report; it reads no historical bundle or acceptance receipt.
-The source-stage transport still needs fresh target identities and exclusive
-stage names before another operation. Live installation/runtime profiles and
+Source preparation now renders the target identity, pinned SSH binding and
+exclusive stage from evidence and a required operation ID, and binds the
+accepted foundation boot. The [mDNS build review](/home/aaron/code/.local-evidence/homelab-ntp/current/source-build-mdns-20261012-v1/review.md)
+is sealed for j2-svntp1; separate execution approval is pending. Live installation/runtime profiles and
 hardware/network acceptance remain pending.
 
 ## Repository assets and private evidence
@@ -374,11 +376,14 @@ python3 -I -B ntpsec/scripts/prepare-source-build.py \
     --foundation "$foundation_spec" --foundation-sha256 "$foundation_sha" \
     --python-evidence "$python_evidence" --python-evidence-sha256 "$python_sha" \
     --sources "$verified_source_cache" --known-hosts "$pinned_known_hosts" \
-    --output "$new_preparation"
+    --operation-id "$new_operation_id" --output "$new_preparation"
 ```
 
 The preparer verifies hashes, prerequisites/options, safe archive roots/links,
-target profile and worker inputs. Publisher archives do not contain a Git PAX
+target profile and worker inputs. The operation ID renders an exclusive workspace;
+hostname/kernel and SSH endpoint/key are rendered from the supplied evidence.
+Reject malformed identities and ambiguous template bindings. Build execution
+also checks the accepted foundation boot ID. Publisher archives do not contain a Git PAX
 commit comment; authentication comes from the reviewed signature/tag/blob
 chain. Only contained links to archive regular files are accepted.
 

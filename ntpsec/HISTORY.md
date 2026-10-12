@@ -14,8 +14,8 @@ live inspection.
 | --- | --- | --- |
 | Rebuilt node | Former j1-svntp1 renamed j2-svntp1; spare-card first boot accepted | Full hardware/time/network acceptance |
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; Ethernet DHCP 10.1.0.137; matching console/SSH key | Fixed dual-stack service addresses; Wi-Fi disablement |
-| Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | New mDNS-enabled source build/acceptance |
-| Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; upstream tests/native staging and 159-entry manifest accepted with mDNS disabled | New mDNS-enabled build/acceptance, then live installation and activation |
+| Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and verify it during the source build |
+| Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; v5 tests/native staging and 159-entry manifest accepted with mDNS disabled; new mDNS-enabled build sealed | Separate new build approval/acceptance, then live installation and activation |
 | Runtime | Candidate only; no new ntp.conf or live application deployment | GPS/PPS/RTC, accounts, combined service, leap maintenance |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
@@ -357,8 +357,8 @@ not be used to satisfy this revised requirement. Preserve those records.
 The revised-recipe v3 snapshot is accepted and its verified stage removed.
 Resolution v3 was held at final continuity and cleaned up; corrected v4 has passed
 acceptance and cleanup. The seven-package installation passed acceptance and
-control cleanup, yielding 686 package records. Prepare the new mDNS-enabled
-source build against this accepted inventory and the current recipe. Further
+control cleanup, yielding 686 package records. The new mDNS-enabled source build
+is sealed against this accepted inventory and the current recipe. Further
 execution requires separate hash-bound approval; the consumed installation
 bundle and pre-installation baseline must not be replayed.
 
@@ -374,8 +374,8 @@ The earlier v2 capture remains a retained record for its previous recipe.
 Use the accepted v3 snapshot for the current foundation requirements, within
 its freshness window and with the bound target inputs rechecked by resolution.
 Fresh resolution v4 and its seven-package installation are accepted.
-Fresh source-stage
-transport bindings and complete live installation/runtime profiles remain pending.
+The new source-stage transport bindings are rendered and sealed. Complete live
+installation/runtime profiles remain pending.
 OPERATIONS identifies these gaps; this history does not certify an unattended
 end-to-end installer or a completed deployment. No new live action is authorized
 by this history entry.
@@ -528,3 +528,41 @@ Next prepare and review a new mDNS-enabled GPSD/NTPsec source build against the
 accepted 686-record inventory. The old 679-record snapshot/resolution and consumed
 installation approval are execution records, not a current baseline or permission
 for further execution.
+
+### October 12: mDNS-enabled source build prepared and sealed
+
+Prepared the [source build review](/home/aaron/code/.local-evidence/homelab-ntp/current/source-build-mdns-20261012-v1/review.md)
+offline for j2-svntp1, ama UID 1000, 10.1.0.137 and kernel 6.18.50+rpt-rpi-v8.
+Operation ID: `mdns-20261012-v1`; exclusive unprivileged target workspace:
+`/home/ama/.ntp-source-build-mdns-20261012-v1`.
+Bundle SHA-256:
+`daddefa703f2466a46425151c4dca4aba889cc78457c2eebef46269c51dda98d`.
+Build/readback approval window ends October 13, 2026 at 20:30:41 UTC.
+
+Used the newly accepted installation specification and observed 686-record
+inventory, with Python/ABI evidence from accepted resolution and unchanged
+interpreter packages. The specification binds foundation and Python evidence
+hashes, exact inventory, installed PPS header, target boot and all build inputs.
+Reverified both pinned publisher archives and detached signatures through the
+checked-in verified asset tool. Safe unpacking and native option/layout checks
+passed; no source execution or target contact occurred during preparation.
+
+Updated source preparation to require a unique operation ID, render stage and
+hostname/kernel/SSH bindings, reject stale foundation windows before output and
+hash-bind Python evidence. The worker rejects operation-stage and foundation
+boot drift. Regression checks cover malformed/ambiguous transport bindings,
+expired input with no output and stage/boot drift. Eleven preparer regressions
+and the rendered stage's 20 offline regressions passed.
+
+The new recipe retains pinned GPSD 3.27.5 and NTPsec 1.2.5, time-service/magic_hat,
+unchanged upstream test coverage, SHM/Python/manual/client staging and two jobs.
+Acceptance additionally requires generated HAVE_DNS_SD_H=1 and records NTPsec
+mDNS support explicitly. Build inputs preserve the accepted v5 candidate in its
+separate stage; no historical candidate is reused or replaced.
+
+Next obtain separate approval for one unprivileged build, both upstream suites,
+DESTDIR staging, feature/module/linkage/file acceptance and conditional terminal
+readback. Failure and success both preserve the new stage/claim/logs/candidate;
+there is no automatic retry or live installation. Destination/collision inspection,
+application installation and runtime activation remain later separately reviewed
+gates. The plan, operations and current history status agree on this resume point.

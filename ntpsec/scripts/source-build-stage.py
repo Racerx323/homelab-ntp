@@ -39,6 +39,10 @@ def identity(spec, epoch):
             or sysconfig.get_path('purelib') != spec['python']['module_directory']
             or sysconfig.get_config_var('EXT_SUFFIX') != spec['python']['extension_suffix']):
         raise ValueError('observed interpreter/ABI/path drift')
+    if spec.get('stage_name', STAGE_NAME) != STAGE_NAME:
+        raise ValueError('operation stage binding mismatch')
+    if spec.get('boot_id') and Path('/proc/sys/kernel/random/boot_id').read_text().strip() != spec['boot_id']:
+        raise ValueError('accepted foundation boot drift')
     home = Path(pwd.getpwuid(1000).pw_dir)
     for parent in (home, *home.parents):
         s = parent.lstat()

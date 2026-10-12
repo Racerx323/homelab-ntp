@@ -1,12 +1,17 @@
 #!/usr/bin/python3
 """Offline source recipe, dependency closure and native option regressions."""
 import copy
+import base64
+import hashlib
 import importlib.util
 import io
 import json
 from pathlib import Path
 import tarfile
+import tempfile
+import time
 import unittest
+from unittest.mock import patch
 
 ROOT=Path(__file__).resolve().parents[1]
 s=importlib.util.spec_from_file_location('prepare_source',ROOT/'scripts/prepare-source-build.py')
@@ -14,6 +19,42 @@ w=importlib.util.module_from_spec(s);s.loader.exec_module(w)
 
 
 class PrepareSource(unittest.TestCase):
+    def test_expired_foundation_rejected_before_other_inputs_or_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory);foundation=root/'foundation.json';output=root/'output'
+            foundation.write_text(json.dumps({'prepared_epoch':int(time.time())-86400,
+                                              'expires_epoch':int(time.time())-1}))
+            args=['prepare-source-build.py','--foundation',str(foundation),
+                  '--foundation-sha256',w.sha(foundation.read_bytes()),
+                  '--python-evidence',str(root/'missing-python'), '--python-evidence-sha256','0'*64,
+                  '--sources',str(root/'missing-sources'), '--known-hosts',str(root/'missing-key'),
+                  '--operation-id','fixture-v6','--output',str(output)]
+            with patch('sys.argv',args),self.assertRaisesRegex(ValueError,'window expired'):
+                w.main()
+            self.assertFalse(output.exists())
+
+    def test_transport_renders_unique_stage_and_observed_target(self):
+        worker=(ROOT/'scripts/source-build-stage.py').read_bytes()
+        launcher=(ROOT/'scripts/run-source-build.py').read_bytes()
+        known=b'fixture.example ssh-ed25519 '+base64.b64encode(b'fixture key')+b'\n'
+        target={'hostname':'fixture-node','kernel':'6.18.51-fixture-v8'}
+        name,stage,transport=w.render_transport(worker,launcher,target,known,'fixture-v6')
+        ns={};exec(compile(stage,'worker','exec'),ns)
+        ls={};exec(compile(transport,'launcher','exec'),ls)
+        self.assertEqual(name,'.ntp-source-build-fixture-v6')
+        self.assertEqual((ns['STAGE_NAME'],ns['HOSTNAME'],ns['KERNEL']),
+                         (name,target['hostname'],target['kernel']))
+        self.assertEqual(ls['TARGET'],'ama@fixture.example')
+        self.assertEqual(ls['FINGERPRINT'],'SHA256:'+base64.b64encode(
+            hashlib.sha256(b'fixture key').digest()).decode().rstrip('='))
+        for operation in ('../v6','v6;id','', 'x'*64):
+            with self.subTest(operation=operation),self.assertRaises(ValueError):
+                w.render_transport(worker,launcher,target,known,operation)
+        with self.assertRaisesRegex(ValueError,'template'):
+            w.render_transport(worker+worker,launcher,target,known,'fixture-v6')
+        with self.assertRaisesRegex(ValueError,'host key'):
+            w.render_transport(worker,launcher,target,known+known,'fixture-v6')
+
     def test_ntpsec_isolated_test_layout_is_bound(self):
         def archive(output, library):
             data=io.BytesIO()
