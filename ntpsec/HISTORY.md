@@ -177,7 +177,7 @@ requirements without an APT install call. Tests include preparation in an isolat
 repository with no historical evidence, different inventory sizes, partial/zero
 additions, dependency/control conflicts, drift and exclusive output.
 
-### October 12: fresh capture transport prepared offline
+### October 12: fresh foundation snapshot accepted
 
 Confirmed the foundation refactor was committed and pushed as `5eb1aeb` before
 preparing the next action. Architecture, operations and history agree on the
@@ -195,12 +195,23 @@ Collection was not replayed. The offline correction now validates only the
 root-owned `/bin` and `/sbin` aliases with exact canonical destinations, in both
 snapshot capture and foundation input checks; unexpected links remain held.
 
+The corrected capture was separately approved and executed once. Terminal
+readback and the full snapshot validator passed: 679 package records, 197
+protected inputs and eight configuration directories; no active time daemons
+and no password-database read. The snapshot SHA-256 is
+`a9775dac0803f65edc5344b8b55844bf8d049a61100f374bbb917899fd11e4a6`.
+Conditional cleanup verified and removed the root-owned stage. Accepted snapshot,
+archive and terminal records remain in the private current evidence directory.
+No package, service, policy or user-managed sudo configuration changed.
+
 ## Exact resume point
 
-Seal and obtain hash-bound approval for the fresh j2-svntp1 snapshot capture,
-conditional terminal readback and cleanup. Review and accept its snapshot before
-sealing the separate metadata resolution operation against that hash. This
-validates fresh preparation and does not reinstall the accepted foundation.
+Prepare, seal and obtain hash-bound approval for metadata resolution against the
+accepted fresh j2-svntp1 snapshot. Use the checked-in recipe and pinned assets;
+recheck snapshot freshness and bound target inputs before resolution. Review
+dependency closure, exact native simulation delta and continuity before offline
+foundation preparation. This does not authorize reinstalling the accepted
+foundation or changing the live APT lists.
 
 Prepare a separately approved destination/collision inspection and live source
 installation bundle with explicit metadata, pre-state, backups, rollback and
@@ -209,10 +220,9 @@ mail/cron, hardware, dual-stack/DNS/UniFi and reboot acceptance follow their
 reviewed stages. Earlier approvals have been consumed; further target contact
 requires a scoped approval.
 
-The read-only snapshot collector and transport are implemented and tested offline;
-the first live capture was held and cleaned up. No accepted fresh snapshot,
-metadata refresh or new package transaction exists. Fresh source-stage
+The corrected read-only snapshot capture is accepted and its stage cleaned up.
+No fresh metadata resolution or new package transaction has been executed. Fresh source-stage
 transport bindings and complete live installation/runtime profiles remain pending.
 OPERATIONS identifies these gaps; this history does not certify an unattended
 end-to-end installer or a completed deployment. No new live action is authorized
-by this offline implementation approval.
+by this history entry.

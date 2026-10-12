@@ -26,6 +26,12 @@ The applications have not been installed live or configured on the new image.
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Pending | Hardware, time, dual-stack clients, monitoring and reboot evidence |
 
+On October 12, the fresh foundation snapshot passed validation with the same
+679 package records, 197 protected inputs and eight configuration directories.
+Its root-owned capture stage was cleaned up. Snapshot-bound metadata resolution
+is the next preparation gate; capture acceptance authorizes no package changes.
+The exact snapshot hash and retained execution outcome are recorded in HISTORY.
+
 There is no completed unattended end-to-end installer yet. Foundation preparation
 now uses a checked-in recipe, fresh target snapshot and accepted combined
 resolution report; it reads no historical bundle or acceptance receipt.
