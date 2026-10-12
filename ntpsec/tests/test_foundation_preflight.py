@@ -1,11 +1,13 @@
 #!/usr/bin/python3
 """Offline sealed transport and protected staging lifecycle regression checks."""
 import base64
+import copy
 import fcntl
 import importlib.util
 import io
 import json
 import os
+import shutil
 from pathlib import Path
 import tarfile
 import tempfile
@@ -215,6 +217,77 @@ class Preflight(unittest.TestCase):
         altered['recipe.json'] = b'changed'
         with self.assertRaisesRegex(ValueError, 'hash mismatch'):
             s.entry(self.spec, altered, int(time.time()), 'collect')
+
+    def test_resolution_seals_in_independent_repository_without_historical_evidence(self):
+        definition = importlib.util.spec_from_file_location('foundation_fixtures', ROOT / 'tests/test_prepare_foundation.py')
+        fixtures = importlib.util.module_from_spec(definition)
+        definition.loader.exec_module(fixtures)
+        previous_umask = os.umask(0o022)  # Debian control directories require normal build permissions.
+        try:
+            fixtures.Prepare.setUpClass()
+        finally:
+            os.umask(previous_umask)
+        self.addCleanup(fixtures.Prepare.tearDownClass)
+        fixture = fixtures.Prepare()
+        fixture.setUp()
+        self.addCleanup(fixture.temporary.cleanup)
+        snapshot = copy.deepcopy(fixture.snapshot)
+        snapshot['baseline']['apt'] = ['3.0.3', 'ii ']
+        snapshot['baseline']['libapt-pkg7.0:arm64'] = ['3.0.3', 'ii ']
+        keys = ['/usr/share/keyrings/debian-archive-keyring.pgp', '/usr/share/keyrings/raspberrypi-archive-keyring.pgp']
+        for key in keys:
+            snapshot['inputs'].append(fixture.file_record(key))
+        snapshot['coverage']['keyrings'] += keys
+        repository = self.parent / 'independent-repository/ntpsec'
+        (repository / 'configs').mkdir(parents=True)
+        shutil.copytree(ROOT / 'scripts', repository / 'scripts')
+        shutil.copytree(ROOT / 'tests', repository / 'tests')
+        for name, value in (('foundation-recipe.json', fixture.recipe), ('installation-assets.json', fixture.manifest),
+                            ('foundation-resolution-policy.json', {'schema': 1, 'verify_packages': ['apt', 'libapt-pkg7.0'],
+                                'releases': [{'base_uri': 'http://repo.test/debian/', 'suite': 'trixie',
+                                              'codename': 'trixie', 'origin': 'Debian', 'release_suite': 'stable', 'components': ['main']}]})):
+            (repository / 'configs' / name).write_bytes(c.encoded(value))
+        # Bind the exact checked-in recipe bytes in this independent fixture repository.
+        snapshot['recipe_sha256'] = c.sha((repository / 'configs/foundation-recipe.json').read_bytes())
+        raw = c.encoded(snapshot)
+        path = self.parent / 'fresh-snapshot.json'
+        path.write_bytes(raw); path.chmod(0o600)
+        fixture.known_hosts.chmod(0o600)
+        args = SimpleNamespace(action='seal-resolution', snapshot=path, snapshot_sha256=c.sha(raw),
+            known_hosts=fixture.known_hosts, operation_id='fixture-resolution', output=self.parent / 'resolution')
+        with patch.object(c, 'ROOT', repository), patch.object(c.subprocess, 'run') as run:
+            result = c.seal(args)
+            spec, files = c.prepare(Path(result['bundle']), result['sha256'])
+            self.assertEqual(spec['operation'], 'foundation-resolution')
+            self.assertEqual(files['snapshot.json'], raw)
+            resolver_spec = json.loads(files['resolver-spec.json'])
+            self.assertEqual(resolver_spec['verify_packages'], ['apt', 'libapt-pkg7.0:arm64'])
+            self.assertEqual(set(resolver_spec['root_pins']), set(fixture.recipe['roots']))
+            self.assertLessEqual(spec['expires_epoch'], snapshot['collected_epoch'] + 86400)
+            run.assert_not_called()
+            for mode in ('collect', 'readback', 'cleanup'):
+                compile(c.payload(spec, files, int(time.time()), mode), 'resolution-fixture', 'exec')
+
+    def test_resolution_post_collection_drift_invalidates_retained_report(self):
+        root = self.parent / 'resolution-stage'
+        root.mkdir()
+        expected = {'schema': 1, 'baseline': {'fixture': ['1', 'ii ']}, 'collected_epoch': 1, 'commands': []}
+        (root / 'snapshot.json').write_bytes(s.encoded(expected))
+        (root / 'resolver-spec.json').write_bytes(s.encoded({'workspace': '/var/tmp/ntp-resolution-fixture'}))
+        worker = SimpleNamespace(read=lambda p: p.read_bytes(), create=lambda p, d: p.write_bytes(d))
+        report = {'state': 'completed', 'groups': {'foundation': {'accepted': True}},
+                  **{k: True for k in ('metadata_accepted', 'metadata_unchanged', 'installed_state_unchanged',
+                                       'boot_unchanged', 'approved_inputs_unchanged')}}
+        resolver = SimpleNamespace(run=Mock(return_value=report))
+        collector = SimpleNamespace(collect=Mock(side_effect=[expected, dict(expected, baseline={'changed': ['2', 'ii ']})]),
+                                    module=lambda name: resolver if name == 'resolver.py' else SimpleNamespace())
+        spec = dict(self.spec, members={**self.spec['members'], 'snapshot.json': 'a'*64, 'installation-assets.json': 'b'*64})
+        result = s.resolution(collector, root, spec, worker, int(time.time()))
+        self.assertEqual(result['state'], 'resolution_held')
+        retained = json.loads((root / 'resolution.json').read_bytes())['report']
+        self.assertFalse(retained['metadata_accepted'])
+        self.assertFalse(retained['groups']['foundation']['accepted'])
+        self.assertEqual(retained['state'], 'held')
 
 
 if __name__ == '__main__':

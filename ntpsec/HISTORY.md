@@ -206,7 +206,14 @@ No package, service, policy or user-managed sudo configuration changed.
 
 ## Exact resume point
 
-Prepare, seal and obtain hash-bound approval for metadata resolution against the
+Metadata resolution preparation is now implemented offline against the accepted
+fresh snapshot. The manifest also pins build-essential and the concrete pkgconf
+provider, bringing requirements to 48 without changing the accepted 679-record
+inventory. The expected delta on this node is zero. Resolution uses exact root
+pins, observed architectures, isolated APT state and full snapshot continuity;
+no live metadata refresh or simulation has been run under this new stage.
+
+Seal and obtain hash-bound approval for metadata resolution against the
 accepted fresh j2-svntp1 snapshot. Use the checked-in recipe and pinned assets;
 recheck snapshot freshness and bound target inputs before resolution. Review
 dependency closure, exact native simulation delta and continuity before offline

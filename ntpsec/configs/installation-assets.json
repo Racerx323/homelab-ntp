@@ -6,7 +6,11 @@
     "package_metadata_sha256": "5b9a817bb678643f9c402ba223611f8bfbd1ed02a63706d16592d626c71b7bdf",
     "selected_plan_sha256": "c2c3700beb8d1e1f6fa2f766d37f85ee63c06942bb0382821bdeb5ce12cef808",
     "bc_signed_index_sha256": "f97011263173eaccb1a215a28a6ec7ba1f6e5cebd8bb68e8fa0475b1d4021161",
-    "source_recipe_sha256": "91465742a92100153f2c0700bc4ac678f595666fb5617451df636262c053a8ec"
+    "source_recipe_sha256": "91465742a92100153f2c0700bc4ac678f595666fb5617451df636262c053a8ec",
+    "foundation_root_records": {
+      "build-essential": "ce113bdd28bc89a49dc13dab51de6950c5bb277aa712a7526a4b4dd9e0a68796",
+      "pkgconf": "7054b72a275daefd42f8aa206307e2f8df92af3b9d141ef8b4112dde851f5cf1"
+    }
   },
   "public_keys": {
     "gpsd": {
@@ -1404,6 +1408,35 @@
       "sha256": "6fb191cddaf607e7754b1f6915a1a61dc4018b3e4eef3d2ffacec961c9682949",
       "signature": "signature-ntpsec",
       "public_key": "ntpsec"
+    },
+    {
+      "id": "foundation-build-essential",
+      "groups": [
+        "foundation"
+      ],
+      "filename": "build-essential_12.12_arm64.deb",
+      "url": "https://deb.debian.org/debian/pool/main/b/build-essential/build-essential_12.12_arm64.deb",
+      "size": 4624,
+      "sha256": "3278c93c699f9c12b6f7fe8e03393aa50d1c6b1c4b35da8f15b1c7bae67dc961",
+      "package": "build-essential",
+      "version": "12.12",
+      "architecture": "arm64"
+    },
+    {
+      "id": "foundation-pkgconf",
+      "groups": [
+        "foundation"
+      ],
+      "filename": "pkgconf_1.8.1-4_arm64.deb",
+      "url": "https://deb.debian.org/debian/pool/main/p/pkgconf/pkgconf_1.8.1-4_arm64.deb",
+      "size": 26148,
+      "sha256": "aaf89947e9a5a6d980d14f43dfde8d0ad4e869b5cd33567321ca8baeb7ee7740",
+      "package": "pkgconf",
+      "version": "1.8.1-4",
+      "architecture": "arm64"
     }
-  ]
+  ],
+  "root_providers": {
+    "pkg-config": "pkgconf"
+  }
 }

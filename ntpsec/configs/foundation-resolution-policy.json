@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "scope": "Authenticated Trixie metadata from the reviewed Raspberry Pi image sources; isolated refresh and exact pinned foundation simulation only",
+  "verify_packages": ["apt", "apt-listchanges", "debconf", "debian-archive-keyring", "raspberrypi-archive-keyring", "raspberrypi-sys-mods", "gpgv", "sqv", "python3-apt", "libapt-pkg7.0", "python3", "python3-minimal", "libpython3-stdlib"],
+  "releases": [
+    {"base_uri": "http://deb.debian.org/debian/", "suite": "trixie", "codename": "trixie", "origin": "Debian", "release_suite": "stable", "components": ["main", "contrib", "non-free", "non-free-firmware"]},
+    {"base_uri": "http://deb.debian.org/debian/", "suite": "trixie-updates", "codename": "trixie-updates", "origin": "Debian", "release_suite": "stable-updates", "components": ["main", "contrib", "non-free", "non-free-firmware"]},
+    {"base_uri": "http://deb.debian.org/debian-security/", "suite": "trixie-security", "codename": "trixie-security", "origin": "Debian", "release_suite": "stable-security", "components": ["main", "contrib", "non-free", "non-free-firmware"]},
+    {"base_uri": "http://archive.raspberrypi.com/debian/", "suite": "trixie", "codename": "trixie", "origin": "Raspberry Pi Foundation", "release_suite": "stable", "components": ["main"]}
+  ]
+}

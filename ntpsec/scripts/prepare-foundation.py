@@ -148,8 +148,13 @@ def package_requirements(recipe, manifest):
         row['binary_package'] = row['package']
         row['file'] = worker.archive_file(row)
         rows.append(row)
-    if (not assets or len({r['package'] for r in rows}) != len(rows)
-            or not set(recipe['roots']).issubset(r['package'] for r in rows)
+    providers = manifest.get('root_providers', {})
+    names = {r['package'] for r in rows}
+    if (not isinstance(providers, dict) or any(not isinstance(k, str) or not isinstance(v, str)
+            or v not in names for k, v in providers.items())):
+        raise ValueError('root provider must name one pinned concrete package')
+    if (not assets or len(names) != len(rows)
+            or not {providers.get(n, n) for n in recipe['roots']}.issubset(names)
             or any(r['package'] in recipe['prohibited_packages'] or r['package'].startswith('ntpsec')
                    or r['architecture'] not in ('arm64', 'all') for r in rows)):
         raise ValueError('complete pinned foundation requirement set required')

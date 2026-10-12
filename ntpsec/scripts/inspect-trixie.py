@@ -264,13 +264,19 @@ def inspect():
                             'no Wi-Fi disablement, thermal stress or NTP/GPSD acceptance']}
 
 
-def policy_files():
+def directory_files(directory, pattern, directory_members=None):
+    if directory_members is None:
+        return Path(directory).glob(pattern)
+    return (Path(directory) / name for name in directory_members[directory] if Path(name).match(pattern))
+
+
+def policy_files(directory_members=None):
     paths = {Path('/etc/needrestart/needrestart.conf'), Path('/etc/apt/apt.conf'),
              Path('/etc/apt/preferences'), Path('/usr/lib/needrestart/apt-pinvoke')}
     for directory, pattern in (('/etc/needrestart/conf.d', '*.conf'),
                                ('/etc/apt/apt.conf.d', '*'),
                                ('/etc/apt/preferences.d', '*')):
-        paths.update(Path(directory).glob(pattern))
+        paths.update(directory_files(directory, pattern, directory_members))
     if len(paths) > 96:
         raise ValueError('policy input count exceeds approved 96-file bound')
     return sorted(paths)
@@ -508,8 +514,8 @@ HOOK_PACKAGES = ('apt', 'apt-listchanges', 'debconf', 'debian-archive-keyring',
                  'raspberrypi-archive-keyring', 'raspberrypi-sys-mods', 'gpgv', 'sqv')
 
 
-def keyring_hook_files(package_listing):
-    paths = set(policy_files())
+def keyring_hook_files(package_listing, directory_members=None):
+    paths = set(policy_files() if directory_members is None else policy_files(directory_members))
     paths.update(map(Path, PUBLIC_KEYRINGS + (
         '/etc/apt/sources.list', '/etc/apt/listchanges.conf', '/etc/dpkg/dpkg.cfg',
         '/usr/bin/apt-listchanges', '/usr/sbin/dpkg-preconfigure',
@@ -521,7 +527,7 @@ def keyring_hook_files(package_listing):
                                ('/etc/apt/sources.list.d', '*.sources'),
                                ('/etc/apt/listchanges.conf.d', '*'),
                                ('/etc/dpkg/dpkg.cfg.d', '*')):
-        paths.update(Path(directory).glob(pattern))
+        paths.update(directory_files(directory, pattern, directory_members))
     for line in package_listing.splitlines():
         path = Path(line)
         if '..' in path.parts:

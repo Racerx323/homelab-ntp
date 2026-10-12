@@ -108,7 +108,10 @@ def command(argv, env, deadline, seconds=60, on_spawn=None):
             'output': output[:OUTPUT_LIMIT].decode(errors='replace'), 'error': reason}
 
 
-def apt_configuration(work):
+def apt_configuration(work, foreign_architectures=None):
+    architectures = ['arm64', *(foreign_architectures if foreign_architectures is not None else ['armhf'])]
+    if len(architectures) != len(set(architectures)) or set(architectures) - {'arm64', 'armhf'}:
+        raise ValueError('unsupported observed APT architectures')
     values = {
         'Dir::Etc::main': str(work / 'no-main.conf'), 'Dir::Etc::parts': str(work / 'empty'),
         'Dir::Etc::sourcelist': str(work / 'sources.list'),
@@ -133,7 +136,7 @@ def apt_configuration(work):
         'Debug::Acquire::gpgv': 'true', 'Debug::pkgAcquire::Auth': 'true',
     }
     text = ''.join(k + ' ' + json.dumps(v) + ';\n' for k, v in values.items())
-    return text + 'APT::Architectures { "arm64"; "armhf"; };\n', values
+    return text + 'APT::Architectures { ' + ' '.join(json.dumps(a) + ';' for a in architectures) + ' };\n', values
 
 
 def verify_config(text, values):
@@ -174,7 +177,7 @@ def authenticated_indexes(text, lists, spec, releases):
     expected = {}
     for source in spec['releases']:
         checksums = release_checksums[source['base_uri'].rstrip('/') + '/dists/' + source['suite'] + '/InRelease']
-        for arch in ('arm64', 'armhf'):
+        for arch in ('arm64', *spec.get('foreign_architectures', ['armhf'])):
             for component in source['components']:
                 checksum = checksums.get(component + '/binary-' + arch + '/Packages')
                 if checksum is None:
@@ -293,11 +296,21 @@ def reject_package_applications(names):
             raise ValueError('source-built application cannot be selected from APT: ' + name)
 
 
-def dependency_plan(cache, roots, native_output, allowed_hosts):
+def dependency_plan(cache, roots, native_output, allowed_hosts, pins=None, providers=None):
     reject_package_applications(roots)
+    providers = providers or {}
+    concrete = {r: providers.get(r, r) for r in roots}
+    reject_package_applications(concrete.values())
     cache.clear()
     for root in roots:
-        cache[root + ':arm64'].mark_install()
+        package = cache[concrete[root] + ':arm64']
+        if pins is not None:
+            if root not in pins:
+                raise ValueError('required root pin missing')
+            package.candidate = package.versions[pins[root]]
+        package.mark_install()
+    if pins is not None and any(cache[concrete[r] + ':arm64'].candidate.version != pins[r] for r in roots):
+        raise ValueError('solver changed an exact root pin')
     changes = cache.get_changes()
     if cache.broken_count or any(p.marked_delete for p in changes):
         raise ValueError('broken/removing Python APT solution')
@@ -305,7 +318,7 @@ def dependency_plan(cache, roots, native_output, allowed_hosts):
     changed = {version_id(p.candidate) for p in changes}
     if changed != simulated_changes(native_output):
         raise ValueError('native/Python APT solution disagreement')
-    pending = [selected_version(cache[root + ':arm64']) for root in roots]
+    pending = [selected_version(cache[concrete[root] + ':arm64']) for root in roots]
     pending += [p.candidate for p in changes]
     records = {}
     while pending:
@@ -355,6 +368,33 @@ def owned_cleanup(work, identity):
     if work.is_symlink() or (st.st_dev, st.st_ino, st.st_uid) != identity:
         raise ValueError('workspace cleanup ownership/identity mismatch')
     shutil.rmtree(work)
+
+
+def reviewed_sources(path, data, spec):
+    """Validate fresh-stage sources as data before network access or public copies."""
+    text = '\n'.join(line for line in data.decode().splitlines() if not line.lstrip().startswith('#'))
+    if not text.strip():
+        return
+    if Path(path).suffix != '.sources':
+        raise ValueError('nonempty legacy sources require separate policy review')
+    allowed = {'Types', 'URIs', 'Suites', 'Components', 'Signed-By', 'Architectures', 'Enabled'}
+    for row in stanzas(text):
+        if set(row) - allowed or row.get('Types') != 'deb' or row.get('Enabled', 'yes') != 'yes':
+            raise ValueError('unsupported source fields or authentication override')
+        if row.get('Signed-By') not in inspection.PUBLIC_KEYRINGS:
+            raise ValueError('source requires the reviewed public keyring')
+        if 'Architectures' in row and sorted(row['Architectures'].split()) != sorted(['arm64', *spec['foreign_architectures']]):
+            raise ValueError('source architecture filter differs from snapshot')
+        for uri in row.get('URIs', '').split():
+            parsed = urlsplit(uri)
+            if parsed.username or parsed.password or parsed.query or parsed.fragment:
+                raise ValueError('credential-bearing or unsupported source URI')
+            for suite in row.get('Suites', '').split():
+                match = [r for r in spec['releases'] if r['base_uri'].rstrip('/') == uri.rstrip('/') and r['suite'] == suite]
+                if len(match) != 1 or sorted(row.get('Components', '').split()) != sorted(match[0]['components']):
+                    raise ValueError('source URI/suite/components differ from reviewed policy')
+        if not row.get('URIs', '').strip() or not row.get('Suites', '').strip():
+            raise ValueError('source URI and suite required')
 
 
 def run(spec, controller_epoch):
@@ -415,7 +455,7 @@ def run(spec, controller_epoch):
     try:
         if query('native_architecture', ['/usr/bin/dpkg', '--print-architecture']).strip() != 'arm64':
             raise ValueError('native architecture drift')
-        if query('foreign_architectures', ['/usr/bin/dpkg', '--print-foreign-architectures']).split() != ['armhf']:
+        if query('foreign_architectures', ['/usr/bin/dpkg', '--print-foreign-architectures']).split() != spec.get('foreign_architectures', ['armhf']):
             raise ValueError('foreign architecture drift')
         versions = query('package_versions', ['/usr/bin/dpkg-query', '-W',
                          '-f=${binary:Package}\t${Version}\t${db:Status-Abbrev}\n'] + spec['verify_packages'])
@@ -446,10 +486,18 @@ def run(spec, controller_epoch):
         if (parent.is_symlink() or not parent.is_dir() or st.st_uid != 0
                 or (st.st_mode & 0o022 and not st.st_mode & 0o1000)):
             raise ValueError('unsafe staging parent')
-        work = Path(tempfile.mkdtemp(prefix='ntp-metadata-', dir='/var/tmp'))
+        if 'workspace' in spec:
+            candidate = Path(spec['workspace'])
+            if candidate.parent != parent or not re.fullmatch(r'ntp-resolution-[a-z][a-z0-9-]{0,63}', candidate.name):
+                raise ValueError('exclusive resolution workspace required')
+            candidate.mkdir(mode=0o700)
+            work = candidate
+        else:
+            work = Path(tempfile.mkdtemp(prefix='ntp-metadata-', dir='/var/tmp'))
         st = work.stat()
         work_identity = (st.st_dev, st.st_ino, st.st_uid)
         report['workspace'] = str(work)
+        report['workspace_identity'] = list(work_identity)
         work.chmod(0o711)  # Public metadata traversable by the native _apt sandbox.
         for name in ('empty', 'sources', 'keyrings', 'state', 'cache', 'cache/archives', 'lists', 'log'):
             (work / name).mkdir(mode=0o755)
@@ -466,16 +514,23 @@ def run(spec, controller_epoch):
                 raise ValueError('installed-state copy does not match the before snapshot')
         (work / 'sources.list').touch(mode=0o644)
         for key in inspection.PUBLIC_KEYRINGS:
-            shutil.copyfile(key, work / 'keyrings' / Path(key).name)
+            data = inspection.read_file(key)
+            if 'snapshot_sha256' in spec and hashlib.sha256(data).hexdigest() != spec['input_hashes'][key]:
+                raise ValueError('public keyring drift before staging')
+            (work / 'keyrings' / Path(key).name).write_bytes(data)
             (work / 'keyrings' / Path(key).name).chmod(0o644)
         for source in spec['source_files']:
             data = inspection.read_file(source)
+            if 'snapshot_sha256' in spec:
+                if hashlib.sha256(data).hexdigest() != spec['input_hashes'][source]:
+                    raise ValueError('source drift before staging')
+                reviewed_sources(source, data, spec)
             for key in inspection.PUBLIC_KEYRINGS:
                 data = data.replace(key.encode(), str(work / 'keyrings' / Path(key).name).encode())
             target = work / 'sources' / Path(source).name
             target.write_bytes(data)
             target.chmod(0o644)
-        config, values = apt_configuration(work)
+        config, values = apt_configuration(work, spec.get('foreign_architectures'))
         (work / 'apt.conf').write_text(config)
         (work / 'apt.conf').chmod(0o644)
         env['APT_CONFIG'] = str(work / 'apt.conf')
@@ -508,11 +563,13 @@ def run(spec, controller_epoch):
         hosts = {urlsplit(s['base_uri']).hostname for s in spec['releases']}
         for name, roots in spec['groups'].items():
             try:
-                native = query('simulate_' + name, ['/usr/bin/apt-get', '--simulate', '--no-remove',
-                               'install'] + [p + ':arm64' for p in roots])
+                pins = spec.get('root_pins')
+                providers = spec.get('root_providers', {})
+                arguments = [providers.get(p, p) + ':arm64' + ('=' + pins[p] if pins is not None else '') for p in roots]
+                native = query('simulate_' + name, ['/usr/bin/apt-get', '--simulate', '--no-remove', 'install'] + arguments)
                 cache = apt.Cache()
                 try:
-                    report['groups'][name] = {'accepted': True, 'plan': dependency_plan(cache, roots, native, hosts)}
+                    report['groups'][name] = {'accepted': True, 'plan': dependency_plan(cache, roots, native, hosts, pins, providers)}
                 finally:
                     cache.close()
             except (ValueError, KeyError, AttributeError, SystemError) as exc:

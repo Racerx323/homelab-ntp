@@ -27,8 +27,10 @@ class Assets(unittest.TestCase):
         manifest = json.loads((ROOT / 'configs/installation-assets.json').read_text())
         f.validate_manifest(manifest)
         foundation = [r for r in manifest['assets'] if 'foundation' in r['groups']]
-        self.assertEqual(len(foundation), 46)
+        self.assertEqual(len(foundation), 48)
         self.assertTrue({'pps-tools', 'bc'}.issubset({r['package'] for r in foundation}))
+        self.assertTrue({'build-essential', 'pkgconf'}.issubset({r['package'] for r in foundation}))
+        self.assertEqual(manifest['root_providers'], {'pkg-config': 'pkgconf'})
         self.assertTrue(all('%' not in r['filename'] for r in foundation))
         self.assertEqual({r['id'] for r in manifest['assets'] if 'signature' in r},
                          {'source-gpsd', 'source-ntpsec'})

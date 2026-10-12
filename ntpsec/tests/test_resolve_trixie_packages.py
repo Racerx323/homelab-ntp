@@ -254,6 +254,7 @@ class ResolutionTests(unittest.TestCase):
         seed.candidate.get_dependencies = lambda *k: [SimpleNamespace(or_dependencies=[alternative(leaf.installed)])]
         leaf.installed.get_dependencies = lambda *k: [SimpleNamespace(or_dependencies=[alternative(base.installed)])]
         seed.mark_install = lambda: setattr(seed, 'marked_install', True)
+        seed.versions = {'1.0': seed.candidate}
 
         class Cache:
             broken_count = 0
@@ -266,6 +267,42 @@ class ResolutionTests(unittest.TestCase):
             def commit(self):
                 raise AssertionError('installation forbidden')
         return Cache()
+
+    def test_root_versions_are_exactly_pinned_before_solving(self):
+        cache = self.make_cache()
+        plan = ENGINE.dependency_plan(cache, ['seed'], 'Inst seed (1.0 Debian:stable [all])',
+                                     {'repo.test'}, {'seed': '1.0'})
+        self.assertEqual(plan['changes'], [['seed', '1.0', 'all']])
+        with self.assertRaises(KeyError):
+            ENGINE.dependency_plan(self.make_cache(), ['seed'], '', {'repo.test'}, {'seed': 'missing'})
+        with self.assertRaisesRegex(ValueError, 'root pin'):
+            ENGINE.dependency_plan(self.make_cache(), ['seed'], '', {'repo.test'}, {})
+        mapped = ENGINE.dependency_plan(self.make_cache(), ['virtual-seed'], 'Inst seed (1.0 Debian:stable [all])',
+                                       {'repo.test'}, {'virtual-seed': '1.0'}, {'virtual-seed': 'seed'})
+        self.assertEqual(mapped['roots'], ['virtual-seed'])
+        self.assertEqual(mapped['changes'], [['seed', '1.0', 'all']])
+
+    def test_no_foreign_architecture_uses_only_native_metadata(self):
+        text, _ = ENGINE.apt_configuration(Path('/var/tmp/fixture'), [])
+        self.assertIn('APT::Architectures { "arm64"; };', text)
+        self.assertNotIn('"armhf"', text)
+        with self.assertRaises(ValueError):
+            ENGINE.apt_configuration(Path('/var/tmp/fixture'), ['amd64'])
+
+    def test_sources_reject_credentials_trust_overrides_and_unreviewed_origins(self):
+        spec = {'foreign_architectures': ['armhf'], 'releases': [{'base_uri': 'http://repo.test/debian/',
+            'suite': 'trixie', 'components': ['main']}]}
+        raw = ('Types: deb\nURIs: http://repo.test/debian\nSuites: trixie\nComponents: main\n'
+               'Signed-By: ' + HELPER.PUBLIC_KEYRINGS[0] + '\n').encode()
+        ENGINE.reviewed_sources('/etc/apt/sources.list.d/fixture.sources', raw, spec)
+        for modified in (raw+b'Trusted: yes\n', raw.replace(b'repo.test', b'other.test'),
+                         raw.replace(b'http://repo.test', b'http://user:secret@repo.test'),
+                         raw.replace(b'Components: main', b'Components: unknown'),
+                         raw.replace(b'Signed-By: ', b'Invalid-Signature-Field: ')):
+            with self.assertRaises(ValueError):
+                ENGINE.reviewed_sources('/etc/apt/sources.list.d/fixture.sources', modified, spec)
+        with self.assertRaises(ValueError):
+            ENGINE.reviewed_sources('/etc/apt/sources.list', b'deb http://repo.test/debian trixie main', spec)
 
     def test_dependency_graph_retains_installed_transitive_satisfiers(self):
         plan = ENGINE.dependency_plan(self.make_cache(), ['seed'],

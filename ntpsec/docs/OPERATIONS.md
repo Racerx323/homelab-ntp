@@ -138,8 +138,11 @@ device ownership, boot configuration and recovery access.
 
 The source recipe includes build-essential, bison, m4, pkg-config, python3-dev,
 scons, libssl-dev, libcap-dev, libseccomp-dev, libncurses-dev, asciidoctor,
-python3-serial, pps-tools and bc. The reviewed retained-baseline union is 46
-new packages: 39 build/test prerequisites and seven needrestart packages.
+python3-serial, pps-tools and bc. The original deployment added 46 packages;
+the fresh preparation manifest now pins 48 requirements, including the two
+prerequisite roots supplied by that image's baseline. `build-essential` is pinned
+directly; the explicit `root_providers` mapping selects Trixie's `pkgconf` for
+the `pkg-config` capability. Additions are calculated from the fresh snapshot.
 The installation manifest holds each exact version/architecture/size/hash.
 python3-dev replaces the old python-dev name. Git is not needed for these
 publisher-archive builds. Target client/manual builds need their target
@@ -152,7 +155,7 @@ Never install APT ntp, ntpsec, gpsd, gpsd-clients or python3-gps, create a globa
 python alias, use unreviewed pip or purge/autoremove packages as a shortcut.
 
 Resolution uses resolve-trixie-packages.py and its guarded transport helpers.
-An isolated metadata refresh uses retained source/key/hook inputs and a private
+An isolated metadata refresh uses fresh snapshot-bound source/key/hook inputs and a private
 APT list/cache workspace; it is a distinct approved mutation scope. Require
 signature/index/package identity, complete recommendations/dependency closure,
 exact native simulation semantics, unchanged inventory and clean dpkg. No
@@ -214,6 +217,22 @@ snapshot; repeat these checks during installation. Other directory symlinks and
 changed alias targets remain rejected.
 Resolution is a subsequent sealed operation bound to the accepted snapshot hash;
 capture approval does not authorize metadata refresh or package installation.
+
+Use `run-foundation-preflight.py seal-resolution --snapshot PATH
+--snapshot-sha256 SHA256 --known-hosts PATH --operation-id ID --output PATH`
+to prepare that operation without target contact. The checked-in
+`foundation-resolution-policy.json` defines trusted release identities and
+verification packages. The tool derives native/foreign architecture, exact root
+pins/providers, installed versions, protected inputs and configuration memberships
+from the fresh snapshot and repository assets. It reads no historical bundle or
+baseline. Execution uses the same one-shot collect/readback/cleanup protocol.
+It rechecks the full snapshot before and after isolated APT refresh and one native
+simulation; the complete dependency/delta validator must pass after readback.
+Live APT lists, packages, policies and automatic-update units stay untouched.
+Cleanup removes the exclusive disposable metadata workspace after ownership and
+inode checks; signed releases, selected Packages records and complete query output
+remain in the controller's private resolution wrapper. A held or interrupted
+operation is never replayed.
 
 The snapshot contract is schema=1, recipe_sha256 and collected_epoch; observed
 hostname/kernel/boot_id/os/architecture/machine/caller/ssh; complete baseline
