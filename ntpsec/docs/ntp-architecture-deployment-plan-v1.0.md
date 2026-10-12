@@ -155,7 +155,10 @@ prepare a newly approved dependency/build stage before live installation.
 First seal a fresh foundation snapshot against the revised recipe and current
 pinned asset manifest, verify its target identity during the approved capture,
 and accept its terminal readback/cleanup. Metadata resolution is a subsequent
-approved operation bound to that accepted snapshot; package and source-build
+approved operation bound to that accepted snapshot, current recipe and pinned
+manifest. Recheck freshness and protected target state before and after isolated
+resolution; require signed metadata, dependency closure and native simulation
+agreement before preparing installation. Package and source-build
 execution require their own reviews. Optimization trials remain after baseline
 hardware/time/network acceptance in Phase 3A.
 

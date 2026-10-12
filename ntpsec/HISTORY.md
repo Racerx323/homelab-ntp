@@ -355,8 +355,8 @@ The v2 snapshot and earlier sealed resolution bind the previous recipe and must
 not be used to satisfy this revised requirement. Preserve those records.
 
 The revised-recipe v3 snapshot is accepted and its verified stage removed.
-Prepare and seal metadata resolution against that
-accepted snapshot. Use the checked-in recipe and pinned assets;
+Metadata resolution against that accepted snapshot is sealed offline and
+awaiting separate execution approval. Use the checked-in recipe and pinned assets;
 recheck snapshot freshness and bound target inputs before resolution. Review
 dependency closure, exact native simulation delta and continuity before offline
 foundation preparation. This does not authorize reinstalling the accepted
@@ -378,3 +378,30 @@ transport bindings and complete live installation/runtime profiles remain pendin
 OPERATIONS identifies these gaps; this history does not certify an unattended
 end-to-end installer or a completed deployment. No new live action is authorized
 by this history entry.
+
+### October 12: revised snapshot-bound metadata resolution sealed
+
+Prepared the [resolution review](/home/aaron/code/.local-evidence/homelab-ntp/current/fresh-foundation-resolution-20261012-v3/review.md)
+offline for j2-svntp1, ama UID 1000, 10.1.0.137 and kernel 6.18.50+rpt-rpi-v8.
+Operation ID: `foundation-resolution-20261012-v3`.
+Bundle SHA-256:
+`d1ce84487410d0dcdcd91457b5865b6cee7fe86f49b948b3c8627d8d956a7922`.
+It binds the accepted v3 snapshot
+`bb1906d5fa9f62263655654e1fe3c27fe560bbb5577470fad4f9196d72cbb6c6`,
+the current recipe, pinned manifest, resolver policy and console-confirmed SSH key.
+Collection expires October 13, 2026 at 20:30:41 UTC.
+
+Offline comparison found seven missing pinned requirements:
+libavahi-compat-libdnssd-dev, libavahi-compat-libdnssd1, libavahi-client-dev,
+libavahi-client3, libavahi-common-dev, libdbus-1-dev and libsystemd-dev.
+These are preparation expectations; signed metadata and native simulation must
+confirm the complete dependency closure and exact transaction delta.
+
+The execution review covers protected root-owned staging, one isolated signed
+APT metadata refresh and combined foundation simulation, conditional terminal
+readback, acceptance and verified cleanup. It rechecks the full accepted target
+snapshot before and after resolution. Lost transport permits one bound readback;
+held, incomplete or changed state requires separately reviewed recovery without
+replay. Live APT lists, installed packages, services and update policy are outside
+this scope. Prior executed evidence remains preserved. Execution approval is the
+next gate; no target contact occurred during preparation.
