@@ -763,6 +763,37 @@ sections 4.2, 8.1, 13.4, 15.2/15.3, 19 and the applicable CFG messages;
 pinned GPSD [ubxtool manual](https://gitlab.com/gpsd/gpsd/-/blob/1d622f5b2c7bf79fc117185be10048e7d4e73c66/man/ubxtool.adoc)
 and [UBX command implementation](https://gitlab.com/gpsd/gpsd/-/blob/1d622f5b2c7bf79fc117185be10048e7d4e73c66/gps/ubx.py).
 
+#### OPT-006: applicable system tuning
+
+Evaluated on October 12, 2026 for Pi 4/Trixie and the source-built
+GPSD/NTPsec stack. Retain applicable proposals only; do not transfer another
+board's settings or observed results. Existing UART/PPS mapping, GPU allocation,
+daemon scheduling, thermal policy and PTP decisions remain in OPT-001,
+OPT-003 and OPT-004 rather than duplicating those trials.
+
+| Item | Disposition and potential improvement | Placement |
+| --- | --- | --- |
+| OPT-006-01: CPU/cache topology inspection | Useful input to an affinity experiment, not an optimization itself. Inspect CPU/cache topology and effective task/IRQ placement using available sysfs/tools first. hwloc is optional analysis tooling if its visualisation adds value; it is not a timing-stack dependency. Do not install it merely to confirm four cores. | Phase 3A baseline; OPT-003 affinity trials |
+| OPT-006-02: Ethernet interrupt coalescing | Strong new network-latency candidate. Identify the actual driver/kernel and supported timer, frame-threshold and adaptive controls. Upstream Linux 6.18 GENET exposes RX delay, RX/TX frame thresholds and adaptive RX; RX timing is quantised in approximately 8.192-microsecond steps. Trial lower effective RX moderation against the accepted settings, with adaptive behavior controlled and readback verified. Reduced receive delay can increase IRQ/CPU load and disturb PPS scheduling; compare client offset/jitter, packet loss, PPS/SHM health and thermal behavior under idle and representative network load. | Phase 3 network baseline; Phase 3A |
+| OPT-006-03: service and maintenance activity | Conditional housekeeping based on observed active work and measured load. Review dependencies before disabling an unused service. Preserve Avahi for required mDNS, supported networking/access, time-service supervision, mail/needrestart reporting, leap maintenance and security updates. If update activity causes a measured disturbance, review its schedule/resource policy within the maintenance lifecycle rather than permanently masking update services. | Phase 3 service acceptance; maintenance; Phase 3A comparison |
+| OPT-006-04: swap and memory pressure | Retain a working memory policy until measurement justifies a change. The retained package manifest records rpi-swap and systemd-zram-generator; inspect actual swap devices, priorities, generator configuration and any disk backing/writeback. Compressed-RAM swap is different from SD-card swap. Correlate paging/compression, memory pressure, disk I/O and OOM events with timing under operational and build/maintenance load. Review disk-backed changes separately; disabling all swap can trade latency for killed services without any benefit when swap is idle. | Phase 3 memory/storage baseline; Phase 3A if pressure is observed |
+| OPT-006-05: onboard audio | Optional headless housekeeping only when the audio device/services are actually enabled and unused. A supported dtparam=audio=off setting may remove unused resources; no timing benefit is assumed for an inactive audio path. Verify console/recovery requirements and observed interrupts/load, then measure any claimed benefit and retain exact boot restoration. | Phase 3 hardware profile; Phase 3A if justified |
+| OPT-006-06: panic reboot timeout | Availability/recovery proposal, not precision tuning. A positive kernel.panic value schedules reboot after a kernel panic; it does not recover every hang. Consider only after boot/access recovery, peer service and shared-antenna power continuity are proven. Choose the delay with crash-evidence retention, watchdog policy and boot-loop/manual-recovery controls; do not adopt an arbitrary ten-second delay. | Phase 3 recovery acceptance; maintenance/reliability |
+
+Prioritise a measured coalescing trial after network/time baseline acceptance.
+Service and memory-policy changes need evidence of active interference; audio
+and topology tooling are optional housekeeping. No new package, boot setting,
+service disablement, memory policy or recovery timeout is adopted here.
+
+Proposal: [advanced system tuning guide](https://github.com/tiagofreire-pt/rpi_uputronics_stratum1_chrony/blob/main/steps/advanced_system_tuning.md).
+Evidence: Linux 6.18 [GENET coalescing implementation](https://github.com/torvalds/linux/blob/v6.18/drivers/net/ethernet/broadcom/genet/bcmgenet.c),
+kernel [zram behavior](https://www.kernel.org/doc/html/latest/admin-guide/blockdev/zram.html)
+and [panic policy](https://www.kernel.org/doc/html/latest/admin-guide/sysctl/kernel.html#panic),
+[zram-generator configuration](https://github.com/systemd/zram-generator/blob/v1.2.1/man/zram-generator.conf.md)
+and systemd 257 [timer scheduling](https://github.com/systemd/systemd/blob/v257/man/systemd.timer.xml).
+The actual Raspberry Pi kernel, effective units and generated swap state
+remain authoritative on the target.
+
 ### Phase 4: rebuild and accept `j1-svntp`
 
 Repeat the Phase 3 controls and Phase 3A review with `10.1.0.50` and

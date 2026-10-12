@@ -695,6 +695,51 @@ GPSD. `MON-VER` establishes `-P`; command support follows that version.
    private. Include the branch-specific RF-delay calculation and uncertainty
    for any TP5 correction. Until adoption, no new receiver profile is installed.
 
+### System and Ethernet moderation trials
+
+[OPT-006](ntp-architecture-deployment-plan-v1.0.md#opt-006-applicable-system-tuning)
+reviews the applicable system proposals. Reuse OPT-001/OPT-003/OPT-004 for
+previously reviewed hardware, scheduling and thermal/network controls.
+
+For an approved coalescing trial, capture the observed interface/driver and
+kernel, full `ethtool --show-coalesce` output, supported controls, adaptive
+state, link settings and packet/error counters. Save the exact baseline and
+restoration command before changing one supported setting. Choose the effective
+RX delay from this driver's readback and granularity; account for frame
+thresholds and adaptive RX behavior. Compare independent client timing,
+IRQ/CPU load, PPS/SHM continuity, loss and temperature under matched idle and
+busy-link windows using OPT-004 statistics. Keep EEE and CPU/IRQ placement
+unchanged for this comparison. Restore if the lower moderation provides no
+repeatable improvement or harms time-service health.
+
+An adopted policy must use the observed interface and tool path, supported
+parameters and verified restoration values in a maintained installation asset.
+Use the supported network-manager mechanism or a reviewed unit with explicit
+device readiness and failure reporting. Verify reapplication after reboot,
+link reconnect and any manager/driver reset. Do not treat a successful oneshot
+start as evidence that the settings remain effective.
+
+For service housekeeping, record effective units, dependencies, enable/mask
+states, schedules and actual CPU/I/O/IRQ activity. Select only an unused,
+observed component; preserve mDNS, management/access and required maintenance.
+Any rescheduling must account for missed-run catch-up and randomisation,
+security-update timeliness, mail/reporting and peer availability. Capture
+exact restoration and repeat affected service/network acceptance.
+
+For memory tuning, inspect `/proc/swaps`, swap priorities, zram configuration
+and backing devices, memory-pressure/paging/OOM records and actual disk I/O.
+The retained package list is not proof of active swap topology. Include build
+and maintenance peaks in the comparison; do not change memory protection from
+RAM capacity alone. Reconcile the observed distribution generator/profile
+before rendering persistent changes, and verify reboot state and recovery.
+
+Audio/boot and panic-reboot policies follow their own approved hardware or
+recovery transaction. Capture existing settings, boot/access checks and
+restoration. Preserve crash evidence and a manual boot-loop recovery route;
+do not induce a production panic as a performance test. Keep adopted settings
+and their installer/acceptance/recovery inputs in the repo, with live outcomes
+in HISTORY.
+
 ## Leapfile, monitoring and routine maintenance
 
 ntpleapfetch.service.in is intentionally unresolved until the installed command,
