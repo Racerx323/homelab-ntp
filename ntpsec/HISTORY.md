@@ -187,6 +187,14 @@ protected root-owned files, collects once, retains terminal evidence and support
 bound readback/cleanup. Offline tests cover success, held results, drift, busy
 staging, missing receipts and replay rejection. No new target contact occurred.
 
+The separately approved capture was then attempted. Its terminal readback held
+on `/bin` while checking an absent helper; the checker rejected the normal
+merged-/usr alias. No snapshot was accepted and no package state changed.
+The approved cleanup verified and removed the exclusive staging directory.
+Collection was not replayed. The offline correction now validates only the
+root-owned `/bin` and `/sbin` aliases with exact canonical destinations, in both
+snapshot capture and foundation input checks; unexpected links remain held.
+
 ## Exact resume point
 
 Seal and obtain hash-bound approval for the fresh j2-svntp1 snapshot capture,
@@ -201,8 +209,9 @@ mail/cron, hardware, dual-stack/DNS/UniFi and reboot acceptance follow their
 reviewed stages. Earlier approvals have been consumed; further target contact
 requires a scoped approval.
 
-The read-only snapshot collector and transport are implemented and tested offline; no target
-capture, metadata refresh or new transaction was executed. Fresh source-stage
+The read-only snapshot collector and transport are implemented and tested offline;
+the first live capture was held and cleaned up. No accepted fresh snapshot,
+metadata refresh or new package transaction exists. Fresh source-stage
 transport bindings and complete live installation/runtime profiles remain pending.
 OPERATIONS identifies these gaps; this history does not certify an unattended
 end-to-end installer or a completed deployment. No new live action is authorized

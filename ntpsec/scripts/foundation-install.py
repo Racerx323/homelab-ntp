@@ -51,8 +51,25 @@ def ancestors(path):
             raise ValueError('unprotected directory: ' + str(item))
 
 
-def read(path, limit=64 * 1024 * 1024, unique=True):
+def protected_input_path(path):
+    """Allow only root-owned Debian merged-/usr aliases with exact destinations."""
     path = Path(path)
+    aliases = {'/bin': '/usr/bin', '/sbin': '/usr/sbin'}
+    parent = str(path.parent)
+    if parent in aliases:
+        ancestors(Path('/'))
+        info = path.parent.lstat()
+        target = aliases[parent]
+        if (not stat.S_ISLNK(info.st_mode) or info.st_uid != OWNER or info.st_gid != OWNER
+                or os.readlink(path.parent) not in (target, target.lstrip('/'))):
+            raise ValueError('unexpected merged-/usr alias: ' + parent)
+        ancestors(Path(target))
+        return Path(target) / path.name
+    return path
+
+
+def read(path, limit=64 * 1024 * 1024, unique=True):
+    path = protected_input_path(path)
     ancestors(path.parent)
     fd = os.open(path, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK)
     try:
@@ -360,7 +377,7 @@ def check_inputs(spec, after=False, controls=False):
     if after:
         allowed |= set(spec['package_created_inputs']) | {'/var/lib/dpkg/status'}
     for item in spec['inputs']:
-        path = Path(item['path'])
+        path = protected_input_path(item['path']) if spec.get('schema') == 2 else Path(item['path'])
         if spec.get('schema') == 2:
             parent = path.parent
             while not os.path.lexists(parent):

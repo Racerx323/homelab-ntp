@@ -15,7 +15,8 @@ definition.loader.exec_module(s)
 
 class Snapshot(unittest.TestCase):
     def probe(self, result):
-        worker = SimpleNamespace(read=Mock(return_value=b'protected native executable'))
+        worker = SimpleNamespace(read=Mock(return_value=b'protected native executable'),
+                                 protected_input_path=lambda path: Path(path))
         inspection = SimpleNamespace(run=Mock(return_value=result))
         return s.Probe(worker, inspection), worker, inspection
 
@@ -76,6 +77,16 @@ class Snapshot(unittest.TestCase):
             self.assertEqual(probe.record(path), {'path': str(path), 'absent': True})
             worker.ancestors.assert_called_once_with(Path(directory))
             worker.read.assert_not_called()
+
+    def test_merged_usr_absence_preserves_requested_alias_and_checks_canonical_parent(self):
+        probe, worker, _ = self.probe({})
+        worker.protected_input_path = Mock(return_value=Path('/usr/bin/fixture-absent-helper'))
+        worker.ancestors = Mock()
+        with patch.object(s.os.path, 'lexists', side_effect=lambda p: p != Path('/usr/bin/fixture-absent-helper')):
+            self.assertEqual(probe.record('/bin/fixture-absent-helper'),
+                             {'path': '/bin/fixture-absent-helper', 'absent': True})
+        worker.ancestors.assert_called_once_with(Path('/usr/bin'))
+        worker.read.assert_not_called()
 
 
 if __name__ == '__main__':

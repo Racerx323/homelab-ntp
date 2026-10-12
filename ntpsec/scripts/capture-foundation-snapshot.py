@@ -43,11 +43,12 @@ class Probe:
         path = Path(path)
         if path == Path('/var/cache/debconf/passwords.dat'):
             raise ValueError('password database outside preflight scope')
-        protected_parent(self.worker, path)
-        if not os.path.lexists(path):
+        observed = self.worker.protected_input_path(path)
+        protected_parent(self.worker, observed)
+        if not os.path.lexists(observed):
             return {'path': str(path), 'absent': True}
-        data = self.worker.read(path)
-        info = path.lstat()
+        data = self.worker.read(observed)
+        info = observed.lstat()
         return {'path': str(path), 'sha256': hashlib.sha256(data).hexdigest(),
                 'uid': info.st_uid, 'gid': info.st_gid, 'mode': oct(info.st_mode & 0o7777)}
 

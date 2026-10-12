@@ -201,6 +201,11 @@ retained terminal readback and removes only the verified stage. Keep complete
 controller output and the accepted snapshot after cleanup. Busy, incomplete or
 drifted staging is preserved for reviewed recovery; never replay collection.
 No temporary sudoers fragment is needed with the existing operator-managed sudo.
+For helper observations through `/bin` or `/sbin`, validate the root-owned
+merged-/usr link and its exact `/usr/bin` or `/usr/sbin` destination, then check
+the protected canonical file or its absence. Preserve the requested path in the
+snapshot; repeat these checks during installation. Other directory symlinks and
+changed alias targets remain rejected.
 Resolution is a subsequent sealed operation bound to the accepted snapshot hash;
 capture approval does not authorize metadata refresh or package installation.
 

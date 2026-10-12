@@ -7,11 +7,13 @@ import json
 import os
 from pathlib import Path
 import shutil
+import stat
 import subprocess
 import sys
 import tempfile
 import time
 import unittest
+from types import SimpleNamespace
 from unittest.mock import patch
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -302,6 +304,33 @@ class FilesAndProcesses(unittest.TestCase):
         for p in self.patchers:
             p.start()
         self.addCleanup(lambda: [p.stop() for p in reversed(self.patchers)])
+
+    def test_only_exact_root_owned_merged_usr_aliases_are_permitted(self):
+        info = SimpleNamespace(st_mode=stat.S_IFLNK | 0o777, st_uid=w.OWNER, st_gid=w.OWNER)
+        for alias, target in (('/bin', '/usr/bin'), ('/sbin', '/usr/sbin')):
+            for link in (target, target.lstrip('/')):
+                with patch.object(Path, 'lstat', return_value=info), patch.object(w.os, 'readlink', return_value=link):
+                    self.assertEqual(w.protected_input_path(alias + '/fixture'), Path(target) / 'fixture')
+            for bad in (SimpleNamespace(st_mode=stat.S_IFDIR | 0o755, st_uid=w.OWNER, st_gid=w.OWNER),
+                        SimpleNamespace(st_mode=stat.S_IFLNK | 0o777, st_uid=w.OWNER+1, st_gid=w.OWNER),
+                        SimpleNamespace(st_mode=stat.S_IFLNK | 0o777, st_uid=w.OWNER, st_gid=w.OWNER+1)):
+                with patch.object(Path, 'lstat', return_value=bad), patch.object(w.os, 'readlink', return_value=target):
+                    with self.assertRaisesRegex(ValueError, 'merged-/usr alias'):
+                        w.protected_input_path(alias + '/fixture')
+            with patch.object(Path, 'lstat', return_value=info), patch.object(w.os, 'readlink', return_value='/tmp/bin'):
+                with self.assertRaisesRegex(ValueError, 'merged-/usr alias'):
+                    w.protected_input_path(alias + '/fixture')
+        self.assertEqual(w.protected_input_path('/etc/arbitrary-link/input'), Path('/etc/arbitrary-link/input'))
+
+    def test_schema_two_absent_alias_checks_the_protected_canonical_parent(self):
+        info = SimpleNamespace(st_mode=stat.S_IFLNK | 0o777, st_uid=w.OWNER, st_gid=w.OWNER)
+        spec = {'schema': 2, 'inputs': [{'path': '/bin/fixture-absent', 'absent': True}],
+                'directories': {}, 'package_created_inputs': {}}
+        with patch.object(Path, 'lstat', return_value=info), patch.object(w.os, 'readlink', return_value='usr/bin'), \
+                patch.object(Path, 'exists', return_value=False), patch.object(Path, 'is_symlink', return_value=False), \
+                patch.object(w.os.path, 'lexists', return_value=True), patch.object(w, 'ancestors') as ancestors:
+            w.check_inputs(spec)
+        self.assertIn(unittest.mock.call(Path('/usr/bin')), ancestors.call_args_list)
 
     def test_exclusive_claim_and_read_symlink_hardlink_mode_limit(self):
         path = self.stage / 'input'
