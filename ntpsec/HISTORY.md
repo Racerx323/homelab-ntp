@@ -18,7 +18,7 @@ live inspection.
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; upstream tests/native staging and 159-entry manifest accepted with mDNS disabled | New mDNS-enabled build/acceptance, then live installation and activation |
 | Runtime | Candidate only; no new ntp.conf or live application deployment | GPS/PPS/RTC, accounts, combined service, leap maintenance |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
-| Optimizations | OPT-001/OPT-002/OPT-003 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna baseline before any optional experiment |
+| Optimizations | OPT-001 through OPT-004 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
 
 The accepted source stage remains `/home/ama/.ntp-source-build-v5`.
@@ -252,6 +252,18 @@ or live scheduler state.
 No target access, package, serial flag, IRQ, scheduler, calibration, IPC or
 restart change was performed. The existing
 fresh snapshot/mDNS prerequisite and build gates remain unchanged.
+
+### October 12: GPSD HOWTO tuning evaluated
+
+Added applicable HOWTO proposals as OPT-004 and the measurement workflow in
+OPERATIONS. Prioritised bounded ntpviz/thermal/link observation, followed by
+measured PPS SHM polling and active EEE trials. ARP/network polling, governor,
+idle-tick and fan-policy changes remain conditional experiments. Software PTP
+is a deferred LAN/client extension requiring a separate architecture decision.
+The evaluation uses the requested HOWTO, pinned application documentation and
+primary Linux/LinuxPTP sources. No target contact, package, configuration,
+network or service change was performed. The fresh snapshot/mDNS prerequisite
+and source-build gates remain unchanged.
 
 ## Exact resume point
 

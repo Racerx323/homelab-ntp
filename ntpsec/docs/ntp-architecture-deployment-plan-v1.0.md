@@ -700,6 +700,41 @@ and systemd 257 [execution policy/inheritance](https://github.com/systemd/system
 Upstream Linux is comparison evidence; the actual 6.18.50+rpt-rpi-v8 driver,
 configuration and effective runtime policy remain authoritative on the node.
 
+#### OPT-004: GPSD time-service HOWTO tuning
+
+Evaluated on October 12, 2026 against GPSD 3.27.5, NTPsec 1.2.5 and the
+Pi 4 UART/GPIO-PPS and Ethernet paths. Only applicable proposals are retained.
+The HOWTO is guidance; the pinned applications and observed Raspberry Pi
+kernel, driver and link state determine the supported controls.
+
+| Item | Disposition and potential improvement | Placement |
+| --- | --- | --- |
+| OPT-004-01: GPSD continuous acquisition and kernel PPS | Baseline requirement already supported by timeservice=yes and pps-tools. Verify that GPSD continuously acquires without an interactive client, uses the observed kernel PPS device/API and exports fresh serial and PPS samples to the intended SHM units. Kernel capture avoids userspace wakeup delay in the PPS timestamp. Verify device access and privilege drop in the combined service; package presence alone does not prove kernel PPS use. | Phase 3 hardware/runtime acceptance |
+| OPT-004-02: ntpviz measurement procedure | Adopt the measurement method for approved tuning trials. Collect bounded loopstats and peerstats; correlate local offset, frequency, jitter and wander with separate serial/PPS peer offsets and client measurements. Add compatible temperature/receiver logs when needed. Generate plots off-host with the pinned NTPsec tools/modules and reviewed analysis dependencies. Use sustained serial measurements to assess calibration only when justified. | Phase 3 instrumentation; Phase 3A; maintenance |
+| OPT-004-03: shorten PPS SHM polling | Worth testing after baseline acceptance. NTPsec's SHM driver supports minpoll/maxpoll down to 0, a one-second interval. Compare the accepted interval with shorter fixed intervals on the PPS association alone; serial and network polling are separate decisions. More frequent discipline updates may reduce offset/jitter but can worsen frequency stability. Select from matched ntpviz/client results after several hours of convergence, not the smallest setting by default. | Phase 3A |
+| OPT-004-04: ARP and network polling | Conditional network-path trial. Observe IPv4 ARP and IPv6 neighbour discovery for the actual next hop, including the gateway for routed upstreams, and correlate resolution with delay/offset spikes. Linux reachability ageing is not a fixed 60-second deletion deadline. If resolution is a measured cause, compare an agreed local-server polling profile; a maxpoll of 5 caps the interval at 32 seconds only with a compatible minpoll. Respect upstream rate policy and load. This cannot improve GPIO PPS capture. | Phase 3 network baseline; Phase 3A |
+| OPT-004-05: thermal stability | Required cooling/power health is already in Phase 3. Correlate fan transitions, temperature and load with frequency wander, PPS timing and client error. Consider a supported, steadier fan policy only if it improves measured stability without overheating, undervoltage or excessive wear. Preserve the installed PoE HAT's safety controls; an optional policy must be rendered and accepted per node. | Phase 3 thermal acceptance; Phase 3A |
+| OPT-004-06: power-saving and scheduling ticks | Conditional experiments, not mandatory boot settings. Governor tuning remains OPT-001-06. Assess nohz=off separately on the actual kernel; it disables idle tick suppression and may reduce wakeup variation while adding interrupts, power and heat. Verify kernel support, effective idle/tick behavior and workload, then compare PPS/client metrics and thermal stability with reboot restoration. Do not combine it with the CPU-isolation trial. | Phase 3A |
+| OPT-004-07: IEEE 802.3az / EEE | High-priority network-latency candidate if supported and active. Inspect the observed Ethernet driver, host and switch-port EEE negotiation, LPI state, link errors and baseline client delay. Compare EEE enabled/disabled on one controlled link; wakeup latency is a plausible network timestamp effect. Evaluate host and switch controls separately and accept only repeatable benefit with link/access, power/thermal and reboot checks. Do not assume a supported feature is active. | Phase 3 network baseline; Phase 3A; switch changes owned by homelab-network |
+| OPT-004-08: software-timestamped PTP | Technically applicable as an optional LAN service extension, deferred pending a client precision requirement. It may improve selected wired clients' synchronisation but does not improve the GPS/PPS input or ordinary NTP clients automatically. Verify software TX/RX timestamp support on both ends, network transport/domain, switch path and LinuxPTP provenance. Preserve NTPsec as the server's clock owner; any PTP-to-NTP SHM integration needs unique units and prevention of source feedback, competing clock servos and election loops. Define GPS-loss/holdover announcements, client failover and recovery before an architecture change or installation. | Separate architecture/network/client decision before Phase 3A implementation |
+
+Start with ntpviz and thermal/link observation; prioritise PPS polling and
+active EEE trials when their baselines justify them. ARP, governor and tick
+changes require evidence of a relevant contribution. PTP remains an optional
+extension, not a deployment prerequisite. No tuning values, new packages or
+live changes are adopted by this review.
+
+Evidence: the requested [GPSD HOWTO](https://github.com/ntpsec/gpsd/blob/master/www/gpsd-time-service-howto.adoc)
+and the [pinned GPSD copy](https://gitlab.com/gpsd/gpsd/-/blob/1d622f5b2c7bf79fc117185be10048e7d4e73c66/www/gpsd-time-service-howto.adoc);
+pinned NTPsec [SHM polling](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/driver_shm.adoc),
+[ntpviz](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/includes/ntpviz-body.adoc)
+and [statistics](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/includes/mon-commands.adoc);
+Linux [ARP](https://man7.org/linux/man-pages/man7/arp.7.html),
+[neighbour handling](https://github.com/torvalds/linux/blob/v6.18/net/core/neighbour.c),
+[tick suppression](https://www.kernel.org/doc/html/latest/timers/no_hz.html)
+and [GENET EEE controls](https://github.com/torvalds/linux/blob/v6.18/drivers/net/ethernet/broadcom/genet/bcmgenet.c);
+[LinuxPTP configuration](https://www.linuxptp.org/documentation/ptp4l/).
+
 ### Phase 4: rebuild and accept `j1-svntp`
 
 Repeat the Phase 3 controls and Phase 3A review with `10.1.0.50` and

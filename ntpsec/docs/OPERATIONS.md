@@ -590,6 +590,71 @@ cleared. Prefer bounded logging over simultaneously changing serial flags,
 priority, IRQ placement and calibration; retain the next-day data privately
 with configuration and sampling metadata.
 
+### GPSD HOWTO measurement and network tuning
+
+[OPT-004](ntp-architecture-deployment-plan-v1.0.md#opt-004-gpsd-time-service-howto-tuning)
+evaluates the applicable HOWTO proposals. Begin after the combined service and
+hardware baseline are accepted. Verify continuous GPSD acquisition and actual
+kernel PPS capture, not just the presence of pps-tools. Preserve the existing
+UART/PPS ownership and SHM mapping.
+
+For an approved ntpviz comparison:
+
+1. Render `statistics loopstats peerstats`, the observed `statsdir`, and daily
+   `filegen` settings into the candidate `/etc/ntp.conf`. Resolve writable
+   ownership under the daemon account and service sandbox, rotation/retention,
+   storage budget and backup/restoration before enabling capture. Add clockstats
+   or receiver/temperature collection only where needed and supported.
+2. Keep separate baseline and candidate directories, configuration hashes,
+   exact UTC windows, source identities and load/thermal records. Capture
+   convergence separately from the comparison window. Use several hours after
+   a poll change and comparable daily cycles where temperature is relevant.
+3. Transfer bounded logs privately and generate plots on the workstation using
+   the matching NTPsec Python modules, ntpviz and reviewed gnuplot installation.
+   Use the same `--datadir`, `--starttime` and `--endtime` window for
+   `--local-offset`, `--local-jitter`, `--local-stability`, `--peer-offsets`
+   and `--peer-jitters` views. Read actual peer identifiers from peerstats.
+   Temperature/GPS plots require the documented `temps`/`gpsd` input formats;
+   ordinary journal output is not a substitute.
+4. Compare serial and PPS peers separately, local frequency/wander and
+   independent client timing. Record gaps, loss/fallback and outliers alongside
+   distributions. A plot against the disciplined system clock characterises
+   that path; absolute UTC claims still require an independent reference.
+5. Trial the PPS SHM association's poll interval as one change, preserving its
+   unit, calibration and selection settings. Review the accepted interval
+   against shorter supported intervals, then restore or retain from measured
+   offset/jitter, frequency stability and client results. Persist an adopted
+   value in the rendered host configuration and installation manifest.
+
+For network-path trials, bind the observed interface/driver, switch port,
+addresses/routes and actual next-hop MAC. Collect IPv4 ARP/IPv6 neighbour
+state and packet-delay evidence under a reviewed capture scope. Distinguish
+link-layer resolution from upstream server and PPS behavior. A lower network
+poll ceiling needs a compatible minimum and the server's rate policy; avoid
+changing all upstreams to keep a neighbour entry alive.
+
+Read EEE support/negotiation and software timestamp capabilities using the
+observed interface with `ethtool --show-eee` and `ethtool -T`, if available in
+the approved collection. An unsupported response closes that trial; enabled
+but inactive EEE is not evidence of LPI latency. For an applicable EEE trial,
+save the exact advertisement/LPI settings and restoration method before
+changing them. Review switch-port changes in homelab-network. Verify link
+recovery, IPv4/IPv6 client timing, errors, power/temperature and persistence
+after any accepted host or switch policy.
+
+Keep governor, tick and fan-policy experiments separate. Capture supported
+controls and actual behavior, use the Phase 3A comparison/recovery process,
+and preserve PoE fan safety and peer/shared-antenna continuity. Optional tools,
+collectors or persistent policies need checked-in inputs and verified pins
+when selected; this review adds no installation dependency.
+
+Software PTP needs a separate server/client/network design before a bundle.
+Define the client accuracy goal, timestamp capability, transport/domain,
+clock ownership, elections, UTC/holdover reporting and unique SHM allocations
+where used. Prevent a server selecting its own redistributed clock or a PTP
+servo competing with NTPsec. Do not activate the HOWTO's sample ptp4l service
+or feed a new SHM association into the current server profile.
+
 ## Leapfile, monitoring and routine maintenance
 
 ntpleapfetch.service.in is intentionally unresolved until the installed command,
