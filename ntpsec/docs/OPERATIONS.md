@@ -465,6 +465,8 @@ explicit `--input-hashes`, pinned known_hosts and a unique operation ID/output.
 The archive binds the current source recipe, pinned assets, transport, root
 helpers, tests, release, build receipt/specification and accepted inspection
 receipt/specification/pre-state. Future nodes require their own accepted inputs.
+Offline fixtures simulate target ownership independently of the workstation or
+CI account; source ownership rejection remains an acceptance boundary.
 
 The wrapper walks the accepted target staging tree with no-follow directory
 descriptors, verifies bounded bytes/links and copies them into protected root

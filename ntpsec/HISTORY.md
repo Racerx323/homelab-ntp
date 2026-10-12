@@ -681,7 +681,7 @@ replayed; its acceptance does not authorize installation.
 Prepared the [native installation review](/home/aaron/code/.local-evidence/homelab-ntp/current/source-install-20261012-v1/review.md)
 for j2-svntp1, operation `source-install-20261012-v1`, entirely offline.
 Bundle SHA-256:
-`d2c57f3f4348c0edf3130af5b21603377e4a0115cbcb2e035be062195430c527`.
+`cda87986ec9ab35499356f8dda1258d558a247db755debedbc212059bf752f32`.
 Installation window expires `2026-10-13T17:12:58-05:00` (America/Chicago).
 It binds the accepted mDNS-enabled 159-entry release, build receipt/specification,
 exact 686-package/boot/Python state and accepted absent destination pre-state
@@ -705,7 +705,11 @@ executed privileged code, journals and recovery evidence remain retained.
 
 Offline native-copy/link/mode checks, injected partial failure and recovery,
 unknown-data/drift rejection, bounded source reads, replay/expiry rejection,
-terminal acceptance and payload-only cleanup regressions passed. No target
+terminal acceptance and payload-only cleanup regressions passed. Corrected the
+source-reader fixture to simulate target UID/GID 1000 independently of the CI
+runner account and verify UID/GID 1001 rejection. Production ownership checks
+remain unchanged. Resealed the unexecuted bundle because its tests are bound
+inputs; the previous hash is superseded. No target
 contact, package change, application installation, configuration or activation
 occurred. Next obtain separate hash-bound execution approval. Library-cache and
 Python/runtime discovery, configuration, services, hardware, networking and

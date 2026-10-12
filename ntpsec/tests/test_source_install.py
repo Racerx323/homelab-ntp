@@ -335,15 +335,23 @@ class SourceReaders(unittest.TestCase):
     def test_source_symlink_ancestor_and_final_type_are_rejected(self):
         with tempfile.TemporaryDirectory() as directory:
             base=Path(directory); (base/'file').write_bytes(b'data'); (base/'link').symlink_to(base)
-            real_fstat = os.fstat
-            def safe_dirs(fd):
-                info = real_fstat(fd)
+            real_fstat, real_stat = os.fstat, os.stat
+            source_owner = 1000
+            def target_metadata(info):
+                # Preserve nanosecond fields while simulating target ownership.
+                fields = {name: getattr(info, name) for name in dir(info) if name.startswith('st_')}
                 if stat.S_ISDIR(info.st_mode):
-                    fields = list(info); fields[0] &= ~0o022; fields[4] = fields[5] = 0
-                    return os.stat_result(fields)
-                return info
-            with patch.object(s.os, 'fstat', side_effect=safe_dirs):
+                    fields.update(st_mode=info.st_mode & ~0o022, st_uid=0, st_gid=0)
+                else:
+                    fields.update(st_uid=source_owner, st_gid=source_owner)
+                return SimpleNamespace(**fields)
+            with patch.object(s.os, 'fstat', side_effect=lambda fd: target_metadata(real_fstat(fd))), \
+                 patch.object(s.os, 'stat', side_effect=lambda *a, **kw: target_metadata(real_stat(*a, **kw))):
                 self.assertEqual(s.source_bytes(base/'file','file'), b'data')
+                source_owner = 1001
+                with self.assertRaisesRegex(ValueError, 'unsafe source ownership'):
+                    s.source_bytes(base/'file','file')
+                source_owner = 1000
                 with self.assertRaisesRegex(ValueError, 'source type/size'):
                     s.source_bytes(base/'file','file',limit=1)
                 os.link(base/'file',base/'hardlink')
