@@ -19,7 +19,7 @@ The applications have not been installed live or configured on the new image.
 | Stage | State | Next requirement |
 | --- | --- | --- |
 | Media and bootstrap | Accepted | Preserve original Debian 11 card and primary/antenna power |
-| Foundation | Original foundation, pps-tools and bc accepted; revised-recipe v3 snapshot accepted; resolution v3 held and cleaned up; corrected v4 sealed; mDNS prerequisites pending | Approve and accept resolution v4, then review the exact dependency delta before additional installation |
+| Foundation | Original foundation, pps-tools and bc accepted; revised-recipe v3 snapshot and resolution v4 accepted; cleanup complete; mDNS prerequisites pending | Prepare the seven-package installation delta from accepted v4 evidence, then obtain separate execution approval |
 | Source candidate | v5 accepted with mDNS disabled | Accept mDNS prerequisites, then a new mDNS-enabled build/acceptance and destination/collision review |
 | Live installation | Pending | New accepted build, reviewed pre-state, explicit metadata, journal and scoped execution |
 | Runtime configuration | Pending | Observed UART/PPS/RTC, accounts, NTP configuration and combined-service cutover |
@@ -41,18 +41,21 @@ the verified root-owned stage was removed. The accepted snapshot retains 679
 package records, 197 protected inputs and eight configuration directories.
 Its hash and receipts are recorded in HISTORY. The
 [corrected snapshot-bound resolution review](/home/aaron/code/.local-evidence/homelab-ntp/current/fresh-foundation-resolution-20261012-v4/review.md)
-is sealed and awaiting separate execution approval. Offline comparison finds
-seven missing pinned requirements; signed metadata resolution must establish
-the complete dependency closure and native simulation delta. Collection expires
-October 13, 2026 at 20:30:41 UTC. HISTORY records the bundle hash.
-Capture approval does not authorize metadata refresh or package installation.
+was approved and executed once. Terminal readback passed the complete resolution
+validator: signed metadata, dependency closure, exact native/Python simulation
+agreement and full target continuity. Verified workspace/stage cleanup completed.
+The accepted delta is seven additions, with no upgrades or removals. HISTORY
+records the bundle/report hashes and receipts. Prepare installation offline from
+this accepted evidence while the snapshot remains fresh, until October 13, 2026
+at 20:30:41 UTC; recheck freshness and target inputs before execution.
+Resolution approval does not authorize package installation.
 
 Resolution v3 performed its isolated refresh and simulation but final continuity
 was held: the resolver left its temporary APT_CONFIG in the worker environment.
 Terminal readback and verified workspace/stage cleanup completed. The resolver
 now restores the caller's environment on exit; protected collection still rejects
 unexpected overrides. The held report is retained evidence, not an accepted
-installation input. Only v4 is prepared for the next execution review.
+installation input. Accepted v4 supplies the current preparation evidence.
 
 There is no completed unattended end-to-end installer yet. Foundation preparation
 now uses a checked-in recipe, fresh target snapshot and accepted combined

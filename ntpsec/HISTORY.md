@@ -355,11 +355,11 @@ The v2 snapshot and earlier sealed resolution bind the previous recipe and must
 not be used to satisfy this revised requirement. Preserve those records.
 
 The revised-recipe v3 snapshot is accepted and its verified stage removed.
-Resolution v3 was held at final continuity and cleaned up; corrected v4 is sealed
-offline and awaiting separate execution approval. Use the checked-in recipe and pinned assets;
-recheck snapshot freshness and bound target inputs before resolution. Review
-dependency closure, exact native simulation delta and continuity before offline
-foundation preparation. This does not authorize reinstalling the accepted
+Resolution v3 was held at final continuity and cleaned up; corrected v4 has passed
+acceptance and cleanup. Prepare the seven-package delta offline using the checked-in
+recipe, pinned assets and accepted snapshot/resolution; recheck freshness and bound
+target inputs before installation. Separate hash-bound installation approval is
+required. This does not authorize reinstalling the accepted
 foundation or changing the live APT lists.
 
 After accepted mDNS prerequisites, prepare a new unprivileged source build and
@@ -373,8 +373,8 @@ requires a scoped approval.
 The earlier v2 capture remains a retained record for its previous recipe.
 Use the accepted v3 snapshot for the current foundation requirements, within
 its freshness window and with the bound target inputs rechecked by resolution.
-Fresh resolution v3 was executed but not accepted; no new package transaction
-has been executed. Fresh source-stage
+Fresh resolution v4 is accepted; no new package transaction has been executed.
+Fresh source-stage
 transport bindings and complete live installation/runtime profiles remain pending.
 OPERATIONS identifies these gaps; this history does not certify an unattended
 end-to-end installer or a completed deployment. No new live action is authorized
@@ -434,3 +434,30 @@ offline against the same still-fresh accepted snapshot, with unique operation ID
 Target and scope remain j2-svntp1, one isolated resolution with conditional
 readback, acceptance and cleanup. Collection expires October 13, 2026 at
 20:30:41 UTC. Separate approval of v4 is the next gate; its execution has not begun.
+
+### October 12: resolution v4 accepted and cleaned up
+
+Executed approved v4 once on j2-svntp1. Collection, terminal readback and cleanup
+each returned matching transport/worker status 0. The complete validator accepted
+signed releases/indexes, dependency closure, native/Python simulation agreement,
+exact pinned delta and full target continuity before and after resolution.
+Installed state, live metadata, protected inputs and boot remained unchanged.
+
+Accepted resolution SHA-256:
+`3b953c4a742b5a6b0346a67c025ba080b4c84daa6c7ed2f5665c099b61dddf62`.
+It binds the accepted v3 snapshot and current pinned asset manifest.
+[Acceptance receipt](/home/aaron/code/.local-evidence/homelab-ntp/current/fresh-foundation-resolution-20261012-v4/acceptance.json)
+and complete signed metadata/query evidence remain private. The simulation
+confirmed seven additions and no upgrades or removals: libavahi-client-dev,
+libavahi-client3, libavahi-common-dev, libavahi-compat-libdnssd-dev and
+libavahi-compat-libdnssd1 at 0.8-16; libdbus-1-dev at 1.16.2-2; and
+libsystemd-dev at 257.13-1~deb13u1, all arm64.
+
+[Verified cleanup](/home/aaron/code/.local-evidence/homelab-ntp/current/fresh-foundation-resolution-20261012-v4/cleanup-result.json)
+removed only the bound disposable APT workspace and root-owned code/evidence
+stage. No package installation, service/update-policy change or reboot occurred.
+Prior executed evidence remains preserved. Next prepare the foundation delta
+offline from accepted v4 evidence, fetch and verify exact pinned archives as
+separately authorized, and seal installation with acceptance, recovery and cleanup
+for separate execution approval. Snapshot freshness ends October 13, 2026 at
+20:30:41 UTC; preparation and execution must reject stale evidence or state drift.
