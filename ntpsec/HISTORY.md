@@ -18,7 +18,7 @@ live inspection.
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; upstream tests/native staging and 159-entry manifest accepted with mDNS disabled | New mDNS-enabled build/acceptance, then live installation and activation |
 | Runtime | Candidate only; no new ntp.conf or live application deployment | GPS/PPS/RTC, accounts, combined service, leap maintenance |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
-| Optimizations | OPT-001 through OPT-006 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
+| Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
 
 The accepted source stage remains `/home/ama/.ntp-source-build-v5`.
@@ -288,6 +288,17 @@ reused. Retained package records identify rpi-swap/zram-generator for fresh
 memory-state inspection. Required mDNS and maintenance remain preserved.
 No target contact, package, service, boot, swap or recovery policy changed;
 the existing deployment gates remain unchanged.
+
+### October 12: Arlington public NTS candidates evaluated
+
+Added OPT-007 and the public-upstream selection procedure in OPERATIONS.
+Cloudflare and System76 provider documentation supports the provisional
+Cloudflare/Ohio/Oregon shortlist. Local routing/performance, operator diversity
+and authenticated associations still need scoped per-node acceptance; no DFW
+path or lowest-latency claim is accepted. Unconfirmed community entries were
+omitted. Kept valid NTPsec syntax and distinct NTS-KE/NTP network checks, with
+normal certificate validation and no insecure fallback. No NTP-node contact,
+upstream change or network mutation occurred; deployment gates remain unchanged.
 
 ## Exact resume point
 

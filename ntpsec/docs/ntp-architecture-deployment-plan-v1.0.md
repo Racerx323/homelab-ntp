@@ -794,6 +794,39 @@ and systemd 257 [timer scheduling](https://github.com/systemd/systemd/blob/v257/
 The actual Raspberry Pi kernel, effective units and generated swap state
 remain authoritative on the target.
 
+#### OPT-007: public NTS upstreams for Arlington, Texas
+
+Evaluated on October 12, 2026 for the operator's Arlington, Texas location.
+Public NTS upstreams provide authenticated network sanity/fallback references
+alongside the existing GPS/PPS profile. Provider documentation establishes
+candidates, not local performance or accepted live associations.
+
+| Candidate | Provider evidence and disposition |
+| --- | --- |
+| time.cloudflare.com | Cloudflare documents public NTS and global anycast. First candidate for a local-path trial; routing from the actual ISP determines the endpoint and delay. DFW delivery, lowest latency and superior reliability are not established by the anycast claim. |
+| ohio.time.system76.com | System76 currently lists this as a public NTS service. US regional comparison candidate; accept from actual NTP delay, offset/jitter, availability and authenticated traffic. |
+| oregon.time.system76.com | System76 currently lists this as a public NTS service. Regional/path comparison alternative to Ohio; both share one operator and do not establish independent-provider diversity. |
+
+| Item | Disposition and potential improvement | Placement |
+| --- | --- | --- |
+| OPT-007-01: locality and ranking | Compare from each NTP node's actual egress path, separately for advertised IPv4/IPv6 service. Measure authenticated NTP delay distributions, offset/jitter, dispersion, loss and availability across representative windows. Geographic names or TLS connection times alone cannot rank time-transfer quality or establish one-way path symmetry. Preserve DNS/route and provider identity with the comparison. | Phase 3 upstream/network acceptance; Phase 3A refinement |
+| OPT-007-02: correct NTS configuration | Use provider-confirmed FQDNs with NTPsec's server hostname nts syntax and normal certificate validation. NTS-KE normally uses TCP 4460; time packets use the negotiated NTP destination/port, normally UDP 123. The key-exchange port is not the NTP data port. Keep poll settings in the separately reviewed source profile; no geographic claim justifies a fixed poll ceiling. | Phase 3 runtime configuration and network policy |
+| OPT-007-03: trustworthy selection and diversity | Compare operator, network/path and timing-reference dependencies as well as delay. Keep a compatible UTC/leap policy and independently useful sanity sources; NTS authenticates the sender and packets, not the correctness of its clock or network path. Multiple System76 regions or multiple Cloudflare addresses do not count as multiple independent operators. Define the final set and GPS/PPS-loss behavior in the accepted host profile. | Phase 3 source-selection acceptance; maintenance |
+| OPT-007-04: authentication and reachability | Require valid hostname/chain/time checks, successful NTS-KE/cookies and sustained authenticated NTP replies for every chosen association. A completed TLS handshake alone is insufficient. Confirm CA store, sane RTC/system time, DNS and egress, including NTP-node exceptions to any UDP 123 redirection and negotiated destinations. Do not bypass validation or silently replace an NTS source with unauthenticated NTP to pass acceptance. | Phase 3; Phase 6 network policy; Phase 8 end-to-end checks |
+| OPT-007-05: maintained provider list | Recheck provider service/access policy, DNS, certificate renewal, leap behavior and measured path quality during maintenance. Retain only verified candidates in the rendered configuration; community lists are discovery leads, not operational acceptance. Provider withdrawal or changed behavior requires a reviewed replacement and regression checks. | Installation assets after profile selection; maintenance |
+
+These three names are a provisional shortlist, not a final geographically
+optimised or independently diversified profile. No upstream configuration,
+network allowance, provider probe from an NTP node or source-selection change
+was executed or adopted by this review.
+
+Evidence: Cloudflare [NTS documentation](https://developers.cloudflare.com/time-services/nts/)
+and [anycast NTP service](https://developers.cloudflare.com/time-services/ntp/);
+System76's [provider-maintained endpoint list](https://system76.com/time/);
+pinned NTPsec [NTS client configuration and verification](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/NTS-QuickStart.adoc),
+[NTS options](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/includes/nts-commands.adoc)
+and [ntpq diagnostics](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/includes/ntpq-body.adoc).
+
 ### Phase 4: rebuild and accept `j1-svntp`
 
 Repeat the Phase 3 controls and Phase 3A review with `10.1.0.50` and

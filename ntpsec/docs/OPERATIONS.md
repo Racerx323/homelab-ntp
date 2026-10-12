@@ -740,6 +740,57 @@ do not induce a production panic as a performance test. Keep adopted settings
 and their installer/acceptance/recovery inputs in the repo, with live outcomes
 in HISTORY.
 
+### Public NTS upstream selection
+
+[OPT-007](ntp-architecture-deployment-plan-v1.0.md#opt-007-public-nts-upstreams-for-arlington-texas)
+owns the Arlington candidate shortlist. Provider documentation was checked on
+October 12, 2026; none of these associations has been accepted on the rebuilt
+node. Keep public-service names in the repo, with actual DNS addresses, paths
+and capture results in bounded private evidence. Do not pin a sampled anycast
+IP or infer the serving data centre from the certificate or hostname.
+
+Candidate syntax for the pinned NTPsec client is:
+
+```conf
+server time.cloudflare.com nts
+server ohio.time.system76.com nts
+server oregon.time.system76.com nts
+```
+
+This is a review example, not an installed host profile. Render the selected
+subset and poll/source-selection options alongside observed GPS/PPS, drift,
+leap and restriction settings into the approved `/etc/ntp.conf` transaction.
+Resolve operator/path/reference diversity before accepting the final set.
+Keep normal TLS hostname, chain and validity checks; verify trusted CAs and
+sane initial RTC/system time instead of adding `noval`.
+
+Prepare one scoped upstream trial per node with exact candidates, address
+families, sampling window/rate, egress checks, acceptance and restoration.
+Verify DNS and TCP 4460 NTS-KE, then the negotiated NTP destination and UDP
+port. Confirm the node's requests are not redirected back to local NTP by the
+network interception policy. Review firewall changes in homelab-network.
+Protect raw logs/captures and avoid collecting key material.
+
+Use the pinned daemon's certificate/NTS-KE journal, association data,
+`ntpq -pn` and `ntpq -c ntsinfo` with bounded peerstats/client observations.
+Correlate authentication counters with each association; aggregate counters
+alone do not prove all candidates work. Check authenticated responses and
+renewal/recovery, not only TLS connectivity. Keep TLS setup duration separate
+from NTP packet delay because key exchange is not performed for every sample.
+
+Compare candidates under the same GPS/PPS discipline, poll profile and capture
+windows, including peak/off-peak network load. Record NTP delay distributions,
+offset/jitter, root distance/dispersion, loss, leap state and availability.
+Verify supported address families and time-service behavior during approved
+GPS/PPS or upstream-loss scenarios. Reuse OPT-004 plotting; do not conflate
+smaller RTT with independently proven UTC accuracy.
+
+After selection, check in the exact rendered host configuration and desired
+upstream/poll/authentication policy as installation inputs. Record accepted
+measurements in HISTORY and recheck provider policy, certificate/DNS health,
+path quality and source diversity during routine maintenance. No live probe,
+configuration or restart is authorised by this documentation.
+
 ## Leapfile, monitoring and routine maintenance
 
 ntpleapfetch.service.in is intentionally unresolved until the installed command,
