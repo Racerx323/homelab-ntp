@@ -673,6 +673,46 @@ Receiver-specific validity and timepulse behavior must be checked against the
 identified module's u-blox documentation and actual configuration; generic
 M8 or older LEA examples do not select a mode for this hardware.
 
+#### OPT-003: serial latency, scheduling, IRQ affinity and offset arithmetic
+
+Evaluated on October 12, 2026. The supplied text quotes serial jitter
+1.8181 ms, serial offset -49.0437 ms, PPS offset -0.0208 ms and PPS jitter
+0.0011 ms without a bound ntpq capture, configuration, timestamps or history.
+Treat these as reported inputs, not accepted measurements of the current node.
+The assumed time1 0.125 is also unverified. Serial/coarse GPS timing is a
+different path from PPS; its jitter alone does not diagnose an IRQ/scheduler
+problem or show that selected PPS time is inaccurate.
+
+| Item | Disposition and reason | Placement |
+| --- | --- | --- |
+| OPT-003-01: infer a kernel latency problem from serial jitter | Collect a timestamped baseline first: actual UART driver/device, receiver protocol/message schedule, baud, GPSD/SHM mappings, full ntpq association status, offsets over time and applied calibration. Receiver emission, serialization and sampling can contribute; a single serial jitter value does not identify the cause. | Phase 3 hardware/time baseline; Phase 3A diagnosis |
+| OPT-003-02: setserial ttyAMA0 low_latency and rc.local | Reject the proposed 8250 explanation for the expected Pi PL011 path; verify the actual driver rather than assuming a device name. Upstream Linux 6.18 serial_core can retain the low_latency flag, but the inspected PL011 driver does not implement a special low_latency delivery path. A successful ioctl or displayed flag is not proof of improved timing. Check the actual Raspberry Pi kernel before any applicable experiment; do not add setserial or rc.local persistence on this basis. | Phase 3 UART identification; Phase 3A only if driver evidence justifies a trial |
+| OPT-003-03: gpsd.service FIFO override | Reject this deployment target: the approved lifecycle is combined timeservice.service, not a separate gpsd.service. A scheduling policy on the combined supervisor can be inherited by GPSD, ntpd and helpers, unless explicitly reset or changed; it is not a GPSD-only adjustment. Any per-process/thread policy needs a separately reviewed lifecycle adaptation and observed effective scheduling. | Phase 3A, after baseline service acceptance |
+| OPT-003-04: FIFO 45 and Nice=-20 guarantee instant processing | Unadopted experiment with no guaranteed latency or jitter result. FIFO can preempt normal runnable work but does not eliminate IRQ, I/O, locks or throttling delays and can starve other work. Nice is not the FIFO priority control. Inspect actual thread policy, privileges, RT limits/budget and built-in behavior: pinned GPSD attempts nice(-10) as root; NTPsec can request FIFO with -N/-P. Do not infer effective policy from a unit file alone or add arbitrary priority 45. | Phase 3A; explicit starvation/access recovery and measured benefit required |
+| OPT-003-05: serial IRQ on CPU 2 adjacent to isolated CPU 3 | Conditional experiment, not a selected configuration. OPT-001 did not adopt CPU 3 isolation. CPU numbering does not establish an optimal cache placement; IRQ affinity does not pin GPSD/ntpd tasks or the separate GPIO PPS path. Identify the IRQ from the actual driver/sysfs mapping and counters, not a presumed tty name or IRQ 35. Check routability/shared users, allowed/effective affinity and any active irqbalance. Hex mask 4 denotes CPU 2; verify delivery and persistence without hard-coding a boot-dependent IRQ number. | Phase 3A |
+| OPT-003-06: restart gpsd/ntpsec to clear SHM and compile calibration | Reject the commands for this source deployment. Use the reviewed combined service transaction if a restart is needed; do not activate competing stock units. Restarting does not prove SysV SHM resources were removed and is not a compilation step for ntp.conf. Do not delete/reset shared memory as an optimization; preserve ownership/state and define any recovery separately. | Phase 3 lifecycle; approved Phase 3A transaction if needed |
+| OPT-003-07: reach 377 / 5-10 minutes / jitter under 0.5000 ms | Reject these guarantees. Octal reach 377 represents eight successful recent reachability bits, not settled clock discipline or demonstrated accuracy. Poll timing, receiver state and convergence determine the observation window. Define a measured improvement over comparable baseline data; neither sub-ms serial jitter nor an offset below 5 ms is promised by these changes. | Phase 3A comparison and acceptance |
+| OPT-003-08: '-' means falseticker; small PPS figures prove accuracy | Correct the status interpretation: '-' is a clustering outlier; 'x' is the intersection/falseticker marker. Read full association status and source configuration before attributing exclusion to a 50 ms bias. The quoted PPS offset/jitter are relative to the local clock and do not independently prove absolute UTC accuracy. | Phase 3 source acceptance; Phase 3A diagnosis |
+| OPT-003-09: change time1 from 0.125 to 0.076 | The proposed subtraction has the wrong sign for the supplied negative offset. Pinned SHM passes time1 to the additive refclock offset calculation. With stable reference/bias and all assumptions verified, new_time1 = old_time1 - measured_offset_seconds: 0.125 - (-0.0490437) = 0.1740437 seconds. Decreasing to 0.076 would move this model's offset further negative. This is conditional arithmetic, not an adopted calibration; verify the actual value, mean, sign and uncertainty before any trial. | Phase 3A; OPT-002 calibration workflow |
+| OPT-003-10: noselect as fallback and distro configuration paths | OPT-002 still applies: noselect prevents selection, so the example is diagnostic-only rather than an NTP fallback. The governed path is /etc/ntp.conf; both /etc/ntpsec/ntp.conf and the doubled /etc/etc/ntpsec/ntp.conf are wrong for this lifecycle. Decide fallback role separately from calibration and preserve valid upstream selection. | Phase 3 runtime design; OPT-002 |
+| OPT-003-11: next-day logging | Recommended measurement approach after baseline service acceptance. Scope receiver/SHM/NTP/client records, polling/retention and comparable load/thermal conditions; a 24-hour window can sample a daily cycle but does not alone prove convergence or absolute accuracy. Logging, receiver access and any scheduled plot generation still need the defined execution approval. | Phase 3 baseline instrumentation; Phase 3A |
+
+No serial flag, RT priority, CPU/IRQ placement, calibration value, IPC reset
+or restart is adopted. Inspect effective behavior before testing one justified
+change; retain a conservative source-selection and restoration path.
+
+Evidence: pinned NTPsec [SHM input](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/ntpd/refclock_shm.c),
+[additive calibration](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/ntpd/ntp_refclock.c),
+[peer tally codes](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/includes/peerfmt.adoc)
+and [priority options](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/ntpd/ntpd.c);
+pinned GPSD [priority handling](https://gitlab.com/gpsd/gpsd/-/blob/1d622f5b2c7bf79fc117185be10048e7d4e73c66/gpsd/gpsd.c);
+upstream Linux 6.18 [PL011](https://github.com/torvalds/linux/blob/v6.18/drivers/tty/serial/amba-pl011.c)
+and [serial core](https://github.com/torvalds/linux/blob/v6.18/drivers/tty/serial/serial_core.c);
+[IRQ affinity](https://www.kernel.org/doc/html/latest/core-api/irq/irq-affinity.html)
+and systemd 257 [execution policy/inheritance](https://github.com/systemd/systemd/blob/v257/man/systemd.exec.xml).
+Upstream Linux is comparison evidence; the actual 6.18.50+rpt-rpi-v8 driver,
+configuration and effective runtime policy remain authoritative on the node.
+
 ### Phase 4: rebuild and accept `j1-svntp`
 
 Repeat the Phase 3 controls and Phase 3A review with `10.1.0.50` and

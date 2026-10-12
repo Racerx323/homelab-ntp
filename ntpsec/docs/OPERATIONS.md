@@ -566,6 +566,40 @@ GPS/PPS loss, network fallback, stale-sample rejection and recovery behavior in
 the runtime acceptance bundle. Preserve truthful leap/stratum reporting and
 do not force invalid GPS time to remain selected.
 
+### Serial latency and scheduler experiments
+
+[OPT-003](ntp-architecture-deployment-plan-v1.0.md#opt-003-serial-latency-scheduling-irq-affinity-and-offset-arithmetic)
+reviews setserial, FIFO priority, IRQ affinity and the quoted offset arithmetic.
+No tuning or restart is selected. Capture actual UART/driver, receiver message
+schedule, SHM mappings and full association status before inferring a scheduling
+problem. Do not apply an 8250 recipe to PL011 or use rc.local to persist an
+unverified flag.
+
+If measurements justify a scheduling experiment, bind observed policies and
+priorities for the supervisor, both daemons and relevant threads, plus CPU
+placement, IRQ source/allowed/effective affinity, counters and RT limits.
+Account for daemon priority changes and service-child inheritance. Do not
+substitute a stock gpsd.service override for the combined lifecycle. Test one
+change with explicit access/starvation recovery and exact restoration; inspect
+the actual Raspberry Pi kernel and any irqbalance policy. An accepted IRQ
+setting must identify the device dynamically, not preserve an example IRQ ID.
+
+For the supplied arithmetic only, additive SHM calibration gives
+`new_time1 = old_time1 - measured_offset_seconds`. If the old value really is
+0.125 and the stable mean really is -0.0490437 seconds against an unchanged
+reference, the calculated trial is 0.1740437, not 0.076. Do not render that
+number into a host profile without the OPT-002 calibration evidence and
+separately approved trial. A noselect association remains diagnostic-only.
+Read the '-' versus 'x' tally correctly and preserve the governed /etc/ntp.conf
+path. Do not equate reach 377 or a few minutes after restart with convergence.
+
+Any necessary restart belongs to the reviewed timeservice transaction with
+before/after state and both daemons' acceptance. Do not restart stock GPSD or
+NTPsec units, remove IPC segments or treat a restart as proof that SHM was
+cleared. Prefer bounded logging over simultaneously changing serial flags,
+priority, IRQ placement and calibration; retain the next-day data privately
+with configuration and sampling metadata.
+
 ## Leapfile, monitoring and routine maintenance
 
 ntpleapfetch.service.in is intentionally unresolved until the installed command,

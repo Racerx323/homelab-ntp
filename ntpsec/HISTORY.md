@@ -18,7 +18,7 @@ live inspection.
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; upstream tests/native staging and 159-entry manifest accepted with mDNS disabled | New mDNS-enabled build/acceptance, then live installation and activation |
 | Runtime | Candidate only; no new ntp.conf or live application deployment | GPS/PPS/RTC, accounts, combined service, leap maintenance |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
-| Optimizations | OPT-001/OPT-002 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna baseline before any optional experiment |
+| Optimizations | OPT-001/OPT-002/OPT-003 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
 
 The accepted source stage remains `/home/ama/.ntp-source-build-v5`.
@@ -239,6 +239,25 @@ demonstrated. Preserve valid upstream failover, actual SHM mappings and the
 source-built `/etc/ntp.conf` path. No receiver access, antenna movement,
 logging deployment or live configuration change was performed. Existing
 snapshot/mDNS prerequisite and build gates remain pending.
+
+### October 12: serial latency and scheduling proposal evaluated
+
+Added OPT-003 and the corresponding operations workflow. The supplied jitter,
+offset and assumed time1 values are unverified reported inputs. Rejected the
+8250/ttyAMA0 explanation and stock GPSD/NTPsec overrides/restarts for this
+combined service. Real-time scheduling and IRQ placement remain conditional
+experiments, with actual driver, per-thread policy, inheritance and recovery
+evidence required. Upstream Linux 6.18 PL011/serial-core and systemd 257 policy
+sources were inspected; they do not establish the effective downstream kernel
+or live scheduler state.
+
+Corrected '-' to clustering outlier rather than the 'x' falseticker marker.
+Pinned SHM calibration is additive: with verified old time1 0.125 and stable
+offset -0.0490437 seconds, the conditional result is 0.1740437, not 0.076.
+No value is adopted; noselect remains diagnostic-only, and reach 377 is not a
+convergence/accuracy guarantee. No target access, package, serial flag, IRQ,
+scheduler, calibration, IPC or restart change was performed. The existing
+fresh snapshot/mDNS prerequisite and build gates remain unchanged.
 
 ## Exact resume point
 
