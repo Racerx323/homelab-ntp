@@ -1,5 +1,5 @@
 {
-  "build_log_sha256": "2e5067c226459c8468815e8a85d9246e11044ec89323a2fe089cbdfcdeca61d7",
+  "build_log_sha256": "0d004b80b9782038d8cd2972d659dec759de935e95c064a53744b39eb8bd3d99",
   "files": {
     "usr/local/bin/cgps": {
       "mode": 448,
@@ -8,7 +8,7 @@
     },
     "usr/local/bin/clockmaker.py": {
       "mode": 493,
-      "sha256": "da1f343a772c324698c98bce3f9abd0848247a97ade10f929621538c191ff03f",
+      "sha256": "77331adb7471e36322103668d82e64ff6db85d2dda1ff12c3b2a96831726e6a3",
       "type": "file"
     },
     "usr/local/bin/gegps": {
@@ -108,7 +108,7 @@
     },
     "usr/local/bin/ntpfrob": {
       "mode": 493,
-      "sha256": "ffb13552a9705a5c915ac34199096405db5bfd9e69ba1dead4b1d2fb58860727",
+      "sha256": "18902cef56fa128659e399fd0d8e7b5e1d3e82e7fd45f2e379bc565d3b67406f",
       "type": "file"
     },
     "usr/local/bin/ntpkeygen": {
@@ -158,7 +158,7 @@
     },
     "usr/local/bin/ntptime": {
       "mode": 493,
-      "sha256": "5c9046b381a335a1cadccf04cacf8ebd5818ea6bb854884697503272852d42fe",
+      "sha256": "da6d51a260ec9afe23d803019ed23d8fe22a57427b6e1104310353dbcc4a1b6c",
       "type": "file"
     },
     "usr/local/bin/ntptrace": {
@@ -254,27 +254,27 @@
     },
     "usr/local/lib/python3.13/dist-packages/gps/__pycache__/__init__.cpython-313.pyc": {
       "mode": 384,
-      "sha256": "2067961145c601908939466263e6dbfb09f21f4b178e01ee32de463cb41ba990",
+      "sha256": "a98983d060050c2a85ef789973d548e7afa22636fc878b914eb9a0e23d447067",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/gps/__pycache__/client.cpython-313.pyc": {
       "mode": 384,
-      "sha256": "a5f7eb04121e5d99bad8054606d4645b4f797f418cac83f67af3230c8e54fc81",
+      "sha256": "c25e63e801e5857dbbbd1a6e991bca8519369664b922954783e11e643856f40f",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/gps/__pycache__/gps.cpython-313.pyc": {
       "mode": 384,
-      "sha256": "ba45520bb8ab11970d4469b88f502d774030a4edf7c4918c6a8a4c51aed94e7b",
+      "sha256": "70dd7adf7e7ce665b35abb08f14b1c084f53da73806f3a86ea4e4f790a96d61b",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/gps/__pycache__/misc.cpython-313.pyc": {
       "mode": 384,
-      "sha256": "c5656c4f1e58c1767050927603be6d0805013e1d2f440c5fdb443a4c5924f1ff",
+      "sha256": "5bbb6e305f88326954a2b96161bc5cbb8c531eb6d05bf66390109b2f9fffa509",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/gps/__pycache__/watch_options.cpython-313.pyc": {
       "mode": 384,
-      "sha256": "2ec2485ec43c6c1df8ccc506e278af22164a8ff12c19366969577428f4278d44",
+      "sha256": "71453d92846f7f235c5ff6ecf6dad90c2e69fb1aff1b8954229012844d8b6d33",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/gps/aiogps.py": {
@@ -334,92 +334,92 @@
     },
     "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/__init__.cpython-313.pyc": {
       "mode": 420,
-      "sha256": "549a4b5be431bef07cadc125fbfe0178a83018c78c9197e2ba738c20ddaa576a",
+      "sha256": "8ebcd9749c6369ad307625cc5fe12a3c19ab52f862882775b75ccdfff750abd1",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/__init__.cpython-313.pyo": {
       "mode": 420,
-      "sha256": "549a4b5be431bef07cadc125fbfe0178a83018c78c9197e2ba738c20ddaa576a",
+      "sha256": "8ebcd9749c6369ad307625cc5fe12a3c19ab52f862882775b75ccdfff750abd1",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/agentx.cpython-313.pyc": {
       "mode": 420,
-      "sha256": "903bdae81b34d9de7044bf20950589a1b685bcb520634b589604683f7920d4df",
+      "sha256": "ec427828e3b807da21ae18ecba4cf84686ca0810313f63f6576bbdf0afc46abd",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/agentx.cpython-313.pyo": {
       "mode": 420,
-      "sha256": "903bdae81b34d9de7044bf20950589a1b685bcb520634b589604683f7920d4df",
+      "sha256": "ec427828e3b807da21ae18ecba4cf84686ca0810313f63f6576bbdf0afc46abd",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/agentx_packet.cpython-313.pyc": {
       "mode": 420,
-      "sha256": "b031d14b348c05222f5f205e17f6db774d05f3ab505fc0aed3e3d656b4c94673",
+      "sha256": "fe02d3fba2cf77761f05d719bf84ac2b37cea9e2b5330dfac7191bb435f5c7f2",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/agentx_packet.cpython-313.pyo": {
       "mode": 420,
-      "sha256": "b031d14b348c05222f5f205e17f6db774d05f3ab505fc0aed3e3d656b4c94673",
+      "sha256": "fe02d3fba2cf77761f05d719bf84ac2b37cea9e2b5330dfac7191bb435f5c7f2",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/control.cpython-313.pyc": {
       "mode": 420,
-      "sha256": "6830173a4d0646174f8a838b6aeac96d25aa6cd92f33a77a497076ab782052b4",
+      "sha256": "5c26ff36e9a194749aacdb3c4eec89cf9b5921009ca9cb376b5f0a3e51f7a191",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/control.cpython-313.pyo": {
       "mode": 420,
-      "sha256": "6830173a4d0646174f8a838b6aeac96d25aa6cd92f33a77a497076ab782052b4",
+      "sha256": "5c26ff36e9a194749aacdb3c4eec89cf9b5921009ca9cb376b5f0a3e51f7a191",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/magic.cpython-313.pyc": {
       "mode": 420,
-      "sha256": "63b92b2d01ef4216421a710b520daef882675531d0e1b6965b4d06d283c93181",
+      "sha256": "99a8c8ce0724098c7787bfeeeaea2d0d8611cf632111771cab4d21571e900a28",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/magic.cpython-313.pyo": {
       "mode": 420,
-      "sha256": "63b92b2d01ef4216421a710b520daef882675531d0e1b6965b4d06d283c93181",
+      "sha256": "99a8c8ce0724098c7787bfeeeaea2d0d8611cf632111771cab4d21571e900a28",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/packet.cpython-313.pyc": {
       "mode": 420,
-      "sha256": "b72c3e1e9409be61314d4df473411f8b2b5d05cde731995466b5bf4413ac5c74",
+      "sha256": "191be45a49a4bf59a0fdeacb68a582ef3e96d7dff0e686df87b6720a50555521",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/packet.cpython-313.pyo": {
       "mode": 420,
-      "sha256": "b72c3e1e9409be61314d4df473411f8b2b5d05cde731995466b5bf4413ac5c74",
+      "sha256": "191be45a49a4bf59a0fdeacb68a582ef3e96d7dff0e686df87b6720a50555521",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/poly.cpython-313.pyc": {
       "mode": 420,
-      "sha256": "bdf5b80d6f7b5b87d4e3e5b405de750a7ac9f01535c6144e55997726be714e97",
+      "sha256": "204841f67d06f9ba1a71788061c0465eb0873a90b9c828ee8d4ca30f32e9c113",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/poly.cpython-313.pyo": {
       "mode": 420,
-      "sha256": "bdf5b80d6f7b5b87d4e3e5b405de750a7ac9f01535c6144e55997726be714e97",
+      "sha256": "204841f67d06f9ba1a71788061c0465eb0873a90b9c828ee8d4ca30f32e9c113",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/statfiles.cpython-313.pyc": {
       "mode": 420,
-      "sha256": "cd67f92711ae8d73cdfc66a72a45e143fa7851d73d71a4df099a11a89e0d8c01",
+      "sha256": "391697a445f02b79ab9ed7808f824198a008b2fe39cf755a8e4c15fbe72770e7",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/statfiles.cpython-313.pyo": {
       "mode": 420,
-      "sha256": "cd67f92711ae8d73cdfc66a72a45e143fa7851d73d71a4df099a11a89e0d8c01",
+      "sha256": "391697a445f02b79ab9ed7808f824198a008b2fe39cf755a8e4c15fbe72770e7",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/util.cpython-313.pyc": {
       "mode": 420,
-      "sha256": "51649316dfa376a4072a2124d0b5210cef945528ecc27d629b45218e32549875",
+      "sha256": "0312f32ff24ae478d2351a8a63005f2dbcfa96668bbee7eec4a59e000fc37ede",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/ntp/__pycache__/util.cpython-313.pyo": {
       "mode": 420,
-      "sha256": "51649316dfa376a4072a2124d0b5210cef945528ecc27d629b45218e32549875",
+      "sha256": "0312f32ff24ae478d2351a8a63005f2dbcfa96668bbee7eec4a59e000fc37ede",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/ntp/agentx.py": {
@@ -444,7 +444,7 @@
     },
     "usr/local/lib/python3.13/dist-packages/ntp/ntpc.cpython-313-aarch64-linux-gnu.so": {
       "mode": 493,
-      "sha256": "a28745d8135e2190419e92ab47e0159443a83daecda315a1c71058999a39f72c",
+      "sha256": "976fe7bf4f4de8342527e578fe5b28be888a1ab028a0a7703576cf4c2fcbb225",
       "type": "file"
     },
     "usr/local/lib/python3.13/dist-packages/ntp/packet.py": {
@@ -469,7 +469,7 @@
     },
     "usr/local/libexec/timeservice.py": {
       "mode": 493,
-      "sha256": "47b55a58112267c430363704433de17f25d807d32e577f8bb79d458b86d0a46b",
+      "sha256": "cd82948e872ef64257ac5b5d7127f7802698b9d9ceb5fe91c37399d9b31e24b4",
       "type": "file"
     },
     "usr/local/sbin/gpsd": {
@@ -484,7 +484,7 @@
     },
     "usr/local/sbin/ntpd": {
       "mode": 493,
-      "sha256": "ce03c8f0d7d7898424235b414f24d05b8867113706e5bb646dd273f6caf28c2a",
+      "sha256": "73b9f410a38659a3b49e9f8df824d2ee7530ae3f4cb618caa6f9b142f4c05cdb",
       "type": "file"
     },
     "usr/local/share/gpsd/doc/AUTHORS": {
@@ -639,27 +639,27 @@
     },
     "usr/local/share/man/man1/ntpdig.1": {
       "mode": 420,
-      "sha256": "c7e52ceb59a3d2db910b4ef9607244a47b9b340c473b9cbd0f166e6666f81641",
+      "sha256": "7b244b32c484f3d1fd02dbbc8473428dbdd5314c77a5ec7e2f8a1453fac5d616",
       "type": "file"
     },
     "usr/local/share/man/man1/ntploggps.1": {
       "mode": 420,
-      "sha256": "54f8f22fa1e0de1bdf8bc358df1ffd2020a78a82a7dced9eb4a7d6cf704f8590",
+      "sha256": "b51637385cca11010341cd1d4e768596cd433e509e64687b5bd9bedd08c028d5",
       "type": "file"
     },
     "usr/local/share/man/man1/ntplogtemp.1": {
       "mode": 420,
-      "sha256": "b37e5ce2accab5b380b7679551ec5cb389e973e149066a7abf44c92174168d37",
+      "sha256": "cb22be5b655c8fe92d3e3f68b0a604ea3a4edf15cddeef51174a30be19b7c24b",
       "type": "file"
     },
     "usr/local/share/man/man1/ntpmon.1": {
       "mode": 420,
-      "sha256": "9ce008f6ece83609f9a8d0b9beb949291443094b09f203d93f5f303c13706535",
+      "sha256": "d648d58809bce9d31262a44a4201298ee884f5f39edc18049be19c956e5e0641",
       "type": "file"
     },
     "usr/local/share/man/man1/ntpq.1": {
       "mode": 420,
-      "sha256": "decbc423bbf9d7026b867247c6cd8492b061e8d10431137841ffc9e13a195e23",
+      "sha256": "5ff4c4e6020777b8503f07daeff36652094b2c3cfa9a077196990822bebd779b",
       "type": "file"
     },
     "usr/local/share/man/man1/ntpshmmon.1": {
@@ -669,17 +669,17 @@
     },
     "usr/local/share/man/man1/ntpsweep.1": {
       "mode": 420,
-      "sha256": "2a16148d11c62bba821e2eb9a279282c47ad066bf57a28e6b49970e45e48e29b",
+      "sha256": "2c0ce579fc9c95100874cba985906a2c10a9cd25b731b01aa349c91119cc7c80",
       "type": "file"
     },
     "usr/local/share/man/man1/ntptrace.1": {
       "mode": 420,
-      "sha256": "a7e3e7ab4e254b9c7187f87d64e10db72c6f40b49207f1c93c9b05f09c13bd8c",
+      "sha256": "31ac70f6c96bc9262dc8facf64dee99d19e3c4f2ab7b361d53aa179c77563a50",
       "type": "file"
     },
     "usr/local/share/man/man1/ntpviz.1": {
       "mode": 420,
-      "sha256": "e5856e9bbb57d01310c36cc7a40d026a99049b0761257ed5b261a8dbde8bcd0f",
+      "sha256": "adc3e8140f872a19bc0e5f432d35292145bb31b830dab1322bd860d85cb6b628",
       "type": "file"
     },
     "usr/local/share/man/man1/ubxtool.1": {
@@ -724,12 +724,12 @@
     },
     "usr/local/share/man/man5/ntp.conf.5": {
       "mode": 420,
-      "sha256": "36307a8c8af94a3145f17459292f7f47d45b13d9b0d0d76cf4b9b4563d6e4023",
+      "sha256": "06d0a15330579287a87006c7f7fb3037e205ae1091b743e50be4de2e8ba86703",
       "type": "file"
     },
     "usr/local/share/man/man5/ntp.keys.5": {
       "mode": 420,
-      "sha256": "f3caf30bf0ea583b574a214d08373c84d0d04634a634cd51026f524cba8d3bfd",
+      "sha256": "be4d3f5e6e792f6c80d5c821d14551c5a97dc318763c4e8a225034901e5c90c0",
       "type": "file"
     },
     "usr/local/share/man/man8/gpsd.8": {
@@ -749,37 +749,37 @@
     },
     "usr/local/share/man/man8/ntpd.8": {
       "mode": 420,
-      "sha256": "c7a38a7a0186562a03808010d4a8d0a4d091f439caa41949fda741d422a3ff51",
+      "sha256": "e0ed9aec8c66a371c88e23ae4ce68775f35bbebd4cdbf35db5f3c2941c83efa2",
       "type": "file"
     },
     "usr/local/share/man/man8/ntpfrob.8": {
       "mode": 420,
-      "sha256": "163fa1f26528908a19e549097ecafe0d22b700016808682b7bbccc8731154e76",
+      "sha256": "1d388ee8083e9145851fcb5054a1dec873ec29d0801d290d22a61341cbe03ae3",
       "type": "file"
     },
     "usr/local/share/man/man8/ntpkeygen.8": {
       "mode": 420,
-      "sha256": "e793798a1e9372d41ad59e0de47e8b4bc0aedef1e059b47b3646fa5b5bb91a23",
+      "sha256": "ae26b7234a456fdf6ffdc76822ceb857f4f62080c2f3a68a553fc8e284e21b07",
       "type": "file"
     },
     "usr/local/share/man/man8/ntpleapfetch.8": {
       "mode": 420,
-      "sha256": "cbe69a52bff3476962e116ec7e670bdd133204db9699ce3e35f153c0d1b841d0",
+      "sha256": "4b86202a38d2ed632989de23b52383c7180355437e8a200d200eaba04708b939",
       "type": "file"
     },
     "usr/local/share/man/man8/ntpsnmpd.8": {
       "mode": 420,
-      "sha256": "b7a2498e748774305b0b3906bf7332c332637ef789315608afe25cc1ebe07713",
+      "sha256": "18d5bb516f28b99f5eba0c6df90ecd6dd4dc01e3574c5a96fccb55b4114c2341",
       "type": "file"
     },
     "usr/local/share/man/man8/ntptime.8": {
       "mode": 420,
-      "sha256": "7b5ec4b2172140ff45681a23b90497c0ceeb0ff10cf29d1f6efce179d200ccea",
+      "sha256": "220958b89bfe89888740f501a456423819b6f3dffb8f57076eac0e30efc2f5a7",
       "type": "file"
     },
     "usr/local/share/man/man8/ntpwait.8": {
       "mode": 420,
-      "sha256": "f5ff90a3d3a5f6cedb36beb4a2812b0d2c725a3bc44fb27223e53506cca1349a",
+      "sha256": "784f2d62e273eaa5b333dc7b920f246cbd4afd072cc099da0799376c2d49eed5",
       "type": "file"
     },
     "usr/local/share/man/man8/ppscheck.8": {
@@ -794,21 +794,23 @@
     }
   },
   "helpers": {
-    "clockmaker.py": "da1f343a772c324698c98bce3f9abd0848247a97ade10f929621538c191ff03f",
+    "clockmaker.py": "77331adb7471e36322103668d82e64ff6db85d2dda1ff12c3b2a96831726e6a3",
     "pinup.py": "cd563ff6d937ab90313102458e514022855f3b822f7b8825d5b05fd6d9f6bcf5",
-    "timeservice.py": "47b55a58112267c430363704433de17f25d807d32e577f8bb79d458b86d0a46b"
+    "timeservice.py": "cd82948e872ef64257ac5b5d7127f7802698b9d9ceb5fe91c37399d9b31e24b4"
   },
   "hostname": "j2-svntp1",
   "kernel": "6.18.50+rpt-rpi-v8",
   "operation": "build",
   "packages": {
     "asciidoctor": "2.0.23-1",
+    "avahi-daemon": "0.8-16",
     "bc": "1.07.1-4+b1",
     "binutils": "2.44-3",
     "bison": "2:3.8.2+dfsg-1+b2",
     "build-essential": "12.12",
     "g++": "4:14.2.0-1",
     "gcc": "4:14.2.0-1",
+    "libavahi-compat-libdnssd-dev:arm64": "0.8-16",
     "libc6:arm64": "2.41-12+rpt1+deb13u4",
     "libcap-dev:arm64": "1:2.75-10+deb13u1+b3",
     "libncurses-dev:arm64": "6.5+20250216-2",
@@ -823,7 +825,7 @@
     "python3-serial": "3.5-2",
     "scons": "4.8.1+dfsg-1"
   },
-  "profile_sha256": "8f4527efed9e4c7f912994f89fa537d4f4f75145b1c477c5d076b7114af12077",
+  "profile_sha256": "e16d1998949237fa0481081c10e4871184ee472eb3ff521754779433e0b33e78",
   "python": {
     "executable": "/usr/bin/python3",
     "module_directory": "/usr/local/lib/python3.13/dist-packages",
@@ -899,8 +901,7 @@
         "--disable-doc",
         "--enable-manpage",
         "--enable-pylib=ext",
-        "--enable-seccomp",
-        "--disable-mdns-registration"
+        "--enable-seccomp"
       ],
       "origin": "https://ftp.ntpsec.org/pub/releases/ntpsec-1.2.5.tar.gz",
       "primary_fingerprint": "E57235D22764129FA4F2F4D17F52608ED0E49D76",

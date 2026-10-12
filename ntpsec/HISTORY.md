@@ -14,14 +14,15 @@ live inspection.
 | --- | --- | --- |
 | Rebuilt node | Former j1-svntp1 renamed j2-svntp1; spare-card first boot accepted | Full hardware/time/network acceptance |
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; Ethernet DHCP 10.1.0.137; matching console/SSH key | Fixed dual-stack service addresses; Wi-Fi disablement |
-| Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and verify it during the source build |
-| Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; v5 tests/native staging and 159-entry manifest accepted with mDNS disabled; new mDNS-enabled build sealed | Separate new build approval/acceptance, then live installation and activation |
+| Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before live installation |
+| Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Separate destination/collision inspection, then live installation and activation |
 | Runtime | Candidate only; no new ntp.conf or live application deployment | GPS/PPS/RTC, accounts, combined service, leap maintenance |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
 
-The accepted source stage remains `/home/ama/.ntp-source-build-v5`.
+The current accepted source stage is
+`/home/ama/.ntp-source-build-mdns-20261012-v1`; the earlier v5 stage is preserved.
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
 
@@ -358,12 +359,12 @@ The revised-recipe v3 snapshot is accepted and its verified stage removed.
 Resolution v3 was held at final continuity and cleaned up; corrected v4 has passed
 acceptance and cleanup. The seven-package installation passed acceptance and
 control cleanup, yielding 686 package records. The new mDNS-enabled source build
-is sealed against this accepted inventory and the current recipe. Further
+passed full acceptance against this inventory and the current recipe. Further
 execution requires separate hash-bound approval; the consumed installation
 bundle and pre-installation baseline must not be replayed.
 
-After accepted mDNS prerequisites, prepare a new unprivileged source build and
-acceptance, then a separately approved destination/collision inspection and live source
+The next stage is a separately approved destination/collision inspection and
+preparation of live source
 installation bundle with explicit metadata, pre-state, backups, rollback and
 acceptance. Preserve the accepted v5 stage and receipts. Runtime configuration,
 mail/cron, hardware, dual-stack/DNS/UniFi and reboot acceptance follow their
@@ -566,3 +567,38 @@ readback. Failure and success both preserve the new stage/claim/logs/candidate;
 there is no automatic retry or live installation. Destination/collision inspection,
 application installation and runtime activation remain later separately reviewed
 gates. The plan, operations and current history status agree on this resume point.
+
+### October 12: mDNS-enabled source build accepted
+
+Executed the approved linked build once on j2-svntp1. The supplied digest omitted
+its final character; the unchanged linked review and verified complete bundle
+SHA-256 `daddefa703f2466a46425151c4dca4aba889cc78457c2eebef46269c51dda98d`
+were used and the approval binding was retained privately. Transport and worker
+both returned 0. All nine returned evidence records were hash-verified, including
+the claim/specification binding, acceptance/complete receipts, native build log
+and release manifest.
+
+Both unchanged upstream suites, native DESTDIR staging, manuals/clients/modules,
+isolated staged imports, linkage and manifest stability passed. GPSD retained
+time-service/magic_hat/SHM and the u-blox driver. NTPsec SHM/NTS/seccomp and
+generated HAVE_DNS_SD_H=1 passed; ntpsec_mdns_registration is explicitly true.
+The complete 686-record package inventory and boot/SSH/NetworkManager continuity
+remained unchanged. No live installation, service activation, package/policy
+change, reboot or hardware/receiver/network configuration occurred.
+
+Accepted release SHA-256:
+`7ea41e51c571744776c2d4563b0da42eb03ce7a237c45922ddc976ee726390f6`.
+The release contains 159 file/link entries and is mirrored byte-for-byte in
+configs/accepted-source-release.json. [Acceptance receipt](/home/aaron/code/.local-evidence/homelab-ntp/current/source-build-mdns-20261012-v1/acceptance.json)
+and complete private terminal evidence are retained. The accepted target stage
+is `/home/ama/.ntp-source-build-mdns-20261012-v1`; its candidate, claims and logs
+remain preserved, along with the earlier v5 evidence. Conditional readback was
+unnecessary because complete terminal acceptance evidence was returned.
+
+Next prepare and review a bounded read-only destination/collision inspection for
+this accepted manifest and target. Execute it only after separate scope/hash
+approval. Then prepare installation with observed pre-state, explicit ownership/
+modes, journal, backups, obsolete-file handling, acceptance and recovery for its
+own approval. Source-build approval has been consumed; it authorizes no further
+target contact or application deployment. Runtime mDNS policy/activation follows
+the governed runtime stage.

@@ -13,15 +13,15 @@ to contact a node, deploy files, send a notification or reboot it.
 j2-svntp1 is the renamed former j1-svntp1 physical node, now running Raspberry
 Pi OS Lite Trixie on the spare card. Its accepted foundation contains 686 package
 records. The retained NTPsec/GPSD source candidate has 159 manifest entries;
-both upstream suites, native staging and corrected standalone acceptance passed.
+both upstream suites, native staging and mDNS feature acceptance passed.
 The applications have not been installed live or configured on the new image.
 
 | Stage | State | Next requirement |
 | --- | --- | --- |
 | Media and bootstrap | Accepted | Preserve original Debian 11 card and primary/antenna power |
-| Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and verify it during the source build |
-| Source candidate | v5 accepted with mDNS disabled; new mDNS-enabled build sealed against accepted prerequisites | Approve the new build and accept its mDNS feature/tests/staging, then destination/collision review |
-| Live installation | Pending | New accepted build, reviewed pre-state, explicit metadata, journal and scoped execution |
+| Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before live installation |
+| Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Prepare a separately approved destination/collision inspection |
+| Live installation | Pending; new build accepted | Reviewed destination pre-state, explicit metadata, journal, recovery and scoped execution |
 | Runtime configuration | Pending | Observed UART/PPS/RTC, accounts, NTP configuration and combined-service cutover |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Pending | Hardware, time, dual-stack clients, monitoring and reboot evidence |
@@ -75,7 +75,12 @@ resolution report; it reads no historical bundle or acceptance receipt.
 Source preparation now renders the target identity, pinned SSH binding and
 exclusive stage from evidence and a required operation ID, and binds the
 accepted foundation boot. The [mDNS build review](/home/aaron/code/.local-evidence/homelab-ntp/current/source-build-mdns-20261012-v1/review.md)
-is sealed for j2-svntp1; separate execution approval is pending. Live installation/runtime profiles and
+was approved and executed once on j2-svntp1. Both upstream suites, native staging,
+u-blox/features, imports/linkage and explicit NTPsec mDNS acceptance passed;
+the accepted release manifest is mirrored byte-for-byte in the repository.
+The package inventory and boot/access-service continuity remained unchanged.
+Conditional readback was unnecessary; complete terminal evidence was retained.
+Live installation/runtime profiles and
 hardware/network acceptance remain pending.
 
 ## Repository assets and private evidence
@@ -99,7 +104,9 @@ operation folders. Keep credentials, raw host captures, recovery-card data and
 execution receipts private. The current private index is
 `/home/aaron/code/.local-evidence/homelab-ntp/current/catalog.json`; it identifies
 verified accepted package/Python/source records by hash and provenance.
-The staged target files remain under ama's retained `.ntp-source-build-v5`.
+The current accepted target files remain under ama's retained
+`.ntp-source-build-mdns-20261012-v1/candidate/stage`. The earlier v5 workspace
+is preserved as prior executed evidence.
 
 The shared `.local-evidence` directory also serves other projects. NTP cleanup
 does not authorize deleting those projects' records. Retain unique observations
