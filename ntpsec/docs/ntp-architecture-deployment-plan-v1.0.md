@@ -735,6 +735,34 @@ Linux [ARP](https://man7.org/linux/man-pages/man7/arp.7.html),
 and [GENET EEE controls](https://github.com/torvalds/linux/blob/v6.18/drivers/net/ethernet/broadcom/genet/bcmgenet.c);
 [LinuxPTP configuration](https://www.linuxptp.org/documentation/ptp4l/).
 
+#### OPT-005: Uputronics u-blox M8 receiver tuning
+
+Evaluated on October 12, 2026. These receiver settings apply independently
+of the client time daemon. Evaluate them with the existing GPSD/NTPsec SHM
+path; exact module, firmware and protocol support remain to be verified.
+
+| Item | Disposition and potential improvement | Placement |
+| --- | --- | --- |
+| OPT-005-01: receiver identity and protocol version | Required before configuration. Capture MON-VER, module/HAT identity, supported GNSS and affected configuration blocks. Select ubxtool's protocol version from the receiver response, not a copied value of 18. Preserve UART 115200 and use the pinned GPSD tool with an explicitly selected device/endpoint. | Phase 3 receiver baseline; all receiver trials |
+| OPT-005-02: NAV5 stationary dynamic model | Strong candidate for the fixed antenna. Model 2 assumes stationary operation and is intended for timing/static applications. Trial changing only the dynamic-model field, retaining existing fix mode, masks and other navigation settings. Compare receiver time validity/accuracy, PPS continuity and NTP/client metrics; a suitable model is not itself proof of improved UTC accuracy. | Phase 3A |
+| OPT-005-03: PMS full power | Worth testing if the receiver is currently using power saving. CFG-PMS setup 0 selects full power on supporting firmware; protocol support starts at 18. Read the complete power configuration before/after because predefined setups can change multiple settings. Assess continuous tracking, PPS/SHM availability, time accuracy, power and heat. If already full power, retain it without a redundant trial. | Phase 3 receiver baseline; Phase 3A if needed |
+| OPT-005-04: GNSS constellation selection | Conditional reception/timing experiment. Verify model/firmware capability, simultaneous-constellation and channel-allocation limits, antenna/filter bandwidth and actual used satellites. Compare supported combinations over representative sky conditions. Enabling Galileo or disabling GLONASS/SBAS is not a universal improvement; retain a working combination unless measured timing/availability improves. Any change disabling an active GNSS includes the manufacturer's cold-start recommendation and recovery window. | Phase 3A |
+| OPT-005-05: NMEA 4.10 | Conditional protocol compatibility setting when Galileo/BeiDou NMEA reporting is used. It changes message representation, not enabled constellations or PPS precision. Verify support and existing format, then check GPSD parsing, UART message load, valid time and SHM freshness. Retain existing working UBX/NMEA output unless a reporting requirement justifies a change. | Phase 3 receiver/GPSD compatibility; Phase 3A with a constellation trial |
+| OPT-005-06: ITFM interference monitor | Optional diagnostic improvement. Monitor supported UBX-MON-HW interference indicators and trial ITFM only where useful. Bind the active-antenna classification to the actual antenna/splitter path; it does not configure antenna power. The monitor needs a good initial fix and an interference baseline for interpretation. Measure detection usefulness and false alarms; enabling telemetry does not remove interference or establish better timing. | Phase 3A diagnostics; maintenance if adopted |
+| OPT-005-07: TP5 antenna cable delay | Potential absolute PPS bias correction, not a serial-jitter adjustment. Derive the value from this installation's cable lengths/types, propagation data and splitter/RF-path delay, with uncertainty and independent timing validation where available. Treat each receiver branch separately. Read/merge the complete supported TP5 message, preserving pulse index, period, width, polarity, time grid, locked/unlocked behavior and other delays. Do not duplicate the same correction elsewhere. | Phase 3 PPS configuration; Phase 3A calibrated refinement |
+| OPT-005-08: save and cold start | Required persistence/recovery procedure for adopted settings, not an optimization. Verify supported storage rather than assuming EEPROM. Read back actual values, test in volatile state where supported, and save only the accepted profile with the intended configuration/storage masks. Cold start is conditional on the changed settings and firmware guidance, particularly disabled GNSS; define PPS interruption, reacquisition and valid-time acceptance. Receiver configuration survives independently of the SD card, so rollback must restore the receiver as well. | Approved receiver transaction; Phase 3 reboot/persistence acceptance; maintenance |
+
+Prioritise identity/configuration capture, then a stationary-model trial and
+full-power trial where needed. Constellation selection and cable compensation
+require additional reception/path evidence. No receiver command, setting or
+persistent profile is adopted by this evaluation.
+
+Proposal: [Uputronics M8 tuning guide](https://github.com/tiagofreire-pt/rpi_uputronics_stratum1_chrony/blob/main/steps/advanced_ublox_m8_tuning.md).
+Authority: u-blox [M8 receiver/protocol manual, UBX-13003221 R28](https://content.u-blox.com/sites/default/files/products/documents/u-blox8-M8_ReceiverDescrProtSpec_UBX-13003221.pdf),
+sections 4.2, 8.1, 13.4, 15.2/15.3, 19 and the applicable CFG messages;
+pinned GPSD [ubxtool manual](https://gitlab.com/gpsd/gpsd/-/blob/1d622f5b2c7bf79fc117185be10048e7d4e73c66/man/ubxtool.adoc)
+and [UBX command implementation](https://gitlab.com/gpsd/gpsd/-/blob/1d622f5b2c7bf79fc117185be10048e7d4e73c66/gps/ubx.py).
+
 ### Phase 4: rebuild and accept `j1-svntp`
 
 Repeat the Phase 3 controls and Phase 3A review with `10.1.0.50` and

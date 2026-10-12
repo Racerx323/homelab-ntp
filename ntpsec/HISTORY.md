@@ -18,7 +18,7 @@ live inspection.
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; upstream tests/native staging and 159-entry manifest accepted with mDNS disabled | New mDNS-enabled build/acceptance, then live installation and activation |
 | Runtime | Candidate only; no new ntp.conf or live application deployment | GPS/PPS/RTC, accounts, combined service, leap maintenance |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
-| Optimizations | OPT-001 through OPT-004 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
+| Optimizations | OPT-001 through OPT-005 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
 
 The accepted source stage remains `/home/ama/.ntp-source-build-v5`.
@@ -264,6 +264,18 @@ The evaluation uses the requested HOWTO, pinned application documentation and
 primary Linux/LinuxPTP sources. No target contact, package, configuration,
 network or service change was performed. The fresh snapshot/mDNS prerequisite
 and source-build gates remain unchanged.
+
+### October 12: Uputronics M8 tuning evaluated
+
+Added applicable receiver proposals as OPT-005 and the receiver transaction
+workflow in OPERATIONS. Stationary navigation and full power where needed
+are the first candidates after exact module/firmware/configuration capture.
+Constellation choice, NMEA format, interference diagnostics and branch-specific
+TP5 delay remain conditional on capability and measurements. Persistence and
+cold-start recovery must restore the receiver independently of the SD card.
+Reviewed the supplied guide, u-blox UBX-13003221 R28 and pinned GPSD commands.
+No receiver contact, live setting, save or reset occurred; existing deployment
+gates remain unchanged.
 
 ## Exact resume point
 

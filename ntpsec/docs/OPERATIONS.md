@@ -655,6 +655,46 @@ where used. Prevent a server selecting its own redistributed clock or a PTP
 servo competing with NTPsec. Do not activate the HOWTO's sample ptp4l service
 or feed a new SHM association into the current server profile.
 
+### M8 receiver configuration trials
+
+[OPT-005](ntp-architecture-deployment-plan-v1.0.md#opt-005-uputronics-u-blox-m8-receiver-tuning)
+owns receiver-tuning decisions. Prepare a separately approved transaction
+after identifying the exact module, firmware, protocol and configuration.
+Use GPSD 3.27.5's ubxtool through the reviewed GPSD endpoint and explicitly
+selected device. In this tool, `--device` selects a device managed by GPSD;
+direct serial access uses `--file` and needs exclusive ownership and the
+observed 115200 baud. Any direct-access transaction must coordinate the
+combined service's stop/start and client impact. Do not open the UART alongside
+GPSD. `MON-VER` establishes `-P`; command support follows that version.
+
+1. Preserve raw receiver identity and affected configuration replies privately,
+   with timestamps, message hashes and target binding. Capture NAV5, supported
+   GNSS/channel allocation, power mode, NMEA/output configuration, ITFM and TP5
+   as applicable. Define exact restoration messages before writing. Preserve
+   the primary's shared-antenna power and operate on one receiver at a time.
+2. Trial one justified change in volatile state where supported. The pinned
+   tool's `MODEL,2` changes the NAV5 dynamic model; `CFG-PMS,0` selects full
+   power on supporting receivers. These are mutation inputs for a sealed
+   bundle, not approved commands. For composite messages, preserve unrelated
+   fields; in particular a partial TP5 command can supply defaults for omitted
+   fields instead of retaining the receiver's current values.
+3. Read back settings and prove effective behavior. An ACK or lack of errors
+   does not establish that a GNSS combination was applied. Compare acquisition,
+   valid time, used satellites/accuracy, PPS gaps, serial/PPS SHM, NTP frequency
+   and client timing under the OPT-004 measurement procedure. Capture any
+   additional fields changed by a predefined power setup.
+4. Save only an accepted configuration using reviewed masks and observed
+   storage support. Define any required cold start and outage window from the
+   actual change and manufacturer guidance. Verify reacquisition, valid UTC,
+   PPS/SHM freshness, source selection and service/client recovery; then verify
+   persistence across the approved restart/power cycle. Restore receiver and
+   host settings if acceptance fails; an SD-card swap alone is insufficient.
+5. Check in adopted desired settings, firmware/protocol constraints, complete
+   command/message inputs, hashes, acceptance and restoration in the maintained
+   installer assets. Keep receiver identifiers, location and raw captures
+   private. Include the branch-specific RF-delay calculation and uncertainty
+   for any TP5 correction. Until adoption, no new receiver profile is installed.
+
 ## Leapfile, monitoring and routine maintenance
 
 ntpleapfetch.service.in is intentionally unresolved until the installed command,
