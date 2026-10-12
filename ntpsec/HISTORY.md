@@ -18,7 +18,7 @@ live inspection.
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; upstream tests/native staging and 159-entry manifest accepted with mDNS disabled | New mDNS-enabled build/acceptance, then live installation and activation |
 | Runtime | Candidate only; no new ntp.conf or live application deployment | GPS/PPS/RTC, accounts, combined service, leap maintenance |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
-| Optimizations | OPT-001 reviewed offline; Phase 3A and proposal register added | Accepted live timing baseline before any optional experiment |
+| Optimizations | OPT-001/OPT-002 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
 
 The accepted source stage remains `/home/ama/.ntp-source-build-v5`.
@@ -222,6 +222,23 @@ GPIO/edge and current hardware/driver mapping need verification. The proposal
 does not establish zero jitter or absolute accuracy. No target contact,
 packages, boot configuration, affinity, governor, service or reboot changes
 were performed during this documentation evaluation.
+
+### October 12: antenna placement and calibration proposal evaluated
+
+Added OPT-002 to the governing register and the antenna/SHM/fallback workflow
+to OPERATIONS. Indoor placement is an unverified scenario, not a new target
+observation. The shared antenna makes relocation a common physical change.
+Selection thresholds are global: mindist 0.002 is a conditional experiment;
+maxdist 1.5 is already the pinned default. No time1 0.130 calibration is
+adopted. A noselect association cannot serve as a selectable fallback, and
+four satellites above a signal-strength threshold do not establish valid PPS.
+
+The first recommended stage is scoped receiver/SHM/NTP logging and placement
+assessment, followed by evidence-based calibration only if a stable bias is
+demonstrated. Preserve valid upstream failover, actual SHM mappings and the
+source-built `/etc/ntp.conf` path. No receiver access, antenna movement,
+logging deployment or live configuration change was performed. Existing
+snapshot/mDNS prerequisite and build gates remain pending.
 
 ## Exact resume point
 

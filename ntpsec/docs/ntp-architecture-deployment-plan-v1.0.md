@@ -632,6 +632,47 @@ current upstream guidance to the pinned target:
 - Pinned NTPsec [SHM driver](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/driver_shm.adoc)
   and [ntpviz](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/includes/ntpviz-body.adoc).
 
+#### OPT-002: indoor antenna placement and SHM calibration
+
+Evaluated on October 12, 2026. Indoor/window placement is a proposed scenario,
+not a newly verified site observation. Obstruction, reflective surroundings
+and some glazing can degrade reception; neither a particular serial delay nor
+loss of valid time follows from placement alone. Establish actual reception
+and receiver behavior before changing clock-selection policy.
+
+The goal remains correct time with GPS/PPS preference when valid. Falling back
+to accepted independent network sources during invalid GPS time is protective,
+not an optimization failure. Both receivers share the antenna/splitter and
+primary-supplied antenna power; an antenna move is a common physical change
+that can affect both services. Review its scope, power/cable continuity,
+expected service impact and restoration explicitly rather than treating it
+as an isolated software experiment on the standby.
+
+| Item | Disposition and reason | Placement |
+| --- | --- | --- |
+| OPT-002-01: window placement and small antenna moves | Assess actual sky visibility, obstructions/glazing, antenna mounting/orientation, interference and cable/splitter health. A small move may help, but two inches is not a guaranteed remedy. Compare candidate locations using reception and timing records over representative satellite geometry, not a single snapshot; preserve shared antenna power. | Phase 3 hardware acceptance; Phase 3A comparison for later moves |
+| OPT-002-02: tos mindist 0.002 | Conditional selection experiment, not an indoor-GPS preset. The pinned default is 0.001 seconds; 0.002 doubles the global minimum distance to 2 ms. It affects selection/intersection and anticlockhop behavior for all sources, not just PPS jitter. A measured high-jitter association can justify investigation, but this does not restore invalid GPS data or repair multipath. Keep the reviewed baseline unless selection logs demonstrate a need. | Phase 3A; accepted host ntp.conf only after comparison |
+| OPT-002-03: tos maxdist 1.5 | No new optimization: 1.5 seconds is already the pinned default synchronization-distance threshold. It is not a GPS fade timer or a guarantee of bridging loss of fix. Preserve validity/aging checks and accepted network fallback rather than increasing tolerances to retain a bad reference. | Phase 3 runtime configuration and loss/recovery acceptance |
+| OPT-002-04: serial SHM time1 0.130 | Do not adopt this value without calibration. time1 is a signed correction in seconds, so the example applies 130 ms; its default is zero. Determine the actual serial SHM unit, protocol/message schedule, baud, GPSD timing behavior and stable bias. It can correct a repeatable serial timestamp bias, not RF reception or variable multipath error. Document reference, sign, uncertainty and before/after results; calibrate serial and PPS paths separately. | Phase 3A; per-node host configuration if justified |
+| OPT-002-05: noselect serial source as fallback | Correct the contradiction: noselect excludes that association from clock selection. It can support diagnostic observation, but is not a selectable fallback. GPSD still uses receiver data to form its timing measurements. Decide explicitly whether serial SHM is diagnostic-only or an accepted lower-precision source; do not remove noselect merely to force GPS selection. | Phase 3 source-selection design and GPS/PPS loss tests |
+| OPT-002-06: center SHM offset using ntpq -p | Useful initial diagnosis, not sufficient calibration evidence. Serial offset is relative to the already disciplined system clock and may reflect UART/receiver message latency. A PPS-disciplined local clock can help compare the serial path, but it does not independently prove GPS/PPS UTC accuracy. Use sustained statistics, receiver time-validity/accuracy reports where available and an independent reference of known uncertainty for absolute claims. | Phase 3A measurement |
+| OPT-002-07: gpsmon and four satellites above SNR 30 | Monitor through the reviewed running GPSD endpoint without opening the live UART independently or issuing receiver-control commands. Use observed versus used satellites, signal-strength units, geometry/fix status, UTC validity and reported time accuracy. Four satellites above 30 is a screening heuristic, not a universal timing/PPS criterion. Verify the exact M8 model/firmware and available timing mode; do not assume every M8 supports survey-in or needs a continuous 3D fix for valid time. | Phase 3 hardware/time acceptance; Phase 3A observation |
+| OPT-002-08: logging versus immediate tuning | First prepare bounded receiver/SHM/NTP logging and a placement baseline, with explicit capture/retention scope. Correlate receiver quality with PPS gaps, SHM freshness, source selection, frequency and client offsets before choosing any calibration or selection change. Accept valid failover/recovery; never count forced GPS selection as success. | Phase 3 baseline logging; Phase 3A evaluation |
+
+Use `/etc/ntp.conf`, the governed source-built runtime path, rather than the
+proposal's distro-package `/etc/ntpsec/ntp.conf`. No numeric calibration, global
+threshold change, receiver-mode change or antenna move is adopted by this
+evaluation. Preserve GPS/PPS, leap/stratum and failover checks when comparing
+any later candidate.
+
+Primary evidence is the pinned NTPsec [tos documentation](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/miscopt.adoc),
+[noselect semantics](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/includes/assoc-options.adoc)
+and SHM driver above, plus pinned GPSD [gpsmon](https://gitlab.com/gpsd/gpsd/-/blob/1d622f5b2c7bf79fc117185be10048e7d4e73c66/man/gpsmon.adoc)
+and [timing guidance](https://gitlab.com/gpsd/gpsd/-/blob/1d622f5b2c7bf79fc117185be10048e7d4e73c66/www/gpsd-time-service-howto.adoc).
+Receiver-specific validity and timepulse behavior must be checked against the
+identified module's u-blox documentation and actual configuration; generic
+M8 or older LEA examples do not select a mode for this hardware.
+
 ### Phase 4: rebuild and accept `j1-svntp`
 
 Repeat the Phase 3 controls and Phase 3A review with `10.1.0.50` and

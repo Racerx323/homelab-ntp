@@ -530,6 +530,42 @@ the maintained repo assets, update HISTORY and repeat affected service/network,
 thermal/power and reboot checks. Restore ineffective or inconclusive changes;
 record deferred candidates without treating them as incomplete mandatory work.
 
+### Antenna quality, serial calibration and fallback
+
+[OPT-002](ntp-architecture-deployment-plan-v1.0.md#opt-002-indoor-antenna-placement-and-shm-calibration)
+reviews indoor/window placement and the proposed SHM/selection changes. Begin
+with scoped evidence collection, not global thresholds or a copied time1.
+Confirm antenna location/model/mounting, splitter/power mapping and cable
+health; identify the actual receiver model/firmware, GPSD endpoint, serial/PPS
+SHM assignments and current host configuration. The antenna is shared, so
+approve any move or reconnection with both services' impact and restoration.
+
+Use pinned GPSD clients through the running daemon for observation. Do not
+open its UART separately or send gpsmon/UBX configuration commands during a
+read-only capture. Collect signal-strength units and used/visible satellites,
+geometry/fix status, time validity and receiver time accuracy where exposed.
+Correlate those records with PPS sequence gaps, SHM timestamps/freshness,
+ntpq source state, loopstats/peerstats/clockstats and client timing. Record load,
+temperature, capture timing and placement so later comparisons are meaningful.
+Protect location/raw receiver records as bounded private evidence. Review
+statistics ownership, retention/rotation and compatible off-host plotting
+before deploying logging; no logging or receiver access is authorized here.
+
+For calibration, establish a repeatable bias and a reference of known quality.
+time1 is in seconds; do not copy 0.130 or center a transient ntpq offset.
+Serial calibration and PPS/antenna-cable timing corrections are separate paths.
+An offset against a PPS-disciplined system can characterize serial timing but
+does not independently validate that PPS source's absolute UTC accuracy.
+Document correction sign/uncertainty and compare after convergence.
+
+The governed configuration path is `/etc/ntp.conf`. mindist/maxdist are global
+selection controls, not receiver sensitivity or loss-of-fix settings. Decide
+whether serial SHM is diagnostic-only (noselect) or selectable at its measured
+precision; noselect cannot provide an NTP selection fallback. Define accepted
+GPS/PPS loss, network fallback, stale-sample rejection and recovery behavior in
+the runtime acceptance bundle. Preserve truthful leap/stratum reporting and
+do not force invalid GPS time to remain selected.
+
 ## Leapfile, monitoring and routine maintenance
 
 ntpleapfetch.service.in is intentionally unresolved until the installed command,
