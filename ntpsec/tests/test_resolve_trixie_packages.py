@@ -361,6 +361,23 @@ class ResolutionTests(unittest.TestCase):
                     'expected_version_lines': [], 'source_files': [str(source)]}
             calls = []
 
+            def assert_environment_restored():
+                def fail_binding():
+                    raise ValueError('binding fixture')
+                apt_pkg = SimpleNamespace(init_config=fail_binding)
+                with patch.object(ENGINE, 'reviewed_sources'), patch.object(ENGINE, 'verify_config'), \
+                        patch.dict(sys.modules, {'apt_pkg': apt_pkg}):
+                    for original in (None, '/fixture/original-apt.conf'):
+                        with self.subTest(apt_config=original), patch.dict(ENGINE.os.environ):
+                            if original is None:
+                                ENGINE.os.environ.pop('APT_CONFIG', None)
+                            else:
+                                ENGINE.os.environ['APT_CONFIG'] = original
+                            failed = ENGINE.run(spec, int(time.time()))
+                            self.assertIn('binding fixture', failed['error'])
+                            self.assertEqual(ENGINE.os.environ.get('APT_CONFIG'), original)
+                            self.assertTrue(failed['workspace_cleaned'])
+
             def query(argv, env, deadline, seconds=60, on_spawn=None):
                 calls.append(argv)
                 output = ('arm64\n' if '--print-architecture' in argv else
@@ -400,6 +417,9 @@ class ResolutionTests(unittest.TestCase):
                     patch.object(ENGINE, 'command', side_effect=query):
                 report = ENGINE.run(spec, int(time.time()))
                 self.assertFalse(work.exists())
+                # Exercise the actual environment assignment, then fail library setup.
+                # A later protected continuity collection must see the caller's environment.
+                assert_environment_restored()
                 with patch.object(ENGINE, 'owned_cleanup', side_effect=ValueError('ownership refusal')):
                     refused = ENGINE.run(spec, int(time.time()))
             self.assertEqual(report['state'], 'held')

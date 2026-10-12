@@ -433,6 +433,7 @@ def run(spec, controller_epoch):
     work_identity = None
     refresh_started = False
     env = dict(inspection.ENV)
+    previous_apt_config = os.environ.get('APT_CONFIG')
 
     def query(label, argv, seconds=60):
         report['current_command'] = {'label': label, 'argv': argv, 'state': 'registered_before_submission'}
@@ -590,6 +591,10 @@ def run(spec, controller_epoch):
             for group in report['groups'].values():
                 group['accepted'] = False
     finally:
+        if previous_apt_config is None:
+            os.environ.pop('APT_CONFIG', None)
+        else:
+            os.environ['APT_CONFIG'] = previous_apt_config
         try:
             report['installed_state_unchanged'] = state_hashes() == baseline
             report['boot_unchanged'] = inspection.read_file('/proc/sys/kernel/random/boot_id').decode().strip() == boot

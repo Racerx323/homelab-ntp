@@ -355,8 +355,8 @@ The v2 snapshot and earlier sealed resolution bind the previous recipe and must
 not be used to satisfy this revised requirement. Preserve those records.
 
 The revised-recipe v3 snapshot is accepted and its verified stage removed.
-Metadata resolution against that accepted snapshot is sealed offline and
-awaiting separate execution approval. Use the checked-in recipe and pinned assets;
+Resolution v3 was held at final continuity and cleaned up; corrected v4 is sealed
+offline and awaiting separate execution approval. Use the checked-in recipe and pinned assets;
 recheck snapshot freshness and bound target inputs before resolution. Review
 dependency closure, exact native simulation delta and continuity before offline
 foundation preparation. This does not authorize reinstalling the accepted
@@ -373,7 +373,8 @@ requires a scoped approval.
 The earlier v2 capture remains a retained record for its previous recipe.
 Use the accepted v3 snapshot for the current foundation requirements, within
 its freshness window and with the bound target inputs rechecked by resolution.
-No fresh metadata resolution or new package transaction has been executed. Fresh source-stage
+Fresh resolution v3 was executed but not accepted; no new package transaction
+has been executed. Fresh source-stage
 transport bindings and complete live installation/runtime profiles remain pending.
 OPERATIONS identifies these gaps; this history does not certify an unattended
 end-to-end installer or a completed deployment. No new live action is authorized
@@ -405,3 +406,31 @@ held, incomplete or changed state requires separately reviewed recovery without
 replay. Live APT lists, installed packages, services and update policy are outside
 this scope. Prior executed evidence remains preserved. Execution approval is the
 next gate; no target contact occurred during preparation.
+
+### October 12: resolution v3 held, cleaned up; corrected v4 prepared
+
+Executed the approved v3 resolution once. Native refresh and simulation returned
+zero, with seven proposed additions, and retained package, boot, protected-input
+and metadata checks reported unchanged state. Final full-snapshot continuity
+failed with `ValueError: unexpected environment override`: the resolver left its
+isolated APT_CONFIG in the worker process, so the protected Debconf collector
+rejected it. Acceptance remains false; the simulation does not authorize installation.
+
+Collection and bound terminal readback both returned matching transport/worker
+status 2. The [held report](/home/aaron/code/.local-evidence/homelab-ntp/current/fresh-foundation-resolution-20261012-v3/held-resolution.json)
+is retained with signed metadata and complete command output. Conditional
+[cleanup](/home/aaron/code/.local-evidence/homelab-ntp/current/fresh-foundation-resolution-20261012-v3/cleanup-result.json)
+returned transport/worker status 0 and removed the exact disposable workspace
+and root-owned stage. No package installation, live APT list refresh, service
+change or reboot occurred. The consumed v3 bundle was preserved and not replayed.
+
+Corrected the repository resolver to restore the previous APT_CONFIG, including
+its absence, in its finally path. Regression coverage exercises the actual
+assignment and failure path with absent and pre-existing values. Protected
+collector checks remain intact. Sealed [v4 review](/home/aaron/code/.local-evidence/homelab-ntp/current/fresh-foundation-resolution-20261012-v4/review.md)
+offline against the same still-fresh accepted snapshot, with unique operation ID
+`foundation-resolution-20261012-v4`. Bundle SHA-256:
+`c2e9918c7fbd00e59b1ed9a4e0d62dc978d797c72ee98e246818667bab30a044`.
+Target and scope remain j2-svntp1, one isolated resolution with conditional
+readback, acceptance and cleanup. Collection expires October 13, 2026 at
+20:30:41 UTC. Separate approval of v4 is the next gate; its execution has not begun.
