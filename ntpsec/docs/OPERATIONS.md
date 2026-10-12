@@ -19,26 +19,29 @@ The applications have not been installed live or configured on the new image.
 | Stage | State | Next requirement |
 | --- | --- | --- |
 | Media and bootstrap | Accepted | Preserve original Debian 11 card and primary/antenna power |
-| Foundation | Original foundation, pps-tools and bc accepted; mDNS prerequisites pending | Fresh snapshot bound to the revised recipe/pins, metadata resolution and exact dependency delta before additional installation |
+| Foundation | Original foundation, pps-tools and bc accepted; revised-recipe v3 snapshot accepted; mDNS prerequisites pending | Seal metadata resolution against v3, then review the exact dependency delta before additional installation |
 | Source candidate | v5 accepted with mDNS disabled | Accept mDNS prerequisites, then a new mDNS-enabled build/acceptance and destination/collision review |
 | Live installation | Pending | New accepted build, reviewed pre-state, explicit metadata, journal and scoped execution |
 | Runtime configuration | Pending | Observed UART/PPS/RTC, accounts, NTP configuration and combined-service cutover |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Pending | Hardware, time, dual-stack clients, monitoring and reboot evidence |
 
-On October 12, the fresh foundation snapshot passed validation with the same
+On October 12, the earlier v2 foundation snapshot passed validation with the same
 679 package records, 197 protected inputs and eight configuration directories.
 Its root-owned capture stage was cleaned up. The subsequent mDNS requirement
-changes the foundation recipe: prepare a new hash-bound capture, then metadata
-resolution. The previous capture authorizes no package changes and cannot bind
+changed the foundation recipe, requiring a new hash-bound capture before metadata
+resolution. The v2 capture authorizes no package changes and cannot bind
 the revised recipe.
 The exact snapshot hash and retained execution outcome are recorded in HISTORY.
 
 The [v3 capture review](/home/aaron/code/.local-evidence/homelab-ntp/current/fresh-foundation-preflight-20261012-v3/review.md)
-is prepared and validated offline against the revised recipe and pinned manifest.
-Execution approval is pending for one collection with conditional terminal
-readback and cleanup. Expected identity/key values come from retained evidence;
-the live identity checks must pass before collection. No new snapshot is accepted.
+was approved and executed once against the revised recipe and pinned manifest.
+Identity checks, terminal readback and full snapshot validation passed;
+the verified root-owned stage was removed. The accepted snapshot retains 679
+package records, 197 protected inputs and eight configuration directories.
+Its hash and receipts are recorded in HISTORY. Next seal metadata resolution
+against this accepted snapshot and obtain its separate execution approval;
+capture approval does not authorize metadata refresh or package installation.
 
 There is no completed unattended end-to-end installer yet. Foundation preparation
 now uses a checked-in recipe, fresh target snapshot and accepted combined

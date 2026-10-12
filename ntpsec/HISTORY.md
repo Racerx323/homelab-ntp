@@ -14,7 +14,7 @@ live inspection.
 | --- | --- | --- |
 | Rebuilt node | Former j1-svntp1 renamed j2-svntp1; spare-card first boot accepted | Full hardware/time/network acceptance |
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; Ethernet DHCP 10.1.0.137; matching console/SSH key | Fixed dual-stack service addresses; Wi-Fi disablement |
-| Foundation | 679 package records; original foundation plus pps-tools and bc accepted; controls cleaned up | Fresh snapshot/resolution and exact mDNS prerequisite delta before additional installation |
+| Foundation | 679 package records; original foundation plus pps-tools and bc accepted; revised-recipe v3 snapshot accepted and capture stage removed | Metadata resolution and exact mDNS prerequisite delta before additional installation |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; upstream tests/native staging and 159-entry manifest accepted with mDNS disabled | New mDNS-enabled build/acceptance, then live installation and activation |
 | Runtime | Candidate only; no new ntp.conf or live application deployment | GPS/PPS/RTC, accounts, combined service, leap maintenance |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
@@ -317,6 +317,26 @@ the new operation verifies identity live before collection. Preparation and
 validation were offline. No target contact, new capture, metadata refresh or
 package action occurred; prior executed evidence is preserved.
 
+### October 12: revised foundation snapshot v3 accepted and cleaned up
+
+Executed the approved v3 bundle once on j2-svntp1. Collection, bound terminal
+readback and cleanup each returned matching transport/worker status 0.
+The strict host-key and target identity checks passed; the full snapshot
+validator accepted 679 package records, 197 protected inputs and eight
+configuration directories. No active ntpd/gpsd process was observed and the
+password database was not read.
+
+Snapshot SHA-256:
+`bb1906d5fa9f62263655654e1fe3c27fe560bbb5577470fad4f9196d72cbb6c6`.
+Collected at `2026-10-12T20:30:41Z` against the current recipe/pinned-manifest
+binding. [Acceptance](/home/aaron/code/.local-evidence/homelab-ntp/current/fresh-foundation-preflight-20261012-v3/acceptance.json)
+and [cleanup receipt](/home/aaron/code/.local-evidence/homelab-ntp/current/fresh-foundation-preflight-20261012-v3/cleanup-result.json)
+are retained with complete controller/transport evidence and the executed
+bundle. Cleanup verified and removed only the approved root-owned stage.
+No package refresh/install, service/policy/update change, sudoers change or
+reboot was performed. Metadata resolution remains unexecuted and requires
+its own sealed review and approval.
+
 ## Exact resume point
 
 The October 12 mDNS requirement is implemented in repository recipes,
@@ -331,12 +351,11 @@ Eight Avahi/DNS-SD development/runtime requirements were pinned from the
 retained signature-verified Trixie index, bringing the foundation manifest to
 56 requirements. Fresh dependency resolution must confirm their closure and
 calculate the exact delta; the prior zero-delta expectation no longer applies.
-The earlier snapshot and sealed resolution bind the previous recipe and must
+The v2 snapshot and earlier sealed resolution bind the previous recipe and must
 not be used to satisfy this revised requirement. Preserve those records.
 
-The revised-recipe v3 capture bundle is prepared and validated offline. Obtain
-hash-bound approval for one capture and conditional terminal readback/cleanup,
-execute it once, and accept the validated snapshot. Then seal metadata resolution against that
+The revised-recipe v3 snapshot is accepted and its verified stage removed.
+Prepare and seal metadata resolution against that
 accepted snapshot. Use the checked-in recipe and pinned assets;
 recheck snapshot freshness and bound target inputs before resolution. Review
 dependency closure, exact native simulation delta and continuity before offline
@@ -351,9 +370,9 @@ mail/cron, hardware, dual-stack/DNS/UniFi and reboot acceptance follow their
 reviewed stages. Earlier approvals have been consumed; further target contact
 requires a scoped approval.
 
-The earlier v2 read-only snapshot capture is accepted for its previous recipe
-and its stage was cleaned up. The revised-recipe v3 capture remains unexecuted
-and is not accepted.
+The earlier v2 capture remains a retained record for its previous recipe.
+Use the accepted v3 snapshot for the current foundation requirements, within
+its freshness window and with the bound target inputs rechecked by resolution.
 No fresh metadata resolution or new package transaction has been executed. Fresh source-stage
 transport bindings and complete live installation/runtime profiles remain pending.
 OPERATIONS identifies these gaps; this history does not certify an unattended
