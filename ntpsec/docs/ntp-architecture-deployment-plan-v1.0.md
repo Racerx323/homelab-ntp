@@ -155,6 +155,13 @@ revisions' build descriptions and the observed Trixie environment, not from an
 APT NTPsec/GPSD application dependency list. Reject an APT solution introducing
 conflicting application packages.
 
+Prepare each node's package transaction from the checked-in foundation recipe,
+pinned assets and a fresh protected target snapshot. Bind dependency resolution
+to that snapshot and compare exact before/after inventories. Historical bundles
+are execution records; they cannot supply a new node's baseline. The
+[operations recipe](OPERATIONS.md#package-foundation-and-installation-controls)
+defines capture, resolution, staging, acceptance and cleanup.
+
 Each application release manifest must bind source origin/revision and archive
 or tree integrity, upstream/adapted script hashes and diff, toolchain/dependency
 versions, build configuration/options and test logs, install prefix,

@@ -7,7 +7,7 @@ observations and the next deployment gate. Entries do not authorize live action.
 
 ## Current deployment state
 
-Last reconciled: October 10, 2026. These are retained observations, not a new
+Last reconciled: October 12, 2026. These are retained observations, not a new
 live inspection.
 
 | Component | Accepted state | Still pending |
@@ -177,7 +177,22 @@ requirements without an APT install call. Tests include preparation in an isolat
 repository with no historical evidence, different inventory sizes, partial/zero
 additions, dependency/control conflicts, drift and exclusive output.
 
+### October 12: fresh capture transport prepared offline
+
+Confirmed the foundation refactor was committed and pushed as `5eb1aeb` before
+preparing the next action. Architecture, operations and history agree on the
+accepted foundation/source candidate and pending live application deployment.
+The reusable preflight transport now seals all capture inputs, stages them as
+protected root-owned files, collects once, retains terminal evidence and supports
+bound readback/cleanup. Offline tests cover success, held results, drift, busy
+staging, missing receipts and replay rejection. No new target contact occurred.
+
 ## Exact resume point
+
+Seal and obtain hash-bound approval for the fresh j2-svntp1 snapshot capture,
+conditional terminal readback and cleanup. Review and accept its snapshot before
+sealing the separate metadata resolution operation against that hash. This
+validates fresh preparation and does not reinstall the accepted foundation.
 
 Prepare a separately approved destination/collision inspection and live source
 installation bundle with explicit metadata, pre-state, backups, rollback and
@@ -186,7 +201,7 @@ mail/cron, hardware, dual-stack/DNS/UniFi and reboot acceptance follow their
 reviewed stages. Earlier approvals have been consumed; further target contact
 requires a scoped approval.
 
-The read-only snapshot collector is implemented and tested offline; no target
+The read-only snapshot collector and transport are implemented and tested offline; no target
 capture, metadata refresh or new transaction was executed. Fresh source-stage
 transport bindings and complete live installation/runtime profiles remain pending.
 OPERATIONS identifies these gaps; this history does not certify an unattended

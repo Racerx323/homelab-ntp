@@ -191,6 +191,19 @@ Fresh preparation follows this sequence:
    snapshot_sha256, asset_manifest_sha256 and report. Hash-bind both evidence
    files in the offline preparation command below.
 
+Use `run-foundation-preflight.py seal` to prepare the capture bundle from repository
+inputs, a pinned `known_hosts`, target identity and a unique operation ID. Its
+private output contains the complete review, member manifest and archive hash.
+After hash-bound approval, `execute --mode collect` creates an exclusive root-owned
+stage and collects once. `--mode readback` retrieves the same terminal snapshot;
+the checked-in validator must pass before accepting it. `--mode cleanup` requires
+retained terminal readback and removes only the verified stage. Keep complete
+controller output and the accepted snapshot after cleanup. Busy, incomplete or
+drifted staging is preserved for reviewed recovery; never replay collection.
+No temporary sudoers fragment is needed with the existing operator-managed sudo.
+Resolution is a subsequent sealed operation bound to the accepted snapshot hash;
+capture approval does not authorize metadata refresh or package installation.
+
 The snapshot contract is schema=1, recipe_sha256 and collected_epoch; observed
 hostname/kernel/boot_id/os/architecture/machine/caller/ssh; complete baseline
 package/version/status mapping; inputs with path/hash/owner/group/mode or explicit
