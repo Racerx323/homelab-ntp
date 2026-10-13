@@ -636,8 +636,11 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    subsystem links and the device-tree root while retaining exact AMBA driver
    and registry checks. Save partial ancestry and the rejected link before a
    hold. These corrections are tested offline. Fresh baseline v3 was accepted
-   and cleaned on October 13; hardware v4 is prepared against that baseline
-   and requires separate execution approval.
+   and cleaned on October 13. Hardware v4 passed the UART ancestry check but
+   held at the assumed PPS device-tree path. Its candidate boot is retained
+   unaccepted for a separately approved read-only PPS/RTC hierarchy inspection
+   before correction or recovery. Inspect class and platform-driver mappings
+   without opening devices or reading PPS samples/RTC clock attributes.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Hardware/time-service/client acceptance remains pending.

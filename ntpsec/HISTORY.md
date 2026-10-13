@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation/readback/payload cleanup accepted; runtime discovery and configuration pending |
-| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware v3 recovered; fresh baseline v3 accepted; corrected hardware v4 awaiting execution approval; account/runtime unstarted |
+| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware v4 candidate retained unaccepted at PPS path hold; read-only PPS/RTC inspection next; account/runtime unstarted |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1315,3 +1315,39 @@ dual-stack/device-metadata acceptance and conditional readback/recovery/cleanup.
 Console/media readiness is required before reboot. Account/runtime setup and
 clock-service activation remain pending hardware acceptance and their own
 execution approvals.
+
+### October 13: hardware v4 held at PPS path; candidate retained
+
+Executed approved hardware v4 once. Boot changes and controlled reboot
+completed. The corrected UART ancestry check passed: serial0 resolves to
+ttyAMA0 through serial-base port/controller layers to the registered PL011
+AMBA device with matching device-tree compatibility. Retained network/native
+checks passed during the bounded probes. Acceptance then held because
+`/sys/class/pps/pps0/device/of_node/compatible` does not exist. PPS/RTC metadata
+acceptance and separate IPv4/IPv6 SSH acceptance proofs did not complete.
+
+The approved conditional readback preserved the actual candidate-boot UART
+chain and error evidence. Candidate boot configuration remains applied and
+unaccepted. No recovery reboot, restoration or cleanup was performed; keep the
+live hierarchy available for diagnosis before recovery. Protected originals,
+sealed inputs and journals remain intact. Existing hardware recovery modes
+remain available under v4's approval. Account/runtime setup and clock-service
+activation remain unstarted.
+
+Prepared `host-timing-inspection-20261013-v1` offline using the existing
+protected registry-inspection controller. Bind the exact v4 readback state,
+candidate boot and candidate boot-file hashes. One capture records bounded
+PPS/RTC class ancestry, device/driver/subsystem/device-tree links, bound
+pps-gpio platform devices and fixed GPIO controller metadata twice. Only
+metadata properties are read: no device opens, PPS assert/clear samples, RTC
+clock attributes, sysfs writes, driver binding, service changes or reboot.
+Tests cover virtual PPS classes without a device link, platform mappings,
+RTC ancestry, excluded sample/clock reads, path/size bounds, candidate drift
+and stable capture acceptance. No new target contact occurred during preparation.
+
+Next approve the [candidate PPS/RTC inspection](/home/aaron/code/.local-evidence/homelab-ntp/current/host-timing-inspection-20261013-v1/review.md)
+and its `sealing.json` SHA-256 for one capture with conditional readback and
+cleanup of only the new diagnostic stage. This does not accept hardware or
+clean up the retained hardware stage. Use the observed hierarchy to determine
+the next correction or execute the already-approved v4 recovery; do not replay
+consumed start/reboot/verify/readback modes.

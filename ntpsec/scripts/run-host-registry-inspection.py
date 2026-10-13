@@ -65,7 +65,8 @@ def validate(spec, files):
     old = json.loads(files['hardware-spec.json'])
     receipt = json.loads(files['hardware-recovery.json'])
     uart = spec.get('operation') == 'host-uart-inspection'
-    if (spec['schema'] != 1 or spec['operation'] not in ('host-registry-inspection', 'host-baseline', 'host-uart-inspection')
+    timing = spec.get('operation') == 'host-timing-inspection'
+    if (spec['schema'] != 1 or spec['operation'] not in ('host-registry-inspection', 'host-baseline', 'host-uart-inspection', 'host-timing-inspection')
             or not re.fullmatch('[a-z][a-z0-9-]{0,47}', spec['operation_id'])
             or spec['stage'] != '/var/lib/ntp-inspect-'+spec['operation_id']
             or not re.fullmatch('/var/lib/ntp-host-[a-z][a-z0-9-]{0,47}', old['stage'])
@@ -74,7 +75,7 @@ def validate(spec, files):
             or spec['old_ipv4'] != old['old_ipv4']
             or spec['endpoints'] != [old['recipe'][key].split('/')[0] for key in ('ipv4_address', 'ipv6_address')]
             or receipt['bundle_sha256'] != spec['hardware_bundle_sha256']
-            or receipt['result']['phase'] != ('recovered' if uart else 'recovery_files_restored')
+            or receipt['result']['phase'] != ('reboot_submitted' if timing else 'recovered' if uart else 'recovery_files_restored')
             or spec['members'].keys() != inputs(spec)
             or any(sha(files[n]) != v for n, v in spec['members'].items())
             or not 0 < spec['expires_epoch']-spec['prepared_epoch'] <= 86400):
@@ -85,7 +86,76 @@ def validate(spec, files):
                  or receipt['result'].get('recovered_boot_id') != spec['recovered_boot_id']
                  or not re.fullmatch('[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}', spec['recovered_boot_id'])):
         raise ValueError('completed hardware recovery/boot binding required')
+    if timing and (receipt['result']['uart_observation']['boot_id'] != spec['candidate_boot_id']
+                   or not re.fullmatch('[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}', spec['candidate_boot_id'])):
+        raise ValueError('candidate hardware boot binding required')
     return old
+
+
+def timing_metadata(sysroot=Path('/sys')):
+    """Inspect PPS/RTC hierarchy and properties; exclude sample and clock reads."""
+    def bounded(path):
+        if path.is_symlink() or not path.is_file():
+            raise ValueError('regular timing property required')
+        with path.open('rb') as stream:
+            raw = stream.read(4097)
+        if len(raw) > 4096:
+            raise ValueError('timing property bound exceeded')
+        return base64.b64encode(raw).decode()
+
+    def chain(path):
+        node = path.resolve(strict=True)
+        if not node.is_relative_to(sysroot/'devices'):
+            raise ValueError('timing device escaped sysfs devices')
+        result = []
+        while node != sysroot/'devices':
+            if len(result) >= 16:
+                raise ValueError('timing ancestry depth exceeded')
+            row = {'path': str(node), 'links': {}, 'properties': {}}
+            for name in ('device', 'driver', 'subsystem', 'of_node'):
+                link = node/name
+                if not link.is_symlink():
+                    continue
+                target = link.resolve(strict=True)
+                roots = {'device': [sysroot/'devices'], 'driver': [sysroot/'bus'],
+                         'subsystem': [sysroot/'bus', sysroot/'class'],
+                         'of_node': [sysroot/'firmware/devicetree/base']}[name]
+                if not any(target.is_relative_to(root) for root in roots):
+                    raise ValueError('timing link escaped approved tree')
+                row['links'][name] = str(target)
+                if name == 'of_node':
+                    for prop in ('compatible','status','name','gpios','phandle','assert-falling-edge'):
+                        if (target/prop).exists():
+                            row['properties'][prop] = bounded(target/prop)
+            result.append(row); node = node.parent
+        return result
+
+    result = {'classes': {}, 'pps_platform': {}, 'gpio_controller': {}}
+    for kind, pattern in [('pps',r'pps[0-9]+'), ('rtc',r'rtc[0-9]+')]:
+        directory = sysroot/'class'/kind
+        entries = sorted(directory.iterdir()) if directory.exists() else []
+        if len(entries) > 16:
+            raise ValueError('timing class entry bound exceeded')
+        for path in entries:
+            if not re.fullmatch(pattern,path.name):
+                raise ValueError('unexpected timing class entry')
+            attrs = ('name','dev','path','mode') if kind == 'pps' else ('name','dev')
+            result['classes'][path.name] = {'ancestors': chain(path), 'attributes':
+                {n: bounded(path/n) for n in attrs if (path/n).exists()}}
+    directory = sysroot/'bus/platform/drivers/pps-gpio'
+    entries = sorted(directory.iterdir()) if directory.exists() else []
+    if len(entries) > 32:
+        raise ValueError('PPS driver entry bound exceeded')
+    for path in entries:
+        if path.name not in ('bind','unbind','uevent','module') and path.is_symlink():
+            result['pps_platform'][path.name] = chain(path)
+    gpio = sysroot/'firmware/devicetree/base/soc/gpio@7e200000'
+    for prop in ('compatible','phandle'):
+        if (gpio/prop).exists():
+            result['gpio_controller'][prop] = bounded(gpio/prop)
+    if len(encoded(result)) > 1024*1024:
+        raise ValueError('timing metadata aggregate bound exceeded')
+    return result
 
 
 def uart_metadata(sysroot=Path('/sys'), devroot=Path('/dev')):
@@ -186,6 +256,8 @@ def collect(h, spec, files):
         boot = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
         if spec.get('operation') == 'host-uart-inspection' and boot != spec['recovered_boot_id']:
             raise ValueError('recovered UART inspection boot changed')
+        if spec.get('operation') == 'host-timing-inspection' and boot != spec['candidate_boot_id']:
+            raise ValueError('candidate timing inspection boot changed')
         report = {'schema': 1, 'hostname': socket.gethostname(), 'kernel': os.uname().release,
                   'boot_id': boot, 'collected_epoch': int(time.time()),
                   'retained': {n: base64.b64encode(v).decode() for n, v in retained.items()},
@@ -222,6 +294,13 @@ def collect(h, spec, files):
         for family in ('-4', '-6'):
             query('routes'+family, ['/usr/sbin/ip', '-j', family, 'route', 'show'])
         query('cmdline', ['/usr/bin/cat', '/proc/cmdline'])
+        if spec.get('operation') == 'host-timing-inspection':
+            report['timing'] = timing_metadata()
+            if report['timing'] != timing_metadata():
+                raise ValueError('timing metadata changed during capture')
+            for path, name in zip(BOOT, ('config-candidate.txt','cmdline-candidate.txt')):
+                if report['boot_files'][path]['sha256'] != old['members'][name]:
+                    raise ValueError('candidate boot-file drift')
         if spec.get('operation') == 'host-uart-inspection':
             report['uart'] = uart_metadata()
             if report['uart'] != uart_metadata():
@@ -323,9 +402,16 @@ def prepare(bundle, checksum):
 def seal(args):
     c = module('run-foundation-preflight.py')
     prior = module('run-host-configuration.py')
-    old, previous = prior.prepare(args.hardware_dir/'host-configuration.tar', args.hardware_sha256)
+    timing = getattr(args, 'timing', False)
+    if timing:
+        raw = c.private_file(args.hardware_dir/'host-configuration.tar',32*1024**2)
+        if sha(raw) != args.hardware_sha256:
+            raise ValueError('exact candidate hardware archive required')
+        previous = archive_inputs(raw); old = json.loads(previous['spec.json'])
+    else:
+        old, previous = prior.prepare(args.hardware_dir/'host-configuration.tar', args.hardware_sha256)
     uart = getattr(args, 'uart', False)
-    recovery = c.private_file(args.hardware_dir/('cleanup-result.json' if uart else 'recover-result.json'))
+    recovery = c.private_file(args.hardware_dir/('readback-result.json' if timing else 'cleanup-result.json' if uart else 'recover-result.json'))
     files = {'worker.py': Path(__file__).read_bytes(), 'helper.py': (ROOT/'scripts/foundation-install.py').read_bytes(),
              'hardware-spec.json': previous['spec.json'], 'hardware-recovery.json': recovery,
              'known_hosts': previous['known_hosts'], 'tests.py': (ROOT/'tests/test_host_registry_inspection.py').read_bytes(),
@@ -335,12 +421,14 @@ def seal(args):
         files[label+'.md'] = (ROOT/path).read_bytes()
     epoch = int(time.time())
     spec = {k: old[k] for k in ('hostname', 'kernel', 'ssh', 'old_ipv4')}
-    spec.update(schema=1, operation='host-uart-inspection' if uart else 'host-registry-inspection', operation_id=args.operation_id,
+    spec.update(schema=1, operation='host-timing-inspection' if timing else 'host-uart-inspection' if uart else 'host-registry-inspection', operation_id=args.operation_id,
                 stage='/var/lib/ntp-inspect-'+args.operation_id, prepared_epoch=epoch, expires_epoch=epoch+86400,
                 endpoints=[old['recipe'][k].split('/')[0] for k in ('ipv4_address', 'ipv6_address')],
                 hardware_bundle_sha256=args.hardware_sha256, members={n: sha(files[n]) for n in INPUTS})
     if uart:
         spec['recovered_boot_id'] = json.loads(recovery)['result']['recovered_boot_id']
+    if timing:
+        spec['candidate_boot_id'] = json.loads(recovery)['result']['uart_observation']['boot_id']
     validate(spec, files)
     files['spec.json'] = encoded(spec)
     files['review.md'] = (f'# Read-only registry inspection\n\nTarget: {spec["hostname"]}. Operation: {args.operation_id}.\n'
@@ -381,6 +469,24 @@ def seal(args):
             'This is the restored boot, not the failed candidate boot: it cannot establish the earlier live mapping. '
             'No corrective mutation or reboot is included. Incomplete captures remain preserved; recovery consists '
             'only of conditional terminal readback and hash-bound cleanup after diagnostic acceptance.\n').encode()
+    if timing:
+        files['review.md'] = files['review.md'].replace(b'Read-only registry inspection',b'Read-only candidate PPS/RTC inspection')
+        files['review.md'] = files['review.md'].replace(b'and recovered state.',b'and held candidate state.')
+        files['review.md'] = files['review.md'].replace(
+            b'Recovery continuation requires these findings and separate approval.',
+            b'The retained hardware recovery modes remain covered only by their original approval.')
+        files['review.md'] += (
+            '\nTiming scope: bind the exact candidate boot from hardware readback and require both boot files '
+            'to match the sealed candidates. Capture PPS/RTC class paths, parent chains, driver/subsystem/device '
+            'links, device-tree compatible/status/name/gpios/phandle/edge properties, PPS name/dev/path/mode '
+            'and RTC name/dev metadata, bound pps-gpio platform devices and the fixed Pi 4 GPIO controller '
+            'compatible/phandle. Read twice and require stable metadata. No device opens, PPS assert/clear '
+            'samples, RTC date/time/since_epoch reads, driver binding, module loading, service changes or reboot. '
+            'Limit 16 class entries, 32 driver entries, 16 ancestors, 4096 bytes per property and 1 MiB timing metadata. '
+            'The existing candidate boot remains unaccepted; this stage does not accept hardware or recover it. '
+            'Recovery here means conditional terminal readback; incomplete captures remain preserved. '
+            'Cleanup removes only this diagnostic stage after acceptance. Original hardware recovery modes '
+            'remain separately retained under their existing approval.\n').encode()
     files['manifest.json'] = encoded({n: sha(v) for n, v in files.items()})
     os.umask(0o077)
     args.output.mkdir(mode=0o700)
@@ -424,6 +530,11 @@ def accept(spec, result):
             or report['retained_sha256'] != {n: sha(base64.b64decode(v, validate=True)) for n, v in report['retained'].items()}
             or any(q['status'] != 0 for q in report['queries'].values())):
         raise ValueError('complete bound diagnostic report required')
+    if spec.get('operation') == 'host-timing-inspection':
+        if (report['boot_id'] != spec['candidate_boot_id']
+                or set(report['timing']) != {'classes','pps_platform','gpio_controller'}
+                or len(encoded(report['timing'])) > 1024*1024):
+            raise ValueError('complete candidate timing metadata required')
     if spec.get('operation') == 'host-uart-inspection':
         if (report['boot_id'] != spec['recovered_boot_id']
                 or set(report['uart']) != {'serial0', 'ttys', 'amba_drivers', 'amba_devices'}
@@ -700,7 +811,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='action', required=True)
     p = sub.add_parser('seal')
-    p.add_argument('--uart', action='store_true', help='Inspect UART/sysfs after completed hardware recovery')
+    kind = p.add_mutually_exclusive_group()
+    kind.add_argument('--uart', action='store_true', help='Inspect UART/sysfs after completed hardware recovery')
+    kind.add_argument('--timing', action='store_true', help='Inspect PPS/RTC on a held candidate boot')
     p.add_argument('--hardware-dir', type=Path, required=True); p.add_argument('--hardware-sha256', required=True)
     p.add_argument('--operation-id', required=True); p.add_argument('--output', type=Path, required=True)
     p = sub.add_parser('execute')

@@ -186,6 +186,75 @@ class UartBindings(Bindings):
                 self.state[field] = old; self.bind()
 
 
+class TimingBindings(Bindings):
+    def setUp(self):
+        super().setUp()
+        self.spec.update(operation='host-timing-inspection',candidate_boot_id=UUID)
+        self.files['hardware-recovery.json']=m.encoded({'bundle_sha256':'a'*64,
+            'result':{'phase':'reboot_submitted','uart_observation':{'boot_id':UUID}}})
+        self.spec['members']={n:m.sha(v) for n,v in self.files.items()}
+
+    def test_changed_candidate_boot_rejected(self):
+        with self.assertRaisesRegex(ValueError,'candidate hardware boot'):
+            m.validate(dict(self.spec,candidate_boot_id=OTHER),self.files)
+
+
+class TimingMetadata(unittest.TestCase):
+    def setUp(self):
+        self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
+        self.root=Path(self.temp.name)
+        for name in ('devices/virtual/pps/pps0','devices/platform/pps','class/pps','class/rtc',
+                     'bus/platform/drivers/pps-gpio','firmware/devicetree/base/pps'):
+            (self.root/name).mkdir(parents=True)
+        self.pps=self.root/'devices/virtual/pps/pps0'
+        (self.root/'class/pps/pps0').symlink_to(self.pps)
+        (self.pps/'subsystem').symlink_to(self.root/'class/pps')
+        (self.pps/'name').write_text('pps-gpio\n');(self.pps/'dev').write_text('246:0\n')
+        node=self.root/'devices/platform/pps'
+        (self.root/'bus/platform/drivers/pps-gpio/pps').symlink_to(node)
+        (node/'driver').symlink_to(self.root/'bus/platform/drivers/pps-gpio')
+        (node/'of_node').symlink_to(self.root/'firmware/devicetree/base/pps')
+        (self.root/'firmware/devicetree/base/pps/compatible').write_bytes(b'pps-gpio\0')
+        rtc=self.root/'devices/platform/i2c/1-0052/rtc/rtc0';rtc.mkdir(parents=True)
+        (self.root/'class/rtc/rtc0').symlink_to(rtc)
+        (rtc/'name').write_text('rtc-rv3028 1-0052\n')
+        # Trap files must never be read by the metadata-only collector.
+        for path in (self.pps/'assert',self.pps/'clear',rtc/'date',rtc/'time',rtc/'since_epoch'):
+            path.write_text('DO NOT READ')
+
+    def test_virtual_pps_and_platform_parent_without_clock_reads(self):
+        original=Path.open
+        def guarded(path,*args,**kwargs):
+            if path.name in ('assert','clear','date','time','since_epoch'):
+                raise AssertionError('sample or clock read')
+            return original(path,*args,**kwargs)
+        with patch.object(Path,'open',guarded):data=m.timing_metadata(self.root)
+        self.assertEqual(set(data['classes']),{'pps0','rtc0'})
+        self.assertEqual(set(data['pps_platform']),{'pps'})
+        self.assertIn('compatible',data['pps_platform']['pps'][0]['properties'])
+        self.assertNotIn('device',data['classes']['pps0']['ancestors'][0]['links'])
+
+    def test_escaped_link_rejected(self):
+        (self.pps/'device').symlink_to('/tmp')
+        with self.assertRaisesRegex(ValueError,'escaped'):
+            m.timing_metadata(self.root)
+
+    def test_unbounded_property_rejected(self):
+        (self.pps/'name').write_bytes(b'x'*4097)
+        with self.assertRaisesRegex(ValueError,'property bound'):
+            m.timing_metadata(self.root)
+
+    def test_nonregular_property_rejected(self):
+        (self.pps/'name').unlink();(self.pps/'name').symlink_to('/dev/zero')
+        with self.assertRaisesRegex(ValueError,'regular timing'):
+            m.timing_metadata(self.root)
+
+    def test_class_bound(self):
+        for i in range(1,17):(self.root/f'class/pps/pps{i}').symlink_to(self.pps)
+        with self.assertRaisesRegex(ValueError,'entry bound'):
+            m.timing_metadata(self.root)
+
+
 class UartMetadata(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
@@ -296,6 +365,44 @@ class UartCapture(Capture):
         with patch.object(m.subprocess, 'run') as query, self.assertRaisesRegex(ValueError, 'boot changed'):
             m.collect(self.h, binding, self.files)
         query.assert_not_called()
+
+
+class TimingCapture(Capture):
+    def candidate(self):
+        boot=Path('/proc/sys/kernel/random/boot_id').read_text().strip()
+        self.state={'phase':'reboot_submitted','uart_observation':{'boot_id':boot}}
+        (self.root/'state.json').write_bytes(m.encoded(self.state))
+        self.files['hardware-recovery.json']=m.encoded({'result':self.state})
+        self.old['members']={}
+        for path,name in zip(self.boot,('config-candidate.txt','cmdline-candidate.txt')):
+            data=Path(path).read_bytes();(self.root/name).write_bytes(data);(self.root/name).chmod(0o600)
+            self.old['members'][name]=m.sha(data)
+        self.files['hardware-spec.json']=m.encoded(self.old)
+        (self.root/'spec.json').write_bytes(self.files['hardware-spec.json'])
+        return {'operation':'host-timing-inspection','candidate_boot_id':boot}
+
+    def test_candidate_metadata_capture_and_acceptance(self):
+        binding=self.candidate();data={'classes':{},'pps_platform':{},'gpio_controller':{}}
+        with patch.object(m,'timing_metadata',return_value=data) as capture,patch.object(m.subprocess,'run',side_effect=self.command):
+            report=m.collect(self.h,binding,self.files)
+        self.assertEqual(capture.call_count,2)
+        binding.update(hostname=report['hostname'],kernel=report['kernel'])
+        result={'phase':'captured','report':report,'terminal_sha256':m.sha(m.encoded(report))}
+        self.assertEqual(m.accept(binding,result)['state'],'diagnostic_accepted')
+        with self.assertRaisesRegex(ValueError,'candidate timing'):
+            m.accept(dict(binding,candidate_boot_id=OTHER),result)
+
+    def test_candidate_file_drift_holds(self):
+        binding=self.candidate();Path(self.boot[0]).write_text('drift')
+        with patch.object(m,'timing_metadata',return_value={}),patch.object(m.subprocess,'run',side_effect=self.command):
+            with self.assertRaisesRegex(ValueError,'candidate boot-file drift'):
+                m.collect(self.h,binding,self.files)
+
+    def test_metadata_drift_holds(self):
+        binding=self.candidate()
+        with patch.object(m,'timing_metadata',side_effect=[{}, {'changed':True}]),patch.object(m.subprocess,'run',side_effect=self.command):
+            with self.assertRaisesRegex(ValueError,'timing metadata changed'):
+                m.collect(self.h,binding,self.files)
 
 
 class Lifecycle(unittest.TestCase):
