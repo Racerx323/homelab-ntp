@@ -816,6 +816,10 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    switching must be reconstructed before interpreting PPS samples as settled
    error. Volatile packet counters absent from saved queries require a later
    explicitly scoped capture; do not infer their values after daemon recovery.
+   A follow-up runtime diagnostic must define an early functional gate, bounded
+   NTS packet counters and request/response observation, and recovery before
+   activation. Separate startup settling from final offset/jitter acceptance;
+   a short recovered trial alone does not justify calibration or relaxed limits.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.

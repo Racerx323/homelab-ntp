@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; retained NTS/PPS diagnostic review prepared offline, execution pending |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; active NTS packet/counter and bounded settling diagnostics remain pending |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -25,6 +25,34 @@ The current accepted source stage is
 `/home/ama/.ntp-source-build-mdns-20261012-v1`; the earlier v5 stage is preserved.
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
+
+## Retained NTS/PPS diagnostics accepted — October 13, 2026
+
+Executed the approved retained-data capture once. Both management endpoints
+returned matching terminal evidence; diagnostic acceptance and cleanup completed.
+The [private outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-retained-20261013-v1/outcome.json)
+binds the approved bundle and result hashes. All source bytes and captured
+artifacts remain preserved. No daemon, configuration, receiver or firewall
+change occurred.
+
+Retrieved 287 retrospective journal records, five saved journal probes and six
+statistics files: matching current/dated copies of loopstats, peerstats and
+clockstats. The two distinct loopstats updates are 308 seconds apart: offset
+changed from -83.814356 ms with zero frequency to +45.720453 ms with
+148.443029 ppm. This supports startup frequency estimation as a hypothesis;
+it does not establish settled PPS performance. Peer statistics include both
+SHM0 and SHM2. No refclock mapping, calibration or timing threshold changed.
+
+The journal confirms successful NTS-KE for all three upstreams. Saved probes
+still show zero upstream reach, and no retained NTS packet rejection counters
+or wire capture locate the cause. Current observations show timeservice absent
+and inactive, bootstrap timesyncd active, and `/etc/ntp.conf` absent, consistent
+with the earlier recovery. Diagnostic acceptance is not time-service acceptance.
+
+Next: prepare a separately reviewed bounded runtime diagnostic for NTS packet
+counters and request/response observation, with an early functionality gate and
+explicit startup-settling versus final timing checks. Define recovery and preserve
+the current evidence before authorizing any service start or active probe.
 
 ## Retained NTS/PPS diagnostic review prepared — October 13, 2026
 

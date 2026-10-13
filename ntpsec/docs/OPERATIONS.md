@@ -386,17 +386,27 @@ from these samples. Do not replay v3.
 ### Retained NTS/PPS diagnostics after v3
 
 The [retained NTS/PPS review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-retained-20261013-v1/review.md)
-is prepared offline for separate execution approval; adjacent `sealing.json`
-identifies its digest. It binds the executed v3 archive, specification, matching
-recovered-state readbacks and cleanup. No node/controller contact occurred.
+was executed once under its sealed approval. Matching dual-stack readbacks
+accepted diagnostic retrieval; cleanup preserved the source and diagnostic
+artifacts. The adjacent `outcome.json` binds acceptance, cleanup and result
+hashes. It does not accept time service or authorize another trial.
+
+The capture recovered 287 journal records, five saved journal probes and six
+statistics files (current/dated copies of three streams). Two loopstats updates
+308 seconds apart show frequency changing from zero to 148.443029 ppm; this
+supports, but does not prove, startup frequency estimation. All three NTS-KE
+exchanges succeeded. Missing packet rejection counters and wire observations
+leave the cause of zero upstream reach unresolved. Timeservice and `/etc/ntp.conf`
+remain absent; bootstrap timesyncd is active. No target configuration changed.
 
 Local review of the five saved samples found system frequency zero through
 246 seconds, then 148.443 ppm at 334 seconds. The pinned NTPsec 1.2.5 source
 uses a default 300-second stepout interval; its NSET/FREQ path defers initial
 frequency estimation until that interval. This is consistent with startup
 training, not proof of the runtime state or a steady-state PPS error. Recovering
-at 334 seconds did not establish settled performance. Keep calibration and
-thresholds unchanged until the retained journal and statistics are evaluated.
+at 334 seconds did not establish settled performance. The retrieved journal
+and statistics do not justify calibration or threshold changes; retain both
+unchanged.
 
 The v3 pairing evidence confirms serial NTP0 and GPIO PPS NTP2; the candidate
 already marks PPS preferred. Another host's NTP1 assignment does not replace
@@ -544,7 +554,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed but first probe rejected NTS response diagnostics logged at error priority; recovered through both endpoints and cleaned; v3 journal gate passed; five probes still failed NTS packet reach and PPS offset/jitter; dual-stack recovery and cleanup complete; retained NTS/PPS diagnostic review prepared offline, execution pending |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed but first probe rejected NTS response diagnostics logged at error priority; recovered through both endpoints and cleaned; v3 journal gate passed; five probes still failed NTS packet reach and PPS offset/jitter; dual-stack recovery and cleanup complete; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; active NTS packet/counter and bounded settling diagnostics remain pending |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 
