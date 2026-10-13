@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; inspection held on boot-ID parsing and cleaned; corrected diagnostic and source-policy review pending |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; inspection v1 held and cleaned; corrected diagnostic v2 prepared, awaiting execution approval; minsane recommendation recorded |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1765,3 +1765,28 @@ for separate execution approval. Evaluate the `minsane` recommendation against
 the intended source/fallback policy before another cutover; do not suppress the
 journal entry or change upstream choices without review. Time-service acceptance
 remains pending.
+
+### October 13: corrected diagnostic v2 prepared; minsane policy reviewed
+
+Corrected the journal boot filter to compact hexadecimal while retaining the
+canonical UUID for target validation. Added malformed-ID rejection and regression
+coverage that exercises the local `journalctl` parser with `--help`, without
+opening a journal. Existing bounded capture, drift, held-result and cleanup tests
+remain required. The
+[v2 review](/home/aaron/code/.local-evidence/homelab-ntp/current/cutover-inspection-20261013-v2/review.md)
+and adjacent `sealing.json` bind a new operation/stage to the recovered cutover
+state and current inputs. No target contact occurred during preparation; v1's
+executed archive, partial report and cleanup evidence remain preserved.
+
+Reviewed the retained pinned NTPsec 1.2.5 source and corroborating upstream docs.
+The startup recommendation counts selectable configured associations; selection
+separately enforces the survivor threshold. Recommend retaining `minsane=1` for
+local-reference availability instead of requiring a network survivor when only
+two local GPS associations remain. Both local associations share one receiver;
+this choice prioritizes availability over a multi-source quorum. OPERATIONS
+records the evidence and the requirements for any future narrow journal exception.
+No cutover configuration, acceptance code or target setting changed.
+
+Next obtain separate execution approval for v2's read-only capture, conditional
+readbacks and diagnostic closure. Complete the diagnostic before a new cutover
+review; the source-policy recommendation is not an executed configuration change.

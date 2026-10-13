@@ -226,11 +226,40 @@ executed archive; do not replay it.
 trial configuration; its absence is expected in the restored state. Do not
 recreate it outside a separately approved cutover.
 
-Next correct and test the journal boot-ID handling, and evaluate the `minsane`
-recommendation against the intended source/fallback policy before another trial.
-Do not suppress the entry or change source policy without review. Complete the
-bounded diagnostic through a new sealed review with separate execution approval.
-Keep original artifacts immutable; future cutover inputs need current evidence.
+The [v2 diagnostic review](/home/aaron/code/.local-evidence/homelab-ntp/current/cutover-inspection-20261013-v2/review.md)
+is prepared offline with corrected boot-ID handling and awaits separate execution
+approval, bound to adjacent `sealing.json`. It preserves the canonical target UUID
+and renders only the journal filter as 32 hexadecimal characters. Regression
+tests cover invalid IDs, unchanged identity and the actual local `journalctl`
+argument parser through `--help`, without reading a journal. V2 has a new stage
+and operation ID; v1 and the original cutover evidence remain intact. Its scope
+remains one read-only capture, conditional readbacks and diagnostic closure.
+
+The pinned NTPsec 1.2.5 source review found `check_minsane()` counts configured
+selectable peers, including the two refclocks, and emits this recommendation at
+`LOG_ERR` when at least five are configured and `sys_minsane <= 1`. It does not
+measure their health or independence. Selection separately requires at least
+`sys_minsane` survivors. With only two local associations, `minsane=3` would
+prevent synchronization during loss of all network sources. `minsane=2` would
+also require both local associations to survive; NMEA and PPS from one receiver
+do not provide independent reference diversity.
+
+Review recommendation: retain `minsane=1` for local-reference availability and
+make that choice explicit in a future candidate. This trades quorum protection
+for availability when only one source survives. Do not change it merely to
+silence the startup recommendation. Any future journal exception must match the
+exact expected startup diagnostic, retain its evidence, and reject unexpected
+messages, with positive and negative tests. No journal exception, rendered
+configuration or cutover acceptance code changed in this diagnostic preparation.
+Complete v2 and review its evidence before sealing another cutover.
+
+Evidence: pinned NTPsec 1.2.5
+[`check_minsane()`](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/ntpd/ntpd.c),
+[survivor selection](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/ntpd/ntp_proto.c)
+and [`tos` documentation](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/miscopt.adoc).
+Source inspection used the retained local pinned release; current upstream
+documentation was checked as corroboration. Current target evidence remains
+required for a future cutover.
 
 For a newly sealed and separately approved stage, use the controller's
 `execute` command with its exact archive/hash and `--mode start`. One start
@@ -304,7 +333,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic held on boot-ID parsing, cleanup complete; corrected diagnostic and policy review pending |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v1 held and cleaned; corrected v2 prepared, awaiting execution approval; minsane recommendation recorded |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

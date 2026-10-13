@@ -5,6 +5,8 @@ import copy
 import importlib.util
 import json
 import os
+import shutil
+import subprocess
 from pathlib import Path
 import tempfile
 from types import SimpleNamespace
@@ -24,7 +26,7 @@ def bind(spec,files):
 
 
 def fixture():
-    old=dict(hostname='fixture',kernel='fixture-kernel',boot_id='fixture-boot',
+    old=dict(hostname='fixture',kernel='fixture-kernel',boot_id='12345678-1234-5678-9abc-123456789abc',
              endpoints=['192.0.2.1','2001:db8::1'],old_ipv4='192.0.2.1',stage='/var/lib/ntp-acquire-trial',members={})
     state=dict(phase='recovered',apply_epoch=100,recovered_epoch=150)
     checksum='a'*64;source=m.encoded(old)
@@ -52,6 +54,21 @@ class LocalFiles:
 
 
 class BindingTests(unittest.TestCase):
+    def test_boot_filter_is_compact_without_changing_target_identity(self):
+        spec,files=fixture();original=spec['boot_id']
+        self.assertEqual(m.journal_boot_id(original),'12345678123456789abc123456789abc')
+        m.validate(spec,files);self.assertEqual(spec['boot_id'],original)
+        for value in (None,'',original+'+1',original.replace('-',''),original.upper(),'0','all'):
+            with self.subTest(value=value),self.assertRaises(ValueError):m.journal_boot_id(value)
+
+    @unittest.skipUnless(shutil.which('journalctl'),'journalctl unavailable on test workstation')
+    def test_real_journalctl_parses_filter_without_opening_journal(self):
+        spec,_=fixture()
+        # --help exits after parsing; no system or target journal is queried.
+        result=subprocess.run(['journalctl','--boot='+m.journal_boot_id(spec['boot_id']),'--help'],
+                              capture_output=True,timeout=10,env=m.ENV,check=False)
+        self.assertEqual(result.returncode,0,result.stderr.decode())
+
     def test_frozen_inputs_and_all_payloads(self):
         spec,files=fixture();m.validate(spec,files)
         for mode in ('start','readback','cleanup'):compile(c.payload(spec,files,mode),mode,'exec')
@@ -153,7 +170,7 @@ class CaptureTests(unittest.TestCase):
         report,calls=self.run_capture()
         self.assertEqual(report['phase'],'captured');self.assertTrue(report['source_preserved'])
         self.assertEqual(set(report['evidence']),set(m.CAPTURE_FILES))
-        self.assertEqual(len(calls),2);self.assertIn('--boot=fixture-boot',calls[0]);self.assertIn('--until=@151',calls[0])
+        self.assertEqual(len(calls),2);self.assertIn('--boot=12345678123456789abc123456789abc',calls[0]);self.assertIn('--until=@151',calls[0])
         self.assertEqual(calls[1][:2],['/usr/bin/systemctl','show'])
         self.assertNotIn('MainPID',str(calls[1]));self.assertNotIn('restart',str(calls))
 

@@ -749,6 +749,13 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    the journal trigger without completing diagnostic acceptance. Review any
    `minsane` recommendation against the intended source/fallback policy before
    changing configuration or journal acceptance; do not silently suppress it.
+   The reviewed recommendation is to retain `minsane=1` for local-reference
+   availability: requiring three survivors would make two local GPS associations
+   insufficient during loss of all network sources. NMEA and PPS from the same
+   receiver are not independent references. A future candidate must state the
+   availability/quorum tradeoff explicitly. Any proposed exception for the known
+   startup recommendation needs exact message matching, retained evidence and
+   tests rejecting unexpected errors; this review does not alter acceptance code.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.

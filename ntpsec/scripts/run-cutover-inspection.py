@@ -34,6 +34,13 @@ def encoded(value):return (json.dumps(value,sort_keys=True)+'\n').encode()
 def sha(raw):return hashlib.sha256(raw).hexdigest()
 
 
+def journal_boot_id(value):
+    """Keep canonical target UUIDs; journalctl boot descriptors use compact hex."""
+    if not isinstance(value,str) or not re.fullmatch('[0-9a-f]{8}(?:-[0-9a-f]{4}){3}-[0-9a-f]{12}',value):
+        raise ValueError('canonical boot UUID required')
+    return value.replace('-','')
+
+
 def load(path):
     spec=importlib.util.spec_from_file_location('diagnostic_'+path.stem.replace('-','_'),path)
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
@@ -44,6 +51,7 @@ def launcher(stage):
 
 
 def validate(spec,files):
+    journal_boot_id(spec['boot_id'])
     old=json.loads(files['source-spec.json']);cleanup=json.loads(files['source-cleanup.json']);receipt=json.loads(files['source-receipt.json'])
     state=cleanup['result'];prior=dict(state);prior.pop('transient_cleanup',None)
     if any(type(spec[k]) is not int or spec[k]<=0 for k in ('journal_since','journal_until','prepared_epoch','expires_epoch')):
@@ -123,7 +131,7 @@ def collect(h,spec,files):
         for n,raw in saved.items():h.create(root/('source-'+n),raw)
         h.create(root/'retained-journal.json',encoded(journals[0]))
         raw=command(h,root,'journal',['/usr/bin/journalctl','--quiet','--no-pager','--output=json','--lines=400',
-                  '--boot='+spec['boot_id'],'--since=@'+str(spec['journal_since']),'--until=@'+str(spec['journal_until']),
+                  '--boot='+journal_boot_id(spec['boot_id']),'--since=@'+str(spec['journal_since']),'--until=@'+str(spec['journal_until']),
                   '--unit=timeservice.service','--unit=avahi-daemon.service'])
         records=[json.loads(line) for line in raw.splitlines()]
         if len(records)>=400:raise ValueError('journal line limit reached; completeness unproven')
@@ -230,7 +238,10 @@ Retrieval is capped at 8 MiB raw evidence; exceeding it holds acceptance and ret
 the staged files. Run one retrospective
 journalctl query for timeservice/Avahi in boot {spec['boot_id']}, from epoch
 {spec['journal_since']} through {spec['journal_until']}, at most 399 complete records
-and 2 MiB. A 400-record response is incomplete and holds acceptance. Also inspect
+and 2 MiB,
+using the compact boot filter `{journal_boot_id(spec['boot_id'])}` while retaining
+the canonical UUID for target identity checks.
+A 400-record response is incomplete and holds acceptance. Also inspect
 metadata for /etc/ntp.conf without following links or reading unexpected contents,
 and fixed timeservice/bootstrap/Avahi/leap-timer unit states. Compare original saved
 files again after capture. No service/configuration change, daemon start, clock
