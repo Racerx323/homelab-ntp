@@ -28,7 +28,7 @@ INPUT_PATHS={
  'tests.py':'tests/test_service_cutover.py','supervisor-tests.py':'tests/test_clockmaker.py',
  'architecture.md':'docs/ntp-architecture-deployment-plan-v1.0.md','operations.md':'docs/OPERATIONS.md','history.md':'HISTORY.md'}
 EXTRA={'reference.py','reference.tar','reference-report.json','reference-receipt.json','reference-cleanup.json',
-       'receiver-runtime.json','known_hosts','timeservice.json','network-evidence.json'}
+       'receiver-runtime.json','known_hosts','timeservice.json','network-evidence.json','recovery-evidence.json'}
 MODES=('start','probe','readback','accept','recover','cleanup')
 
 
@@ -94,6 +94,27 @@ def network_evidence(raw,spec):
     return outcome
 
 
+RECOVERY_RECORDS=('spec.json','terminal-receipt.json','readback-1-0-result.json',
+                  'readback-1-1-result.json','cleanup-0-result.json')
+
+
+def recovery_evidence(raw,spec):
+    proof=json.loads(raw)
+    if set(proof)!=set(RECOVERY_RECORDS):raise ValueError('closed recovered cutover evidence')
+    old=proof['spec.json'];receipt=proof['terminal-receipt.json']
+    first=proof['readback-1-0-result.json'];state=first['result'];digest=sha(encoded(old))
+    if (old['operation_id']==spec['operation_id']
+            or any(old[k]!=spec[k] for k in ('hostname','kernel','boot_id','old_ipv4','endpoints'))
+            or first!=proof['readback-1-1-result.json'] or first['spec_sha256']!=digest
+            or receipt['spec_sha256']!=digest or receipt['state']!='recovered'
+            or receipt['state_sha256']!=sha(encoded(state)) or state['phase']!='recovered'
+            or not old['prepared_epoch']<=state['recovered_epoch']<=spec['prepared_epoch']):
+        raise ValueError('matching recovered target receipts required')
+    cleanup=proof['cleanup-0-result.json']
+    if cleanup!={'spec_sha256':digest,'result':dict(state,transient_cleanup=True)}:
+        raise ValueError('recovered terminal cleanup required')
+
+
 def validate(spec,files):
     if set(files)!=set(INPUT_PATHS)|EXTRA|{'spec.json','manifest.json','review.md'}:raise ValueError('closed cutover archive required')
     if not re.fullmatch('[a-z][a-z0-9-]{0,47}',spec['operation_id']):raise ValueError('operation ID')
@@ -118,6 +139,7 @@ def validate(spec,files):
     if any(spec[k]!=old[k] for k in ('hostname','kernel','boot_id','old_ipv4','endpoints')) or spec['expires_epoch']>old['expires_epoch'] or files['known_hosts']!=ref['known_hosts']:
         raise ValueError('accepted target/boot/window/key binding')
     network_evidence(files['network-evidence.json'],spec)
+    recovery_evidence(files['recovery-evidence.json'],spec)
     recipe=json.loads(files['recipe.json'])
     if spec['recipe']!=recipe or recipe['hostname']!=spec['hostname'] or json.loads(files['timeservice.json'])!=recipe['timeservice']:
         raise ValueError('rendered recipe binding')
@@ -126,7 +148,7 @@ def validate(spec,files):
             or recipe['timeservice']['startup_gate']!={'timeout_seconds':30,'matching_samples_per_source':5,'units':{'TOFF':'NTP0','PPS':'NTP2'}}
             or recipe['timeservice']['gpsd']!=['/usr/local/sbin/gpsd','-b','-N','-n','-s','115200','/dev/serial0','/dev/pps0']
             or recipe['timeservice']['ntpd']!=['/usr/local/sbin/ntpd','-n','-m','-c','/etc/ntp.conf','-u','ntp:ntp']):raise ValueError('closed runtime bounds/profile required')
-    if (recipe.get('minsane')!=1 or recipe.get('journal_policy')!='single-ntpd-startup-minsane-advisory'
+    if (recipe.get('minsane')!=1 or recipe.get('journal_policy')!='bounded-ntpd-startup-minsane-and-nts-telemetry'
             or re.findall(rb'^tos[^#\n]*',files['ntp.conf'],re.M)!=[b'tos minsane 1']):
         raise ValueError('explicit local-reference minsane and journal policy required')
     if sha(files['leap-seconds.list'])!=recipe['leapfile']['sha256']:raise ValueError('pinned leap input')
@@ -164,6 +186,9 @@ def review(spec):
 Target **{spec['hostname']}**, boot `{spec['boot_id']}`; expires **{expiry}**.
 Addresses: {', '.join(spec['endpoints'])}. One start; no reboot or receiver setting writes.
 Archive contains all non-secret inputs, current recipes, tests and governing documents.
+It binds the prior cutover's matching recovered-state receipts and terminal cleanup,
+alongside the accepted receiver/runtime and network evidence. Live preflight must
+still revalidate the target; retained evidence does not extend the execution window.
 The workstation lacks the pinned ntpleapfetch executable; exact unit/executable validation
 therefore remains mandatory on the target before activation.
 Root-owned 0700 stage: `{spec['stage']}`; retain backups and all prior evidence.
@@ -179,7 +204,12 @@ The archive binds the accepted IPv6 permit/TCP receipts; those do not prove UDP 
 Explicit `tos minsane 1` permits a lone surviving source; it provides no multi-source quorum.
 Both local associations share one receiver. Journal checks use this boot and monotonic
 apply time, allowing at most one exact error-priority startup minsane advisory from the
-current ntpd child within 120 seconds; all other errors block acceptance. Raw records
+current ntpd child within 120 seconds. Also permit at most three read-byte and three
+cookie-count startup records with matching totals, exact source message formats and
+bounded values (1..2048 bytes, 1..8 cookies, lengths 1..192, AEAD 15/16/17).
+Require the same ntpd syslog provenance and startup window; reject repeated records,
+excess counts, malformed/unexpected messages and all other errors. These records do
+not establish authenticated NTP packet exchange. Raw records
 remain evidence. NTP0 serial NMEA is selectable without calibration; NTP2 PPS is preferred. All three
 reviewed NTS servers are configured. Serve only Default LAN IPv4/ULA clients;
 administrative queries remain localhost-only. ntpd -m publishes through eth0-only Avahi.
@@ -244,6 +274,12 @@ def seal(args):
     network={'outcome':json.loads(c.private_file(args.network_dir/'outcome.json')),
              'records':{n:base64.b64encode(c.private_file(args.network_dir/n,32*1024**2)).decode() for n in NETWORK_RECORDS}}
     files['network-evidence.json']=encoded(network)
+    recovered_raw=c.private_file(args.recovered_dir/'service-cutover.tar',64*1024**2)
+    recovered=unpack(recovered_raw)
+    recovery={n:json.loads(c.private_file(args.recovered_dir/n,16*1024**2)) for n in RECOVERY_RECORDS}
+    if (recovery['terminal-receipt.json']['bundle_sha256']!=sha(recovered_raw)
+            or encoded(recovery['spec.json'])!=recovered['spec.json']):raise ValueError('recovered archive binding')
+    files['recovery-evidence.json']=encoded(recovery)
     epoch=int(time.time());spec={k:old[k] for k in ('hostname','kernel','boot_id','endpoints','old_ipv4')}
     spec.update(schema=1,operation_id=args.operation_id,stage='/var/lib/ntp-acquire-'+args.operation_id,
                 apply_unit='ntp-cutover-'+args.operation_id,recovery_unit='ntp-cutover-'+args.operation_id+'-recovery',
@@ -324,6 +360,7 @@ def main():
     parser=argparse.ArgumentParser(description=__doc__);sub=parser.add_subparsers(dest='action',required=True)
     p=sub.add_parser('seal');p.add_argument('--receiver-dir',type=Path,required=True);p.add_argument('--receiver-sha256',required=True)
     p.add_argument('--network-dir',type=Path,required=True)
+    p.add_argument('--recovered-dir',type=Path,required=True)
     p.add_argument('--operation-id',required=True);p.add_argument('--output',type=Path,required=True)
     p=sub.add_parser('execute');p.add_argument('--bundle',type=Path,required=True);p.add_argument('--sha256',required=True)
     p.add_argument('--mode',choices=MODES,required=True);p.add_argument('--attempt',type=int,choices=range(1,61),default=1)

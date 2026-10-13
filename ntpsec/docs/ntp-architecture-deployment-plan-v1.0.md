@@ -787,8 +787,16 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    most one exact error-priority startup recommendation from the current ntpd
    child's syslog transport within 120 seconds of apply. Use compact boot
    identity and monotonic apply time to avoid wall-clock step ambiguity. Retain
-   raw records and reject all unexpected errors, malformed records, duplicates,
-   wrong provenance and late advisories. Test these cases before sealing.
+   raw records and reject malformed records, wrong provenance and late messages.
+   For pinned NTPsec 1.2.5, classify the exact startup read-byte and cookie-count
+   formats as bounded response telemetry: 1–2048 bytes, 1–8 cookies, cookie
+   lengths 1–192 and AEAD 15/16/17. Permit no more than three of each with equal
+   totals from the same ntpd syslog provenance within 120 seconds. Reject
+   repeated identical records, excess counts, invalid values and all other
+   errors. Telemetry does not prove per-upstream packet authentication; retain
+   the independent three-association reach/authentication/cookie gate. Test
+   success and rejection cases, and bind the prior recovered-state receipts
+   and cleanup before sealing a replacement.
    Candidate preparation does not authorize installation or activation.
    When a new error-priority diagnostic blocks a trial, use retained records
    and the pinned source to distinguish response telemetry from failures before

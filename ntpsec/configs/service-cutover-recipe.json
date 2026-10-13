@@ -54,5 +54,5 @@
     "maintenance_url": "https://data.iana.org/time-zones/tzdb/leap-seconds.list"
   },
   "minsane": 1,
-  "journal_policy": "single-ntpd-startup-minsane-advisory"
+  "journal_policy": "bounded-ntpd-startup-minsane-and-nts-telemetry"
 }

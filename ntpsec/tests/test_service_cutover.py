@@ -50,6 +50,17 @@ def network_fixture(spec):
         'records':{n:base64.b64encode(v).decode() for n,v in records.items()}})
 
 
+def recovery_fixture(spec):
+    old={k:spec[k] for k in ('hostname','kernel','boot_id','old_ipv4','endpoints','prepared_epoch')}
+    old['operation_id']='prior-cutover'
+    state={'phase':'recovered','recovered_epoch':old['prepared_epoch']}
+    digest=c.sha(c.encoded(old));response={'spec_sha256':digest,'result':state}
+    return c.encoded({'spec.json':old,'terminal-receipt.json':{'spec_sha256':digest,
+        'state':'recovered','state_sha256':c.sha(c.encoded(state)),'bundle_sha256':'b'*64},
+        'readback-1-0-result.json':response,'readback-1-1-result.json':response,
+        'cleanup-0-result.json':{'spec_sha256':digest,'result':dict(state,transient_cleanup=True)}})
+
+
 def fixture():
     old,ref=acqtest.fixture();old['purpose']='receiver-runtime-inputs'
     ref['recipe.json']=(ROOT/'configs/receiver-runtime-inputs.json').read_bytes()
@@ -71,6 +82,7 @@ def fixture():
     spec.update(schema=1,operation_id='cutover-fixture',stage='/var/lib/ntp-acquire-cutover-fixture',
                 apply_unit='ntp-cutover-cutover-fixture',recovery_unit='ntp-cutover-cutover-fixture-recovery',recipe=recipe)
     files['network-evidence.json']=network_fixture(spec)
+    files['recovery-evidence.json']=recovery_fixture(spec)
     bind(spec,files);return spec,files
 
 
@@ -193,6 +205,58 @@ class JournalTests(unittest.TestCase):
         self.assertFalse(self.check([self.row(),self.row()])['healthy'])
         with self.assertRaises(ValueError):self.check([dict(self.row(),_BOOT_ID='b'*32)])
         with self.assertRaises(ValueError):stage.journal_health('not json','a'*32,100,123)
+
+    def telemetry(self):
+        messages=[stage.MINSANE_MESSAGE,'NTSc: read 816 bytes',
+                  'NTSc: Got 8 cookies, length 96, aead=15.',
+                  'NTSc: read 848 bytes','NTSc: Got 8 cookies, length 100, aead=15.',
+                  'NTSc: read 848 bytes','NTSc: Got 8 cookies, length 100, aead=15.']
+        return [dict(self.row(),MESSAGE=m,__MONOTONIC_TIMESTAMP=str(110000000+i)) for i,m in enumerate(messages)]
+
+    def test_retained_message_sequence_and_source_bounds(self):
+        result=self.check(self.telemetry());self.assertTrue(result['healthy'])
+        self.assertEqual(result['startup_counts'],{'minsane':1,'read':3,'cookies':3})
+        for count,length,aead,size in ((1,1,15,1),(8,192,17,2048),(4,100,16,848)):
+            rows=self.telemetry()[1:3]
+            rows[0]['MESSAGE']=f'NTSc: read {size} bytes'
+            rows[1]['MESSAGE']=f'NTSc: Got {count} cookies, length {length}, aead={aead}.'
+            self.assertTrue(self.check(rows)['healthy'])
+
+    def test_nts_failures_invalid_values_incomplete_exchanges_and_excess_are_rejected(self):
+        failures=['NTSc: read 0 bytes','NTSc: read 2049 bytes','NTSc: read -1 bytes',
+                  'NTSc: read 816 bytes suffix','NTSc: Got 0 cookies, length 96, aead=15.',
+                  'NTSc: Got 9 cookies, length 96, aead=15.',
+                  'NTSc: Got 8 cookies, length 193, aead=15.',
+                  'NTSc: Got 8 cookies, length 0, aead=15.',
+                  'NTSc: Got 8 cookies, length 96, aead=1.',
+                  'NTSc: No cookies.','NTSc: AEAD not negotiated.',
+                  'NTSc: EOM not at end 8','NTSc: TLS handshake failed',
+                  'NTSc: connect failed: Connection refused']
+        for message in failures:
+            with self.subTest(message=message):
+                self.assertFalse(self.check(self.telemetry()+[dict(self.row(),MESSAGE=message)])['healthy'])
+        self.assertFalse(self.check(self.telemetry()[:-1])['healthy'])
+        self.assertFalse(self.check(self.telemetry()[2:])['healthy'])
+        self.assertFalse(self.check(self.telemetry()+self.telemetry()[1:3])['healthy'])
+        extra=[dict(r,__MONOTONIC_TIMESTAMP=str(115000000+i)) for i,r in enumerate(self.telemetry()[1:3])]
+        self.assertFalse(self.check(self.telemetry()+extra)['healthy'])
+        for key,value in (('_PID','other'),('_TRANSPORT','stdout'),('_SYSTEMD_UNIT','avahi-daemon.service'),
+                          ('_EXE','/other'),('PRIORITY','2'),('__MONOTONIC_TIMESTAMP','221000000')):
+            rows=self.telemetry();rows[1][key]=value
+            with self.subTest(key=key):self.assertFalse(self.check(rows)['healthy'])
+
+    def test_recovered_receipt_drift_is_rejected(self):
+        for case in ('target','readback','cleanup','state','digest','future','reuse'):
+            spec,files=fixture();proof=json.loads(files['recovery-evidence.json'])
+            if case=='target':proof['spec.json']['boot_id']='other'
+            elif case=='readback':proof['readback-1-1-result.json']['result']['phase']='observing'
+            elif case=='cleanup':proof['cleanup-0-result.json']['result']['transient_cleanup']=False
+            elif case=='state':proof['terminal-receipt.json']['state']='accepted'
+            elif case=='digest':proof['terminal-receipt.json']['state_sha256']='0'*64
+            elif case=='future':spec['prepared_epoch']-=1
+            else:proof['spec.json']['operation_id']=spec['operation_id']
+            files['recovery-evidence.json']=c.encoded(proof);bind(spec,files)
+            with self.subTest(case=case),self.assertRaises(ValueError):c.validate(spec,files)
 
     def test_rebound_network_and_policy_failures(self):
         for case in ('digest','pending','boot','readback','cleanup','policy','config'):

@@ -59,21 +59,35 @@ MINSANE_MESSAGE='SYNC: Found 5 servers, suggest minsane at least 3'
 
 
 def journal_health(raw,boot_id,apply_monotonic,ntpd_pid):
-    """Permit one exact startup advisory; retain and reject all other errors."""
-    allowed=[];unexpected=[]
+    """Classify bounded startup telemetry, without accepting NTS packet service."""
+    allowed=[];unexpected=[];seen=set();counts={'minsane':0,'read':0,'cookies':0}
     for line in raw.splitlines():
         row=json.loads(line)
         stamp=int(row['__MONOTONIC_TIMESTAMP'])/1_000_000
         if row['_BOOT_ID']!=boot_id.replace('-',''):
             raise ValueError('journal boot mismatch')
         if stamp<apply_monotonic:continue
-        expected={'MESSAGE':MINSANE_MESSAGE,'PRIORITY':'3','_SYSTEMD_UNIT':'timeservice.service',
+        expected={'PRIORITY':'3','_SYSTEMD_UNIT':'timeservice.service',
                   '_EXE':'/usr/local/sbin/ntpd','_COMM':'ntpd','_TRANSPORT':'syslog',
                   'SYSLOG_IDENTIFIER':'ntpd','_PID':str(ntpd_pid)}
-        if (all(row.get(k)==v for k,v in expected.items())
-                and stamp<=apply_monotonic+120 and not allowed):allowed.append(row)
+        message=row.get('MESSAGE');kind=None
+        if isinstance(message,str):
+            if message==MINSANE_MESSAGE:kind='minsane'
+            read=re.fullmatch(r'NTSc: read ([1-9][0-9]{0,3}) bytes',message)
+            cookies=re.fullmatch(r'NTSc: Got ([1-8]) cookies, length ([1-9][0-9]{0,2}), aead=(15|16|17)\.',message)
+            # Pinned 1.2.5: nts_client.c buffer; nts.h cookie and AEAD bounds.
+            if read and int(read[1])<=2048:kind='read'
+            if cookies and int(cookies[2])<=192:kind='cookies'
+        digest=sha(encoded(row))
+        if (kind and all(row.get(k)==v for k,v in expected.items())
+                and stamp<=apply_monotonic+120 and digest not in seen
+                and counts[kind]<(1 if kind=='minsane' else 3)):
+            counts[kind]+=1;allowed.append(row)
         else:unexpected.append(row)
-    return {'healthy':not unexpected,'allowed':allowed,'unexpected':unexpected}
+        seen.add(digest)
+    paired=counts['read']==counts['cookies']
+    return {'healthy':not unexpected and paired,'allowed':allowed,'unexpected':unexpected,
+            'startup_counts':counts,'response_counts_match':paired}
 
 
 class Transaction:

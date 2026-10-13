@@ -200,6 +200,7 @@ python3 -I -B ntpsec/scripts/run-service-cutover.py seal \
     --receiver-dir "$accepted_receiver_directory" \
     --receiver-sha256 "$accepted_receiver_sha256" \
     --network-dir "$accepted_network_directory" \
+    --recovered-dir "$recovered_cutover_directory" \
     --operation-id "$unique_operation_id" --output "$private_review_directory"
 ```
 
@@ -338,6 +339,31 @@ Retain early functionality, UDP/NTS authentication, clock discipline, workstatio
 dual-stack NTP, mDNS and recovery requirements. TCP success alone does not accept
 the time service or authorize replaying the earlier cutover.
 
+The corrected [v3 cutover review](/home/aaron/code/.local-evidence/homelab-ntp/current/service-cutover-20261013-v3/review.md)
+is prepared offline; the adjacent `sealing.json` identifies its digest. In
+addition to accepted receiver/runtime and firewall evidence, it binds v2's
+archive identity, specification, matching recovered-state receipts and terminal
+cleanup. Original freshness bounds remain in force; live preflight must still
+revalidate the target. Executed v1/v2 artifacts remain unchanged.
+
+The v3 classifier retains the single minsane allowance and adds exactly two
+NTPsec response formats, with the pinned source's bounds: read sizes 1–2048,
+cookie counts 1–8, lengths 1–192 and AEAD IDs 15/16/17. Allow at most three
+read records and three cookie records with equal totals, all from the current
+ntpd child's syslog transport within 120 seconds of apply. These totals bound
+startup telemetry; the messages do not identify which upstream produced them.
+Repeated identical records, excess counts, wrong provenance, late records,
+invalid values and other errors block acceptance. Partial read/cookie totals
+remain unhealthy until balanced. Independent checks still require all three
+named associations to authenticate NTP packets, have reach and retain cookies.
+
+Tests replay the observed message sequence, verify source-bound endpoints and
+reject TLS/connection/AEAD/cookie failures and altered recovery receipts. An
+offline check of all seven retained v2 error-priority records also passes the
+new classifier. No receiver, firewall or running service changed. Next obtain
+separate approval for v3; retain early functionality, PPS, workstation and
+recovery gates. No new live diagnostic is needed to classify the saved records.
+
 `run-nts-transport-inspection.py` seals the checked-in recipe, helpers, tests,
 governing documents and the network owner's `UNIFI_ACCESS.md`, bound to the
 original recovered cutover specification and live-revalidated boot/state. The
@@ -449,7 +475,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed but first probe rejected NTS response diagnostics logged at error priority; recovered through both endpoints and cleaned; correct/test journal classification before another reviewed trial |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed but first probe rejected NTS response diagnostics logged at error priority; recovered through both endpoints and cleaned; v3 classifier corrected/tested and review prepared offline; separate execution approval pending |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 
