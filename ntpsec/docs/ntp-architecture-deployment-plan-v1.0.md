@@ -790,6 +790,12 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    raw records and reject all unexpected errors, malformed records, duplicates,
    wrong provenance and late advisories. Test these cases before sealing.
    Candidate preparation does not authorize installation or activation.
+   When a new error-priority diagnostic blocks a trial, use retained records
+   and the pinned source to distinguish response telemetry from failures before
+   proposing another exception. Cookie receipt is not authenticated NTP packet
+   acceptance. A cumulative journal failure that cannot clear with time calls
+   for recovery rather than prolonged observation. Any classifier change needs
+   rejection tests and a newly sealed review; preserve executed artifacts.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.

@@ -299,8 +299,8 @@ completed. Both new rules remain enabled; no recovery or service start occurred.
 Preserve both executed bundles and v2's private acceptance/outcome receipts.
 
 The corrected [v2 cutover review](/home/aaron/code/.local-evidence/homelab-ntp/current/service-cutover-20261013-v2/review.md)
-is prepared offline for separate execution approval; its adjacent `sealing.json`
-identifies the archive digest. It binds the accepted network outcome, policy
+ran once and recovered; its adjacent `sealing.json` identifies the preserved
+archive digest. It binds the accepted network outcome, policy
 receipt, matching after-capture readbacks, controller receipt and diagnostic
 cleanup alongside the accepted receiver/runtime inputs. The original freshness
 window remains unchanged; live preflight must still reject target drift.
@@ -315,6 +315,25 @@ child's syslog transport within 120 seconds of apply. Unexpected messages,
 provenance, duplicates and late advisories block acceptance. Malformed records
 or a boot mismatch fail closed. The informational stderr copy requires no
 exception. Raw journal records and classification remain private evidence.
+
+V2's early GPSD/SHM and localhost ntpd gate passed. Its first convergence probe
+allowed the one expected minsane record but rejected six other error-priority
+records: three `NTSc: read ... bytes` and three `NTSc: Got 8 cookies ...`.
+Each NTS association reported seven available cookies. PPS reach/selection
+and authenticated NTP packet acceptance were still pending at that first probe;
+no later convergence or workstation checks were attempted. Waiting could not
+clear the cumulative journal failure, so the approved recovery ran immediately.
+Both management endpoints confirmed the same recovered state, and terminal
+cleanup completed. `/etc/ntp.conf` is again absent, GPSD/NTPsec stopped, and
+bootstrap timesyncd restored. Preserve the stage, archive and private outcome.
+
+Offline review of the pinned NTPsec 1.2.5 archive confirms `ntpd/nts_client.c`
+lines 714 and 870 log the read-byte and cookie-count records at `LOG_ERR`;
+the cookie-count message precedes a successful return. Cookie acquisition does
+not establish authenticated UDP time exchange. Next correct and test journal
+classification against these source-backed diagnostics before sealing another
+cutover. No additional exception, replay or live change is authorized by this
+outcome; preserve rejection of actual TLS/NTS failures and all other gates.
 Retain early functionality, UDP/NTS authentication, clock discipline, workstation
 dual-stack NTP, mDNS and recovery requirements. TCP success alone does not accept
 the time service or authorize replaying the earlier cutover.
@@ -430,7 +449,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; corrected cutover v2 prepared offline with explicit minsane 1 and tested journal handling; separate execution approval pending |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed but first probe rejected NTS response diagnostics logged at error priority; recovered through both endpoints and cleaned; correct/test journal classification before another reviewed trial |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

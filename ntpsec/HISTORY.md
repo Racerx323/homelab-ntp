@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; corrected cutover v2 prepared offline; explicit minsane 1 and tested journal handling; separate execution approval pending |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; corrected journal classification pending |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -25,6 +25,31 @@ The current accepted source stage is
 `/home/ama/.ntp-source-build-mdns-20261012-v1`; the earlier v5 stage is preserved.
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
+
+## Service cutover v2 recovered — October 13, 2026
+
+Executed the approved v2 bundle once. The short GPSD/SHM pairing gate passed
+with five PPS and six serial matches; localhost ntpd responded. The first
+probe correctly allowed the expected minsane advisory, but six other
+error-priority records blocked journal acceptance: three NTS read-byte counts
+and three cookie-count messages. All three upstreams reported seven available
+cookies. PPS reach/selection and authenticated NTP packet checks had not passed.
+No workstation acceptance or second probe was attempted.
+
+The cumulative journal gate could not clear with waiting. Immediate approved
+recovery restored the original files, `/etc/ntp.conf` absence, UART state and
+bootstrap timesyncd. Both management endpoints returned matching recovered
+state; terminal cleanup completed and all evidence/backups remain retained.
+The private [outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/service-cutover-20261013-v2/outcome.json)
+binds the probe, recovery, readbacks and cleanup. The time service is not accepted.
+
+Offline source review verified the pinned NTPsec archive digest and found
+`ntpd/nts_client.c` lines 714 and 870 emit these response diagnostics at
+`LOG_ERR`; the cookie-count message precedes a successful return. This is
+progress beyond the previous IPv6 refusals, without proving authenticated UDP
+exchange. Next correct/test the journal classifier against the pinned source,
+then prepare a replacement cutover for separate execution approval. Do not
+replay v2 or broaden the existing exception during execution.
 
 ## Corrected service cutover prepared — October 13, 2026
 
@@ -42,7 +67,7 @@ malformed JSON, network evidence binding, early failure and recovery. Journal
 selection now uses a compact boot ID and monotonic apply time; the informational
 stderr duplicate is outside the error-priority gate.
 
-Next: separately approve one v2 cutover with the early functionality gate,
+The prepared scope was one v2 cutover with the early functionality gate,
 three authenticated NTS associations, PPS selection, workstation dual-stack
 NTP/mDNS acceptance, backups, 30-minute timed recovery and conditional cleanup.
 TCP reachability alone does not establish UDP or authenticated NTS operation.
