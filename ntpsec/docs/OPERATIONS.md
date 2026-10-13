@@ -23,7 +23,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware boot edits and one reboot executed; acceptance held on network registry drift; original boot files restored, recovery reboot blocked by the same guard; runtime stage unstarted | Inspect registry drift through a separately reviewed capture, complete recovery and cleanup, then review replacement hardware/runtime stages |
+| Runtime configuration | Hardware boot edits and one reboot executed; acceptance held on network registry drift; original boot files restored, recovery reboot blocked by the same guard; runtime stage unstarted | Approve the prepared registry inspection, inspect its accepted findings, then review a recovery continuation before replacement hardware/runtime stages |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Pre-reboot networking accepted; IPv4 SSH returned after hardware reboot, but complete post-reboot acceptance is held | Resolve registry drift and recovery before hardware, time, dual-stack NTP clients and monitoring acceptance |
 
@@ -1284,3 +1284,29 @@ selection, isolated imports, rollback and exclusive claims. They prevent
 recurrence; they are not historical operation runbooks. Check local links,
 rendered unit syntax and changed-shell Bash/ShellCheck/shfmt policy. Offline
 fixtures and retained observations do not establish new live acceptance.
+
+## Held hardware registry inspection
+
+`run-host-registry-inspection.py` prepares one read-only diagnostic capture
+against the exact executed hardware bundle and its recovered-file receipt.
+`host-registry-inspection-20261013-v1` is prepared offline; its private review
+and SHA-256 are in the matching current evidence directory. Execution needs
+separate approval. The source hardware archive and root stage stay unchanged.
+
+The capture reads the retained command journal and before/state records, current
+boot identity and boot files, NetworkManager profile UUIDs/types and public
+settings, active profiles, addresses and routes. A shared operation lock plus
+end-of-capture checks detect concurrent changes. Profiles are observed without
+normalizing away differences. No receiver/device access, profile changes,
+service changes or reboot are included. Only the separate protected diagnostic
+stage is created; conditional cleanup removes that stage after local acceptance
+of its exact terminal report. Interrupted captures remain held for review.
+
+Use the checked-in controller's `seal` command with `--hardware-dir`,
+`--hardware-sha256`, `--operation-id` and a new `--output` directory. Approved
+execution uses `execute --bundle ... --sha256 ... --mode capture` once;
+conditional modes are `readback` and `cleanup`. Every mode is registered before
+SSH. Capture or cleanup uncertainty never authorizes replay. Diagnostic
+acceptance establishes evidence completeness, not hardware or network health.
+The recovery continuation must be based on these findings and separately
+reviewed before any reboot or change to a guard.

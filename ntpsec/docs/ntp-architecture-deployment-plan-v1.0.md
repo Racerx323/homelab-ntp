@@ -613,8 +613,12 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    remain retained. Hardware execution on October 13 subsequently held on
    post-reboot network registry drift. Original boot files were restored, but
    the same guard blocked recovery reboot submission. Complete scoped
-   inspection and recovery before replacement hardware/runtime stages; see
-   HISTORY for execution evidence. Reboot persistence and time-service/client
+   inspection and recovery before replacement hardware/runtime stages. The
+   prepared read-only registry inspection binds the executed hardware bundle
+   and recovered-file receipt, preserves its root stage, and captures exact
+   registry/profile differences without relaxing acceptance. Approve that
+   capture separately; prepare recovery from its findings. See HISTORY for
+   execution evidence. Reboot persistence and time-service/client
    acceptance remain pending.
    Prepare hardware/boot and account/runtime prerequisites as separately
    approved hash-bound stages. Boot edits preserve unrelated settings and

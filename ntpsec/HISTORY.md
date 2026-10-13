@@ -1010,3 +1010,25 @@ journal, current network registry/profile identities, boot identity and boot
 file state. Use that evidence to review a bounded recovery continuation.
 Do not replay consumed controller modes or execute the conditional runtime
 stage before accepted hardware and a fresh applicable review.
+
+### October 13: read-only registry inspection prepared offline
+
+Approved preparation of a scoped registry inspection and a subsequent recovery
+continuation for separate execution approval. Added the checked-in inspection
+controller and offline tests for stable capture, state/member drift, locking,
+private files, single-use transport, lost responses, and guarded cleanup.
+
+Prepared `host-registry-inspection-20261013-v1`, bound to the exact executed
+hardware archive and `recover-result.json`, target/key, retained input hashes,
+and current governing documents. It reads the original operation under a
+shared lock, captures exact before/current registry identities and public
+profile fields, boot state and the retained command journal. It creates only
+a separate protected diagnostic stage. Conditional readback and terminal-bound
+cleanup preserve the original stage and all local executed evidence.
+
+No target contact occurred during preparation. Hardware recovery remains
+incomplete and runtime/account setup remains unstarted. Next approve the
+[inspection review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-registry-inspection-20261013-v1/review.md)
+and its `sealing.json` SHA-256. Recovery continuation cannot be sealed until
+the inspection is executed and its findings accepted; do not presume the
+registry difference is harmless or bypass the existing guard.
