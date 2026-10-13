@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection prepared, awaiting execution approval |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit correction requires separate network-owner review |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1857,3 +1857,33 @@ service sandbox, and an API snapshot cannot establish packet/rule-hit attributio
 Next obtain separate execution approval for this two-target diagnostic. Review
 its current source-address and policy evidence before preparing any network-owner
 firewall change or another cutover. The diagnostic is not time-service acceptance.
+
+### October 13: UniFi/NTS transport inspection accepted and closed
+
+Executed the approved `nts-transport-inspection-20261013-v1` bundle once against
+both named targets. Verified controller collection completed before node start;
+13 bounded requests collected current policy, ordering and referenced lists.
+Both pinned management readbacks matched; diagnostic cleanup completed with all
+original and new evidence preserved. Private `inspection-acceptance.json` and
+`outcome.json` beside the review bind the receipts, result hashes and conclusions.
+
+Current Default LAN-to-External ordering has IPv4-only UDP 123 and TCP 4460
+exceptions referencing an IPv4 NTP-server list, followed by an enabled dual-stack
+reject referencing both ports. There is no applicable IPv6 NTP/NTS exception.
+All three upstreams accepted IPv4 TCP 4460 connections under both root and the
+NTP account; all six IPv6 attempts returned connection refused. The actual IPv6
+socket source was a global address, not the fixed management ULA. Exact addresses,
+policy identifiers and per-probe timings remain in private evidence.
+
+These observations support the missing-permit explanation, but do not prove
+which component generated each refusal: no packet trace or rule-hit counters
+were collected. UDP, TLS/NTS negotiation and the service sandbox were not tested.
+The recovered state remains intact: `/etc/ntp.conf` absent, trial service inactive,
+and bootstrap timesyncd active. No firewall or service configuration changed;
+time service remains unaccepted.
+
+Next prepare a network-owner IPv6 permit correction with source-identity/stability
+checks, ordering, return traffic, backups, recovery and bounded transport
+acceptance for separate approval. Resolve transport before another cutover;
+retain the pending explicit `minsane` policy and narrowly tested journal handling,
+NTS authentication, dual-stack client and mDNS acceptance requirements.

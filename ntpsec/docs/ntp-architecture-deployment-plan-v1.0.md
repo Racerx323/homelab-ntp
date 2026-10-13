@@ -747,6 +747,13 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    proof, account-context TCP success from service-sandbox success, and transport
    reachability from authenticated NTP acceptance. Firewall changes remain a
    separate network-owner operation after evidence review.
+   Where IPv6 permits are missing, scope the correction to intended NTP hosts'
+   verified public egress identities, UDP 123 and TCP 4460, before the existing
+   reject. Verify address stability and return traffic, and bind backups,
+   recovery and bounded before/after transport checks to a separate review.
+   A management ULA alone does not identify public IPv6 egress. Require transport
+   acceptance before another cutover; retain full NTS authentication and client
+   acceptance in that cutover. OPERATIONS and HISTORY record diagnostic outcomes.
    A diagnostic binds the recovered state and source archive, reads
    the existing command log under its shared lock, and bounds retrospective
    journal collection to the trial boot/time window. Matching dual-endpoint

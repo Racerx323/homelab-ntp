@@ -260,16 +260,24 @@ exact expected startup diagnostic, retain its evidence, and reject unexpected
 messages, with positive and negative tests. No journal exception, rendered
 configuration or cutover acceptance code changed in this diagnostic preparation.
 The [UniFi/NTS transport review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-transport-inspection-20261013-v1/review.md)
-is prepared offline and awaits separate execution approval, bound to adjacent
-`sealing.json`. Establish why the IPv6 connections were refused before another
-cutover. The operator confirms no IPv6 permits for either UDP 123 or TCP 4460
-from Default LAN to External. This has not yet been independently inspected;
-it is the leading firewall explanation. Inspect effective source/destination matches,
-IP family, protocol/ports, ordering and logs, including NTS-KE TCP 4460 separately
-from NTP UDP 123. Establish the actual IPv6 egress source; do not assume the fixed
-ULA is used for public destinations. Do not change firewall rules,
-disable certificate checks, force IPv4 or replace upstreams based on this record
-alone. Carry the mDNS warnings into the next client-acceptance review.
+was executed and accepted for diagnostic collection; both node readbacks matched
+and diagnostic cleanup completed. Adjacent `inspection-acceptance.json` and
+`outcome.json` retain the receipts and evidence hashes. Current controller evidence
+confirms IPv4-only Default LAN NTP/NTS exceptions before a dual-stack reject
+covering TCP/UDP ports 123 and 4460. All six IPv4 TCP 4460 probes succeeded;
+all six IPv6 probes returned connection refused, across root and the NTP account.
+The observed IPv6 egress source was a global address, not the fixed ULA.
+This supports the firewall explanation without proving an individual rule hit.
+UDP delivery, TLS/NTS authentication and service-sandbox behavior remain untested.
+
+Next prepare a network-owner IPv6 permit correction for separate approval,
+scoped to the intended NTP host egress identity, UDP 123 and TCP 4460, before
+the existing reject. Verify source-address stability and return-traffic policy;
+do not substitute the management ULA for the observed public egress source.
+Include backups, recovery and bounded before/after transport acceptance. A
+successful transport check must precede another cutover; retain authenticated
+NTS and client acceptance there. No firewall changes are authorized by this
+inspection. Carry the mDNS warnings into the next client-acceptance review.
 
 `run-nts-transport-inspection.py` seals the checked-in recipe, helpers, tests,
 governing documents and the network owner's `UNIFI_ACCESS.md`, bound to the
@@ -294,12 +302,12 @@ Failed connections are valid diagnostic observations, not time-service acceptanc
 The API snapshot is not atomic and does not prove a rule hit. Controller traffic
 logs/counters remain unknown unless returned in the approved policy metadata.
 
-Execute the new controller with its approved archive/hash using `--mode unifi`,
+For a fresh approved bundle, execute the controller using `--mode unifi`,
 then `--mode start`, `--mode readback --attempt 1` and `--mode cleanup`. Never
 repeat a registered collection after lost output. The recipe does not authorize
 gateway SSH, cloud access, alternate APIs or firewall changes. Historical
 September 21 controller evidence informed schema tests only; current facts must
-come from this separately approved capture.
+come from the accepted October 13 capture. Do not replay its registered modes.
 
 Evidence: pinned NTPsec 1.2.5
 [`check_minsane()`](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/ntpd/ntpd.c),
@@ -381,7 +389,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; UniFi/NTS transport inspection prepared, awaiting execution approval |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit correction requires separate network-owner review |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 
