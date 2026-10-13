@@ -23,7 +23,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | V2 discovery accepted; supplemental network/boot discovery prepared offline; configuration pending | Approve supplemental capture; confirm board PPS GPIO/RTC before sealing host mutations |
+| Runtime configuration | V2 discovery accepted; supplemental network/boot discovery prepared offline; vendor PPS/RTC inputs recorded; configuration pending | Approve supplemental capture; verify overlay capabilities and mapping before sealing host mutations |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Pending | Hardware, time, dual-stack clients, monitoring and reboot evidence |
 
@@ -622,9 +622,24 @@ and runtime imports require reviewed inputs and acceptance before activation.
 
 Do not create a deployable ntp.conf or select UART/PPS/RTC overlays without
 observed target inputs. The approved Uputronics revision on the rebuilt node
-is reported as 5.9 (2020), with rv3028 RTC and fixed 115200 baud. Primary-node
-HAT/power details still need their own observations. Verify device names,
-permissions, PPS GPIO, RTC behavior, firmware/fix and stack/fan compatibility.
+is reported as 5.9 (2020). The operator-supplied Uputronics GPS/RTC datasheet,
+document revision 2.2 (December 2020), specifies PPS on BCM GPIO18 (header pin
+12), an RV-3028-C7 RTC at I2C address 0x52, and serial operation at 115200 baud
+(pages 1, 2, 4 and 5). GPIO18 is not physical pin 18. Prepare explicit
+`dtoverlay=pps-gpio,gpiopin=18` and `dtoverlay=i2c-rtc,rv3028` candidates only
+after checking the target's installed overlays and boot configuration. The
+datasheet's revision identifies the document, not the physical board revision.
+Primary-node HAT/power details still need their own observations. Verify actual
+device aliases, permissions, PPS edge, RTC behavior, firmware/fix and stack/fan
+compatibility before accepting bring-up. The datasheet notes that after a cold
+start, the time pulse can take up to 12.5 minutes while time parameters,
+including leap seconds, become known; positional lock alone is not PPS readiness.
+
+Treat the datasheet's Raspbian commands as historical examples. Do not infer
+the UART alias from `/dev/ttyS0`, copy `/boot/config.txt` paths, change hwclock
+udev rules, remove packages, scan I2C or open the receiver from this document.
+Those actions require a target-specific reviewed stage. The supplemental
+read-only bundle remains unchanged; this document review authorizes no execution.
 
 clockmaker configure takes a hash-bound profile with schema/hostname,
 ntp_config and unit path/hash objects, plus explicit timeservice gpsd/ntpd

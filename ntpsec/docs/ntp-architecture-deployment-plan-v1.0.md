@@ -82,6 +82,15 @@ not add Keepalived, VRRP, or another NTP HA layer.
 
 ### Existing hardware and replacement policy
 
+For the rebuilt node's Uputronics GPS/RTC board, the operator-supplied datasheet
+(document revision 2.2, December 2020) specifies time pulse on BCM GPIO18,
+physical header pin 12, and an RV-3028-C7 RTC at I2C address 0x52. Its serial
+example uses 115200 baud. These are vendor wiring inputs for preparation;
+target overlay availability, UART mapping, PPS edge and RTC operation still
+require verification. The document revision is not the board revision. Use
+explicit GPIO18 in the PPS overlay candidate and the rv3028 RTC parameter;
+do not infer device aliases or apply the document's older Raspbian setup steps.
+
 Retain j2-svntp1's working Raspberry Pi PoE HAT through the OS rebuild. Aaron
 identified its 2018 marking and confirmed that it is in use and works. He
 reports that this model is no longer available and selected the Raspberry Pi

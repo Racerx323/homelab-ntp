@@ -833,3 +833,22 @@ revision 5.9 HAT's PPS BCM GPIO and RTC. Then seal networking with timed recover
 hardware changes with console/reboot recovery, and account/loader/runtime
 configuration from accepted inputs. No deployable hardware or ntp.conf settings
 are inferred from missing devices. Activation remains separately gated.
+
+### October 12: operator-supplied GPS/RTC datasheet evaluated offline
+
+Reviewed Uputronics Raspberry Pi GPS/RTC Expansion Board datasheet, document
+revision 2.2 (December 2020), supplied for the reported revision 5.9 M8 HAT.
+Pages 1 and 2 specify BCM GPIO18/header pin 12 for PPS and an RV-3028-C7 RTC
+at I2C address 0x52; pages 4 and 5 describe the rv3028 overlay and 115200-baud
+serial operation. These vendor inputs resolve the preparation question about
+PPS GPIO/RTC without claiming observed device operation or board revision.
+Recorded them in the architecture and operations documents. Source PDF SHA-256:
+`63ef89d93c79a939033ee5e0a7645ae56f5adf66d3f0393d5cbbf8e0755d9004`.
+The supplied PDF remains in private local evidence.
+
+No commands embedded in the datasheet were executed. Its older Raspbian paths,
+UART example and hwclock/package changes are not the Trixie installation recipe.
+The already sealed supplemental capture is unchanged and still awaits separate
+approval. Next accept its network/boot inputs, then prepare guarded networking,
+explicit GPIO18/rv3028 boot candidates and account/loader/runtime configuration.
+No target contact, receiver access, boot edit, reboot or activation occurred.
