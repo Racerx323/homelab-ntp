@@ -606,6 +606,13 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    profile settings on missed acceptance, preserving journals and holding on
    unrelated drift. Reboot persistence remains a later independently approved
    hardware/reboot check; do not claim it from live profile activation alone.
+   On October 13, 2026, `host-network-20261013-v1` passed live dual-stack
+   host acceptance and transient cleanup on j2-svntp1. Fixed IPv4/ULA,
+   retained RA, both DNS VIPs, routes, HTTPS egress and pinned-key management
+   access were verified. The original DHCP profile and recovery evidence
+   remain retained. Next prepare separately reviewed hardware/boot and
+   account/loader/runtime stages; reboot persistence and time-service/client
+   acceptance remain pending.
    Keep bootstrap time synchronization until the approved ntpd cutover. Use
    foreground GPSD with nowait polling so time service does not depend on a
    connected client. Derive daemon identities from the accepted build and

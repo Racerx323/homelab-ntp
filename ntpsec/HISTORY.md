@@ -13,10 +13,10 @@ live inspection.
 | Component | Accepted state | Still pending |
 | --- | --- | --- |
 | Rebuilt node | Former j1-svntp1 renamed j2-svntp1; spare-card first boot accepted | Full hardware/time/network acceptance |
-| OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; Ethernet DHCP 10.1.0.137; matching console/SSH key | Fixed dual-stack service addresses; Wi-Fi disablement |
+| OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation/readback/payload cleanup accepted; runtime discovery and configuration pending |
-| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Prepare networking/hardware/accounts, loader validation and combined-service configuration from accepted observations |
+| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Networking accepted; prepare hardware/accounts, loader validation and combined-service configuration from accepted observations |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -916,3 +916,26 @@ policy restoration does not promise the old lease; console recovery is required
 for lost endpoints or a held transaction. No reboot, DNS/controller changes,
 hardware bring-up or application cutover is included. Reboot persistence remains
 a later separately approved acceptance gate.
+
+### October 13: fixed dual-stack networking accepted
+
+Executed approved `host-network-20261013-v1` once on j2-svntp1. The linked
+review and uniquely matching pasted hash prefix identified the full sealed
+bundle SHA-256
+`460b694931e63748f101832f9a8a59ab934b862f63280eb1d66de3307169dcf5`.
+Start, dual-endpoint verification/acceptance and transient cleanup returned
+status 0. All ten acceptance checks passed: profile, retained original,
+registry, addresses, IPv6 RA, DNS, routes, DNS reachability, HTTPS egress and
+continuity. Both fixed addresses passed pinned-key SSH checks.
+
+The host now uses `10.1.0.51/22` and `fd36:5aa8:6971:1::51/64`, retaining
+automatic IPv6/RA and the governed DNS VIPs. Durable acceptance was committed
+before stopping timed recovery; no recovery was needed. Cleanup removed only
+transient-unit activity, retaining the original DHCP profile, root-owned
+before-state/journal and all private execution streams and receipts under
+`.local-evidence/homelab-ntp/current/host-network-20261013-v1`.
+
+The three governing documents agree on accepted live host networking and the
+next hardware/boot and account/loader/runtime preparation gates. No reboot or
+application activation occurred. Reboot persistence, hardware/time service,
+dual-stack NTP clients and maintenance/reporting acceptance remain pending.

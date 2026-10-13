@@ -23,9 +23,9 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Host-input capture accepted; fixed-network transaction prepared offline; vendor PPS/RTC inputs recorded; configuration pending | Approve sealed networking stage, then prepare hardware and account/loader/runtime stages |
+| Runtime configuration | Host-input capture and fixed dual-stack networking accepted; transient cleanup complete; vendor PPS/RTC inputs recorded; application configuration pending | Prepare separately reviewed hardware and account/loader/runtime stages |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
-| Node/network acceptance | Pending | Hardware, time, dual-stack clients, monitoring and reboot evidence |
+| Node/network acceptance | Host dual-stack addresses, DNS, routes, egress and management access accepted | Hardware, time, dual-stack NTP clients, monitoring and reboot evidence |
 
 On October 12, the earlier v2 foundation snapshot passed validation with the same
 679 package records, 197 protected inputs and eight configuration directories.
@@ -532,7 +532,8 @@ be rebuilt against changed dependencies.
 Accepted v2 observations: no matching UART/PPS/RTC device nodes or sysfs entries;
 boot command line requests a serial console, while GPS UART/PPS/RTC overlays
 are absent. Local ntp/ntpd/gpsd accounts and groups are absent. Ethernet uses a
-NetworkManager profile; fixed dual-stack configuration remains pending. Avahi
+NetworkManager profile at capture time; fixed dual-stack networking subsequently
+passed acceptance on October 13. Avahi
 and systemd-timesyncd are active, while application time-service units are absent.
 Disable the conflicting time writer only in the reviewed NTPsec cutover.
 
@@ -626,8 +627,8 @@ Avahi and bootstrap timesyncd remain enabled/running. All 159 native entries
 and 686 package records retained accepted continuity. Configuration readiness
 and activation authorization remain false.
 
-Prepare subsequent mutations in this order: fixed networking with exact prior
-properties, timed recovery and new-address acceptance; hardware boot edits with
+Fixed networking has passed acceptance with timed recovery and new-address
+checks. Prepare subsequent mutations in this order: hardware boot edits with
 confirmed PPS GPIO/RTC, byte-exact backups and console/reboot recovery; then
 runtime accounts, loader checks and staged application configuration. Bootstrap
 timesyncd remains active until the separately approved clock-discipline cutover.
@@ -679,8 +680,10 @@ python3 -I -B ntpsec/scripts/run-host-network.py seal \
     --operation-id "$unique_operation_id" --output "$new_private_output"
 ```
 
-`host-network-20261013-v1` is prepared offline for separate approval in the
+`host-network-20261013-v1` was executed and accepted on October 13, 2026, with transient-unit cleanup complete. Its immutable scope is recorded in the
 [private review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-network-20261013-v1/review.md).
+The accepted host uses `10.1.0.51/22` and `fd36:5aa8:6971:1::51/64`, with IPv6 RA retained. Both fixed addresses passed pinned-key SSH checks; all ten acceptance checks passed, including DNS VIPs, routes and HTTPS egress in both families. Durable acceptance preceded recovery-timer cancellation. The original DHCP profile, root journal and private execution evidence remain available. Reboot persistence and NTP client acceptance remain pending. Do not replay the consumed operation; prepare hardware/boot and account/loader/runtime stages for separate approval.
+
 Its scope is one background apply job, endpoint acceptance, conditional
 readback/recovery and transient-unit cleanup on j2-svntp1. Before mutation,
 require original profile/registry/active-interface continuity, the recorded
