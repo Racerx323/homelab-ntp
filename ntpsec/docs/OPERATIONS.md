@@ -23,7 +23,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware v4 candidate boot retained after PPS metadata-path hold; UART ancestry passed; hardware unaccepted; no recovery or cleanup performed; runtime unstarted | Candidate PPS/RTC inspection accepted and diagnostic cleanup complete; corrected PPS class/platform validator and acceptance-only continuation prepared; execution approval pending |
+| Runtime configuration | Hardware acceptance-only continuation accepted through both management endpoints; UART/PPS/RTC metadata and network/native checks passed; continuation evidence closed; original v4 preserved | Reseal account/runtime prerequisites against the accepted continuation for separate approval; runtime and clock-service activation remain unstarted |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 
@@ -743,7 +743,12 @@ identity and drift guards still apply. Do not repeat a reboot submission after
 an uncertain reply. If the OS will not boot, use console/media recovery and the
 preserved original card; do not touch the primary's power or splitter mapping.
 
-For the retained hardware v4 candidate, use the separate
+The retained hardware v4 candidate passed the separate hardware acceptance
+continuation on October 13. Both management endpoints and all required
+network/native/device-metadata checks passed; evidence-only cleanup closed
+the continuation. No boot edits, reboot, service actions or device opens
+occurred. The separate receipt is authoritative for the next runtime gate;
+original v4 state remains unchanged. Preserve the executed
 [acceptance-only review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-hardware-acceptance-20261013-v1/review.md)
 and its `sealing.json` hash. This is a new schema-3 hardware stage, prepared
 with `run-host-configuration.py seal-acceptance --hardware-dir SOURCE_DIR
@@ -774,8 +779,9 @@ under the private evidence directory. Use that byte-exact controller with
 v4's original archive/hash for its remaining approved recovery modes;
 the current controller intentionally rejects older launcher bytes. The
 original console worker also remains available. Preparation did not invoke
-recovery or contact the target. Account/runtime must be resealed against the
-new hardware continuation specification and accepted receipt after success.
+recovery or contact the target. Account/runtime must now be resealed against the
+accepted hardware continuation specification and receipt for separate approval.
+Do not execute the older account/runtime bundle bound to hardware v1.
 
 The runtime stage requires the exact hardware root specification, accepted
 checks and current accepted boot ID. Create only a dedicated `ntp:ntp` system

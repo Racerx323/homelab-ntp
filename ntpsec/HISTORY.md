@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation/readback/payload cleanup accepted; runtime discovery and configuration pending |
-| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware v4 candidate retained unaccepted; PPS/RTC inspection accepted; acceptance-only continuation prepared, execution approval pending; account/runtime unstarted |
+| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware continuation accepted through both management endpoints and evidence closed; original v4 preserved; account/runtime resealing next |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1404,3 +1404,25 @@ using its exact `sealing.json` hash, for j2-svntp1. No target contact or live
 acceptance occurred during preparation. Hardware v4 remains applied and
 unaccepted; its authorized recovery remains available. Account/runtime must
 be resealed against successful continuation acceptance before execution.
+
+### October 13: hardware acceptance-only continuation accepted and closed
+
+Executed the approved `host-hardware-acceptance-20261013-v1` evidence-only
+start once, followed by one verification sequence. Both fixed IPv4/IPv6 SSH
+endpoints produced matching candidate-boot and hardware proofs. Acceptance
+passed all eight checks: network, native files, boot files, changed boot,
+UART, PPS, RTC and unchanged bootstrap clock-service state. The corrected
+PPS class/platform correlation passed against the retained candidate.
+
+The separate hardware receipt records successful metadata acceptance.
+Conditional cleanup marked its evidence closed while preserving both stages,
+original v4 specification/state/backups/journal, and all private execution
+records. Terminal replies were complete; separate readback was unnecessary.
+No boot writes, reboot, recovery, account/cache mutation, service activation,
+PPS samples, RTC clock reads or device opens occurred.
+
+Next prepare and seal account/runtime prerequisites against this accepted
+continuation for separate execution approval. The older runtime bundle is
+bound to hardware v1 and must not be executed. Dedicated account creation,
+loader validation and rendered service candidate remain pending; physical
+GNSS/PPS/RTC health and clock-service activation remain later gates.

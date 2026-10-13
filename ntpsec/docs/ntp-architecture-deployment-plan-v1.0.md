@@ -637,25 +637,27 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    and registry checks. Save partial ancestry and the rejected link before a
    hold. These corrections are tested offline. Fresh baseline v3 was accepted
    and cleaned on October 13. Hardware v4 passed the UART ancestry check but
-   held at the assumed PPS device-tree path. Its candidate boot is retained
-   unaccepted. The accepted PPS/RTC inspection found a virtual PPS class
+   held at the assumed PPS device-tree path. Its candidate boot was retained
+   for inspection. The accepted PPS/RTC inspection found a virtual PPS class
    without a device/of_node link, a separately bound pps-gpio platform device
    configured for BCM18 without falling-edge metadata, and RV3028 at I2C 0x52.
    Correlate the observed PPS class identity with the bound platform device
    instead of assuming a class device-tree link. The corrected checker binds
    the class source name and character-device number to one registered
    pps-gpio platform, its GPIO controller and BCM18/rising mapping. The
-   acceptance-only continuation is prepared for separate execution approval.
-   It binds the accepted diagnostic, exact candidate boot and unchanged
-   original specification, members, state, before-state and journal under
-   the original shared lock. A separate protected stage records full
-   dual-stack/network/native/device acceptance; original v4 stays immutable.
-   No boot change, reboot, recovery or service activation is in this scope.
-   Conditional readback and evidence-only cleanup preserve both stages.
-   Physical timing and full dual-stack hardware acceptance remain pending.
+   acceptance-only continuation was accepted on October 13 through both
+   fixed management endpoints, with network/native continuity and corrected
+   UART/PPS/RTC metadata checks. It bound the accepted diagnostic, exact
+   candidate boot and unchanged original specification, members, state,
+   before-state and journal under the original shared lock. Acceptance is
+   recorded in its separate protected stage; original v4 stays immutable.
+   Evidence-only cleanup closed the continuation and preserved both stages.
+   No boot change, reboot, recovery, service activation or device I/O occurred.
+   Physical timing acceptance remains pending. Reseal account/runtime
+   prerequisites against the accepted continuation for separate approval.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
-   execution evidence. Hardware/time-service/client acceptance remains pending.
+   execution evidence. Time-service/client acceptance remains pending.
    Prepare hardware/boot and account/runtime prerequisites as separately
    approved hash-bound stages. Boot edits preserve unrelated settings and
    storage/root parameters, remove only the observed serial console, and use
