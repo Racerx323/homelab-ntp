@@ -128,23 +128,28 @@ def load_module(root, name, digest, helper):
     return module
 
 
-def uart_ancestry(tty, sysroot=Path('/sys')):
+def uart_ancestry(tty, sysroot=Path('/sys'), chain=None):
     node = tty.resolve(strict=True)
     if not node.is_relative_to(sysroot/'devices'):
         raise ValueError('UART must resolve within sysfs devices')
-    chain = []
+    if chain is None:
+        chain = []
     while node != sysroot/'devices':
         if len(chain) >= 16:
             raise ValueError('bounded UART ancestry required')
         item = {'path': str(node), 'driver': None, 'subsystem': None, 'of_node': None, 'compatible': []}
+        chain.append(item)
         for name, parent in [('driver', sysroot/'bus'), ('subsystem', sysroot/'bus'),
                              ('of_node', sysroot/'firmware/devicetree/base')]:
             link = node/name
             if link.is_symlink():
                 resolved = link.resolve(strict=True)
-                if not resolved.is_relative_to(parent) or resolved == parent:
-                    raise ValueError('UART metadata link escaped sysfs tree')
                 item[name] = str(resolved)
+                allowed = resolved.is_relative_to(parent) and (resolved != parent or name == 'of_node')
+                if name == 'subsystem' and resolved == sysroot/'class/tty':
+                    allowed = True
+                if not allowed:
+                    raise ValueError(f'UART metadata link escaped sysfs tree: {link} -> {resolved}')
         if item['of_node']:
             prop = Path(item['of_node'])/'compatible'
             if prop.exists():
@@ -155,7 +160,6 @@ def uart_ancestry(tty, sysroot=Path('/sys')):
                 if len(raw) > 4096:
                     raise ValueError('bounded UART compatibility required')
                 item['compatible'] = raw.rstrip(b'\0').decode('ascii').split('\0')
-        chain.append(item)
         node = node.parent
     return chain
 
@@ -328,7 +332,7 @@ class Transaction:
             uart=alias.resolve(strict=True);observation['uart']=str(uart)
             if not re.fullmatch('/dev/ttyAMA[0-9]+',str(uart)) or not stat.S_ISCHR(uart.stat().st_mode):
                 raise ValueError('PL011 character UART required')
-            observation['ancestors']=uart_ancestry(Path('/sys/class/tty')/uart.name)
+            uart_ancestry(Path('/sys/class/tty')/uart.name,chain=observation['ancestors'])
             parent=pl011_parent(observation['ancestors'],self.recipe['uart_driver'])
         except (OSError, ValueError) as error:
             observation['error']=str(error)[:500]

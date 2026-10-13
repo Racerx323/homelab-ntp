@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation/readback/payload cleanup accepted; runtime discovery and configuration pending |
-| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware v2 recovered; UART inspection and fresh baseline v2 accepted; hardware v3 awaiting execution approval; account/runtime unstarted |
+| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware v3 recovered after sysfs validation hold; checker corrected offline; fresh baseline v3 awaiting approval; account/runtime unstarted |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1258,3 +1258,37 @@ dual-stack/device-metadata acceptance and conditional readback/recovery/cleanup.
 Console/media recovery readiness is required before reboot. Account/runtime
 setup remains separately approved and conditional on hardware acceptance;
 clock-service activation remains pending.
+
+### October 13: hardware v3 held; recovery and checker corrections
+
+Executed approved hardware v3 once. Boot edits and the controlled reboot
+completed, but bounded acceptance probes held at `UART metadata link escaped
+sysfs tree`. Conditional readback preserved the candidate boot identity and
+`serial0 -> /dev/ttyAMA0`; its ancestor array was empty. PPS/RTC acceptance
+did not complete. The terminal error did not identify the rejected link, so
+its exact live target remains unconfirmed.
+
+The approved recovery restored original boot files, submitted one recovery
+reboot and passed the retained network/native continuity checks. Cleanup
+recorded `phase=recovered` and `transient_units_cleaned=true`. As with v2,
+recovery uses a reachable pinned endpoint rather than the hardware acceptance
+mode's separate IPv4/IPv6 SSH proofs. Root backups, candidate bytes, state,
+journals and all local records remain preserved. Account/runtime setup and
+clock-service activation remain unstarted.
+
+Offline review identified two checker defects: all subsystem links were
+restricted to `/sys/bus`, excluding tty class links, and partial ancestry was
+lost when collection raised an exception. Corrected the bounded traversal to
+permit exactly the tty class subsystem and device-tree root where applicable,
+while preserving AMBA driver/registry identity checks. Partial ancestry and
+the rejected link are now saved before failure. Regression fixtures include
+an intermediate serial layer, tty class link, device-tree-root ancestor and
+rejected unrelated class with retained evidence. This is an offline correction,
+not proof of the precise candidate-boot failure or hardware acceptance.
+
+Prepared `host-baseline-20261013-v3` from v3's completed recovery/cleanup for
+one read-only capture with conditional readback and cleanup. No additional
+target contact occurred after the approved cleanup. Next approve the
+[fresh baseline v3 review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-baseline-20261013-v3/review.md)
+and its `sealing.json` SHA-256. After acceptance, seal the corrected hardware
+bundle for separate execution approval; do not replay consumed v3 modes.

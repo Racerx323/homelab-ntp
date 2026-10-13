@@ -631,8 +631,12 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    Preserve the observed chain and validation errors in protected state before
    a hold or recovery. These checks are tested offline. Fresh baseline v2, bound
    to hardware v2's completed recovery/cleanup, was accepted and cleaned on
-   October 13. Hardware v3 uses that baseline and requires separate execution
-   approval.
+   October 13. Hardware v3 then held at sysfs path validation and completed
+   conditional recovery/cleanup. The bounded traversal must permit tty class
+   subsystem links and the device-tree root while retaining exact AMBA driver
+   and registry checks. Save partial ancestry and the rejected link before a
+   hold. These corrections are tested offline; fresh baseline v3 requires
+   separate capture approval before a replacement hardware bundle is sealed.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Hardware/time-service/client acceptance remains pending.

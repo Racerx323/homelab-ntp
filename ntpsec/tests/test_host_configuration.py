@@ -32,7 +32,7 @@ class UartAncestry(unittest.TestCase):
         self.node=self.root/'devices/platform/uart';self.tty=self.node/'serial/port/tty/ttyAMA0'
         self.tty.mkdir(parents=True)
         for name in ('bus/amba/drivers/uart-pl011','bus/serial-base/drivers/port','bus/amba/devices',
-                     'firmware/devicetree/base/uart'):
+                     'firmware/devicetree/base/uart','class/tty'):
             (self.root/name).mkdir(parents=True)
         (self.node/'driver').symlink_to(self.root/'bus/amba/drivers/uart-pl011')
         (self.node/'subsystem').symlink_to(self.root/'bus/amba')
@@ -40,6 +40,8 @@ class UartAncestry(unittest.TestCase):
         (self.root/'firmware/devicetree/base/uart/compatible').write_bytes(b'arm,pl011-axi\0arm,pl011\0')
         (self.root/'bus/amba/devices/uart').symlink_to(self.node)
         (self.tty.parent.parent/'driver').symlink_to(self.root/'bus/serial-base/drivers/port')
+        (self.tty/'subsystem').symlink_to(self.root/'class/tty')
+        (self.node.parent/'of_node').symlink_to(self.root/'firmware/devicetree/base')
 
     def test_serial_layer_does_not_hide_pl011(self):
         chain=s.uart_ancestry(self.tty,self.root)
@@ -72,6 +74,16 @@ class UartAncestry(unittest.TestCase):
         (self.node/'driver').unlink();(self.node/'driver').symlink_to('/tmp')
         with self.assertRaisesRegex(ValueError,'escaped'):
             s.uart_ancestry(self.tty,self.root)
+
+    def test_partial_chain_and_rejected_link_preserved(self):
+        (self.tty/'subsystem').unlink()
+        (self.root/'class/unrelated').mkdir()
+        (self.tty/'subsystem').symlink_to(self.root/'class/unrelated')
+        chain=[]
+        with self.assertRaisesRegex(ValueError,'subsystem.*class/unrelated'):
+            s.uart_ancestry(self.tty,self.root,chain=chain)
+        self.assertEqual(chain[0]['path'],str(self.tty))
+        self.assertEqual(chain[0]['subsystem'],str(self.root/'class/unrelated'))
 
     def test_failure_saved_in_state_before_recovery(self):
         tx=s.Transaction.__new__(s.Transaction);tx.recipe={'uart_alias':str(self.root/'missing')}
