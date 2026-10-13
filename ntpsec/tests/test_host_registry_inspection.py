@@ -165,6 +165,139 @@ class Capture(unittest.TestCase):
                 m.collect(self.h, {}, self.files)
 
 
+class UartBindings(Bindings):
+    def setUp(self):
+        super().setUp()
+        self.spec.update(operation='host-uart-inspection', recovered_boot_id=UUID)
+        self.state = {'phase': 'recovered', 'transient_units_cleaned': True, 'recovered_boot_id': UUID}
+        self.bind()
+
+    def bind(self):
+        self.files['hardware-recovery.json'] = m.encoded({'bundle_sha256': 'a'*64, 'result': self.state})
+        self.spec['members'] = {n: m.sha(v) for n, v in self.files.items()}
+
+    def test_incomplete_recovery_rejected(self):
+        for field, value in [('phase', 'recovery_files_restored'), ('transient_units_cleaned', False),
+                             ('recovered_boot_id', OTHER)]:
+            with self.subTest(field=field):
+                old = self.state[field]; self.state[field] = value; self.bind()
+                with self.assertRaises(ValueError):
+                    m.validate(self.spec, self.files)
+                self.state[field] = old; self.bind()
+
+
+class UartMetadata(unittest.TestCase):
+    def setUp(self):
+        self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)
+        self.root = Path(self.temp.name); self.sys = self.root/'sys'; self.dev = self.root/'dev'
+        self.dev.mkdir()
+        for name in ('devices', 'class/tty', 'bus/amba/drivers', 'bus/amba/devices', 'firmware/devicetree/base'):
+            (self.sys/name).mkdir(parents=True, exist_ok=True)
+
+    def fixture(self):
+        driver = self.sys/'bus/amba/drivers/uart-pl011'; driver.mkdir()
+        node = self.sys/'devices/platform/uart'; node.mkdir(parents=True)
+        (node/'driver').symlink_to(driver)
+        dt = self.sys/'firmware/devicetree/base/uart'; dt.mkdir()
+        (dt/'compatible').write_bytes(b'arm,pl011\0arm,primecell\0')
+        (node/'of_node').symlink_to(dt)
+        tty = node/'serial/tty/ttyAMA0'; tty.mkdir(parents=True)
+        serial_driver = self.sys/'bus/serial-base/drivers/port'; serial_driver.mkdir(parents=True)
+        (tty.parent.parent/'driver').symlink_to(serial_driver)
+        (self.sys/'class/tty/ttyAMA0').symlink_to(tty)
+        (self.sys/'bus/amba/devices/uart').symlink_to(node)
+        return node, dt
+
+    def test_parent_driver_chain_without_device_io(self):
+        self.fixture()
+        original = Path.open
+        def guarded(path, *args, **kwargs):
+            if path.is_relative_to(self.dev):
+                raise AssertionError('device opened')
+            return original(path, *args, **kwargs)
+        with patch.object(Path, 'open', guarded):
+            result = m.uart_metadata(self.sys, self.dev)
+        drivers = [p['driver'] for p in result['ttys']['ttyAMA0'] if p['driver']]
+        self.assertEqual([Path(d).name for d in drivers], ['port', 'uart-pl011'])
+        self.assertEqual(result['amba_drivers'], ['uart-pl011'])
+        self.assertIsNone(result['serial0'])
+        self.assertIn('compatible', result['amba_devices']['uart']['properties'])
+
+    def test_absent_devices_are_observations(self):
+        self.assertEqual(m.uart_metadata(self.sys, self.dev),
+                         {'serial0': None, 'ttys': {}, 'amba_drivers': [], 'amba_devices': {}})
+
+    def test_escaped_link_rejected(self):
+        (self.sys/'class/tty/ttyAMA0').symlink_to(self.dev)
+        with self.assertRaisesRegex(ValueError, 'escaped'):
+            m.uart_metadata(self.sys, self.dev)
+
+    def test_property_size_bound(self):
+        node, dt = self.fixture()
+        (dt/'compatible').write_bytes(b'x'*4097)
+        with self.assertRaisesRegex(ValueError, 'property bound'):
+            m.uart_metadata(self.sys, self.dev)
+
+    def test_property_symlink_rejected(self):
+        node, dt = self.fixture()
+        (dt/'compatible').unlink(); (dt/'compatible').symlink_to('/dev/zero')
+        with self.assertRaisesRegex(ValueError, 'regular device-tree'):
+            m.uart_metadata(self.sys, self.dev)
+
+    def test_entry_bound(self):
+        for i in range(33):
+            (self.sys/f'bus/amba/drivers/driver{i}').mkdir()
+        with self.assertRaisesRegex(ValueError, 'entry bound'):
+            m.uart_metadata(self.sys, self.dev)
+
+
+class UartCapture(Capture):
+    def uart_spec(self):
+        boot = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
+        self.state.update(phase='recovered', transient_units_cleaned=True, recovered_boot_id=boot)
+        (self.root/'state.json').write_bytes(m.encoded(self.state))
+        self.files['hardware-recovery.json'] = m.encoded({'result': self.state})
+        before = json.loads((self.root/'before.json').read_bytes())
+        before['boot_files'] = {}
+        for name in self.boot:
+            path = Path(name); info = path.stat(); raw = path.read_bytes()
+            before['boot_files'][name] = {'sha256': m.sha(raw), 'base64': base64.b64encode(raw).decode(),
+                                         'uid': info.st_uid, 'gid': info.st_gid, 'mode': info.st_mode & 0o777}
+        (self.root/'before.json').write_bytes(m.encoded(before))
+        return {'operation': 'host-uart-inspection', 'recovered_boot_id': boot}
+
+    def test_stable_uart_capture_and_acceptance(self):
+        binding = self.uart_spec()
+        uart = {'serial0': None, 'ttys': {}, 'amba_drivers': [], 'amba_devices': {}}
+        with patch.object(m, 'uart_metadata', return_value=uart) as capture, patch.object(m.subprocess, 'run', side_effect=self.command):
+            report = m.collect(self.h, binding, self.files)
+        self.assertEqual(capture.call_count, 2)
+        binding.update(hostname=report['hostname'], kernel=report['kernel'])
+        result = {'phase': 'captured', 'report': report, 'terminal_sha256': m.sha(m.encoded(report))}
+        self.assertEqual(m.accept(binding, result)['state'], 'diagnostic_accepted')
+        binding['recovered_boot_id'] = OTHER
+        with self.assertRaisesRegex(ValueError, 'recovered UART'):
+            m.accept(binding, result)
+
+    def test_uart_drift_holds(self):
+        binding = self.uart_spec()
+        with patch.object(m, 'uart_metadata', side_effect=[{'a': 1}, {'a': 2}]), patch.object(m.subprocess, 'run', side_effect=self.command):
+            with self.assertRaisesRegex(ValueError, 'UART metadata changed'):
+                m.collect(self.h, binding, self.files)
+
+    def test_restored_boot_drift_holds(self):
+        binding = self.uart_spec(); Path(self.boot[0]).write_text('drift')
+        with patch.object(m, 'uart_metadata', return_value={}), patch.object(m.subprocess, 'run', side_effect=self.command):
+            with self.assertRaisesRegex(ValueError, 'restored boot files drift'):
+                m.collect(self.h, binding, self.files)
+
+    def test_changed_recovered_boot_holds_before_queries(self):
+        binding = self.uart_spec(); binding['recovered_boot_id'] = OTHER
+        with patch.object(m.subprocess, 'run') as query, self.assertRaisesRegex(ValueError, 'boot changed'):
+            m.collect(self.h, binding, self.files)
+        query.assert_not_called()
+
+
 class Lifecycle(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(); self.addCleanup(self.temp.cleanup)

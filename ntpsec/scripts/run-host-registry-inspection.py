@@ -64,7 +64,8 @@ def registry(text):
 def validate(spec, files):
     old = json.loads(files['hardware-spec.json'])
     receipt = json.loads(files['hardware-recovery.json'])
-    if (spec['schema'] != 1 or spec['operation'] not in ('host-registry-inspection', 'host-baseline')
+    uart = spec.get('operation') == 'host-uart-inspection'
+    if (spec['schema'] != 1 or spec['operation'] not in ('host-registry-inspection', 'host-baseline', 'host-uart-inspection')
             or not re.fullmatch('[a-z][a-z0-9-]{0,47}', spec['operation_id'])
             or spec['stage'] != '/var/lib/ntp-inspect-'+spec['operation_id']
             or not re.fullmatch('/var/lib/ntp-host-[a-z][a-z0-9-]{0,47}', old['stage'])
@@ -73,14 +74,80 @@ def validate(spec, files):
             or spec['old_ipv4'] != old['old_ipv4']
             or spec['endpoints'] != [old['recipe'][key].split('/')[0] for key in ('ipv4_address', 'ipv6_address')]
             or receipt['bundle_sha256'] != spec['hardware_bundle_sha256']
-            or receipt['result']['phase'] != 'recovery_files_restored'
+            or receipt['result']['phase'] != ('recovered' if uart else 'recovery_files_restored')
             or spec['members'].keys() != inputs(spec)
             or any(sha(files[n]) != v for n, v in spec['members'].items())
             or not 0 < spec['expires_epoch']-spec['prepared_epoch'] <= 86400):
         raise ValueError('held hardware/target/input binding required')
     if spec['operation'] == 'host-baseline':
         recovery_inputs(files, spec)
+    if uart and (receipt['result'].get('transient_units_cleaned') is not True
+                 or receipt['result'].get('recovered_boot_id') != spec['recovered_boot_id']
+                 or not re.fullmatch('[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}', spec['recovered_boot_id'])):
+        raise ValueError('completed hardware recovery/boot binding required')
     return old
+
+
+def uart_metadata(sysroot=Path('/sys'), devroot=Path('/dev')):
+    """Read bounded sysfs metadata only; never open a device node."""
+    def inside(path, parent):
+        resolved = path.resolve(strict=True)
+        if not resolved.is_relative_to(parent) or resolved == parent:
+            raise ValueError('UART metadata path escaped approved tree')
+        return resolved
+
+    def names(path, pattern):
+        entries = sorted(p for p in path.iterdir() if re.fullmatch(pattern, p.name)) if path.exists() else []
+        if len(entries) > 32:
+            raise ValueError('UART metadata entry bound exceeded')
+        return entries
+
+    result = {'serial0': None, 'ttys': {}, 'amba_drivers': [], 'amba_devices': {}}
+    alias = devroot/'serial0'
+    if alias.is_symlink():
+        target = inside(alias, devroot)
+        if not re.fullmatch('tty(?:AMA|S)[0-9]+', target.name) or not stat.S_ISCHR(target.stat().st_mode):
+            raise ValueError('unexpected serial0 character-device alias')
+        result['serial0'] = str(target)
+    elif alias.exists():
+        raise ValueError('serial0 must be an alias')
+
+    def metadata(node):
+        entry = {'path': str(node), 'driver': None, 'of_node': None, 'properties': {}}
+        if (node/'driver').is_symlink():
+            entry['driver'] = str(inside(node/'driver', sysroot/'bus'))
+        if (node/'of_node').is_symlink():
+            dt = inside(node/'of_node', sysroot/'firmware/devicetree/base')
+            entry['of_node'] = str(dt)
+            for name in ('compatible', 'status', 'name'):
+                path = dt/name
+                if path.exists():
+                    if path.is_symlink() or not path.is_file():
+                        raise ValueError('regular device-tree property required')
+                    with path.open('rb') as stream:
+                        data = stream.read(4097)
+                    if len(data) > 4096:
+                        raise ValueError('device-tree property bound exceeded')
+                    entry['properties'][name] = base64.b64encode(data).decode()
+        return entry
+
+    for tty in names(sysroot/'class/tty', r'tty(?:AMA|S)[0-9]+'):
+        node = inside(tty, sysroot/'devices')
+        chain = []
+        while node != sysroot/'devices':
+            if len(chain) >= 16:
+                raise ValueError('UART parent depth bound exceeded')
+            chain.append(metadata(node))
+            node = node.parent
+        result['ttys'][tty.name] = chain
+    for driver in names(sysroot/'bus/amba/drivers', r'[a-zA-Z0-9_.:-]+'):
+        inside(driver, sysroot/'bus/amba/drivers')
+        result['amba_drivers'].append(driver.name)
+    for device in names(sysroot/'bus/amba/devices', r'[a-zA-Z0-9_.:@-]+'):
+        result['amba_devices'][device.name] = metadata(inside(device, sysroot/'devices'))
+    if len(encoded(result)) > 1024*1024:
+        raise ValueError('UART metadata aggregate bound exceeded')
+    return result
 
 
 def private_root_file(h, path, limit=8*1024**2):
@@ -117,6 +184,8 @@ def collect(h, spec, files):
         elif json.loads(retained['state.json']) != json.loads(files['hardware-recovery.json'])['result']:
             raise ValueError('recovered state drift; inspect scope needs review')
         boot = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
+        if spec.get('operation') == 'host-uart-inspection' and boot != spec['recovered_boot_id']:
+            raise ValueError('recovered UART inspection boot changed')
         report = {'schema': 1, 'hostname': socket.gethostname(), 'kernel': os.uname().release,
                   'boot_id': boot, 'collected_epoch': int(time.time()),
                   'retained': {n: base64.b64encode(v).decode() for n, v in retained.items()},
@@ -153,6 +222,13 @@ def collect(h, spec, files):
         for family in ('-4', '-6'):
             query('routes'+family, ['/usr/sbin/ip', '-j', family, 'route', 'show'])
         query('cmdline', ['/usr/bin/cat', '/proc/cmdline'])
+        if spec.get('operation') == 'host-uart-inspection':
+            report['uart'] = uart_metadata()
+            if report['uart'] != uart_metadata():
+                raise ValueError('UART metadata changed during capture')
+            before = json.loads(retained['before.json'])
+            if report['boot_files'] != before['boot_files']:
+                raise ValueError('restored boot files drift')
         if registry(query('registry-end', ['/usr/bin/nmcli', '-t', '-f', 'UUID,TYPE', 'connection', 'show'])) != current:
             raise ValueError('registry changed during capture')
         if boot != Path('/proc/sys/kernel/random/boot_id').read_text().strip():
@@ -248,7 +324,8 @@ def seal(args):
     c = module('run-foundation-preflight.py')
     prior = module('run-host-configuration.py')
     old, previous = prior.prepare(args.hardware_dir/'host-configuration.tar', args.hardware_sha256)
-    recovery = c.private_file(args.hardware_dir/'recover-result.json')
+    uart = getattr(args, 'uart', False)
+    recovery = c.private_file(args.hardware_dir/('cleanup-result.json' if uart else 'recover-result.json'))
     files = {'worker.py': Path(__file__).read_bytes(), 'helper.py': (ROOT/'scripts/foundation-install.py').read_bytes(),
              'hardware-spec.json': previous['spec.json'], 'hardware-recovery.json': recovery,
              'known_hosts': previous['known_hosts'], 'tests.py': (ROOT/'tests/test_host_registry_inspection.py').read_bytes(),
@@ -258,10 +335,12 @@ def seal(args):
         files[label+'.md'] = (ROOT/path).read_bytes()
     epoch = int(time.time())
     spec = {k: old[k] for k in ('hostname', 'kernel', 'ssh', 'old_ipv4')}
-    spec.update(schema=1, operation='host-registry-inspection', operation_id=args.operation_id,
+    spec.update(schema=1, operation='host-uart-inspection' if uart else 'host-registry-inspection', operation_id=args.operation_id,
                 stage='/var/lib/ntp-inspect-'+args.operation_id, prepared_epoch=epoch, expires_epoch=epoch+86400,
                 endpoints=[old['recipe'][k].split('/')[0] for k in ('ipv4_address', 'ipv6_address')],
                 hardware_bundle_sha256=args.hardware_sha256, members={n: sha(files[n]) for n in INPUTS})
+    if uart:
+        spec['recovered_boot_id'] = json.loads(recovery)['result']['recovered_boot_id']
     validate(spec, files)
     files['spec.json'] = encoded(spec)
     files['review.md'] = (f'# Read-only registry inspection\n\nTarget: {spec["hostname"]}. Operation: {args.operation_id}.\n'
@@ -285,6 +364,23 @@ def seal(args):
         'conditional modes are readback and cleanup. Each is registered locally before target contact. '
         'Fixed queries have 10-second bounds and a 90-second aggregate deadline; SSH is bounded to 180 seconds. '
         'Preparation is offline. Recovery continuation requires these findings and separate approval.\n').encode()
+    if uart:
+        files['review.md'] = files['review.md'].replace(b'Read-only registry inspection', b'Read-only UART/sysfs inspection')
+        files['review.md'] = files['review.md'].replace(
+            b'Recovery continuation requires these findings and separate approval.',
+            b'Any corrected hardware stage requires these findings, fresh evidence and separate approval.')
+        files['review.md'] += (
+            '\nUART scope: bind the completed hardware recovery/cleanup and exact recovered boot. '
+            'Require both boot files to match retained originals. Capture /dev/serial0 link/character-node metadata '
+            '(never open it), ttyAMA/ttyS sysfs parent chains, driver links, and device-tree compatible/status/name '
+            'properties; list AMBA driver names and AMBA device driver/device-tree metadata. '
+            'Two matching metadata passes are required; at most 32 entries per collection, 16 parents per tty, '
+            '4096 bytes per property and 1 MiB total UART metadata. Sysfs links must resolve within their approved trees. '
+            'Do not bind/unbind drivers, load modules, write sysfs, read receiver data or change boot settings. '
+            'Missing UART aliases/drivers are reportable observations, not hardware acceptance. '
+            'This is the restored boot, not the failed candidate boot: it cannot establish the earlier live mapping. '
+            'No corrective mutation or reboot is included. Incomplete captures remain preserved; recovery consists '
+            'only of conditional terminal readback and hash-bound cleanup after diagnostic acceptance.\n').encode()
     files['manifest.json'] = encoded({n: sha(v) for n, v in files.items()})
     os.umask(0o077)
     args.output.mkdir(mode=0o700)
@@ -328,6 +424,11 @@ def accept(spec, result):
             or report['retained_sha256'] != {n: sha(base64.b64decode(v, validate=True)) for n, v in report['retained'].items()}
             or any(q['status'] != 0 for q in report['queries'].values())):
         raise ValueError('complete bound diagnostic report required')
+    if spec.get('operation') == 'host-uart-inspection':
+        if (report['boot_id'] != spec['recovered_boot_id']
+                or set(report['uart']) != {'serial0', 'ttys', 'amba_drivers', 'amba_devices'}
+                or len(encoded(report['uart'])) > 1024*1024):
+            raise ValueError('complete recovered UART metadata required')
     if spec.get('operation') == 'host-baseline':
         baseline = report['baseline']
         if (baseline['observation']['boot_id'] != spec['recovered_boot_id']
@@ -577,6 +678,7 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     sub = parser.add_subparsers(dest='action', required=True)
     p = sub.add_parser('seal')
+    p.add_argument('--uart', action='store_true', help='Inspect UART/sysfs after completed hardware recovery')
     p.add_argument('--hardware-dir', type=Path, required=True); p.add_argument('--hardware-sha256', required=True)
     p.add_argument('--operation-id', required=True); p.add_argument('--output', type=Path, required=True)
     p = sub.add_parser('execute')

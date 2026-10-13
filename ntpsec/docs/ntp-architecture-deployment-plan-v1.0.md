@@ -625,7 +625,10 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    check; original boot files were restored and recovery reboot/network checks
    and transient cleanup completed. Establish the observed UART driver identity
    through a separately approved read-only inspection before correcting that
-   gate. Bind replacement stages independently from historical
+   gate. The prepared inspection records bounded tty parent/driver chains and
+   AMBA/device-tree metadata without device I/O or sysfs writes, bound to the
+   recovered boot and completed cleanup. It cannot reconstruct the failed
+   boot mapping or establish hardware acceptance. Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Hardware/time-service/client acceptance remains pending.
    Prepare hardware/boot and account/runtime prerequisites as separately

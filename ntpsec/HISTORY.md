@@ -1172,3 +1172,30 @@ execution approval. Establish the observed mapping before changing the recipe
 or checker; preserve this executed bundle unchanged. A replacement hardware
 stage needs fresh evidence and its own approval. Do not replay consumed modes
 or treat recovery as UART/PPS/RTC acceptance.
+
+### October 13: read-only UART/sysfs inspection prepared
+
+Prepared `host-uart-inspection-20261013-v1` offline using the existing registry
+inspection controller. Bind the exact hardware v2 bundle, completed recovery
+and cleanup state, recovered boot, pinned SSH identity, current worker/tests
+and all three governing documents. Preserve the executed hardware bundle and
+its root stage unchanged.
+
+One capture reads the serial alias metadata, bounded ttyAMA/ttyS parent driver
+chains, device-tree compatible/status/name properties and AMBA driver/device
+metadata twice. The inherited capture also records stable retained state,
+network profiles/routes and boot files; restored boot bytes must match the
+protected originals. It performs no device opens, sysfs writes, module changes,
+service changes or reboot. Conditional readback never repeats capture; cleanup
+removes only the new protected diagnostic stage after terminal-hash acceptance.
+Interrupted captures remain preserved.
+
+Focused offline tests cover parent-driver relationships, absent devices,
+path escapes, property/entry bounds, changing metadata, restored-file drift
+and recovered-boot/cleanup binding. These checks establish capture behavior,
+not a diagnosis of the failed candidate boot. No target contact occurred.
+
+Next approve the [UART/sysfs review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-uart-inspection-20261013-v1/review.md)
+and its `sealing.json` SHA-256 for one read-only capture with conditional
+readback and cleanup. Receiver timing, hardware acceptance, account/runtime
+setup and clock-service activation remain pending.
