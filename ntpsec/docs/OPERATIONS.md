@@ -270,7 +270,7 @@ The observed IPv6 egress source was a global address, not the fixed ULA.
 This supports the firewall explanation without proving an individual rule hit.
 UDP delivery, TLS/NTS authentication and service-sandbox behavior remain untested.
 
-The network owner now prepares an automated IPv6 permit correction in
+The network owner prepared an automated IPv6 permit correction in
 `homelab-network/Ubiquiti/ntp-ipv6/` for separate approval. Its two IPv6-only rules
 match the observed Ethernet MAC for UDP 123 and TCP 4460 before the existing
 reject. This avoids storing a changing global IPv6 address or distributing an
@@ -285,6 +285,14 @@ is no independent gateway recovery timer; interrupted work may require the
 approved recovery continuation. UDP traffic, authenticated NTS and client
 acceptance remain cutover gates. No firewall change has executed. Carry the
 mDNS warnings into the next client-acceptance review.
+
+V1 execution held before any firewall write: its accepted before-capture found
+the IPv6 DNS allow rule had changed from an address-list source to MAC matching.
+The old list was consequently not referenced/retrieved; deletion is not inferred.
+The NTP probes still showed six IPv4 successes and six IPv6 refusals. Matching
+readbacks and diagnostic cleanup completed; no rollback was required. V2 binds
+that fresh capture while preserving the observed DNS configuration and needs
+separate execution approval. Preserve v1's executed bundle and registration.
 
 `run-nts-transport-inspection.py` seals the checked-in recipe, helpers, tests,
 governing documents and the network owner's `UNIFI_ACCESS.md`, bound to the
@@ -397,7 +405,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; Automated MAC-bound IPv6 permit candidate prepared; separate network-owner execution approval pending |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v1 held before writes on DNS policy drift; refreshed v2 requires separate execution approval |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

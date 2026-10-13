@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; Automated MAC-bound IPv6 permit candidate prepared; separate network-owner execution approval pending |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v1 held before writes on DNS policy drift; refreshed v2 requires separate execution approval |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1917,3 +1917,26 @@ under `homelab-network/ntp-ipv6-permit-20261013-v1`. It accepts only policy scop
 and root/NTP-account dual-stack TCP reachability. UDP exchange, authenticated
 NTS, explicit minsane/journal policy and client/mDNS acceptance remain pending
 for the service cutover. Prefix rollover itself is not tested by this stage.
+
+### October 13: IPv6 permit v1 held before mutation; v2 prepared
+
+Executed the approved parent bundle once. Its before-diagnostic completed,
+matched both management readbacks and recorded cleanup. Fresh controller data
+showed the existing IPv6 DNS allow rule now matched MAC addresses instead of
+its previously referenced IPv6 address list. That list was no longer referenced
+by the collection; this does not establish deletion. All other compared baseline
+sections and policy fields matched. This existing DNS change was observed, not
+performed or reverted by the NTP operation.
+
+Exact preflight comparison held before the mutation client authenticated or any
+firewall write was submitted. No NTP permits were created; no recovery was needed.
+The fresh TCP results still showed all six IPv4 connections succeeding and all
+six IPv6 connections refused. Original service state and all evidence remain
+preserved. The v1 apply registration cannot be replayed.
+
+Prepared v2 offline from v1's accepted and closed before-diagnostic. It retains
+the same MAC-bound two-permit scope, current DNS policy, conditional recovery and
+TCP acceptance. Fresh child operation IDs and a new archive hash require separate
+execution approval. No host address change, UDP/NTS authentication or service
+cutover occurred. The next review is
+`homelab-network/ntp-ipv6-permit-20261013-v2` under private evidence storage.
