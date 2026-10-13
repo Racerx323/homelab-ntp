@@ -23,9 +23,9 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware boot edits and one reboot executed; acceptance held on network registry drift; original boot files restored, recovery reboot blocked by the same guard; runtime stage unstarted | Registry inspection accepted and cleaned; approve the prepared recovery continuation before replacement hardware/runtime stages |
+| Runtime configuration | Hardware attempt recovered to original boot configuration; recovery reboot, dual-stack acceptance and transient cleanup complete; runtime stage unstarted | Prepare a fresh baseline and corrected hardware/boot stage, then conditional runtime prerequisites; obtain separate execution approval |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
-| Node/network acceptance | Pre-reboot networking accepted; IPv4 SSH returned after hardware reboot, but complete post-reboot acceptance is held | Resolve registry drift and recovery before hardware, time, dual-stack NTP clients and monitoring acceptance |
+| Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 
 On October 12, the earlier v2 foundation snapshot passed validation with the same
 679 package records, 197 protected inputs and eight configuration directories.
@@ -1308,12 +1308,14 @@ execution uses `execute --bundle ... --sha256 ... --mode capture` once;
 conditional modes are `readback` and `cleanup`. Every mode is registered before
 SSH. Capture or cleanup uncertainty never authorizes replay. Diagnostic
 acceptance establishes evidence completeness, not hardware or network health.
-The resulting recovery continuation is prepared for separate execution approval.
+The resulting recovery continuation was executed, accepted and cleaned on October 13.
 
 ## Recovery after loopback UUID drift
 
-`host-recovery-continuation-20261013-v1` binds the accepted inspection,
-its cleanup, the executed hardware archive and diagnosed current boot.
+`host-recovery-continuation-20261013-v1` completed one recovery reboot,
+acceptance through both pinned management endpoints and transient cleanup on
+October 13. It binds the accepted inspection, its cleanup, the executed
+hardware archive and diagnosed boot. Its execution modes are consumed.
 `run-host-recovery-continuation.py` reuses the sealed original worker with
 an in-memory registry comparison adapter. It permits only one loopback UUID
 replacement whose public settings match the observed `lo` profile, manual

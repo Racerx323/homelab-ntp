@@ -1064,3 +1064,32 @@ Recovery remains incomplete; account/runtime setup remains unstarted.
 Next approve the [recovery review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-recovery-continuation-20261013-v1/review.md)
 and its `sealing.json` SHA-256. Retain console/media readiness and the original
 Debian 11 card. Do not replay the consumed hardware controller modes.
+
+### October 13: recovery reboot accepted and cleanup complete
+
+Executed the approved `host-recovery-continuation-20261013-v1` bundle after
+verifying its exact hash and validity window, using Aaron's confirmed
+console/media readiness. Preflight matched the diagnosed boot, retained
+state/before/journal hashes and restored original boot bytes/owners/modes.
+The continuation submitted its one recovery reboot and observed a new boot.
+
+Both pinned IPv4 and IPv6 endpoints passed matching recovery acceptance:
+original boot files, fixed addressing, RA, DNS, routes, HTTPS egress and
+package/native/service continuity. The constrained loopback comparison passed
+without changing any profile or the sealed original worker. Conditional
+cleanup completed for the original operation reboot transients. Both root
+stages, the byte-exact before-state, command journals, sealed bundles and all
+local execution records remain preserved.
+
+The private continuation directory contains `reboot-result.json`,
+`acceptance.json`, endpoint proofs and `cleanup-result.json`; the latter
+records `phase=accepted` and `transient_units_cleaned=true`. Rollback is now
+complete. This accepts recovery to the pre-hardware boot configuration, not
+UART/PPS/RTC bring-up or physical timing performance. No account/runtime setup
+or clock-service activation occurred.
+
+Next prepare a fresh target baseline and corrected hardware/boot stage that
+incorporates the tested loopback comparison, followed by conditional runtime
+prerequisites. Obtain separate execution approval for those exact bundles.
+Do not reuse consumed hardware/recovery modes or claim hardware acceptance
+from the recovery receipt.

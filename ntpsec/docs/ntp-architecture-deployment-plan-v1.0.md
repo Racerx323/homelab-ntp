@@ -611,18 +611,17 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    retained RA, both DNS VIPs, routes, HTTPS egress and pinned-key management
    access were verified. The original DHCP profile and recovery evidence
    remain retained. Hardware execution on October 13 subsequently held on
-   post-reboot network registry drift. Original boot files were restored, but
-   the same guard blocked recovery reboot submission. Complete scoped
-   inspection and recovery before replacement hardware/runtime stages. The
-   accepted read-only inspection established that only the loopback UUID
-   changed; non-loopback UUIDs/types were unchanged. Its diagnostic staging
-   was cleaned. A separate recovery continuation is prepared: permit only
-   the observed lo profile UUID replacement, with exact reserved addresses,
-   methods, gateways and autoconnect state; retain every non-loopback and
-   dual-stack/native continuity check. Apply this same constraint to future
-   hardware/reboot stages. The continuation needs separate execution approval.
-   See HISTORY for execution evidence. Reboot persistence and time-service/client
-   acceptance remain pending.
+   post-reboot network registry drift. The accepted inspection established
+   that only the loopback UUID changed. The separately approved recovery
+   continuation completed a reboot into the restored original boot files,
+   dual-stack acceptance and transient cleanup on October 13. Native files,
+   packages, services, addresses, RA, DNS and routes retained continuity.
+   Keep the constrained loopback comparison in future hardware/reboot stages:
+   allow only the observed lo identity and reserved addresses, methods,
+   gateways and autoconnect state; preserve exact non-loopback registry and
+   network/native checks. Next prepare a fresh baseline and corrected
+   hardware/boot stage for separate execution approval. See HISTORY for
+   execution evidence. Hardware/time-service/client acceptance remains pending.
    Prepare hardware/boot and account/runtime prerequisites as separately
    approved hash-bound stages. Boot edits preserve unrelated settings and
    storage/root parameters, remove only the observed serial console, and use
