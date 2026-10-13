@@ -1,0 +1,10 @@
+[Unit]
+Description=Maintain the reviewed NTP leapfile from IANA
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/bin/ntpleapfetch -s https://data.iana.org/time-zones/tzdb/leap-seconds.list -f /etc/ntp.conf -t /var/lib/ntpsec/leap-seconds.tmp -r 3 -i 10 -e 60
+TimeoutStartSec=120
+UMask=0022

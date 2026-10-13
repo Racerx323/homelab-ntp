@@ -2,7 +2,7 @@
 Description=Run leapfile maintenance at the architecture schedule
 
 [Timer]
-OnBootSec=15min
+OnActiveSec=15min
 OnUnitActiveSec=4w
 RandomizedDelaySec=30min
 Unit=ntpleapfetch.service

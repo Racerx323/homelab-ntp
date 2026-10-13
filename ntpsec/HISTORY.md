@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Serial NTP0/GPIO PPS NTP2 pairing and SPG 3.01/protocol 18.00 observed; prepare final configuration/cutover for separate execution approval |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Serial NTP0/GPIO PPS NTP2 and SPG 3.01/protocol 18.00 observed; final service cutover prepared, awaiting separate execution approval |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1648,3 +1648,33 @@ SHM associations, selected NTS upstreams, LAN restrictions and Avahi scope;
 include backups, early functionality, timing/client acceptance and recovery.
 Execution requires separate approval. No new long acquisition is needed solely
 to reproduce the already accepted source pairing.
+
+### October 13: final service cutover prepared offline
+
+The user selected serial NMEA as a selectable source, without assumed
+calibration, alongside preferred GPIO PPS and all three NTS upstreams. This
+workstation is the approved client-test location. The checked-in candidate
+binds observed NTP0/NTP2 ordering, receiver-read-only GPSD, Default LAN access,
+localhost-only administrative queries, eth0-only Avahi and the pinned leap asset.
+
+The reproducible supervisor now applies the shared short source-pairing gate
+before every ntpd start. The sealed cutover procedure includes byte-exact backups,
+120-second apply limit, early ntpd functionality, independent 1800-second
+recovery, consecutive convergence checks, dual-endpoint proof and workstation
+NTP/mDNS acceptance. Durable acceptance precedes recovery cancellation;
+only acceptance enables persistent timeservice and leap maintenance. Recovery
+restores files/UART/bootstrap service while preserving all executed evidence;
+it cannot reverse clock corrections or survive a reboot.
+
+The current review is `service-cutover-20261013-v1/review.md` under the private
+current-evidence directory; its adjacent `sealing.json` binds the archive SHA-256.
+No target contact, clock-service activation, receiver change or upstream query
+occurred during preparation. Next obtain separate approval of this sealed
+cutover, then execute its one start and early functionality gate before the
+bounded convergence/client checks. Timing/client acceptance remains pending.
+
+Offline input-binding, startup, client parser, acceptance and recovery tests
+passed against the candidate, including an offline seal using the accepted
+receiver archive. Exact ntpleapfetch unit/executable validation remains a target
+pre-activation requirement because that pinned executable is absent from the
+workstation. These checks do not constitute live acceptance.

@@ -1,0 +1,28 @@
+{
+  "schema": 1,
+  "hostname": "j2-svntp1",
+  "recovery_seconds": 1800,
+  "apply_max_seconds": 120,
+  "acceptance_reserve_seconds": 60,
+  "max_probes": 40,
+  "probe_interval_seconds": 30,
+  "stable_probes": 3,
+  "maximum_pps_offset_ms": 5,
+  "maximum_pps_jitter_ms": 1,
+  "client": "controller",
+  "ntp_uid": 999,
+  "ntp_gid": 985,
+  "nts_servers": ["time.cloudflare.com", "ohio.time.system76.com", "oregon.time.system76.com"],
+  "timeservice": {
+    "gpsd": ["/usr/local/sbin/gpsd", "-b", "-N", "-n", "-s", "115200", "/dev/serial0", "/dev/pps0"],
+    "ntpd": ["/usr/local/sbin/ntpd", "-n", "-m", "-c", "/etc/ntp.conf", "-u", "ntp:ntp"],
+    "uart_device": "/dev/serial0",
+    "startup_gate": {"timeout_seconds": 30, "matching_samples_per_source": 5, "units": {"TOFF": "NTP0", "PPS": "NTP2"}}
+  },
+  "leapfile": {
+    "sha256": "db5a895f16853b03bfc865e8d68f9fc8710ef1740e3400c701cd46a5bbbc3433",
+    "expiry_utc": "2027-06-28T00:00:00Z",
+    "provenance": "accepted receiver/runtime inspection of the distribution leap list",
+    "maintenance_url": "https://data.iana.org/time-zones/tzdb/leap-seconds.list"
+  }
+}

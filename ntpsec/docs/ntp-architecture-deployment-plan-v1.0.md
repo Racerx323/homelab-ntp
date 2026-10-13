@@ -705,6 +705,32 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    is restricted to the governed Default LAN IPv4/IPv6 ULA subnets, with
    administrative queries restricted to localhost. Bootstrap synchronization
    remains active until the later ntpd cutover.
+   For the initial j2-svntp1 profile, make observed serial NTP0 selectable
+   without an assumed time1 correction; prefer GPIO PPS NTP2. Require the
+   same five-sample/30-second source gate in the installed supervisor before
+   every ntpd launch, stopping diagnostic readers before ntpd consumes SHM.
+   A failed gate stops the pair. Require early localhost ntpd functionality
+   before longer convergence checks. Use this workstation for both IP-family
+   NTP responses, denied administrative queries and LAN mDNS discovery.
+   Limit Avahi to eth0 with reflection and wide-area discovery disabled.
+   Bind the accepted distribution leap list as a checked-in asset; install it
+   root-owned under /var/lib/ntpsec, with separate ntp-owned drift and statistics
+   paths. Maintain it from the reviewed IANA HTTPS source without restarting
+   ntpd. Enable the four-week timer only after service acceptance; its first
+   check is 15 minutes after activation plus up to 30 minutes random delay.
+   The cutover trial has a 120-second apply limit and independent 1800-second
+   recovery timer. Require three consecutive observations at least 30 seconds
+   apart, within 40 probes: PPS selected and serial/PPS reachable, leap 0, stratum 1,
+   absolute PPS offset at most 5 ms and jitter at most 1 ms, all three NTS
+   associations authenticated/reachable with cookies, expected daemon
+   credentials, no supervisor restart and no service/Avahi error-priority
+   journal entries. These are initial operation thresholds, not calibrated
+   UTC accuracy or a replacement for the Phase 3A baseline. Confirm retained
+   native/package/account/loader/boot/network/hardware state, both SSH endpoints
+   and workstation acceptance before persistence and recovery cancellation.
+   On failure restore backed-up files, UART and bootstrap synchronization;
+   preserve statistics/evidence. Recovery cannot undo clock corrections and
+   does not survive reboot. No reboot is part of this cutover approval.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.

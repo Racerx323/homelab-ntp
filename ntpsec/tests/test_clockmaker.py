@@ -29,6 +29,7 @@ def load(name):
 CLOCK = load('clockmaker')
 PIN = load('pinup')
 SERVICE = load('timeservice')
+STARTUP_GATE = {'timeout_seconds':30,'matching_samples_per_source':5,'units':{'TOFF':'NTP0','PPS':'NTP2'}}
 
 
 def write_json(path, data):
@@ -502,7 +503,7 @@ class TimeserviceTests(unittest.TestCase):
                                   'ntpd': ['/usr/local/sbin/ntpd', '-n', '-m']})
 
     def test_uart_initialization_failure_prevents_both_daemons(self):
-        config = {'uart_device': '/dev/observed-gps',
+        config = {'startup_gate':STARTUP_GATE,'uart_device': '/dev/observed-gps',
                   'gpsd': ['/usr/local/sbin/gpsd', '-N', '-s', '115200', '/dev/observed-gps'],
                   'ntpd': ['/usr/local/sbin/ntpd', '-n', '-m']}
         for error in (subprocess.CalledProcessError(1, 'stty'),
@@ -524,8 +525,8 @@ class TimeserviceTests(unittest.TestCase):
             def terminate(self): self.stopped = True; self.exited = True
             def wait(self, timeout=None): return 0
         first, second = Process(False), Process(True)
-        config = {'uart_device': '/dev/observed-gps', 'gpsd': ['/usr/local/sbin/gpsd', '-N', '-s', '115200', '/dev/observed-gps'], 'ntpd': ['/usr/local/sbin/ntpd', '-n', '-m']}
-        with patch.object(SERVICE.subprocess, 'run') as stty:
+        config = {'startup_gate':STARTUP_GATE,'uart_device': '/dev/observed-gps', 'gpsd': ['/usr/local/sbin/gpsd', '-N', '-s', '115200', '/dev/observed-gps'], 'ntpd': ['/usr/local/sbin/ntpd', '-n', '-m']}
+        with patch.object(SERVICE.subprocess, 'run') as stty, patch.object(SERVICE, 'check_startup'):
             def launch(argv, **kwargs):
                 stty.assert_called_once()
                 return first if argv[0].endswith('/gpsd') else second
@@ -536,9 +537,9 @@ class TimeserviceTests(unittest.TestCase):
     def test_second_daemon_launch_error_cleans_up_first(self):
         process = unittest.mock.Mock()
         process.poll.return_value = None
-        with patch.object(SERVICE.subprocess, 'run'), patch.object(SERVICE.subprocess, 'Popen', side_effect=[process, OSError('launch failed')]):
+        with patch.object(SERVICE, 'check_startup'), patch.object(SERVICE.subprocess, 'run'), patch.object(SERVICE.subprocess, 'Popen', side_effect=[process, OSError('launch failed')]):
             with self.assertRaises(OSError):
-                SERVICE.supervise({'uart_device': '/dev/observed-gps', 'gpsd': ['/usr/local/sbin/gpsd', '-N', '-s', '115200', '/dev/observed-gps'], 'ntpd': ['/usr/local/sbin/ntpd', '-n', '-m']})
+                SERVICE.supervise({'startup_gate':STARTUP_GATE,'uart_device': '/dev/observed-gps', 'gpsd': ['/usr/local/sbin/gpsd', '-N', '-s', '115200', '/dev/observed-gps'], 'ntpd': ['/usr/local/sbin/ntpd', '-n', '-m']})
         process.terminate.assert_called_once()
 
 

@@ -173,11 +173,92 @@ The pinned source references for leap behavior are `ntpclients/ntpleapfetch`,
 Do not activate a timer, choose a restart action or accept a leapfile merely
 from its presence. Final configuration/cutover remains a separate review after
 the captured inputs are incorporated; no repeat long acquisition is needed
-just to re-establish the accepted pairing. The next stage is offline rendering
-and sealing of final configuration/cutover, with backups, source attachment,
-NTS/mDNS and dual-stack client acceptance, and recovery. Its execution requires
-separate approval. This inspection changed no receiver settings, started no
-GPSD/NTPsec process and left bootstrap synchronization unchanged.
+just to re-establish the accepted pairing. The final candidate and
+execution procedure are defined below. This inspection changed no receiver
+settings, started no GPSD/NTPsec process and left bootstrap synchronization unchanged.
+
+### Final service cutover candidate
+
+`configs/service-cutover-recipe.json` and `configs/j2-svntp1-ntp.conf` define
+selectable serial NTP0 without calibration, preferred GPIO PPS NTP2, all three
+NTS associations, Default LAN IPv4/ULA access and localhost-only queries.
+GPSD retains `-b`, explicit serial0/pps0 and 115200. The candidate is not an
+accepted live configuration. No APT application packages or receiver settings
+change in this stage.
+
+`scripts/run-service-cutover.py` seals the current inputs against the accepted
+receiver/runtime archive, matching dual-endpoint receipt and cleanup. It
+embeds the frozen accepted prerequisite checker, preserving executed bytes;
+this is continuity evidence for this node, not a fresh-node installation recipe.
+The new stage rejects changed target/boot, inputs, existing destinations,
+unreviewed overrides and SHM membership/ownership. Backups, commands and state
+remain under its root-owned 0700 stage, with 0600 evidence. Raw receiver records
+remain private. Execution must fit the accepted evidence window.
+
+```bash
+python3 -I -B ntpsec/scripts/run-service-cutover.py seal \
+    --receiver-dir "$accepted_receiver_directory" \
+    --receiver-sha256 "$accepted_receiver_sha256" \
+    --operation-id "$unique_operation_id" --output "$private_review_directory"
+```
+
+The [cutover review](/home/aaron/code/.local-evidence/homelab-ntp/current/service-cutover-20261013-v1/review.md)
+and adjacent `sealing.json` are the concrete execution gate. After separate
+approval of its SHA-256, use the sealed controller's `execute` command with
+that exact archive/hash and `--mode start`. One start is allowed. The controller
+registers submissions before transport and retains stdout/stderr/status; lost
+responses require conditional readback, never a repeated start.
+
+The trial backs up and replaces the supervisor, pairing helper, NTP/supervisor
+configuration, systemd unit and Avahi configuration. It creates a root-owned
+leap directory, ntp-owned drift/statistics directories and reviewed leap
+maintenance unit/timer. The initial leap asset is the byte-exact accepted
+distribution file under `configs/leap-seconds.list`, internally checksummed
+and valid through June 28, 2027 UTC; this does not imply a publisher signature.
+Avahi is limited to eth0, IPv4/IPv6 enabled, no reflection or wide-area discovery.
+NTPsec advertises with `-m`; the candidate retains outbound global IPv6 for NTS
+while unsolicited client service is limited by the configured restrictions.
+
+Arm independent 1800-second recovery before mutation. Apply has a 120-second
+systemd lifetime limit and failure recovery. Stop bootstrap timesyncd only
+at the reviewed cutover, then start the pair. `timeservice.py` runs the shared
+`gpsd-pairing.py` gate before every ntpd launch: at most 15 seconds for the GPSD
+socket, then 30 seconds to match five leap-0 timestamps from each expected
+device/unit. Stop and reap both diagnostic monitors before starting ntpd;
+missing or changed pairing stops the pair. The start response exposes the
+gate and early localhost ntpd query result before longer observation.
+
+Use numbered `--mode probe --attempt N` calls, at least 30 seconds apart,
+up to 40. Three consecutive successful probes are required: leap 0, stratum 1,
+PPS selected/reachable, serial reachable, absolute PPS offset at most 5 ms and jitter at most 1 ms,
+all three NTS associations authenticated/reachable with cookies, unchanged
+supervisor, expected daemon credentials and no timeservice/Avahi error-priority
+journal entries. These initial service thresholds do not prove UTC accuracy,
+long-term stability or holdover. Retain the measurements for later Phase 3A work.
+
+`--mode accept` first reads both management endpoints and tests this workstation's
+IPv4/IPv6 NTP responses, denied external mode-6 queries and `_ntp._udp.local`
+SRV port 123 plus the target's fixed A/AAAA records. Multicast reachability is
+unverified until this approved stage; any missing client proof blocks acceptance.
+The target then rechecks protected inputs and native/package/account/loader/
+boot/network/hardware continuity and current convergence with recovery time
+remaining. Only then enable timeservice, disable timesyncd, enable/start leap
+maintenance, record durable acceptance and cancel recovery. The four-week timer
+uses `OnActiveSec=15min` and up to 30 minutes random delay for its first check;
+its root-owned temporary file, IANA HTTPS source and bounded retry command
+are rendered in `templates/ntpleapfetch-j2.service`. No ntpd restart is configured.
+A post-acceptance leap maintenance fetch is part of the reviewed scope.
+
+Use numbered `--mode readback --attempt N` for uncertain or terminal state
+through both endpoints (up to 60, at least 30 seconds apart). A matching
+accepted/recovered receipt permits `--mode cleanup`. One explicit `--mode recover`
+is available in addition to independent timed/failure recovery. Recovery stops
+the pair and maintenance, restores exact backups and UART settings, preserves
+bounded generated statistics, restarts Avahi/bootstrap timesyncd and verifies
+original continuity. Unexplained drift holds recovery for inspection. Retain all
+stages and SHM segments. Cleanup clears transient controls only after terminal
+acceptance/recovery; it leaves an accepted service running. No reboot is included,
+and this recovery does not survive reboot or undo clock corrections.
 
 ## Current state and remaining work
 
@@ -194,7 +275,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Prepare final explicit-PPS configuration/cutover using the observed firmware, SHM, account, leap and service inputs; execution and timing/client acceptance remain pending |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Final explicit-PPS cutover candidate prepared against accepted inputs; separate execution approval and timing/client acceptance pending |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

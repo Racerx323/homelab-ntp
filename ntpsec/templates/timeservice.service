@@ -13,6 +13,8 @@ RestartSec=10
 KillMode=control-group
 TimeoutStopSec=15
 UMask=0027
+RuntimeDirectory=ntpsec-startup
+RuntimeDirectoryMode=0700
 
 [Install]
 WantedBy=multi-user.target

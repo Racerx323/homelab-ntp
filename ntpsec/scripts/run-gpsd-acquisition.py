@@ -2,7 +2,6 @@
 """Seal offline, then run one separately approved, bounded GPSD observation."""
 import argparse
 import base64
-from decimal import Decimal
 import fcntl
 import hashlib
 import importlib.util
@@ -25,7 +24,7 @@ ENV = {'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
 INPUTS = {'worker.py', 'runtime.tar', 'runtime-acceptance.json', 'runtime-cleanup.json',
           'recipe.json', 'architecture.md', 'operations.md', 'history.md', 'tests.py',
           'transport.py', 'known_hosts', 'prior.tar', 'prior-acceptance.json', 'prior-cleanup.json',
-          'prior-terminal.json', 'prior-restoration.json', 'prior-shm-after.txt', 'receiver-inputs.py'}
+          'prior-terminal.json', 'prior-restoration.json', 'prior-shm-after.txt', 'receiver-inputs.py', 'gpsd-pairing.py'}
 
 
 def encoded(value):
@@ -148,38 +147,8 @@ def prior_guard(h, spec, files):
 
 
 def pairing_evidence(gps_json, shm_text, minimum_samples=60):
-    """Correlate explicit-device reports with independently sampled SHM timestamps."""
-    rows = [json.loads(line) for line in gps_json.splitlines() if line.strip()]
-    watches = [r for r in rows if r.get('class') == 'WATCH']
-    if not watches or any(r.get('pps') is not True for r in watches):
-        return {'observed':False,'reason':'PPS watch acknowledgement missing'}
-    samples = set()
-    for line in shm_text.splitlines():
-        fields = line.split()
-        if not fields or fields[0] != 'sample': continue
-        if len(fields) != 7: raise ValueError('malformed SHM sample')
-        if fields[5] == '0':
-            samples.add((fields[1],int(Decimal(fields[3])*1000000000),int(Decimal(fields[4])*1000000000)))
-    units = {}; matched = {}; summary = {}
-    for kind,path in (('TOFF','/dev/serial0'),('PPS','/dev/pps0')):
-        reports = [r for r in rows if r.get('class') == kind]
-        if not reports or any(r.get('device') != path for r in reports):
-            return {'observed':False,'reason':'missing or ambiguous '+kind+' device'}
-        names = {r.get('shm') for r in reports}
-        if len(names) != 1 or not re.fullmatch(r'NTP[0-9]+',next(iter(names)) or ''):
-            return {'observed':False,'reason':'ambiguous '+kind+' SHM unit'}
-        unit = next(iter(names)); units[kind] = unit; pairs = set()
-        for r in reports:
-            fields = ('clock_sec','clock_nsec','real_sec','real_nsec')
-            if any(type(r.get(k)) is not int for k in fields): raise ValueError('integer JSON timestamps required')
-            if not all(0 <= r[k] < 1000000000 for k in ('clock_nsec','real_nsec')): raise ValueError('nanosecond range')
-            pair = (unit,r['clock_sec']*1000000000+r['clock_nsec'],r['real_sec']*1000000000+r['real_nsec'])
-            if pair in samples: pairs.add(pair)
-        matched[kind] = len(pairs)
-        summary[kind] = {'device':path,'unit':unit,'matching_samples':len(pairs)}
-    observed = len(set(units.values())) == 2 and all(n >= minimum_samples for n in matched.values())
-    return {'observed':observed,'sources':summary,'reason':None if observed else 'insufficient or overlapping matched sources',
-            'timing_accuracy_accepted':False}
+    location = Path(__file__).resolve().parent/'gpsd-pairing.py'
+    return load(location).pairing_evidence(gps_json,shm_text,minimum_samples)
 
 
 def run(argv, timeout=20):
@@ -500,6 +469,7 @@ def prepare(bundle, checksum):
     if (set(files) != INPUTS|{'spec.json','manifest.json','review.md'}
             or files['worker.py'] != Path(__file__).read_bytes()
             or files['receiver-inputs.py'] != (ROOT/'scripts/inspect-receiver-runtime.py').read_bytes()
+            or files['gpsd-pairing.py'] != (ROOT/'scripts/gpsd-pairing.py').read_bytes()
             or files['transport.py'] != (ROOT/'scripts/run-foundation-preflight.py').read_bytes()
             or c.private_file(bundle.parent/'known_hosts',4096) != files['known_hosts']):
         raise ValueError('closed current controller/transport/key inputs required')
@@ -548,6 +518,7 @@ def seal(args):
              'transport.py':(ROOT/'scripts/run-foundation-preflight.py').read_bytes(),
              'tests.py':(ROOT/'tests/test_gpsd_acquisition.py').read_bytes(),
              'receiver-inputs.py':(ROOT/'scripts/inspect-receiver-runtime.py').read_bytes(),
+             'gpsd-pairing.py':(ROOT/'scripts/gpsd-pairing.py').read_bytes(),
              'recipe.json':(ROOT/'configs'/('receiver-runtime-inputs.json' if args.purpose=='receiver-runtime-inputs'
                                           else 'gpsd-acquisition-recipe.json')).read_bytes()}
     for n,p in [('architecture.md','docs/ntp-architecture-deployment-plan-v1.0.md'),

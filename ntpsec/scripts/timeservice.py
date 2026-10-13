@@ -1,8 +1,10 @@
 #!/usr/bin/python3
 """Supervise the source-built GPSD/ntpd pair as one foreground systemd service."""
 import argparse
+import importlib.util
 import json
 import os
+import re
 from pathlib import Path
 import signal
 import stat
@@ -47,6 +49,12 @@ def stop(children):
 
 def supervise(config):
     validate(config)
+    gate=config.get('startup_gate')
+    if (not isinstance(gate,dict) or set(gate)!={'timeout_seconds','matching_samples_per_source','units'}
+            or gate['timeout_seconds']!=30 or gate['matching_samples_per_source']!=5
+            or set(gate['units'])!={'TOFF','PPS'} or len(set(gate['units'].values()))!=2
+            or any(not isinstance(v,str) or not re.fullmatch(r'NTP[0-9]+',v) for v in gate['units'].values())):
+        raise ValueError('reviewed bounded startup gate and observed units required')
     stopping = False
 
     def requested_stop(signum, frame):
@@ -62,6 +70,9 @@ def supervise(config):
         if stopping:
             return 0
         for name in ('gpsd', 'ntpd'):
+            if name=='ntpd':
+                check_startup(children[0],lambda:stopping,gate)
+                if stopping:return 0
             children.append(subprocess.Popen(config[name], env={
                 'PATH': '/usr/local/bin:/usr/local/sbin:/usr/bin:/bin', 'LC_ALL': 'C'}))
             if stopping or children[-1].poll() is not None:
@@ -75,6 +86,26 @@ def supervise(config):
         stop(children)
         for sig, handler in previous.items():
             signal.signal(sig, handler)
+
+
+def check_startup(gpsd, stopping, gate):
+    path=Path(__file__).resolve().parent/'gpsd-pairing.py'
+    spec=importlib.util.spec_from_file_location('gpsd_pairing',path)
+    helper=importlib.util.module_from_spec(spec);spec.loader.exec_module(helper)
+    root=Path('/run/ntpsec-startup');info=root.lstat()
+    if not stat.S_ISDIR(info.st_mode) or info.st_uid!=0 or stat.S_IMODE(info.st_mode)!=0o700:
+        raise ValueError('protected startup directory required')
+    result={'supervisor_pid':os.getpid(),'gpsd_pid':gpsd.pid,'started_epoch':time.time()}
+    try:
+        result.update(state='passed',pairing=helper.startup(gpsd,stopping,gate['units'],root))
+    except BaseException as error:
+        result.update(state='failed',error=str(error)[:500]);raise
+    finally:
+        tmp=root/'gate.json.new'
+        fd=os.open(tmp,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
+        with os.fdopen(fd,'w') as stream:
+            json.dump(result,stream);stream.write('\n');stream.flush();os.fsync(stream.fileno())
+        tmp.chmod(0o600);os.replace(tmp,root/'gate.json')
 
 
 def main():
