@@ -948,6 +948,9 @@ leaving final NTP source/access configuration and service cutover for later.
 Added checked-in hardware/runtime recipes, an offline sealer/controller and a
 protected root worker reusing the existing native/file/network guards. Added
 regression coverage to the existing offline test runner.
+Synthetic execution receipts now use explicit 0600 modes rather than inheriting
+the operator workstation's umask; validate with CI's 022 umask as well. The
+production owner-private input checks remain unchanged.
 
 Prepared `host-hardware-20261013-v1` for j2-svntp1, bound to the accepted
 networking archive, target boot/kernel, fresh host-input baseline, installed

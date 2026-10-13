@@ -327,6 +327,7 @@ class Controller(unittest.TestCase):
 
     def test_acceptance_not_retried_after_lost_response(self):
         (self.directory/'start-execution.json').write_bytes(c.c.encoded({'bundle_sha256':'a'*64}))
+        (self.directory/'start-execution.json').chmod(0o600)
         self.args.mode='verify';calls=[]
         def remote(*args,**kwargs):
             mode=args[4];calls.append(mode)
@@ -338,6 +339,7 @@ class Controller(unittest.TestCase):
 
     def test_failed_endpoint_proof_never_submits_acceptance(self):
         (self.directory/'start-execution.json').write_bytes(c.c.encoded({'bundle_sha256':'a'*64}))
+        (self.directory/'start-execution.json').chmod(0o600)
         self.args.mode='verify';calls=[]
         def remote(*args,**kwargs):
             calls.append(args[4])
