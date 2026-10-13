@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation/readback/payload cleanup accepted; runtime discovery and configuration pending |
-| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware v4 candidate retained unaccepted at PPS path hold; read-only PPS/RTC inspection next; account/runtime unstarted |
+| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware v4 candidate retained unaccepted; PPS/RTC inspection accepted; corrected acceptance-only continuation next; account/runtime unstarted |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1351,3 +1351,32 @@ cleanup of only the new diagnostic stage. This does not accept hardware or
 clean up the retained hardware stage. Use the observed hierarchy to determine
 the next correction or execute the already-approved v4 recovery; do not replay
 consumed start/reboot/verify/readback modes.
+
+### October 13: candidate PPS/RTC inspection accepted and cleaned
+
+Executed the approved `host-timing-inspection-20261013-v1` capture once.
+Diagnostic acceptance bound the unchanged candidate boot, v4 readback state,
+candidate boot-file hashes and two matching metadata passes. Conditional
+cleanup matched the accepted terminal hash and removed only the diagnostic
+stage. Original hardware state, backups, candidate boot and private evidence
+remain preserved. No hardware recovery or clock-service activation occurred.
+
+Observed PPS class `pps0` at `/sys/devices/virtual/pps/pps0`, without a device
+link or device-tree node. Its name is `pps@12.-1`; the separately bound
+pps-gpio platform device is `pps@12`. That platform's device-tree node has
+`pps-gpio` compatibility, GPIO controller phandle 7, BCM GPIO18 and flags 0;
+`assert-falling-edge` is absent. The referenced controller identifies as
+`brcm,bcm2711-gpio`. The checker incorrectly assumed that the virtual class
+provided `device/of_node/compatible`.
+
+RTC class `rtc0` links to I2C device `1-0052`, driver `rtc-rv3028`, with
+`microcrystal,rv3028` compatibility. No PPS samples, RTC clock attributes or
+device data were read. These are accepted diagnostic observations, not proof
+of pulse health, RTC accuracy or completed hardware/time-service acceptance.
+
+Next prepare corrected PPS class/platform correlation and an acceptance-only
+continuation bound to this candidate and accepted inspection, for separate
+execution approval. Preserve original v4 sealed code/state. No repeated boot
+change is needed solely to correct the metadata validator. Account/runtime
+setup remains conditional on successful full hardware acceptance; v4 recovery
+modes remain available under their existing approval.

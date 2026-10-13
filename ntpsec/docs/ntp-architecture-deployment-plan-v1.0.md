@@ -638,9 +638,15 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    hold. These corrections are tested offline. Fresh baseline v3 was accepted
    and cleaned on October 13. Hardware v4 passed the UART ancestry check but
    held at the assumed PPS device-tree path. Its candidate boot is retained
-   unaccepted for a separately approved read-only PPS/RTC hierarchy inspection
-   before correction or recovery. Inspect class and platform-driver mappings
-   without opening devices or reading PPS samples/RTC clock attributes.
+   unaccepted. The accepted PPS/RTC inspection found a virtual PPS class
+   without a device/of_node link, a separately bound pps-gpio platform device
+   configured for BCM18 without falling-edge metadata, and RV3028 at I2C 0x52.
+   Correlate the observed PPS class identity with the bound platform device
+   instead of assuming a class device-tree link. Prepare an acceptance-only
+   continuation against the unchanged candidate for separate approval; preserve
+   original sealed code/state and avoid another boot change solely to fix
+   validation. Physical timing and full dual-stack hardware acceptance remain
+   pending.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Hardware/time-service/client acceptance remains pending.
