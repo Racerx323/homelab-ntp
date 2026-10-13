@@ -1819,3 +1819,10 @@ intended service context, for separate execution approval. Resolve the connectio
 refusals before another cutover; retain authentication and upstream choices.
 The `minsane` recommendation still requires explicit treatment in the next
 cutover review. Diagnostic acceptance is not time-service acceptance.
+
+The operator subsequently reported missing IPv6 address entries in the UniFi
+Default LAN-to-External NTP rule. This is a plausible, unverified explanation
+for the observed transport failures. Next inspection should establish the actual
+rule matches and IPv6 egress source, and distinguish TCP 4460 key exchange from
+UDP 123 time traffic. No UniFi inspection or firewall modification was performed
+or authorized by this diagnostic execution.

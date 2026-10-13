@@ -261,7 +261,12 @@ messages, with positive and negative tests. No journal exception, rendered
 configuration or cutover acceptance code changed in this diagnostic preparation.
 Next prepare a scoped IPv4/IPv6 NTS transport inspection for separate execution
 approval, accounting for the intended service context. Establish why the IPv6
-connections were refused before another cutover. Do not change firewall rules,
+connections were refused before another cutover. The operator reports missing
+IPv6 address entries in the Default LAN-to-External NTP rule; treat this as an
+unverified firewall hypothesis. Inspect its effective source/destination matches,
+IP family, protocol/ports, ordering and logs, including NTS-KE TCP 4460 separately
+from NTP UDP 123. Establish the actual IPv6 egress source; do not assume the fixed
+ULA is used for public destinations. Do not change firewall rules,
 disable certificate checks, force IPv4 or replace upstreams based on this record
 alone. Carry the mDNS warnings into the next client-acceptance review.
 
