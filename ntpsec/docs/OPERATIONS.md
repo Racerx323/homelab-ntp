@@ -23,7 +23,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware v4 candidate boot retained after PPS metadata-path hold; UART ancestry passed; hardware unaccepted; no recovery or cleanup performed; runtime unstarted | Candidate PPS/RTC inspection accepted and diagnostic cleanup complete; virtual PPS class and separate BCM18 platform mapping observed; prepare corrected acceptance-only continuation for separate approval |
+| Runtime configuration | Hardware v4 candidate boot retained after PPS metadata-path hold; UART ancestry passed; hardware unaccepted; no recovery or cleanup performed; runtime unstarted | Candidate PPS/RTC inspection accepted and diagnostic cleanup complete; corrected PPS class/platform validator and acceptance-only continuation prepared; execution approval pending |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 
@@ -742,6 +742,40 @@ ID. The same entry supports `recover`, `recovery-reboot --console-ready`,
 identity and drift guards still apply. Do not repeat a reboot submission after
 an uncertain reply. If the OS will not boot, use console/media recovery and the
 preserved original card; do not touch the primary's power or splitter mapping.
+
+For the retained hardware v4 candidate, use the separate
+[acceptance-only review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-hardware-acceptance-20261013-v1/review.md)
+and its `sealing.json` hash. This is a new schema-3 hardware stage, prepared
+with `run-host-configuration.py seal-acceptance --hardware-dir SOURCE_DIR
+--hardware-sha256 SOURCE_HASH --timing-dir INSPECTION_DIR --timing-sha256
+INSPECTION_HASH --operation-id UNIQUE_ID --output NEW_PRIVATE_DIRECTORY`.
+The source is immutable hardware v4; the timing inspection must be accepted
+and cleaned. Preparation verifies both archive manifests, diagnostic receipt,
+terminal hash, candidate boot, source specification and boot-file hashes.
+Current helpers, tests, recipes, pinned manifests and governing documents
+are bound in the new archive.
+
+Its execution permits only `start`, `verify`, conditional `readback` and
+`cleanup`. Start creates protected evidence only. Verification holds the
+original stage lock shared/read-only, rejects original-state or candidate
+drift, and obtains matching proofs through both pinned management endpoints
+before writing a separate hardware receipt. PPS validation correlates the
+virtual class name and device number with the bound platform's BCM18/rising
+mapping. No devices are opened. The new stage does not edit boot files,
+reboot, restore files, change services or rewrite v4's acceptance state.
+Cleanup marks only the new evidence stage closed, including after a hold;
+all original and continuation artifacts remain preserved. Readback remains
+available if candidate/source drift prevents further validation. Do not
+replay a consumed mode after uncertain output.
+
+The original v4 controller is preserved and verified offline at
+`host-hardware-20261013-v4/recovery-controller/ntpsec/scripts/run-host-configuration.py`
+under the private evidence directory. Use that byte-exact controller with
+v4's original archive/hash for its remaining approved recovery modes;
+the current controller intentionally rejects older launcher bytes. The
+original console worker also remains available. Preparation did not invoke
+recovery or contact the target. Account/runtime must be resealed against the
+new hardware continuation specification and accepted receipt after success.
 
 The runtime stage requires the exact hardware root specification, accepted
 checks and current accepted boot ID. Create only a dedicated `ntp:ntp` system

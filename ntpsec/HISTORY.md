@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation/readback/payload cleanup accepted; runtime discovery and configuration pending |
-| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware v4 candidate retained unaccepted; PPS/RTC inspection accepted; corrected acceptance-only continuation next; account/runtime unstarted |
+| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware v4 candidate retained unaccepted; PPS/RTC inspection accepted; acceptance-only continuation prepared, execution approval pending; account/runtime unstarted |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1380,3 +1380,27 @@ execution approval. Preserve original v4 sealed code/state. No repeated boot
 change is needed solely to correct the metadata validator. Account/runtime
 setup remains conditional on successful full hardware acceptance; v4 recovery
 modes remain available under their existing approval.
+
+### October 13: PPS correction and acceptance-only continuation prepared
+
+Prepared `host-hardware-acceptance-20261013-v1` offline, bound to unchanged
+hardware v4 and the accepted/cleaned PPS/RTC inspection. Corrected PPS checks
+use the registered pps-gpio platform and GPIO controller metadata, correlate
+the virtual class source name, and verify its character-device number.
+Regression fixtures cover the observed virtual-class hierarchy, ambiguous or
+wrong mappings, candidate/source drift, shared-lock exclusion, evidence-only
+staging/cleanup, prohibited mutation modes and dual-endpoint acceptance.
+
+The new stage may only stage its own protected evidence, verify the existing
+candidate, record a separate acceptance, read back and close its evidence.
+It cannot repeat boot edits, reboot, restore files, activate services or open
+devices. The original source stage is checked under its existing shared lock
+and remains unchanged. Failure preserves diagnostics and candidate state.
+The original v4 controller and dependencies were preserved privately and its
+remaining recovery payloads verified offline against the original archive.
+
+Next approve the [acceptance-only continuation](/home/aaron/code/.local-evidence/homelab-ntp/current/host-hardware-acceptance-20261013-v1/review.md)
+using its exact `sealing.json` hash, for j2-svntp1. No target contact or live
+acceptance occurred during preparation. Hardware v4 remains applied and
+unaccepted; its authorized recovery remains available. Account/runtime must
+be resealed against successful continuation acceptance before execution.

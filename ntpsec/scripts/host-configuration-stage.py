@@ -2,6 +2,8 @@
 """Sealed boot bring-up or account/loader prerequisites; never activate time services."""
 import argparse
 import base64
+from contextlib import contextmanager
+import fcntl
 import importlib.util
 import json
 import os
@@ -12,6 +14,8 @@ import stat
 import struct
 import sys
 import time
+
+ACCEPTANCE_MODES = ('start','probe','accept','readback','cleanup')
 
 BOOT_PATHS = ('/boot/firmware/config.txt', '/boot/firmware/cmdline.txt')
 HARDWARE_LABELS = {'network', 'native', 'boot_files', 'new_boot', 'uart', 'pps', 'rtc', 'no_clock_cutover'}
@@ -126,6 +130,46 @@ def load_module(root, name, digest, helper):
     spec = importlib.util.spec_from_file_location('host_'+name.replace('-', '_'),root/name)
     module = importlib.util.module_from_spec(spec); spec.loader.exec_module(module)
     return module
+
+
+def gpio_pps_metadata(sysroot=Path('/sys'), devroot=Path('/dev')):
+    gpio = sysroot/'firmware/devicetree/base/soc/gpio@7e200000'
+    if b'brcm,bcm2711-gpio' not in (gpio/'compatible').read_bytes().split(b'\0'):
+        raise ValueError('Pi 4 GPIO controller required')
+    platforms = []
+    driver = sysroot/'bus/platform/drivers/pps-gpio'
+    entries = list(driver.iterdir())
+    if len(entries) > 32:
+        raise ValueError('bounded PPS platform registry required')
+    for link in entries:
+        if link.name in ('module','bind','unbind','uevent') or not link.is_symlink():
+            continue
+        platform = link.resolve(strict=True)
+        if (not platform.is_relative_to(sysroot/'devices/platform')
+                or (platform/'driver').resolve(strict=True) != driver
+                or (platform/'subsystem').resolve(strict=True) != sysroot/'bus/platform'):
+            raise ValueError('bound PPS platform identity required')
+        node = (platform/'of_node').resolve(strict=True)
+        if not node.is_relative_to(sysroot/'firmware/devicetree/base'):
+            raise ValueError('PPS device-tree path escaped')
+        if b'pps-gpio' not in (node/'compatible').read_bytes().split(b'\0'):
+            raise ValueError('PPS GPIO compatibility required')
+        pps_mapping((node/'gpios').read_bytes(),(gpio/'phandle').read_bytes(),(node/'assert-falling-edge').exists())
+        platforms.append((platform,node))
+    classes = sorted((sysroot/'class/pps').glob('pps[0-9]*'))
+    if len(platforms) != 1 or len(classes) != 1:
+        raise ValueError('one GPIO PPS platform and class required')
+    platform,node = platforms[0]; path = classes[0]
+    if not path.resolve(strict=True).is_relative_to(sysroot/'devices'):
+        raise ValueError('PPS class escaped sysfs devices')
+    name = (path/'name').read_text().strip()
+    if name != platform.name+'.-1':
+        raise ValueError('PPS class/platform source identity mismatch')
+    dev = devroot/path.name; info = dev.stat()
+    if (not stat.S_ISCHR(info.st_mode) or
+            (path/'dev').read_text().strip() != f'{os.major(info.st_rdev)}:{os.minor(info.st_rdev)}'):
+        raise ValueError('PPS character-device identity mismatch')
+    return {'device':str(dev),'of_node':str(node),'name':name,'platform':str(platform)}
 
 
 def uart_ancestry(tty, sysroot=Path('/sys'), chain=None):
@@ -342,18 +386,7 @@ class Transaction:
         driver=self.recipe['uart_driver']
         uinfo=uart.stat()
         # Metadata only: no stty, GNSS polling, PPS ioctls or RTC read/write.
-        pps=[];rtc=[]
-        for path in sorted(Path('/sys/class/pps').glob('pps[0-9]*')):
-            node=path/'device/of_node'
-            if b'pps-gpio' not in (node/'compatible').read_bytes().split(b'\0'): continue
-            cells=(node/'gpios').read_bytes()
-            gpio=Path('/proc/device-tree/soc/gpio@7e200000')
-            if b'brcm,bcm2711-gpio' not in (gpio/'compatible').read_bytes().split(b'\0'):
-                raise ValueError('Pi 4 GPIO controller required')
-            pps_mapping(cells,(gpio/'phandle').read_bytes(),(node/'assert-falling-edge').exists())
-            dev=Path('/dev')/path.name
-            if not stat.S_ISCHR(dev.stat().st_mode):raise ValueError('PPS character node required')
-            pps.append({'device':str(dev),'of_node':str(node.resolve()),'name':(path/'name').read_text().strip()})
+        pps=gpio_pps_metadata();rtc=[]
         for path in sorted(Path('/sys/class/rtc').glob('rtc[0-9]*')):
             node=path/'device/of_node'
             compatible=(node/'compatible').read_bytes() if (node/'compatible').exists() else b''
@@ -363,11 +396,11 @@ class Transaction:
             dev=Path('/dev')/path.name
             if not stat.S_ISCHR(dev.stat().st_mode):raise ValueError('RTC character node required')
             rtc.append({'device':str(dev),'of_node':str(node.resolve()),'address':address,'name':(path/'name').read_text().strip()})
-        if len(pps)!=1 or len(rtc)!=1:
+        if len(rtc)!=1:
             raise ValueError('one observed BCM18 PPS and RV3028 RTC required')
         return {'uart':str(uart),'uart_alias':str(alias),'uart_driver':driver,'uart_parent':parent['path'],
                 'uart_of_node':parent['of_node'],'uart_uid':uinfo.st_uid,
-                'uart_gid':uinfo.st_gid,'uart_mode':stat.S_IMODE(uinfo.st_mode),'pps':pps[0],'rtc':rtc[0]}
+                'uart_gid':uinfo.st_gid,'uart_mode':stat.S_IMODE(uinfo.st_mode),'pps':pps,'rtc':rtc[0]}
 
     def hardware_gate(self):
         gate=self.spec['hardware_prerequisite']; root=Path(gate['stage'])
@@ -465,7 +498,9 @@ class Transaction:
             self.network_checks()
             state.update(phase='recovered',recovered_boot_id=boot_id());self.write('state.json',state)
             return {'phase':'recovered','boot_id':boot_id()}
-        allowed = ('reboot_submitted','accepted') if self.spec['operation']=='hardware' else ('runtime_prepared','accepted')
+        if self.spec.get('schema')==3 and boot_id()!=self.spec['continuation']['candidate_boot_id']:
+            raise ValueError('continuation candidate boot changed')
+        allowed = ('acceptance_pending','accepted') if self.spec.get('schema')==3 else ('reboot_submitted','accepted') if self.spec['operation']=='hardware' else ('runtime_prepared','accepted')
         if state['phase'] not in allowed:raise ValueError('prepared configuration required')
         self.network_checks()
         if self.spec['operation']=='hardware':
@@ -548,8 +583,87 @@ class Transaction:
             state['transient_units_cleaned']=True;self.write('state.json',state);return state
 
 
+@contextmanager
+def source_guard(spec, files, helper):
+    """Read the immutable source under its existing lock; never create or write it."""
+    source=json.loads(files['source-spec.json']);root=Path(source['stage'])
+    gate=spec['continuation']
+    if (source['stage']!=gate['source_stage'] or root==Path(spec['stage'])
+            or helper.sha(files['source-spec.json'])!=gate['source_spec_sha256']
+            or not re.fullmatch('/var/lib/ntp-host-[a-z][a-z0-9-]{0,47}',str(root))):
+        raise ValueError('bound original hardware stage required')
+    helper.ancestors(root)
+    if stat.S_IMODE(root.stat().st_mode)!=0o700:raise ValueError('private original stage required')
+    fd=os.open(root/'.lock',os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
+    try:
+        info=os.fstat(fd)
+        if (not stat.S_ISREG(info.st_mode) or info.st_uid!=helper.OWNER or info.st_gid!=helper.OWNER
+                or info.st_nlink!=1 or stat.S_IMODE(info.st_mode)!=0o600):
+            raise ValueError('protected original lock required')
+        fcntl.flock(fd,fcntl.LOCK_SH|fcntl.LOCK_NB)
+        expected=set(source['members'])|{'spec.json','manifest.json','state.json','before.json','commands.jsonl','.lock'}
+        if {p.name for p in root.iterdir()}!=expected:
+            raise ValueError('original stage membership drift')
+        for path in root.iterdir():
+            if stat.S_IMODE(path.lstat().st_mode)!=0o600:raise ValueError('private original evidence required')
+            helper.read(path,limit=8*1024**2)
+        if (helper.read(root/'spec.json')!=files['source-spec.json']
+                or json.loads(helper.read(root/'manifest.json'))!=source['members']):
+            raise ValueError('original specification drift')
+        for name,digest in source['members'].items():
+            if helper.sha(helper.read(root/name,limit=2*1024**2))!=digest:
+                raise ValueError('original member drift')
+        report=json.loads(files['timing-result.json'])['report']
+        for name,value in report['retained'].items():
+            if helper.read(root/name,limit=8*1024**2)!=base64.b64decode(value,validate=True):
+                raise ValueError('original retained state drift: '+name)
+        if boot_id()!=gate['candidate_boot_id']:raise ValueError('continuation candidate boot changed')
+        before=json.loads(base64.b64decode(report['retained']['before.json'],validate=True))
+        for path,name in zip(BOOT_PATHS,('config-candidate.txt','cmdline-candidate.txt')):
+            info=Path(path).lstat();original=before['boot_files'][path]
+            if (helper.sha(helper.read(Path(path),limit=256*1024))!=source['members'][name]
+                    or info.st_uid!=original['uid'] or info.st_gid!=original['gid']
+                    or stat.S_IMODE(info.st_mode)!=original['mode']):
+                raise ValueError('candidate boot file content/ownership drift')
+        yield before
+    finally:
+        os.close(fd)
+
+
+def acceptance_entry(spec, files, mode, proofs, helper):
+    if mode not in ACCEPTANCE_MODES:raise ValueError('acceptance-only worker mode required')
+    root=Path(spec['stage'])
+    if mode in ('readback','cleanup'):
+        if helper.read(root/'foundation-install.py')!=files['foundation-install.py']:
+            raise ValueError('protected helper drift before import')
+        tx=Transaction(spec);tx.verify(files)
+        if mode=='readback':return tx.state()
+        with tx.core.lock():
+            state=tx.state()
+            state['evidence_closed']=True;tx.write('state.json',state);return state
+    with source_guard(spec,files,helper) as before:
+        if mode=='start':
+            if not spec['prepared_epoch']-300<=time.time()<spec['expires_epoch']:
+                raise ValueError('continuation execution window expired')
+            helper.ancestors(root.parent);root.mkdir(mode=0o700);helper.sync(root.parent)
+            initial={'phase':'acceptance_pending','boot_id':boot_id(),'source_stage':spec['continuation']['source_stage']}
+            for name,data in {**files,'spec.json':encoded(spec),'manifest.json':encoded(spec['members']),
+                              'state.json':encoded(initial),'before.json':encoded(before)}.items():
+                if not re.fullmatch('[a-z][a-z0-9.-]+',name):raise ValueError('flat stage entries required')
+                helper.create(root/name,data)
+        elif helper.read(root/'foundation-install.py')!=files['foundation-install.py']:
+            raise ValueError('protected helper drift before import')
+        tx=Transaction(spec);tx.verify(files)
+        if tx.state().get('evidence_closed'):raise ValueError('continuation evidence already closed')
+        if mode=='start':return tx.state()
+        if mode=='probe':return tx.probe()
+        return tx.accept(proofs)
+
+
 def entry(spec, files, mode, proofs=None, console_ready=False):
-    identity(spec,initial=mode=='start' and spec['operation']=='hardware')
+    if spec.get('schema')==3 and mode not in ACCEPTANCE_MODES:
+        raise ValueError('acceptance-only worker mode required')
+    identity(spec,initial=mode=='start' and spec['operation']=='hardware' and spec.get('schema')!=3)
     validate_recipe(spec['operation'],spec['host_recipe'])
     namespace={'__name__':'host_helper'}
     exec(compile(files['foundation-install.py'],'sealed-host-helper','exec'),namespace)
@@ -557,6 +671,8 @@ def entry(spec, files, mode, proofs=None, console_ready=False):
     root=Path(spec['stage'])
     if set(files)!=set(spec['members']) or any(helper.sha(data)!=spec['members'][name] for name,data in files.items()):
         raise ValueError('sealed host configuration inputs required')
+    if spec.get('schema')==3:
+        return acceptance_entry(spec,files,mode,proofs,helper)
     if mode=='start':
         helper.ancestors(root.parent);root.mkdir(mode=0o700);helper.sync(root.parent)
         initial={'phase':'staged','boot_id':boot_id()}

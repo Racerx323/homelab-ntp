@@ -642,11 +642,17 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    without a device/of_node link, a separately bound pps-gpio platform device
    configured for BCM18 without falling-edge metadata, and RV3028 at I2C 0x52.
    Correlate the observed PPS class identity with the bound platform device
-   instead of assuming a class device-tree link. Prepare an acceptance-only
-   continuation against the unchanged candidate for separate approval; preserve
-   original sealed code/state and avoid another boot change solely to fix
-   validation. Physical timing and full dual-stack hardware acceptance remain
-   pending.
+   instead of assuming a class device-tree link. The corrected checker binds
+   the class source name and character-device number to one registered
+   pps-gpio platform, its GPIO controller and BCM18/rising mapping. The
+   acceptance-only continuation is prepared for separate execution approval.
+   It binds the accepted diagnostic, exact candidate boot and unchanged
+   original specification, members, state, before-state and journal under
+   the original shared lock. A separate protected stage records full
+   dual-stack/network/native/device acceptance; original v4 stays immutable.
+   No boot change, reboot, recovery or service activation is in this scope.
+   Conditional readback and evidence-only cleanup preserve both stages.
+   Physical timing and full dual-stack hardware acceptance remain pending.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Hardware/time-service/client acceptance remains pending.

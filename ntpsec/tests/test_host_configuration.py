@@ -3,10 +3,12 @@
 import argparse
 import base64
 import copy
+import fcntl
 from contextlib import nullcontext
 import importlib.util
 import json
 import os
+import stat
 from pathlib import Path
 import struct
 import tempfile
@@ -94,6 +96,72 @@ class UartAncestry(unittest.TestCase):
         self.assertEqual(state['uart_observation']['boot_id'],'candidate')
         self.assertIn('serial0 alias',state['uart_observation']['error'])
         self.assertEqual(state['phase'],'reboot_submitted')
+
+
+class GpioPpsMetadata(unittest.TestCase):
+    def setUp(self):
+        tmp=tempfile.TemporaryDirectory();self.addCleanup(tmp.cleanup);self.root=Path(tmp.name)
+        self.sys=self.root/'sys';self.dev=self.root/'dev';self.dev.mkdir()
+        self.driver=self.sys/'bus/platform/drivers/pps-gpio'
+        self.platform=self.sys/'devices/platform/pps@12'
+        self.node=self.sys/'firmware/devicetree/base/pps@12'
+        self.gpio=self.sys/'firmware/devicetree/base/soc/gpio@7e200000'
+        self.pps=self.sys/'devices/virtual/pps/pps0'
+        for path in (self.driver,self.platform,self.node,self.gpio,self.pps,self.sys/'class/pps'):
+            path.mkdir(parents=True,exist_ok=True)
+        (self.driver/'pps@12').symlink_to(self.platform)
+        (self.platform/'driver').symlink_to(self.driver)
+        (self.platform/'subsystem').symlink_to(self.sys/'bus/platform')
+        (self.platform/'of_node').symlink_to(self.node)
+        (self.sys/'class/pps/pps0').symlink_to(self.pps)
+        (self.node/'compatible').write_bytes(b'pps-gpio\0')
+        (self.node/'gpios').write_bytes(struct.pack('>III',7,18,0))
+        (self.gpio/'compatible').write_bytes(b'brcm,bcm2711-gpio\0')
+        (self.gpio/'phandle').write_bytes(struct.pack('>I',7))
+        (self.pps/'name').write_text('pps@12.-1\n');(self.pps/'dev').write_text('249:0\n')
+        original=Path.stat
+        self.info=SimpleNamespace(st_mode=stat.S_IFCHR|0o660,st_rdev=os.makedev(249,0))
+        self.patch=patch.object(Path,'stat',lambda path,**kw:self.info if path==self.dev/'pps0' else original(path,**kw))
+        self.patch.start();self.addCleanup(self.patch.stop)
+
+    def test_virtual_class_correlates_without_device_link_or_device_io(self):
+        original=Path.open
+        def opened(path,*args,**kwargs):
+            if path.is_relative_to(self.dev):raise AssertionError('device opened')
+            return original(path,*args,**kwargs)
+        with patch.object(Path,'open',opened):result=s.gpio_pps_metadata(self.sys,self.dev)
+        self.assertEqual(result['platform'],str(self.platform));self.assertEqual(result['name'],'pps@12.-1')
+
+    def test_wrong_gpio_controller_edge_and_flags_hold(self):
+        for cells in ((8,18,0),(7,4,0),(7,18,1)):
+            (self.node/'gpios').write_bytes(struct.pack('>III',*cells))
+            with self.subTest(cells=cells),self.assertRaises(ValueError):s.gpio_pps_metadata(self.sys,self.dev)
+        (self.node/'gpios').write_bytes(struct.pack('>III',7,18,0));(self.node/'assert-falling-edge').touch()
+        with self.assertRaises(ValueError):s.gpio_pps_metadata(self.sys,self.dev)
+
+    def test_class_source_and_character_identity_must_match(self):
+        (self.pps/'name').write_text('other')
+        with self.assertRaisesRegex(ValueError,'source identity'):s.gpio_pps_metadata(self.sys,self.dev)
+        (self.pps/'name').write_text('pps@12.-1');(self.pps/'dev').write_text('250:0')
+        with self.assertRaisesRegex(ValueError,'character-device'):s.gpio_pps_metadata(self.sys,self.dev)
+        (self.pps/'dev').write_text('249:0');self.info.st_mode=stat.S_IFREG|0o660
+        with self.assertRaisesRegex(ValueError,'character-device'):s.gpio_pps_metadata(self.sys,self.dev)
+
+    def test_missing_and_duplicate_class_or_platform_hold(self):
+        link=self.sys/'class/pps/pps1';link.symlink_to(self.pps)
+        with self.assertRaisesRegex(ValueError,'one GPIO'):s.gpio_pps_metadata(self.sys,self.dev)
+        link.unlink();(self.sys/'class/pps/pps0').unlink()
+        with self.assertRaisesRegex(ValueError,'one GPIO'):s.gpio_pps_metadata(self.sys,self.dev)
+        (self.sys/'class/pps/pps0').symlink_to(self.pps)
+        (self.driver/'duplicate').symlink_to(self.platform)
+        with self.assertRaisesRegex(ValueError,'one GPIO'):s.gpio_pps_metadata(self.sys,self.dev)
+
+    def test_wrong_driver_and_escaped_tree_hold(self):
+        (self.platform/'driver').unlink();(self.platform/'driver').symlink_to(self.sys/'bus/platform')
+        with self.assertRaisesRegex(ValueError,'platform identity'):s.gpio_pps_metadata(self.sys,self.dev)
+        (self.platform/'driver').unlink();(self.platform/'driver').symlink_to(self.driver)
+        (self.platform/'of_node').unlink();(self.platform/'of_node').symlink_to(self.root)
+        with self.assertRaisesRegex(ValueError,'escaped'):s.gpio_pps_metadata(self.sys,self.dev)
 
 
 class Recipes(unittest.TestCase):
@@ -319,6 +387,103 @@ class Transaction(unittest.TestCase):
         self.assertEqual(self.tx.state()['phase'],'recovered')
 
 
+class AcceptanceSource(unittest.TestCase):
+    def setUp(self):
+        tmp=tempfile.TemporaryDirectory();self.addCleanup(tmp.cleanup)
+        self.parent=Path(tmp.name);self.root=self.parent/'source';self.root.mkdir(mode=0o700)
+        self.boot_paths=tuple(str(self.parent/name) for name in ('config.txt','cmdline.txt'))
+        members={'config-candidate.txt':b'candidate config','cmdline-candidate.txt':b'candidate cmdline'}
+        before={'registry':{},'boot_files':{path:{'uid':os.getuid(),'gid':os.getgid(),'mode':0o600}
+                                          for path in self.boot_paths}}
+        source={'stage':str(self.root),'members':{k:c.c.sha(v) for k,v in members.items()}}
+        self.retained={'state.json':s.encoded({'phase':'reboot_submitted'}),'before.json':s.encoded(before),'commands.jsonl':b'original'}
+        self.files={'source-spec.json':s.encoded(source),'timing-result.json':s.encoded({'report':{
+            'retained':{k:base64.b64encode(v).decode() for k,v in self.retained.items()}}})}
+        self.spec={'stage':str(self.parent/'new'),'continuation':{'source_stage':str(self.root),
+            'source_spec_sha256':c.c.sha(self.files['source-spec.json']),'candidate_boot_id':'candidate'}}
+        for name,data in {**members,**self.retained,'spec.json':self.files['source-spec.json'],
+                          'manifest.json':s.encoded(source['members']),'.lock':b''}.items():
+            path=self.root/name;path.write_bytes(data);path.chmod(0o600)
+        for path,data in zip(self.boot_paths,members.values()):Path(path).write_bytes(data);Path(path).chmod(0o600)
+        self.helper=SimpleNamespace(ancestors=Mock(),read=lambda p,**kw:p.read_bytes(),sha=c.c.sha,OWNER=os.getuid())
+        match=s.re.fullmatch
+        for target in (patch.object(s,'boot_id',return_value='candidate'),patch.object(s,'BOOT_PATHS',self.boot_paths),
+                       patch.object(s.re,'fullmatch',lambda pattern,value:True if value==str(self.root) else match(pattern,value))):
+            target.start();self.addCleanup(target.stop)
+
+    def test_shared_guard_is_read_only_and_holds_original_lock(self):
+        initial={p.name:p.read_bytes() for p in self.root.iterdir()}
+        with s.source_guard(self.spec,self.files,self.helper) as before:
+            self.assertEqual(before['registry'],{})
+            with (self.root/'.lock').open('rb') as lock:
+                with self.assertRaises(BlockingIOError):fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+        self.assertEqual(initial,{p.name:p.read_bytes() for p in self.root.iterdir()})
+
+    def test_source_state_spec_member_and_journal_drift_hold(self):
+        for name in ('state.json','before.json','commands.jsonl','spec.json','config-candidate.txt'):
+            path=self.root/name;original=path.read_bytes();path.write_bytes(original+b' ')
+            with self.subTest(name=name),self.assertRaises(ValueError):
+                with s.source_guard(self.spec,self.files,self.helper):pass
+            path.write_bytes(original)
+
+    def test_candidate_boot_content_permissions_and_source_membership_hold(self):
+        with patch.object(s,'boot_id',return_value='other'),self.assertRaisesRegex(ValueError,'boot changed'):
+            with s.source_guard(self.spec,self.files,self.helper):pass
+        path=Path(self.boot_paths[0]);original=path.read_bytes();path.write_bytes(b'other')
+        with self.assertRaisesRegex(ValueError,'boot file'):
+            with s.source_guard(self.spec,self.files,self.helper):pass
+        path.write_bytes(original);path.chmod(0o644)
+        with self.assertRaisesRegex(ValueError,'boot file'):
+            with s.source_guard(self.spec,self.files,self.helper):pass
+        path.chmod(0o600);(self.root/'unexpected').touch()
+        with self.assertRaisesRegex(ValueError,'membership'):
+            with s.source_guard(self.spec,self.files,self.helper):pass
+
+    def test_exclusive_recovery_lock_prevents_continuation(self):
+        with (self.root/'.lock').open('rb') as lock:
+            fcntl.flock(lock,fcntl.LOCK_EX|fcntl.LOCK_NB)
+            with self.assertRaises(BlockingIOError):
+                with s.source_guard(self.spec,self.files,self.helper):pass
+
+
+class AcceptanceOnly(unittest.TestCase):
+    setUp=Transaction.setUp
+    run_command=Transaction.run_command
+    def test_start_stages_only_and_never_applies(self):
+        self.tx.spec.update(schema=3,stage=str(self.root/'continuation'),continuation={'source_stage':'original'})
+        helper=SimpleNamespace(ancestors=Mock(),sync=Mock(),create=self.tx.h.create)
+        before={'registry':{'fixture':'ethernet'}}
+        self.tx.state=Mock(return_value={'phase':'acceptance_pending'});self.tx.verify=Mock()
+        self.tx.apply=Mock(side_effect=AssertionError('boot mutation'))
+        with patch.object(s,'source_guard',return_value=nullcontext(before)),patch.object(s,'Transaction',return_value=self.tx):
+            result=s.acceptance_entry(self.tx.spec,{},'start',None,helper)
+        self.assertEqual(result['phase'],'acceptance_pending');self.tx.apply.assert_not_called()
+        self.assertEqual(json.loads((self.root/'continuation/before.json').read_bytes()),before)
+        self.assertEqual(self.calls,[])
+
+    def test_readback_and_cleanup_preserve_failed_stage_without_source_or_service_actions(self):
+        self.tx.spec.update(schema=3,stage=str(self.root))
+        (self.root/'foundation-install.py').write_bytes(b'fixture')
+        self.tx.verify=Mock();self.tx.write('state.json',{'phase':'acceptance_pending'})
+        with patch.object(s,'Transaction',return_value=self.tx),patch.object(s,'source_guard',side_effect=AssertionError('source read')):
+            result=s.acceptance_entry(self.tx.spec,{'foundation-install.py':b'fixture'},'readback',None,self.tx.h)
+            self.assertEqual(result['phase'],'acceptance_pending')
+            result=s.acceptance_entry(self.tx.spec,{'foundation-install.py':b'fixture'},'cleanup',None,self.tx.h)
+            self.assertTrue(result['evidence_closed']);self.assertEqual(result['phase'],'acceptance_pending')
+        self.assertEqual(self.calls,[])
+
+    def test_continuation_probe_accepts_only_exact_candidate_boot(self):
+        self.tx.spec.update(schema=3,continuation={'candidate_boot_id':'new'})
+        self.tx.write('state.json',{'phase':'acceptance_pending'})
+        self.tx.hardware_metadata=Mock(return_value={'pps':{'name':'pps@12.-1'}})
+        with patch.object(s,'boot_id',return_value='new'):
+            proof=self.tx.probe();self.assertEqual(set(proof['checks']),s.HARDWARE_LABELS)
+            endpoints={self.tx.spec['recipe'][k].split('/')[0]:proof for k in ('ipv4_address','ipv6_address')}
+            self.assertEqual(self.tx.accept(endpoints)['phase'],'accepted')
+        with patch.object(s,'boot_id',return_value='different'),self.assertRaisesRegex(ValueError,'candidate boot'):
+            self.tx.probe()
+
+
 class Preparation(unittest.TestCase):
     def setUp(self):
         tmp=tempfile.TemporaryDirectory();self.addCleanup(tmp.cleanup);self.root=Path(tmp.name);self.root.chmod(0o700)
@@ -381,6 +546,49 @@ class Preparation(unittest.TestCase):
             self.assertEqual(spec['schema'],2);self.assertEqual(spec['boot_id'],'recovered-boot')
             self.assertEqual(json.loads(files['network-spec.json'])['boot_id'],'fixture-boot')
             self.assertEqual(files['baseline.json'],raw)
+            inspector=c.module('run-host-registry-inspection.py')
+            candidate='11111111-2222-3333-4444-555555555555'
+            retained={'state.json':c.c.encoded({'phase':'reboot_submitted'}),
+                      'before.json':c.c.encoded({'registry':{}}),'commands.jsonl':b'fixture journal'}
+            state={'phase':'reboot_submitted','uart_observation':{'boot_id':candidate}}
+            (self.args.output/'readback-result.json').write_bytes(c.c.encoded({'bundle_sha256':result['sha256'],'result':state}))
+            timing_args=argparse.Namespace(hardware_dir=self.args.output,hardware_sha256=result['sha256'],timing=True,
+                                          operation_id='fixture-timing',output=self.root/'timing')
+            with patch.object(inspector,'prepare'):
+                timing=inspector.seal(timing_args)
+            tspec=json.loads((timing_args.output/'spec.json').read_bytes())
+            report={'hostname':spec['hostname'],'kernel':spec['kernel'],'boot_id':candidate,
+                'checks':{'read_only_capture':True,'retained_state_stable':True,'registry_stable':True},
+                'queries':{k:{'status':0} for k in ('registry','registry-end','active','addresses','routes-4','routes-6','cmdline')},
+                'current_registry':{},'boot_files':{path:{'sha256':spec['members'][name]} for path,name in
+                    zip(s.BOOT_PATHS,('config-candidate.txt','cmdline-candidate.txt'))},
+                'retained':{k:base64.b64encode(v).decode() for k,v in retained.items()},
+                'retained_sha256':{k:c.c.sha(v) for k,v in retained.items()},
+                'timing':{'classes':{},'pps_platform':{},'gpio_controller':{}}}
+            terminal={'phase':'captured','report':report,'terminal_sha256':c.c.sha(c.c.encoded(report))}
+            accepted=dict(inspector.accept(tspec,terminal),bundle_sha256=timing['sha256'])
+            for name,value in [('capture-result.json',terminal),('acceptance.json',accepted),
+                               ('cleanup-result.json',{'phase':'cleaned','terminal_sha256':terminal['terminal_sha256']})]:
+                (timing_args.output/name).write_bytes(c.c.encoded(value))
+            args=argparse.Namespace(hardware_dir=self.args.output,hardware_sha256=result['sha256'],
+                timing_dir=timing_args.output,timing_sha256=timing['sha256'],
+                operation_id='fixture-acceptance',output=self.root/'acceptance')
+            with patch.object(c.subprocess,'run',side_effect=AssertionError('offline target contact')):
+                continuation=c.seal_acceptance(args)
+                cspec,cfiles=c.prepare(Path(continuation['bundle']),continuation['sha256'])
+            self.assertEqual(cspec['schema'],3);self.assertNotEqual(cspec['stage'],spec['stage'])
+            self.assertEqual(cspec['continuation']['candidate_boot_id'],candidate)
+            for name in ('timing-acceptance.json','timing-cleanup.json'):
+                changed=dict(cfiles);changed[name]=c.c.encoded({})
+                with self.subTest(name=name),self.assertRaises(ValueError):c.validate_continuation(changed,cspec)
+            changed=copy.deepcopy(cspec);changed['continuation']['candidate_boot_id']='other'
+            with self.assertRaises(ValueError):c.validate_continuation(cfiles,changed)
+            # A subsequent runtime candidate can bind the separate accepted hardware stage.
+            runtime_args=argparse.Namespace(**vars(self.args));runtime_args.kind='runtime'
+            runtime_args.output=self.root/'runtime-continuation';runtime_args.operation_id='fixture-runtime'
+            runtime_args.hardware_dir=args.output;runtime_args.hardware_sha256=continuation['sha256']
+            runtime=c.seal(runtime_args);rspec,_=c.prepare(Path(runtime['bundle']),runtime['sha256'])
+            self.assertEqual(rspec['hardware_prerequisite']['stage'],cspec['stage'])
             changed=dict(files,**{'fresh-baseline-cleanup.json':c.c.encoded({'phase':'held'})})
             with self.assertRaisesRegex(ValueError,'fresh baseline'):c.validate_fresh_baseline(changed,spec)
             changed=dict(files,**{'baseline.json':self.old['baseline.json']})
@@ -404,6 +612,17 @@ class Controller(unittest.TestCase):
         self.spec={'operation':'hardware','hostname':'j2-svntp1','prepared_epoch':1,'expires_epoch':9999999999,
                    'recipe':{'ipv4_address':'10.1.0.51/22','ipv6_address':'fd36:5aa8:6971:1::51/64'}}
         self.args=argparse.Namespace(bundle=self.directory/'host-configuration.tar',sha256='a'*64,mode='start',console_ready=False)
+
+    def test_acceptance_only_rejects_mutation_modes_before_registration_or_identity(self):
+        self.spec['schema']=3
+        for mode in ('reboot','recover','recovery-reboot','verify-recovery','apply'):
+            self.args.mode=mode
+            with self.subTest(mode=mode),patch.object(c,'prepare',return_value=(self.spec,{})),patch.object(c,'remote') as remote:
+                with self.assertRaisesRegex(ValueError,'acceptance-only'):c.execute(self.args)
+                remote.assert_not_called();self.assertFalse((self.directory/(mode+'-execution.json')).exists())
+            with patch.object(s,'identity') as identity:
+                with self.assertRaisesRegex(ValueError,'acceptance-only'):s.entry(self.spec,{},mode)
+                identity.assert_not_called()
 
     def test_start_is_registered_before_submission_and_cannot_replay(self):
         def submit(*args,**kwargs):

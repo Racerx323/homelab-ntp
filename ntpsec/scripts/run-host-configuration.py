@@ -33,6 +33,8 @@ HARDWARE={'config-candidate.txt','cmdline-candidate.txt'}
 RUNTIME={'timeservice.py','timeservice-template.json','timeservice-template.service',
          'hardware-spec.json','hardware-bundle-sha256.json'}
 FRESH={'fresh-baseline-spec.json','fresh-baseline-acceptance.json','fresh-baseline-cleanup.json'}
+CONTINUATION={'source-hardware.tar','source-spec.json','timing-inspection.tar',
+              'timing-result.json','timing-acceptance.json','timing-cleanup.json'}
 EXTRAS={'launcher.py','transport-controller.py','known_hosts','spec.json','manifest.json','review.md','tests.py'}
 
 
@@ -67,6 +69,40 @@ def validate_fresh_baseline(files,spec):
         raise ValueError('fresh baseline provenance/acceptance/cleanup mismatch')
 
 
+def validate_continuation(files, spec):
+    inspector=module('run-host-registry-inspection.py')
+    gate=spec['continuation']
+    if (set(gate)!={'source_sha256','source_stage','source_spec_sha256','timing_sha256','candidate_boot_id'}
+            or c.sha(files['source-hardware.tar'])!=gate['source_sha256']
+            or c.sha(files['timing-inspection.tar'])!=gate['timing_sha256']):
+        raise ValueError('exact continuation provenance archives required')
+    old=inspector.archive_inputs(files['source-hardware.tar']);source=json.loads(old['spec.json'])
+    timing=inspector.archive_inputs(files['timing-inspection.tar']);diagnostic=json.loads(timing['spec.json'])
+    if source['schema']!=2 or source['operation']!='hardware':
+        raise ValueError('fresh-baseline hardware source required')
+    validate(old,source);inspector.validate(diagnostic,timing)
+    result=json.loads(files['timing-result.json']);report=result['report']
+    receipt=dict(inspector.accept(diagnostic,result),bundle_sha256=gate['timing_sha256'])
+    inherited=('hostname','kernel','boot_id','ssh','old_ipv4','mac','original_uuid','candidate_name','recipe',
+               'network_candidate_uuid','network_bundle_sha256','network_spec_sha256','host_recipe','fresh_baseline_sha256')
+    if (spec['operation']!='hardware' or files['source-spec.json']!=old['spec.json']
+            or timing['hardware-spec.json']!=old['spec.json']
+            or gate['source_spec_sha256']!=c.sha(old['spec.json']) or gate['source_stage']!=source['stage']
+            or spec['stage']==source['stage']
+            or any(spec[k]!=source[k] for k in inherited)
+            or diagnostic['operation']!='host-timing-inspection'
+            or diagnostic['hardware_bundle_sha256']!=gate['source_sha256']
+            or diagnostic['candidate_boot_id']!=gate['candidate_boot_id']
+            or report['boot_id']!=gate['candidate_boot_id'] or report['boot_id']==source['boot_id']
+            or json.loads(files['timing-acceptance.json'])!=receipt
+            or json.loads(files['timing-cleanup.json'])!={'phase':'cleaned','terminal_sha256':receipt['terminal_sha256']}
+            or json.loads(base64.b64decode(report['retained']['state.json'],validate=True))['phase']!='reboot_submitted'
+            or any(files[name]!=old[name] for name in HARDWARE|FRESH|{'baseline.json','release.json','host-recipe.json'})
+            or any(report['boot_files'][path]['sha256']!=source['members'][name]
+                   for path,name in zip(s.BOOT_PATHS,('config-candidate.txt','cmdline-candidate.txt')))):
+        raise ValueError('accepted diagnostic/candidate/source binding required')
+
+
 def validate(files, spec):
     kind=spec['operation'];s.validate_recipe(kind,spec['host_recipe'])
     network=json.loads(files['network-spec.json']);receipt=json.loads(files['network-acceptance.json'])
@@ -77,10 +113,13 @@ def validate(files, spec):
           'network_spec_sha256','prepared_epoch','expires_epoch','host_recipe','reference_hashes','members',
           'hardware_prerequisite'}
     inputs=COMMON | (HARDWARE if kind=='hardware' else RUNTIME)
-    if spec['schema']==2:
+    if spec['schema'] in (2,3):
         keys.add('fresh_baseline_sha256'); inputs |= FRESH
         validate_fresh_baseline(files,spec)
-    if (set(spec)!=keys or spec['schema'] not in (1,2) or not re.fullmatch('[a-z][a-z0-9-]{0,47}',spec['operation_id'])
+    if spec['schema']==3:
+        keys.add('continuation');inputs |= CONTINUATION
+        validate_continuation(files,spec)
+    if (set(spec)!=keys or spec['schema'] not in (1,2,3) or not re.fullmatch('[a-z][a-z0-9-]{0,47}',spec['operation_id'])
             or spec['stage']!='/var/lib/ntp-host-'+spec['operation_id']
             or set(spec['members'])!=inputs or any(c.sha(files[name])!=digest for name,digest in spec['members'].items())
             or not 0<spec['expires_epoch']-spec['prepared_epoch']<=86400
@@ -132,7 +171,7 @@ def prepare(bundle, checksum):
             raise ValueError('closed regular bounded configuration archive required')
         files={m.name:archive.extractfile(m).read() for m in members}
     spec=json.loads(files['spec.json'])
-    inputs=COMMON | (HARDWARE if spec['operation']=='hardware' else RUNTIME) | (FRESH if spec['schema']==2 else set())
+    inputs=COMMON | (HARDWARE if spec['operation']=='hardware' else RUNTIME) | (FRESH if spec['schema'] in (2,3) else set()) | (CONTINUATION if spec['schema']==3 else set())
     if set(files)!=inputs|EXTRAS:
         raise ValueError('closed configuration archive membership required')
     manifest=json.loads(files['manifest.json'])
@@ -143,12 +182,43 @@ def prepare(bundle, checksum):
             or bundle.parent.stat().st_uid!=os.getuid() or bundle.parent.stat().st_mode & 0o077):
         raise ValueError('configuration archive/controller/private path drift')
     validate(files,spec)
-    for mode in ('start','reboot','probe','accept','readback','recover','recovery-reboot','verify-recovery','cleanup'):
+    for mode in (s.ACCEPTANCE_MODES if spec['schema']==3 else ('start','reboot','probe','accept','readback','recover','recovery-reboot','verify-recovery','cleanup')):
         compile(payload(spec,files,mode),'sealed-host-configuration','exec')
     return spec,files
 
 
 def review(spec):
+    if spec['schema']==3:
+        gate=spec['continuation']
+        return (f'# Hardware acceptance-only review\n\nTarget: {spec["hostname"]}. Operation: {spec["operation_id"]}.\n'
+            f'Root stage: `{spec["stage"]}`. Candidate boot: `{gate["candidate_boot_id"]}`.\n'
+            f'Start expires: {datetime.fromtimestamp(spec["expires_epoch"],timezone.utc).isoformat()}.\n'
+            f'Original hardware bundle: `{gate["source_sha256"]}`.\n'
+            f'Accepted and cleaned timing inspection: `{gate["timing_sha256"]}`.\n'
+            f'Pinned SSH ED25519: {spec["ssh"]["fingerprint"]}.\n\n'
+            'One evidence-only start in a new root-owned 0700 stage with 0600 sealed inputs, journals and receipt. '
+            'Bind current repository inputs, target identity, exact candidate boot, unchanged original hardware '
+            'specification, members, state, before-state and command journal from the accepted inspection. '
+            'Hold the original existing lock shared and read-only during start and validation. Preserve original '
+            'stage, backups, journals and all executed evidence. No original state is rewritten.\n\n'
+            'One verification sequence obtains proofs over BOTH fixed IPv4/IPv6 SSH endpoints, then submits '
+            'acceptance once. Recheck network/DNS/routes/HTTPS, native/package/service continuity, exact boot '
+            'file content and ownership, UART PL011 ancestry, one PPS class correlated by source name and '
+            'device number with the bound pps-gpio BCM18/rising platform, and RV3028 metadata. '
+            'Write a separate hardware acceptance receipt; do not mark original v4 accepted. '
+            'Metadata acceptance does not prove pulse health, GNSS fix or RTC accuracy.\n\n'
+            'No boot writes, reboot, restoration, account/cache changes, service actions, device opens, '
+            'PPS sampling or RTC clock reads. Controller and worker reject all mutation/recovery modes. '
+            'On a hold, preserve the candidate and diagnostics. Conditional readback can recover a lost '
+            'acceptance response; conditional cleanup only closes the new evidence stage, even after a hold. '
+            'No files are deleted and no units are stopped. Each controller mode is registered before SSH '
+            'and cannot be replayed. SSH calls retain their 60-second bounds.\n\n'
+            'Use run-host-configuration.py execute --bundle ABSOLUTE_BUNDLE --sha256 APPROVED_HASH '
+            '--mode start, then --mode verify. Conditional --mode readback and --mode cleanup only. '
+            'Original v4 recovery remains available through its byte-exact archived controller under '
+            'host-hardware-20261013-v4/recovery-controller/ntpsec/scripts/run-host-configuration.py '
+            'or the original retained root worker, under its existing approval. Account/runtime execution '
+            'requires a later bundle bound to this continuation receipt. Preparation contacts no target.\n').encode()
     common=(f'# {spec["operation"].title()} configuration review\n\nTarget: {spec["hostname"]}, '
             f'ama UID/GID 1000, aarch64 kernel {spec["kernel"]}.\n'
             f'Operation: {spec["operation_id"]}.\nRoot stage: `{spec["stage"]}`.\n'
@@ -287,6 +357,49 @@ def seal(args):
     (args.output/'sealing.json').write_bytes(c.encoded(result));return result
 
 
+def seal_acceptance(args):
+    inspector=module('run-host-registry-inspection.py')
+    raw=c.private_file(args.hardware_dir/'host-configuration.tar')
+    if c.sha(raw)!=args.hardware_sha256:raise ValueError('source hardware hash mismatch')
+    old=inspector.archive_inputs(raw);source=json.loads(old['spec.json'])
+    files={name:old[name] for name in COMMON|HARDWARE|FRESH}
+    files.update({'source-hardware.tar':raw,'source-spec.json':old['spec.json'],
+        'timing-inspection.tar':c.private_file(args.timing_dir/'registry-inspection.tar'),
+        'timing-result.json':c.private_file(args.timing_dir/'capture-result.json'),
+        'timing-acceptance.json':c.private_file(args.timing_dir/'acceptance.json'),
+        'timing-cleanup.json':c.private_file(args.timing_dir/'cleanup-result.json'),
+        'known_hosts':old['known_hosts'],'launcher.py':Path(__file__).read_bytes(),
+        'transport-controller.py':(ROOT/'scripts/run-foundation-preflight.py').read_bytes(),
+        'tests.py':(ROOT/'tests/test_host_configuration.py').read_bytes()})
+    for name in COMMON:
+        if name.endswith('.py'):files[name]=(ROOT/'scripts'/name).read_bytes()
+    for name in ('installation-assets.json','source-build-recipe.json','accepted-packages.tsv','accepted-source-release.json'):
+        files[name]=(ROOT/'configs'/name).read_bytes()
+    for label,path in (('architecture','docs/ntp-architecture-deployment-plan-v1.0.md'),('operations','docs/OPERATIONS.md'),('history','HISTORY.md')):
+        files[label+'.md']=(ROOT/path).read_bytes()
+    if files['host-recipe.json']!=(ROOT/'configs/host-hardware-recipe.json').read_bytes():
+        raise ValueError('source hardware recipe changed')
+    epoch=int(time.time());spec=dict(source,schema=3,operation_id=args.operation_id,
+        stage='/var/lib/ntp-host-'+args.operation_id,prepared_epoch=epoch,expires_epoch=epoch+86400,
+        continuation={'source_sha256':args.hardware_sha256,'source_stage':source['stage'],
+            'source_spec_sha256':c.sha(old['spec.json']),'timing_sha256':args.timing_sha256,
+            'candidate_boot_id':json.loads(files['timing-result.json'])['report']['boot_id']},
+        reference_hashes={label:c.sha(files[label+'.md']) for label in ('architecture','operations','history')},
+        members={name:c.sha(files[name]) for name in sorted(COMMON|HARDWARE|FRESH|CONTINUATION)})
+    validate(files,spec);files['spec.json']=c.encoded(spec);files['review.md']=review(spec)
+    files['manifest.json']=c.encoded({name:c.sha(data) for name,data in sorted(files.items())})
+    os.umask(0o077);args.output.mkdir(mode=0o700)
+    for name in ('spec.json','review.md','known_hosts'):(args.output/name).write_bytes(files[name])
+    bundle=args.output/'host-configuration.tar'
+    with tarfile.open(bundle,'w',format=tarfile.USTAR_FORMAT) as archive:
+        for name,data in sorted(files.items()):
+            item=tarfile.TarInfo(name);item.mode=0o600;item.size=len(data);item.mtime=epoch;archive.addfile(item,io.BytesIO(data))
+    digest=c.sha(bundle.read_bytes());prepare(bundle,digest)
+    result={'bundle':str(bundle),'sha256':digest,'target':spec['hostname'],'expires_epoch':spec['expires_epoch'],
+            'target_contact':False,'execution_authorized':False}
+    (args.output/'sealing.json').write_bytes(c.encoded(result));return result
+
+
 def payload(spec, files, mode, proofs=None, console_ready=False):
     return ('import base64,hashlib,json\n'
         'spec=json.loads('+repr(json.dumps(spec))+')\n'
@@ -345,6 +458,8 @@ def record_acceptance(directory,spec,checksum,result):
 
 def execute(args):
     bundle=args.bundle.absolute();spec,files=prepare(bundle,args.sha256);directory=bundle.parent
+    if spec.get('schema')==3 and args.mode not in ('start','verify','readback','cleanup'):
+        raise ValueError('acceptance-only controller mode required')
     if args.mode=='start' and not spec['prepared_epoch']-300<=time.time()<spec['expires_epoch']:
         raise ValueError('configuration execution window expired')
     if args.mode in ('reboot','recovery-reboot') and (spec['operation']!='hardware' or args.console_ready is not True):
@@ -358,11 +473,12 @@ def execute(args):
     if args.mode=='start':result=remote(directory,spec,files,endpoints[0],'start','start-ssh')
     elif args.mode=='verify':
         ready=False
-        for attempt in range(6):
+        attempts=1 if spec.get('schema')==3 else 6
+        for attempt in range(attempts):
             try:
                 result=remote(directory,spec,files,endpoints[0],'probe','wait-'+str(attempt));ready=True;break
             except (ValueError,subprocess.TimeoutExpired):
-                if attempt<5:time.sleep(20)
+                if attempt<attempts-1:time.sleep(20)
         if not ready:raise ValueError('configuration not ready; use conditional readback/recovery')
         proofs={host:remote(directory,spec,files,host,'probe','probe-'+str(index)) for index,host in enumerate(endpoints)}
         result=remote(directory,spec,files,endpoints[0],'accept','accept-ssh',proofs)
@@ -387,13 +503,17 @@ def main():
     p.add_argument('--baseline-dir',type=Path,required=True);p.add_argument('--baseline-sha256',required=True)
     p.add_argument('--hardware-dir',type=Path);p.add_argument('--hardware-sha256')
     p.add_argument('--operation-id',required=True);p.add_argument('--output',type=Path,required=True)
+    p=sub.add_parser('seal-acceptance')
+    p.add_argument('--hardware-dir',type=Path,required=True);p.add_argument('--hardware-sha256',required=True)
+    p.add_argument('--timing-dir',type=Path,required=True);p.add_argument('--timing-sha256',required=True)
+    p.add_argument('--operation-id',required=True);p.add_argument('--output',type=Path,required=True)
     p=sub.add_parser('execute');p.add_argument('--bundle',type=Path,required=True);p.add_argument('--sha256',required=True)
     p.add_argument('--mode',choices=('start','reboot','verify','readback','recover','recovery-reboot','verify-recovery','cleanup'),required=True)
     p.add_argument('--console-ready',action='store_true')
     args=parser.parse_args()
     if args.action=='seal' and args.kind=='runtime' and (args.hardware_dir is None or args.hardware_sha256 is None):
         parser.error('runtime sealing requires exact conditional hardware bundle')
-    print(json.dumps(seal(args) if args.action=='seal' else execute(args)))
+    print(json.dumps(seal_acceptance(args) if args.action=='seal-acceptance' else seal(args) if args.action=='seal' else execute(args)))
 
 
 if __name__=='__main__':main()
