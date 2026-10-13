@@ -580,6 +580,16 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    Use PL011 for the GPS UART where supported; apply `disable-bt`, `enable_uart`
    and hciuart changes only as required by the observed mapping. Reject a
    competing clock-discipline process before activating source-built ntpd.
+   Before sealing these changes, collect persistent Ethernet properties by UUID
+   and available boot overlays without reading credentials or opening devices.
+   Confirm the HAT's PPS GPIO and RTC from board evidence. Review networking,
+   boot/reboot and account/loader/runtime changes as distinct recoverable stages;
+   network endpoint changes need timed restoration and console recovery.
+   Keep bootstrap time synchronization until the approved ntpd cutover. Use
+   foreground GPSD with nowait polling so time service does not depend on a
+   connected client. Derive daemon identities from the accepted build and
+   device permissions, preserving accepted release modes unless separately
+   reviewed changes prove necessary.
 6. Query `j2-svntp1` directly from controlled clients over IPv4 and IPv6;
    confirm GPS/PPS selection, upstream reachability, leap state, Webmin
    management scope, approved Munin polling, delivered mail, needrestart

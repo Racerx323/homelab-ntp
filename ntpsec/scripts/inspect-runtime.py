@@ -18,19 +18,23 @@ QUERIES = {
     'ipv4_routes': ['/usr/sbin/ip', '-j', '-4', 'route', 'show', 'table', 'all'],
     'ipv6_routes': ['/usr/sbin/ip', '-j', '-6', 'route', 'show', 'table', 'all'],
     'connections': ['/usr/bin/nmcli', '-t', '-f', 'NAME,UUID,TYPE,DEVICE', 'connection', 'show'],
+    'profile_registry': ['/usr/bin/nmcli', '-t', '-f', 'UUID,TYPE', 'connection', 'show'],
     'network_devices': ['/usr/bin/nmcli', '-t', '-f', 'GENERAL,IP4,IP6', 'device', 'show'],
     'linker_cache': ['/usr/sbin/ldconfig', '-p'],
     'time_units': ['/usr/bin/systemctl', 'show', '--no-pager',
-        '--property=Id,LoadState,ActiveState,SubState,FragmentPath,DropInPaths,User,Group,ExecStart',
+        '--property=Id,LoadState,ActiveState,SubState,UnitFileState,FragmentPath,DropInPaths,User,Group,ExecStart',
         'timeservice.service', 'ntpd.service', 'ntpsec.service', 'gpsd.service',
-        'avahi-daemon.service', 'systemd-timesyncd.service', 'chrony.service'],
-    'accounts': ['/usr/bin/getent', '-s', 'files', 'passwd', 'root', 'ama', 'ntp', 'ntpd', 'gpsd'],
-    'groups': ['/usr/bin/getent', '-s', 'files', 'group', 'root', 'ama', 'ntp', 'ntpd', 'gpsd', 'dialout', 'tty'],
+        'avahi-daemon.service', 'systemd-timesyncd.service', 'chrony.service',
+        'hciuart.service', 'serial-getty@serial0.service', 'serial-getty@ttyAMA0.service'],
+    'accounts': ['/usr/bin/getent', '-s', 'files', 'passwd', 'root', 'ama', 'ntp', 'ntpd', 'gpsd', 'nobody'],
+    'groups': ['/usr/bin/getent', '-s', 'files', 'group', 'root', 'ama', 'ntp', 'ntpd', 'gpsd', 'dialout', 'tty', 'nogroup'],
 }
 FILE_PATHS = ('/boot/firmware/config.txt', '/boot/firmware/cmdline.txt',
     '/boot/firmware/usercfg.txt', '/boot/firmware/syscfg.txt', '/etc/ntp.conf',
     '/etc/ntpsec/ntp.conf', '/etc/default/gpsd', '/etc/ntpsec-timeservice.json',
-    '/etc/ld.so.conf', '/etc/systemd/system/timeservice.service')
+    '/etc/ld.so.conf', '/etc/systemd/system/timeservice.service',
+    '/boot/firmware/overlays/disable-bt.dtbo', '/boot/firmware/overlays/pps-gpio.dtbo',
+    '/boot/firmware/overlays/i2c-rtc.dtbo')
 GLOBS = ('/etc/ld.so.conf.d/*.conf', '/etc/systemd/system/timeservice.service.d/*.conf')
 REQUIREMENTS = ('observed_uart_pps_rtc_and_boot_includes', 'verified_native_loader_python_and_path',
     'explicit_runtime_accounts_and_device_access', 'fixed_dual_stack_network_profile_and_dns',
@@ -181,6 +185,32 @@ def protected_files(helper):
     return output
 
 
+def ethernet_uuids(registry):
+    """Use UUIDs only; profile names may contain escaped separators."""
+    identifiers = set()
+    lines = registry['stdout'].splitlines()
+    if registry['exit_status'] != 0 or len(lines) > 64:
+        raise ValueError('bounded profile registry required')
+    for line in lines:
+        match = re.fullmatch(r'([a-fA-F0-9]{8}(?:-[a-fA-F0-9]{4}){3}-[a-fA-F0-9]{12}):([^:\s]+)', line)
+        if not match:
+            raise ValueError('malformed profile registry')
+        if match[2] == '802-3-ethernet':
+            if match[1] in identifiers:
+                raise ValueError('duplicate Ethernet profile UUID')
+            identifiers.add(match[1])
+    if len(identifiers) > 16:
+        raise ValueError('Ethernet profile count bound exceeded')
+    return identifiers
+
+
+def ethernet_profiles(registry):
+    # Explicit groups exclude Wi-Fi, 802.1X and VPN credentials; never --show-secrets.
+    return {uuid: query(['/usr/bin/nmcli', '-t', '-f',
+        'connection,802-3-ethernet,ipv4,ipv6', 'connection', 'show', 'uuid', uuid])
+        for uuid in sorted(ethernet_uuids(registry))}
+
+
 def devices(helper):
     output = {'nodes': {}, 'sysfs': {}}
     for pattern in DEVICE_GLOBS:
@@ -249,6 +279,7 @@ def collect(root, spec, helper, epoch):
     verify_parents(parents,native_parents(files))
     configs = protected_files(helper); hardware = devices(helper)
     results = {name: query(argv, name if name in ('accounts', 'groups') else None) for name, argv in QUERIES.items()}
+    results['ethernet_profiles'] = ethernet_profiles(results['profile_registry'])
     elf = [n for n, r in release['files'].items() if r['type'] == 'file' and
            (n in ('usr/local/sbin/gpsd', 'usr/local/sbin/ntpd') or re.search(r'\.so(?:\.[0-9.]+)?$', n))]
     if not 2 <= len(elf) <= 16:
@@ -257,7 +288,9 @@ def collect(root, spec, helper, epoch):
     if len(json.dumps(results).encode()) > 2 * 1024**2:
         raise ValueError('runtime queries total bound exceeded')
     if (installed_state(root, spec, helper, inspector, release) != (state, parents)
-            or inspector.observation() != observed or protected_files(helper) != configs or devices(helper) != hardware):
+            or inspector.observation() != observed or protected_files(helper) != configs or devices(helper) != hardware
+            or query(QUERIES['profile_registry']) != results['profile_registry']
+            or ethernet_profiles(results['profile_registry']) != results['ethernet_profiles']):
         raise ValueError('runtime collection continuity failed')
     return {'schema': 1, 'collected_epoch': epoch, 'hostname': spec['hostname'], 'kernel': spec['kernel'],
         'release_sha256': spec['members']['release.json'], 'installation_acceptance_sha256': spec['members']['installation-acceptance.json'],
@@ -282,7 +315,7 @@ def validate(report, spec, release, build):
             or report['observation']['inventory'] != build['inventory']
             or report['observation']['boot_id'] != build['boot_id'] or report['observation']['python'] != build['python']
             or report['observation']['active_daemons'] or set(report['installed_state']['files']) != set(release['files'])
-            or set(report['queries']) != set(QUERIES) | {'elf_dependencies'}
+            or set(report['queries']) != set(QUERIES) | {'elf_dependencies', 'ethernet_profiles'}
             or not set(FILE_PATHS) <= set(report['protected_files']) or len(report['protected_files']) > 64
             or set(report['devices']) != {'nodes', 'sysfs'}):
         raise ValueError('complete bound static runtime discovery required')
@@ -317,8 +350,10 @@ def validate(report, spec, release, build):
         (n in ('usr/local/sbin/gpsd', 'usr/local/sbin/ntpd') or re.search(r'\.so(?:\.[0-9.]+)?$', n))}
     if set(report['queries']['elf_dependencies']) != expected_elf:
         raise ValueError('complete installed ELF coverage required')
+    if set(report['queries']['ethernet_profiles']) != ethernet_uuids(report['queries']['profile_registry']):
+        raise ValueError('complete Ethernet profile coverage required')
     for name, result in report['queries'].items():
-        if name == 'elf_dependencies':
+        if name in ('elf_dependencies', 'ethernet_profiles'):
             records = result.values()
         elif name in ('accounts', 'groups'):
             requested = set(QUERIES[name][4:]); entries = result['entries']

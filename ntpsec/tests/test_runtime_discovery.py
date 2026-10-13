@@ -62,6 +62,7 @@ class RuntimeDiscovery(unittest.TestCase):
                 queries[name]={'exit_status':0,'stdout':'[]' if name in ('addresses','ipv4_routes','ipv6_routes') else ''}
         queries['elf_dependencies']={n:{'exit_status':0,'stdout':''} for n,r in release['files'].items()
             if r['type']=='file' and (n in ('usr/local/sbin/gpsd','usr/local/sbin/ntpd') or i.re.search(r'\.so(?:\.[0-9.]+)?$',n))}
+        queries['ethernet_profiles']={}
         return {'schema':1,'collected_epoch':spec['prepared_epoch'],'hostname':spec['hostname'],'kernel':spec['kernel'],
             'release_sha256':spec['members']['release.json'],'installation_acceptance_sha256':spec['members']['installation-acceptance.json'],
             'runtime_recipe_sha256':spec['members']['runtime-recipe.json'],'installed_state':state,'parents':parents,
@@ -76,6 +77,7 @@ class RuntimeDiscovery(unittest.TestCase):
         self.assertEqual(spec['operation'],'runtime-discovery');self.assertEqual(set(spec['members']),s.required_inputs('runtime-discovery'))
         self.assertEqual(set(files),c.INPUTS|c.EXTRAS)
         self.assertEqual(spec['installation_bundle_sha256'],self.args.installation_sha256)
+        self.assertIn('-n',json.loads(files['timeservice.json.example'])['gpsd'])
         for mode in ('collect','readback','cleanup'):compile(c.c.payload(spec,files,spec['prepared_epoch'],mode),'fixture','exec')
         with self.assertRaisesRegex(ValueError,'hash mismatch'):c.prepare(Path(result['bundle']),'0'*64)
         for label,digest in spec['reference_hashes'].items():self.assertEqual(c.c.sha(files[label+'.md']),digest)
@@ -152,6 +154,39 @@ class RuntimeDiscovery(unittest.TestCase):
                 with self.assertRaises(ValueError):i.query(i.QUERIES['linker_cache'])
         with patch.object(i.subprocess,'run',side_effect=subprocess.TimeoutExpired('query',15)):
             with self.assertRaises(subprocess.TimeoutExpired):i.query(i.QUERIES['addresses'])
+
+    def test_ethernet_profile_scope_and_registry_rejection(self):
+        uuid='30c72d67-6d27-3d62-8d4d-6ef2e477815b'
+        registry={'exit_status':0,'stdout':uuid+':802-3-ethernet\n'+'00000000-0000-0000-0000-000000000001:802-11-wireless\n'}
+        with patch.object(i,'query',return_value={'exit_status':0,'stdout':'ipv4.method:auto'}) as run:
+            self.assertEqual(set(i.ethernet_profiles(registry)),{uuid})
+            run.assert_called_once_with(['/usr/bin/nmcli','-t','-f',
+                'connection,802-3-ethernet,ipv4,ipv6','connection','show','uuid',uuid])
+        for text in ('invalid:802-3-ethernet\n',registry['stdout']+uuid+':802-3-ethernet\n',
+                     '0'*65, (uuid+':802-3-ethernet\n')*65):
+            with self.assertRaises(ValueError):i.ethernet_uuids({'exit_status':0,'stdout':text})
+        _,spec,files=self.seal();report=self.report(spec,files)
+        report['queries']['profile_registry']=registry
+        release,build,_,_=c.validate_bindings(files,spec)
+        with self.assertRaisesRegex(ValueError,'profile coverage'):i.validate(report,spec,release,build)
+        report['queries']['ethernet_profiles']={uuid:{'exit_status':0,'stdout':'ipv4.method:auto'}}
+        i.validate(report,spec,release,build)
+        report['queries']['ethernet_profiles'][uuid]['exit_status']=1
+        with self.assertRaisesRegex(ValueError,'status/bound'):i.validate(report,spec,release,build)
+
+    def test_profile_drift_holds_collection(self):
+        _,spec,files=self.seal();report=self.report(spec,files)
+        helper=SimpleNamespace(read=lambda p:files[p.name])
+        inspector=SimpleNamespace(accepted_inputs=c.module('inspect-source-destinations.py').accepted_inputs,
+            observation=Mock(return_value=report['observation']))
+        registry={'exit_status':0,'stdout':''}
+        with patch.object(i,'load',return_value=inspector), \
+             patch.object(i,'installed_state',return_value=(report['installed_state'],report['parents'])), \
+             patch.object(i,'protected_files',return_value=report['protected_files']), \
+             patch.object(i,'devices',return_value=report['devices']), \
+             patch.object(i,'query',return_value=registry), \
+             patch.object(i,'ethernet_profiles',side_effect=[{}, {'changed':{}}]):
+            with self.assertRaisesRegex(ValueError,'continuity failed'):i.collect(Path('/fixture'),spec,helper,spec['prepared_epoch'])
 
     def test_static_file_bounds_and_optional_absence(self):
         helper=SimpleNamespace(read=Mock(side_effect=FileNotFoundError))

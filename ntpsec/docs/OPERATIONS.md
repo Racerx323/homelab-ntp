@@ -22,8 +22,8 @@ configuration and activation remain pending.
 | Media and bootstrap | Accepted | Preserve original Debian 11 card and primary/antenna power |
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
-| Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Prepare library/Python runtime discovery and host configuration for separate approval |
-| Runtime configuration | V2 discovery, terminal acceptance and observation-stage cleanup accepted; configuration pending | Prepare host networking, UART/PPS/RTC, runtime accounts and loader validation from the accepted report before reviewing cutover |
+| Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
+| Runtime configuration | V2 discovery accepted; supplemental network/boot discovery prepared offline; configuration pending | Approve supplemental capture; confirm board PPS GPIO/RTC before sealing host mutations |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Pending | Hardware, time, dual-stack clients, monitoring and reboot evidence |
 
@@ -596,6 +596,29 @@ readiness remains false until these requirements and the reviewed host choices
 are satisfied. Runtime execution tests, library-cache changes, account/device
 setup, fixed dual-stack networking, file deployment and activation require later
 explicit approval, backups and acceptance under Phase 3.
+
+The supplemental `host-inputs-20261012-v1` review uses the same guarded
+read-only collector and accepted native receipt. It adds all registered Ethernet
+profiles' connection/Ethernet/IPv4/IPv6 properties by UUID, with unchanged
+registry/properties required across capture. Wi-Fi, 802.1X and VPN settings,
+secrets and raw NetworkManager profile files are excluded. It also records
+nobody/nogroup, serial-getty/Bluetooth enablement state and the installed
+disable-bt, pps-gpio and i2c-rtc overlay bytes/hashes. Overlay availability is
+not proof of board wiring. Prior v2 evidence remains preserved.
+
+Prepare subsequent mutations in this order: fixed networking with exact prior
+properties, timed recovery and new-address acceptance; hardware boot edits with
+confirmed PPS GPIO/RTC, byte-exact backups and console/reboot recovery; then
+runtime accounts, loader checks and staged application configuration. Bootstrap
+timesyncd remains active until the separately approved clock-discipline cutover.
+Do not create a gpsd account by assumption: pinned GPSD 3.27.5 SConscript
+defaults to nobody/dialout; confirm the accepted build's privilege settings and
+device access before selecting identities. Retain accepted native file modes;
+root launch or diagnostic access does not establish unprivileged client access.
+The foreground GPSD template now includes `-n` to poll without a client, as
+specified by the pinned GPSD manual, together with `-N` and 115200 baud.
+NTP account choice, UART path, SHM ownership, leapfile, provider/listener scope
+and runtime imports require reviewed inputs and acceptance before activation.
 
 Do not create a deployable ntp.conf or select UART/PPS/RTC overlays without
 observed target inputs. The approved Uputronics revision on the rebuilt node

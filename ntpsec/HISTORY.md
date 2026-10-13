@@ -806,3 +806,30 @@ configuration, account, service, network mutation or reboot occurred.
 Next prepare reviewed host networking/hardware/account and runtime configuration
 inputs with recovery and bounded loader/runtime validation. Further execution and
 combined-service activation require separately approved hash-bound stages.
+
+### October 12: host configuration preparation and supplemental input gate
+
+Approved offline preparation of networking, hardware, accounts and runtime
+configuration. Accepted v2 discovery remains the starting observation; no new
+target contact occurred. It lacks persistent Ethernet properties and installed
+overlay capabilities required to prepare guarded changes. Prepared supplemental
+operation `host-inputs-20261012-v1` using the existing protected runtime discovery
+lifecycle, accepted native receipt and current governing input hashes.
+
+The collector adds bounded Ethernet properties by UUID, registry/profile drift
+checks, boot-overlay bytes/hashes, nobody/nogroup and serial/Bluetooth unit
+enablement state. Credentials and receiver I/O remain excluded. Offline tests
+cover scoped profile queries, malformed registries, missing profile coverage and
+profile drift, alongside existing replay/readback/cleanup regressions.
+
+Pinned GPSD source defaults to nobody/dialout; future runtime identities still
+require accepted-build/device-access confirmation. Added nowait polling to the
+foreground GPSD template. No account, loader/cache, network, boot, application
+configuration or service changes were executed. Existing native release modes,
+executed evidence and journals remain intact.
+
+Next: separately approve the supplemental read-only capture and confirm the
+revision 5.9 HAT's PPS BCM GPIO and RTC. Then seal networking with timed recovery,
+hardware changes with console/reboot recovery, and account/loader/runtime
+configuration from accepted inputs. No deployable hardware or ntp.conf settings
+are inferred from missing devices. Activation remains separately gated.
