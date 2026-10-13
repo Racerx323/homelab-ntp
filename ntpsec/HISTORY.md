@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v1 held before writes on DNS policy drift; refreshed v2 requires separate execution approval |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; corrected service cutover remains pending |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1940,3 +1940,33 @@ TCP acceptance. Fresh child operation IDs and a new archive hash require separat
 execution approval. No host address change, UDP/NTS authentication or service
 cutover occurred. The next review is
 `homelab-network/ntp-ipv6-permit-20261013-v2` under private evidence storage.
+
+### October 13: IPv6 permit v2 policy and TCP acceptance completed
+
+Executed the separately approved v2 parent once. Fresh preflight matched the
+reviewed controller baseline, including the operator-confirmed DNS MAC-source
+change. Both new IPv6-only NTP permits were created disabled, verified, ordered
+before the existing reject, then enabled. Original policies, referenced lists,
+return traffic and relative order were preserved. The permits match the observed
+Ethernet MAC; no host address, prefix or interface configuration changed.
+
+Before the change, six IPv4 TCP probes succeeded and six IPv6 probes were refused.
+Afterward, all twelve connected successfully: all three configured upstreams,
+both families, under root and the NTP account. Both diagnostics matched their
+dual-endpoint readbacks and completed cleanup; their source state remained
+unchanged. V2 recorded `policy_and_tcp_accepted`. The two permits remain enabled;
+recovery was unnecessary and was not exercised. All original and new evidence,
+including v1's held execution, remains private and preserved.
+
+This accepts firewall policy and bounded TCP connectivity only. It does not prove
+UDP delivery, TLS/NTS authentication, service-sandbox behavior, prefix rollover,
+clock discipline or client/mDNS acceptance. No clock service was activated.
+Private `apply/accepted.json` and `outcome.json` under
+`homelab-network/ntp-ipv6-permit-20261013-v2` bind the operation and results.
+
+Next prepare a corrected service-cutover review using the accepted network
+receipt and current node inputs. Explicit minsane policy and narrowly tested
+journal handling remain required, along with early functionality, authenticated
+upstreams, dual-stack workstation NTP/mDNS acceptance and recovery. Separate
+execution approval is required; neither accepted firewall transaction nor the
+previous cutover may be replayed.

@@ -756,9 +756,13 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    whole LAN or replace host addressing to accommodate the firewall.
    Preserve return traffic, and bind backups,
    recovery and bounded before/after transport checks to a separate review.
-   A management ULA alone does not identify public IPv6 egress. Require transport
+   A management ULA alone does not identify public IPv6 egress. Require
    TCP acceptance before another cutover; retain UDP exchange, full NTS authentication and client
    acceptance in that cutover. OPERATIONS and HISTORY record diagnostic outcomes.
+   Bind the next cutover to accepted network receipts and current host inputs;
+   do not replay an accepted firewall transaction. Resolve the explicit minsane
+   decision and test narrowly scoped expected-journal handling before sealing
+   that cutover, preserving all other acceptance and recovery requirements.
    If preflight detects an unrelated policy change, stop before writes and bind
    a new review to the accepted fresh capture. Preserve that observed policy;
    do not restore the older baseline or replay the registered operation.
