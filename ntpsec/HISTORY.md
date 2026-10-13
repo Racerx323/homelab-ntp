@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation and account/runtime v2 accepted; cleanup complete; account, loader and private candidate validated; copied_not_activated | Explicit-PPS v2 capture/cleanup accepted; serial NTP0 and GPIO PPS NTP2 pairing observed; remaining receiver/runtime inputs and final cutover pending |
+| Runtime | Hardware continuation and account/runtime v2 accepted; cleanup complete; account, loader and private candidate validated; copied_not_activated | Explicit-PPS v2 capture/cleanup accepted; serial NTP0 and GPIO PPS NTP2 pairing observed; short receiver/runtime-input inspection prepared for approval; final cutover pending |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1589,3 +1589,33 @@ prepare final NTP configuration and service cutover for separate execution
 approval. Rerender the earlier serial-only service candidate with the observed
 explicit-PPS profile and unit mapping. Source pairing is established; clock
 discipline, timing accuracy and dual-stack client acceptance remain pending.
+
+### October 13: functional gate implemented; remaining input inspection prepared
+
+Implemented the short functional gate in the checked-in acquisition recipe
+and runner. Five distinct leap-0 serial/PPS matches on different SHM units
+must arrive within 30 seconds with live children before the longer window
+continues. Start and pending readback responses expose the durable result.
+Failure stops children and retains independent UART restoration; partial held
+captures can be read back and cleaned after dual-stack restoration/continuity
+acceptance without accepting samples or replaying acquisition. Prior executed
+archives remain unchanged. This implementation is tested offline, not on target.
+
+Reviewed accepted v2 evidence offline: NMEA0183/115200 and NTP0/NTP2 pairing
+are established, but no receiver firmware response is present. The pinned
+NTPsec source resolves leapfile refresh options and reload checks without an
+automatic restart; current leap contents/destination/permissions and final
+service/Avahi inputs still require inspection.
+
+Prepared `receiver-runtime-inputs-20261013-v1` using the existing protected
+acquisition controller and a checked-in bounded inspector/recipe. Its private
+review and sealing.json bind the accepted runtime and v2 capture/cleanup,
+current inputs and target identity. Scope: one MON-VER query at 115200 with a
+10-second/65536-byte bound, read-only runtime file/service metadata, independent
+UART restoration, dual-stack acceptance, conditional recovery and cleanup.
+The query writes a version request but no receiver settings. GPSD/NTPsec stay
+stopped; no long acquisition, leap download or clock-service change is prepared.
+
+Next approve that sealed inspection, review the receiver response and runtime
+inputs, then prepare final configuration/cutover for separate execution
+approval. No target contact or mutation occurred during this preparation.

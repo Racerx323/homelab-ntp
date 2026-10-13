@@ -1,0 +1,9 @@
+{
+  "schema": 3,
+  "purpose": "receiver-runtime-inputs",
+  "query_hex": "b5620a0400000e34",
+  "query_timeout_seconds": 10,
+  "response_limit_bytes": 65536,
+  "runtime_max_seconds": 120,
+  "receiver_configuration_writes": false
+}

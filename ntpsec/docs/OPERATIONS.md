@@ -92,13 +92,83 @@ units. The unit numbers are observed, not predetermined. A pairing observation
 does not establish timing accuracy, firmware identity or NTP client acceptance.
 Missing or ambiguous samples hold configuration without replaying acquisition.
 
-For further acquisition work, first use a short, separately reviewed functional
-gate: confirm device access, physical PPS reports and distinct serial/PPS SHM
-pairing within an explicit short timeout. Expose the result promptly; an active
-service or a pending terminal readback is not a functionality check. Start a
-longer observation only after that gate passes and its scope is approved.
-Cold-start allowances do not replace initial interface validation on an already
-running receiver. Preserve the currently executed bundle unchanged.
+The checked-in schema-3 acquisition recipe implements the functional gate for
+subsequent installations/configurations: within 30 seconds of starting both
+monitors, require five distinct, matching leap-0 samples from each expected
+device on different SHM units, with all three children still running. Missing,
+ambiguous or malformed samples stop acquisition; ExecStopPost restores UART.
+Both pinned monitors flush lines, so the check does not wait for process exit.
+Only a passing gate permits the remainder of the approved 900-second window;
+the completed capture still requires at least 60 matches per source.
+
+The start response waits at most 50 seconds, including socket readiness, for
+the durable `functional-gate.json` result. Pending readbacks also expose it.
+An unavailable result requires conditional readback/recovery, never another
+start. Gate failure is not capture acceptance. Matching dual-stack evidence
+of a restored hold permits diagnostic cleanup without accepting samples.
+Review the gate and longer window together in the sealed execution scope;
+no additional permission is needed for steps already included in that scope.
+Cold-start allowances do not replace initial interface validation. The executed
+v1/v2 archives retain their original code and evidence; they do not gain this
+gate retroactively. Gate success proves source functionality, not UTC accuracy.
+
+### Resolve the remaining cutover inputs
+
+The accepted v2 evidence identifies NMEA0183 at 115200 and the serial/PPS
+pairing. It contains no receiver software/hardware version response. Do not
+infer firmware from GPSD's VERSION message or the HAT model.
+
+`configs/receiver-runtime-inputs.json` and `scripts/inspect-receiver-runtime.py`
+define the short inspection, using the acquisition controller's existing
+protected staging, continuity checks, single-use registration and independent
+UART restoration. Prepare it offline with the accepted runtime and latest
+accepted acquisition/cleanup:
+
+```bash
+python3 -I -B ntpsec/scripts/run-gpsd-acquisition.py seal \
+    --purpose receiver-runtime-inputs \
+    --runtime-dir "$accepted_runtime_dir" --runtime-sha256 "$accepted_runtime_sha256" \
+    --prior-dir "$accepted_acquisition_dir" --prior-sha256 "$accepted_acquisition_sha256" \
+    --operation-id "$unique_operation_id" --output "$private_review_directory"
+```
+
+Use the hashes from the corresponding accepted archives, not a historical
+example. The current [receiver/runtime input review](/home/aaron/code/.local-evidence/homelab-ntp/current/receiver-runtime-inputs-20261013-v1/review.md)
+awaits separate execution approval. Its adjacent sealing.json binds the exact
+bundle. No new target contact has occurred during preparation.
+
+The operation sends exactly one MON-VER request, hex `b5620a0400000e34`, to the
+identity-checked UART at 115200, with a 10-second/65536-byte response bound.
+This is a receiver query write, not a read-only serial open. It sends no CFG
+command, changes no receiver setting and performs no retry or daemon start.
+Checksum-valid software/hardware fields and any protocol/module extensions are
+retained privately; missing identity holds configuration. Review capability
+from the actual response before any later receiver setting is proposed.
+
+The same capture records bounded installed ntpleapfetch and distribution
+leap-list contents, existing NTP/supervisor/Avahi configuration, relevant
+directories and their ownership/modes, NTP account, UDP 123 listeners and
+fixed service states. Its worker has a 120-second limit and restores UART on
+exit. Acceptance requires matching dual-stack terminal evidence and unchanged
+runtime/network/bootstrap/SHM state. No download, service activation, receiver
+reconfiguration or final configuration installation is covered.
+
+Resolve the final inputs in this order:
+
+| Input | Established or required action |
+| --- | --- |
+| Receiver and GPSD profile | NMEA0183 at 115200; `/dev/serial0` then explicit `/dev/pps0`, receiver writes disabled and loopback-only. Capture MON-VER identity before rendering the final profile. |
+| SHM | Observed serial NTP0 and PPS NTP2, root-owned 0600/0666. Bind the configuration to this exact ordering and verify NTPsec attachment/privilege behavior during cutover. |
+| Upstreams/access | All three selected NTS candidates; Default LAN IPv4/ULA service, localhost-only administrative queries. Render the governed subnets and validate both families. |
+| Leap maintenance | Pinned NTPsec 1.2.5 provides `/usr/local/bin/ntpleapfetch`, explicit source/config/temp/retry options and no default restart. Its timer code checks the leapfile hourly and reports expiry daily. Inspect current target inputs before selecting destination, permissions and an unexpired, verified installation asset. |
+| Service/mDNS/runtime paths | Inspect current files, directories, listeners and Avahi state; rerender the earlier serial-only candidate. Resolve writable drift/stats locations and Avahi interface scope before activation. |
+
+The pinned source references for leap behavior are `ntpclients/ntpleapfetch`,
+`ntpd/ntp_timer.c` and `ntpd/ntp_util.c` in the authenticated 1.2.5 archive.
+Do not activate a timer, choose a restart action or accept a leapfile merely
+from its presence. Final configuration/cutover remains a separate review after
+these inputs are accepted; no repeat long acquisition is needed just to
+re-establish the accepted pairing.
 
 ## Current state and remaining work
 
@@ -115,7 +185,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation and account/runtime v2 accepted through both management endpoints; cleanup complete; account, loader and private service candidate validated; original evidence preserved | Explicit-PPS v2 capture/cleanup accepted and NTP0/NTP2 pairing observed; resolve remaining receiver/runtime inputs and prepare final configuration/cutover |
+| Runtime configuration | Hardware continuation and account/runtime v2 accepted through both management endpoints; cleanup complete; account, loader and private service candidate validated; original evidence preserved | Explicit-PPS v2 capture/cleanup accepted and NTP0/NTP2 pairing observed; short receiver/runtime-input inspection prepared for approval before final configuration/cutover |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

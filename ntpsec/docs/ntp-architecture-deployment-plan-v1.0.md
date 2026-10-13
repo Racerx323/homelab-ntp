@@ -679,11 +679,22 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    pairing within a bounded short timeout; process/socket readiness or a
    pending readback does not satisfy that gate. Longer observation follows
    only after functionality passes and its execution scope is approved.
+   The reproducible acquisition recipe bounds this gate to 30 seconds and
+   requires five distinct leap-0 timestamp matches per source on different
+   SHM units with live children. Expose its durable result in the start response
+   and subsequent readbacks; failure stops acquisition and restores UART.
+   Completed observation still requires at least 60 matches per source.
+   Keep the gate and any longer window explicit in the approved bundle.
    Bind final host configuration to the observed serial/PPS unit mapping
    for its exact GPSD input profile and SHM ownership. Rerender earlier private
    service candidates when the PPS input profile changes; do not carry forward
    a serial-only candidate after explicit GPIO PPS acceptance. Keep source
    pairing evidence separate from clock-discipline and client accuracy tests.
+   When passive evidence lacks receiver identity, prepare one separately
+   approved MON-VER query: exact request bytes, identity-checked UART, 115200,
+   10-second/65536-byte response bound, no receiver configuration or retry,
+   and independent UART restoration. Inspect final leapfile/runtime/Avahi
+   inputs within a bounded stage before rendering cutover configuration.
    Final NTP configuration and service cutover require subsequent approval.
    Use all three selected authenticated associations: time.cloudflare.com,
    ohio.time.system76.com and oregon.time.system76.com. Initial client service

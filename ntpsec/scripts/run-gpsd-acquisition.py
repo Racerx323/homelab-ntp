@@ -25,7 +25,7 @@ ENV = {'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin',
 INPUTS = {'worker.py', 'runtime.tar', 'runtime-acceptance.json', 'runtime-cleanup.json',
           'recipe.json', 'architecture.md', 'operations.md', 'history.md', 'tests.py',
           'transport.py', 'known_hosts', 'prior.tar', 'prior-acceptance.json', 'prior-cleanup.json',
-          'prior-terminal.json', 'prior-restoration.json', 'prior-shm-after.txt'}
+          'prior-terminal.json', 'prior-restoration.json', 'prior-shm-after.txt', 'receiver-inputs.py'}
 
 
 def encoded(value):
@@ -56,7 +56,15 @@ def unpack(raw):
 
 
 def validate_recipe(r):
-    if (r['schema'] != 2 or r.get('pairing_min_samples') != 60 or r['duration_seconds'] != 900 or r['runtime_max_seconds'] != 1080
+    if r.get('purpose') == 'receiver-runtime-inputs':
+        if r != {'schema':3,'purpose':'receiver-runtime-inputs','query_hex':'b5620a0400000e34',
+                 'query_timeout_seconds':10,'response_limit_bytes':65536,'runtime_max_seconds':120,
+                 'receiver_configuration_writes':False}:
+            raise ValueError('closed single MON-VER query recipe required')
+        return
+    if (r['schema'] != 3 or r.get('purpose') != 'acquisition'
+            or r.get('functional_gate') != {'timeout_seconds':30,'matching_samples_per_source':5}
+            or r.get('pairing_min_samples') != 60 or r['duration_seconds'] != 900 or r['runtime_max_seconds'] != 1080
             or r['log_limit_bytes'] != 8388608
             or r['gpsd'] != ['/usr/local/sbin/gpsd','-b','-N','-n','-D','3','-s','115200','/dev/serial0','/dev/pps0']
             or r['gpspipe'] != ['/usr/local/bin/gpspipe','-B','-w','-P','-x','900','127.0.0.1:2947']
@@ -68,7 +76,8 @@ def validate(spec, files):
     old = unpack(files['runtime.tar']); runtime = json.loads(old['spec.json'])
     receipt = json.loads(files['runtime-acceptance.json']); cleanup = json.loads(files['runtime-cleanup.json'])
     state = cleanup['result']; recipe = json.loads(files['recipe.json']); validate_recipe(recipe)
-    if (spec['schema'] != 2 or not re.fullmatch('[a-z][a-z0-9-]{0,47}', spec['operation_id'])
+    if (spec['schema'] != 3 or spec['purpose'] != recipe['purpose']
+            or not re.fullmatch('[a-z][a-z0-9-]{0,47}', spec['operation_id'])
             or spec['stage'] != '/var/lib/ntp-acquire-'+spec['operation_id']
             or spec['unit'] != 'ntp-acquire-'+spec['operation_id']+'.service'
             or runtime['operation'] != 'runtime' or runtime['hostname'] != spec['hostname']
@@ -96,7 +105,7 @@ def validate_prior(spec, files):
     prior = unpack(files['prior.tar']); previous = json.loads(prior['spec.json'])
     receipt = json.loads(files['prior-acceptance.json']); cleanup = json.loads(files['prior-cleanup.json'])
     terminal = json.loads(files['prior-terminal.json']); restoration = json.loads(files['prior-restoration.json'])
-    if (previous['schema'] != 1 or previous['stage'] == spec['stage']
+    if (previous['schema'] not in (1,2,3) or previous['stage'] == spec['stage']
             or any(previous[k] != spec[k] for k in ('hostname','kernel','boot_id','runtime_sha256','endpoints'))
             or receipt['state'] != 'acquisition_capture_accepted'
             or receipt['bundle_sha256'] != sha(files['prior.tar'])
@@ -138,7 +147,7 @@ def prior_guard(h, spec, files):
         raise ValueError('SHM ownership/membership/attachment drift since accepted capture')
 
 
-def pairing_evidence(gps_json, shm_text):
+def pairing_evidence(gps_json, shm_text, minimum_samples=60):
     """Correlate explicit-device reports with independently sampled SHM timestamps."""
     rows = [json.loads(line) for line in gps_json.splitlines() if line.strip()]
     watches = [r for r in rows if r.get('class') == 'WATCH']
@@ -168,7 +177,7 @@ def pairing_evidence(gps_json, shm_text):
             if pair in samples: pairs.add(pair)
         matched[kind] = len(pairs)
         summary[kind] = {'device':path,'unit':unit,'matching_samples':len(pairs)}
-    observed = len(set(units.values())) == 2 and all(n >= 60 for n in matched.values())
+    observed = len(set(units.values())) == 2 and all(n >= minimum_samples for n in matched.values())
     return {'observed':observed,'sources':summary,'reason':None if observed else 'insufficient or overlapping matched sources',
             'timing_accuracy_accepted':False}
 
@@ -259,7 +268,7 @@ def unit_command(spec):
     script = spec['stage']+'/worker.py'
     return ['/usr/bin/systemd-run','--quiet','--unit='+spec['unit'],
             '--property=Type=exec','--property=Restart=no','--property=UMask=0077',
-            '--property=RuntimeMaxSec=1080','--property=TimeoutStopSec=20',
+            '--property=RuntimeMaxSec='+('120' if spec['purpose']=='receiver-runtime-inputs' else '1080'),'--property=TimeoutStopSec=20',
             '--property=KillMode=control-group','--property=LimitFSIZE=8388608',
             '--property=WorkingDirectory='+spec['stage'],
             '--property=ExecStopPost=/usr/bin/python3 -I -B '+script+' worker restore',
@@ -283,10 +292,53 @@ def restore(h, spec):
         h.create(root/'restoration.json', encoded(result))
 
 
+def live_pairing(h, root, minimum_samples):
+    # Both pinned monitors flush each line. Ignore only an unfinished last line.
+    streams = []
+    for name in ('gpspipe.stdout','ntpshmmon.stdout'):
+        raw = h.read(root/name, limit=8388608)
+        streams.append(raw[:raw.rfind(b'\n')+1].decode())
+    return pairing_evidence(*streams, minimum_samples=minimum_samples)
+
+
+def functional_gate(h, root, processes, recipe):
+    started = time.monotonic(); last = {'observed':False,'reason':'no samples yet'}
+    try:
+        while time.monotonic()-started < recipe['timeout_seconds']:
+            if any(p.poll() is not None for p in processes):
+                raise ValueError('acquisition child exited during functional gate')
+            last = live_pairing(h,root,recipe['matching_samples_per_source'])
+            if last['observed']:
+                return {'state':'passed','elapsed_seconds':time.monotonic()-started,'pairing':last}
+            time.sleep(0.25)
+        raise ValueError('functional gate timeout: '+last['reason'])
+    except Exception as error:
+        return {'state':'failed','elapsed_seconds':time.monotonic()-started,
+                'error':str(error)[:500],'pairing':last}
+
+
+def publish_gate(h, root, gate):
+    # Readers must never see partially written JSON. The capture claim is single-use.
+    h.create(root/'functional-gate.tmp', encoded(gate))
+    os.rename(root/'functional-gate.tmp',root/'functional-gate.json')
+
+
+def startup_result(h, root, timeout=50):
+    deadline = time.monotonic()+timeout
+    while time.monotonic() < deadline:
+        if (root/'functional-gate.json').exists():
+            return json.loads(h.read(root/'functional-gate.json'))
+        time.sleep(0.25)
+    return {'state':'unavailable','error':'startup result unavailable; use conditional readback/recovery, never repeat start'}
+
+
 def capture(h, spec, files):
     root = Path(spec['stage']); recipe = json.loads(files['recipe.json'])
+    if recipe['purpose'] == 'receiver-runtime-inputs':
+        import types
+        return load(root/'receiver-inputs.py').capture(types.SimpleNamespace(**globals()),h,spec,files)
     h.create(root/'capture-claim.json', encoded({'started_epoch': int(time.time())}))
-    processes = []; logs = []; statuses = {}; failure = None
+    processes = []; logs = []; statuses = {}; failure = None; gate = None
     def interrupted(signum, frame):
         raise InterruptedError('bounded acquisition interrupted')
     for sig in (signal.SIGINT, signal.SIGTERM): signal.signal(sig, interrupted)
@@ -313,6 +365,10 @@ def capture(h, spec, files):
         for line in listeners.splitlines():
             if line.split()[3] not in ('127.0.0.1:2947','[::1]:2947','::1:2947'):
                 raise ValueError('non-loopback GPSD listener')
+        gate = functional_gate(h,root,processes,recipe['functional_gate'])
+        publish_gate(h,root,gate)
+        if gate['state'] != 'passed': raise ValueError(gate['error'])
+        # Continue only after demonstrated functionality; the total window remains bounded.
         statuses['gpspipe'] = processes[1].wait(timeout=930)
         statuses['ntpshmmon'] = processes[2].wait(timeout=20)
         if any(statuses.values()) or processes[0].poll() is not None:
@@ -320,6 +376,8 @@ def capture(h, spec, files):
         h.create(root/'gpsd-process.txt', Path('/proc/'+str(processes[0].pid)+'/status').read_bytes())
         if time.monotonic()-started < recipe['duration_seconds']:
             raise ValueError('incomplete acquisition window')
+        if not live_pairing(h,root,recipe['pairing_min_samples'])['observed']:
+            raise ValueError('final serial/PPS pairing not established')
     except BaseException as error:
         failure = str(error)[:500]
     finally:
@@ -330,9 +388,13 @@ def capture(h, spec, files):
             try: p.wait(timeout=5)
             except subprocess.TimeoutExpired: p.kill(); p.wait(timeout=5)
         for stream in logs: stream.close()
+        if gate is None:
+            gate = {'state':'failed','error':failure or 'functional gate interrupted'}
+            publish_gate(h,root,gate)
         h.create(root/'shm-after.txt', Path('/proc/sysvipc/shm').read_bytes())
         h.create(root/'terminal.json', encoded({'phase': 'captured' if failure is None else 'held',
                  'error': failure, 'child_statuses': statuses, 'elapsed_seconds': time.monotonic()-started,
+                 'functional_gate':gate,
                  'receiver_timing_accepted': False, 'shm_mapping_accepted': False}))
     # ExecStopPost owns restoration, including process crash and timeout paths.
 
@@ -365,7 +427,7 @@ def entry(spec, files, mode):
                  'termios': run(['/usr/bin/stty','-F','/dev/serial0','-g']).strip()}))
         h.create(root/'start.json', encoded({'submitted_epoch': int(time.time())}))
         run(unit_command(spec))
-        return {'phase': 'started', 'unit': spec['unit']}
+        return {'phase': 'started', 'unit': spec['unit'], 'functional_gate':startup_result(h,root)}
     h.ancestors(root)
     if stat.S_IMODE(root.stat().st_mode) != 0o700 or h.read(root/'spec.json') != encoded(spec):
         raise ValueError('protected stage/specification required')
@@ -378,7 +440,9 @@ def entry(spec, files, mode):
         return {'phase': 'restored', 'acquisition_replayed': False}
     active = run(['/usr/bin/systemctl','show','--property=ActiveState','--value',spec['unit']]).strip()
     if active not in ('inactive','failed'):
-        return {'phase': 'pending', 'unit_state': active}
+        gate = (json.loads(h.read(root/'functional-gate.json')) if (root/'functional-gate.json').exists()
+                else {'state':'checking'})
+        return {'phase': 'pending', 'unit_state': active, 'functional_gate':gate}
     if mode not in ('readback','cleanup'): raise ValueError('closed mode required')
     restoration = json.loads(h.read(root/'restoration.json'))
     before = json.loads(h.read(root/'serial-before.json'))
@@ -391,10 +455,20 @@ def entry(spec, files, mode):
     if shm_inventory(h.read(root/'shm-after.txt')) != shm_inventory(files['prior-shm-after.txt']):
         raise ValueError('retained SHM segment identity or ownership changed')
     terminal = json.loads(h.read(root/'terminal.json'))
-    pairing = pairing_evidence(h.read(root/'gpspipe.stdout').decode(), h.read(root/'ntpshmmon.stdout').decode())
+    pairing = {'observed':False,'reason':'identity inspection; no acquisition' if spec['purpose']=='receiver-runtime-inputs' else 'capture held'}
+    if terminal['phase'] == 'captured' and spec['purpose'] == 'acquisition':
+        pairing = live_pairing(h,root,60)
+        if terminal['functional_gate']['state'] != 'passed' or not pairing['observed']:
+            raise ValueError('functional gate and final pairing required')
     evidence = {}
-    for name in ('gpsd.stdout','gpsd.stderr','gpspipe.stdout','gpspipe.stderr','ntpshmmon.stdout',
-                 'ntpshmmon.stderr','gpsd-process.txt','listeners.txt','shm-before.txt','shm-after.txt','terminal.json','restoration.json','serial-before.json'):
+    names = ('shm-before.txt','shm-after.txt','terminal.json','restoration.json','serial-before.json','functional-gate.json')
+    if spec['purpose'] == 'receiver-runtime-inputs':
+        names += ('receiver-query.json','receiver-response.bin','receiver-runtime.json')
+    else:
+        names += ('gpsd.stdout','gpsd.stderr','gpspipe.stdout','gpspipe.stderr','ntpshmmon.stdout',
+                  'ntpshmmon.stderr','gpsd-process.txt','listeners.txt')
+    for name in names:
+        if terminal['phase'] == 'held' and not (root/name).exists(): continue
         raw = h.read(root/name,limit=8388608)
         evidence[name] = {'sha256': sha(raw), 'base64': base64.b64encode(raw).decode()}
     if mode == 'cleanup':
@@ -403,7 +477,8 @@ def entry(spec, files, mode):
         return {'phase': 'cleaned', 'evidence_preserved': True, 'shm_preserved': True,
                 'terminal_sha256': evidence['terminal.json']['sha256']}
     return {'phase': terminal['phase'], 'hostname':spec['hostname'], 'boot_id':spec['boot_id'],
-            'restored':True, 'continuity':True, 'evidence':evidence, 'pairing':pairing}
+            'restored':True, 'continuity':True, 'evidence':evidence, 'pairing':pairing,
+            'functional_gate':terminal['functional_gate']}
 
 
 def payload(spec, files, mode):
@@ -424,6 +499,7 @@ def prepare(bundle, checksum):
     files = unpack(raw); spec = json.loads(files['spec.json'])
     if (set(files) != INPUTS|{'spec.json','manifest.json','review.md'}
             or files['worker.py'] != Path(__file__).read_bytes()
+            or files['receiver-inputs.py'] != (ROOT/'scripts/inspect-receiver-runtime.py').read_bytes()
             or files['transport.py'] != (ROOT/'scripts/run-foundation-preflight.py').read_bytes()
             or c.private_file(bundle.parent/'known_hosts',4096) != files['known_hosts']):
         raise ValueError('closed current controller/transport/key inputs required')
@@ -471,11 +547,13 @@ def seal(args):
              'runtime-cleanup.json':cleanup,'known_hosts':old['known_hosts'],
              'transport.py':(ROOT/'scripts/run-foundation-preflight.py').read_bytes(),
              'tests.py':(ROOT/'tests/test_gpsd_acquisition.py').read_bytes(),
-             'recipe.json':(ROOT/'configs/gpsd-acquisition-recipe.json').read_bytes()}
+             'receiver-inputs.py':(ROOT/'scripts/inspect-receiver-runtime.py').read_bytes(),
+             'recipe.json':(ROOT/'configs'/('receiver-runtime-inputs.json' if args.purpose=='receiver-runtime-inputs'
+                                          else 'gpsd-acquisition-recipe.json')).read_bytes()}
     for n,p in [('architecture.md','docs/ntp-architecture-deployment-plan-v1.0.md'),
                 ('operations.md','docs/OPERATIONS.md'),('history.md','HISTORY.md')]: files[n]=(ROOT/p).read_bytes()
     files.update(prior_inputs(c,args))
-    epoch=int(time.time()); spec={'schema':2,'operation_id':args.operation_id,
+    epoch=int(time.time()); spec={'schema':3,'purpose':args.purpose,'operation_id':args.operation_id,
         'stage':'/var/lib/ntp-acquire-'+args.operation_id,'unit':'ntp-acquire-'+args.operation_id+'.service',
         'hostname':runtime['hostname'],'kernel':runtime['kernel'],'boot_id':json.loads(receipt)['boot_id'],
         'old_ipv4':runtime['old_ipv4'],'source_stage':runtime['stage'],'runtime_sha256':args.runtime_sha256,
@@ -501,6 +579,48 @@ def seal(args):
 
 
 def review(spec):
+    if spec['purpose'] == 'receiver-runtime-inputs':
+        return f'''# Receiver identity and final runtime inputs: {spec['operation_id']}
+
+Target: **{spec['hostname']}**, boot `{spec['boot_id']}`.
+Accepted runtime: `{spec['runtime_sha256']}`; accepted acquisition, restoration,
+cleanup and SHM inventory are bound as inputs. Expires epoch {spec['expires_epoch']}.
+
+One start. With GPSD/NTPsec stopped and devices idle, save UART settings,
+temporarily select raw 115200 and send exactly one UBX MON-VER query
+`b5620a0400000e34` directly to the identity-checked UART. This writes a version
+request, not receiver configuration. Read at most 65536 bytes for 10 seconds;
+require a checksum-valid software/hardware response. No retry, protocol change,
+CFG command, flash save, PPS device open, daemon start or long observation.
+NMEA traffic and receiver identity remain in private evidence.
+
+Read bounded files/metadata for installed ntpleapfetch, distribution leap list,
+/etc/ntp.conf, /etc/ntpsec-timeservice.json, /etc/avahi/avahi-daemon.conf and
+/etc/systemd/system/timeservice.service; record absent files. Read metadata for
+/var/lib/ntp, /var/lib/ntpsec, /var/log/ntpstats; NTP account, UDP 123 listeners,
+and fixed time/GPSD/Avahi service states. No leap download, upstream connection,
+clock-service change, file installation, network/Avahi change, reboot or IPC deletion.
+
+Use a unique root-owned 0700 stage `{spec['stage']}` with 0600 inputs/evidence.
+Preserve and verify prior executed stages and SHM inventory. Reuse the accepted
+runtime/native/hardware/network continuity checks before and after. A transient
+unit limits the worker to 120 seconds; ExecStopPost restores the original UART
+after its children stop. Boot/device drift holds restoration for inspection.
+
+One start, up to 26 numbered readbacks at least 45 seconds apart through both
+pinned management endpoints. A complete capture requires identical dual-stack
+terminal evidence, stopped receiver/time daemons, restored UART and unchanged
+continuity/SHM ownership. Conditional recovery stops only this operation unit
+and restores UART; no query replay. Conditional cleanup retires only transient
+unit state after accepted capture or a restored hold. All evidence stays private
+and is preserved. No receiver or NTP timing accuracy acceptance is implied.
+
+Use `python3 -I -B ntpsec/scripts/run-gpsd-acquisition.py execute --bundle
+ABSOLUTE_BUNDLE --sha256 APPROVED_HASH --mode start` once; conditional modes
+are `readback --attempt N`, `recover`, `cleanup`. Every action is registered
+locally before transport; lost output does not authorize repetition.
+Preparation is offline. Final configuration/cutover requires separate approval.
+'''
     return f'''# Bounded GPSD acquisition: {spec['operation_id']}
 
 Target: **{spec['hostname']}**; boot `{spec['boot_id']}`.
@@ -515,6 +635,15 @@ GPSD activation and device I/O, not a read-only host snapshot. The only temporar
 hardware change is UART termios. No receiver reconfiguration, ntpd, clock step,
 bootstrap service change, package/file installation, network change or reboot.
 No NTS server is contacted by acquisition. Shared antenna/primary stays untouched.
+
+Before the long observation continues, a 30-second functional gate requires
+five distinct, matching leap-0 SHM timestamps for each of the explicit serial
+and PPS sources, on different observed SHM units. All three children must remain
+running. Missing, ambiguous or malformed samples stop acquisition promptly;
+ExecStopPost restores UART settings. The start response waits at most 50 seconds
+for the durable gate result (including the 15-second socket-readiness allowance).
+Pending readbacks also expose the gate result. No gate pass means no long
+observation; never interpret process/socket readiness as functional acceptance.
 
 Root-owned 0700 unique stage and 0600 inputs/logs; accepted source stage is shared
 locked and verified, never modified. Native/network/hardware/account/loader
@@ -538,6 +667,10 @@ its retained segments. The pinned
 GPSD source propagates serial time to PPS-only devices; one serial source keeps
 that relationship unambiguous.
 
+A failed capture may be accepted only as restored/held evidence after matching
+dual-stack readbacks and continuity checks, permitting diagnostic cleanup. This
+does not accept its samples or authorize another start.
+
 Conditional recovery stops only this operation's unit and restores the bound UART
 settings. Cleanup retires only its transient unit state; logs, original stages,
 and all SHM segments remain. No explicit IPC deletion, blanket process kill, or replay.
@@ -548,6 +681,25 @@ ABSOLUTE_BUNDLE --sha256 APPROVED_HASH --mode start` once. Conditional modes:
 is registered before transport; lost output never authorizes repeating start.
 Final NTP configuration/service cutover requires a later separately sealed review.
 '''
+
+
+def terminal_receipt(spec, files, checksum, results):
+    phases = {r['phase'] for r in results.values()}
+    if phases not in ({'captured'},{'held'}): return None
+    if (set(results) != set(spec['endpoints']) or len(results) != 2
+            or len({sha(encoded(r)) for r in results.values()}) != 1):
+        raise ValueError('matching dual-stack terminal evidence required')
+    if any(r.get('restored') is not True or r.get('continuity') is not True for r in results.values()):
+        raise ValueError('restored continuity required')
+    captured = phases == {'captured'}
+    success = 'receiver_runtime_inputs_captured' if spec['purpose']=='receiver-runtime-inputs' else 'acquisition_capture_accepted'
+    report = next(iter(results.values()))
+    if captured and spec['purpose']=='acquisition':
+        if report.get('functional_gate',{}).get('state') != 'passed' or report.get('pairing',{}).get('observed') is not True:
+            raise ValueError('functional gate and final pairing required')
+    return {'state':success if captured else 'acquisition_held_restored','bundle_sha256':checksum,
+            'spec_sha256':sha(files['spec.json']),'receiver_timing_accepted':False,
+            'shm_mapping_accepted':False,'report_sha256':sha(encoded(report))}
 
 
 def execute(args):
@@ -562,10 +714,12 @@ def execute(args):
         if args.attempt>1 and time.time()-json.loads(c.private_file(previous))['epoch']<45:
             raise ValueError('readback interval must be at least 45 seconds')
     if args.mode=='cleanup':
-        receipt=json.loads(c.private_file(directory/'acceptance.json'))
-        if (receipt['state']!='acquisition_capture_accepted' or receipt['bundle_sha256']!=args.sha256
+        path = directory/'acceptance.json'
+        if not path.exists(): path = directory/'restored-hold.json'
+        receipt=json.loads(c.private_file(path))
+        if (receipt['state'] not in ('acquisition_capture_accepted','receiver_runtime_inputs_captured','acquisition_held_restored') or receipt['bundle_sha256']!=args.sha256
                 or receipt['spec_sha256']!=sha(files['spec.json'])):
-            raise ValueError('bound accepted capture required before cleanup')
+            raise ValueError('bound accepted capture or restored hold required before cleanup')
     c.write_new(directory/(label+'-execution.json'),{'bundle_sha256':args.sha256,'epoch':int(time.time())})
     results={}
     for index,endpoint in enumerate(spec['endpoints'] if args.mode=='readback' else spec['endpoints'][:1]):
@@ -586,16 +740,14 @@ def execute(args):
         c.write_new(directory/(stem+'-result.json'),response)
         if p.returncode:raise ValueError(response['result'].get('error','acquisition held'))
         results[endpoint]=response['result']
-    if args.mode=='readback' and all(r['phase']=='captured' for r in results.values()):
-        if len(results)!=2 or len({sha(encoded(r)) for r in results.values()})!=1:
-            raise ValueError('matching dual-stack terminal evidence required')
-        receipt={'state':'acquisition_capture_accepted','bundle_sha256':args.sha256,'spec_sha256':sha(files['spec.json']),
-                 'receiver_timing_accepted':False,'shm_mapping_accepted':False,'report_sha256':sha(encoded(next(iter(results.values()))))}
-        path=directory/'acceptance.json'
+    receipt = terminal_receipt(spec,files,args.sha256,results) if args.mode=='readback' else None
+    if receipt is not None:
+        path=directory/('restored-hold.json' if receipt['state']=='acquisition_held_restored' else 'acceptance.json')
         if path.exists():
             if json.loads(c.private_file(path))!=receipt:raise ValueError('acceptance conflict')
         else:c.write_new(path,receipt)
-    return {'mode':args.mode,'results':{k:v['phase'] for k,v in results.items()}}
+    return {'mode':args.mode,'results':{k:{n:v[n] for n in ('phase','functional_gate') if n in v}
+                                      for k,v in results.items()}}
 
 
 def main():
@@ -611,6 +763,7 @@ def main():
         return
     parser=argparse.ArgumentParser(description=__doc__);sub=parser.add_subparsers(dest='action',required=True)
     p=sub.add_parser('seal');p.add_argument('--runtime-dir',type=Path,required=True)
+    p.add_argument('--purpose',choices=('acquisition','receiver-runtime-inputs'),default='acquisition')
     p.add_argument('--prior-dir',type=Path,required=True);p.add_argument('--prior-sha256',required=True)
     p.add_argument('--runtime-sha256',required=True);p.add_argument('--operation-id',required=True);p.add_argument('--output',type=Path,required=True)
     p=sub.add_parser('execute');p.add_argument('--bundle',type=Path,required=True);p.add_argument('--sha256',required=True)

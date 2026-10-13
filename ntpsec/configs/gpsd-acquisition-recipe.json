@@ -1,5 +1,10 @@
 {
-  "schema": 2,
+  "schema": 3,
+  "purpose": "acquisition",
+  "functional_gate": {
+    "timeout_seconds": 30,
+    "matching_samples_per_source": 5
+  },
   "duration_seconds": 900,
   "runtime_max_seconds": 1080,
   "log_limit_bytes": 8388608,
