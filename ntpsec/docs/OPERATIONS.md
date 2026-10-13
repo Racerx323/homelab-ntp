@@ -216,7 +216,7 @@ executed once. Its only retained error-priority entry was NTPsec's
 `SYNC: Found 5 servers, suggest minsane at least 3`; this made the cutover's
 empty-output journal criterion false. It does not establish an NTS failure.
 The supplemental journal query rejected the hyphenated boot descriptor, so
-diagnostic acceptance remains held. Current configuration/service metadata and
+v1 diagnostic acceptance remained held. Current configuration/service metadata and
 the final source-file comparison were not reached. Both management endpoints
 returned matching partial evidence, and diagnostic cleanup completed while
 retaining all files. No services or configuration were changed. Preserve this
@@ -227,13 +227,21 @@ trial configuration; its absence is expected in the restored state. Do not
 recreate it outside a separately approved cutover.
 
 The [v2 diagnostic review](/home/aaron/code/.local-evidence/homelab-ntp/current/cutover-inspection-20261013-v2/review.md)
-is prepared offline with corrected boot-ID handling and awaits separate execution
-approval, bound to adjacent `sealing.json`. It preserves the canonical target UUID
-and renders only the journal filter as 32 hexadecimal characters. Regression
-tests cover invalid IDs, unchanged identity and the actual local `journalctl`
-argument parser through `--help`, without reading a journal. V2 has a new stage
-and operation ID; v1 and the original cutover evidence remain intact. Its scope
-remains one read-only capture, conditional readbacks and diagnostic closure.
+executed once and completed with 191 journal records. Both pinned management
+endpoints returned identical complete evidence, source-file comparisons passed,
+and diagnostic cleanup completed. V1 and the original cutover evidence remain
+intact. The accepted diagnostic confirms `/etc/ntp.conf` is absent;
+`timeservice.service` and `ntpleapfetch.timer` are absent/inactive, while bootstrap
+`systemd-timesyncd` and Avahi are active/enabled. No service/configuration change
+occurred. These results accept the diagnostic, not time service.
+
+The trial journal records IPv6 TCP connection refusals for all three configured
+NTS-KE endpoints on port 4460, before TLS negotiation. This explains the observed
+initial handshake failures; it does not locate the rejecting component or prove
+persistent provider failure. No IPv4 NTS-KE attempts are shown in this window.
+NTPsec also logged successful mDNS registration, Avahi compatibility warnings,
+and later Avahi legacy-unicast response-size warnings. Registration alone does
+not establish successful workstation discovery or client acceptance.
 
 The pinned NTPsec 1.2.5 source review found `check_minsane()` counts configured
 selectable peers, including the two refclocks, and emits this recommendation at
@@ -251,7 +259,11 @@ silence the startup recommendation. Any future journal exception must match the
 exact expected startup diagnostic, retain its evidence, and reject unexpected
 messages, with positive and negative tests. No journal exception, rendered
 configuration or cutover acceptance code changed in this diagnostic preparation.
-Complete v2 and review its evidence before sealing another cutover.
+Next prepare a scoped IPv4/IPv6 NTS transport inspection for separate execution
+approval, accounting for the intended service context. Establish why the IPv6
+connections were refused before another cutover. Do not change firewall rules,
+disable certificate checks, force IPv4 or replace upstreams based on this record
+alone. Carry the mDNS warnings into the next client-acceptance review.
 
 Evidence: pinned NTPsec 1.2.5
 [`check_minsane()`](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/ntpd/ntpd.c),
@@ -333,7 +345,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v1 held and cleaned; corrected v2 prepared, awaiting execution approval; minsane recommendation recorded |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; transport diagnosis pending |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; inspection v1 held and cleaned; corrected diagnostic v2 prepared, awaiting execution approval; minsane recommendation recorded |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; scoped transport diagnosis pending |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1790,3 +1790,32 @@ No cutover configuration, acceptance code or target setting changed.
 Next obtain separate execution approval for v2's read-only capture, conditional
 readbacks and diagnostic closure. Complete the diagnostic before a new cutover
 review; the source-policy recommendation is not an executed configuration change.
+
+### October 13: diagnostic v2 accepted and cleaned; NTS transport failures identified
+
+Executed the approved `cutover-inspection-20261013-v2` capture once. Corrected
+boot filtering returned 191 records for the bounded trial window. Both pinned-key
+management endpoints returned identical complete reports, all evidence digests
+verified, and the original source-file comparisons passed. Diagnostic acceptance
+and closure completed; all staged and prior evidence remains preserved. Private
+`outcome.json` binds the capture, both readbacks, receipt and cleanup result.
+
+The saved journal-health trigger remains the `minsane` startup recommendation.
+The wider journal additionally shows each of the three configured NTS-KE
+connections attempted over IPv6 on TCP 4460 and refused before TLS negotiation.
+No IPv4 attempts are shown in this window. The evidence establishes the initial
+transport failures, not the location of the rejection, its persistence, a
+certificate problem or provider outage. No new upstream probes were performed.
+
+NTPsec logged successful mDNS registration with Avahi compatibility warnings;
+Avahi later logged legacy-unicast response-size warnings. Workstation discovery
+and client acceptance remain unproven. Current metadata confirms `/etc/ntp.conf`
+is absent, the trial service and leap timer are absent/inactive, and bootstrap
+synchronization and Avahi are active/enabled. This matches the recorded recovery;
+no target services or configurations changed during inspection.
+
+Next prepare a scoped IPv4/IPv6 NTS transport inspection, accounting for the
+intended service context, for separate execution approval. Resolve the connection
+refusals before another cutover; retain authentication and upstream choices.
+The `minsane` recommendation still requires explicit treatment in the next
+cutover review. Diagnostic acceptance is not time-service acceptance.

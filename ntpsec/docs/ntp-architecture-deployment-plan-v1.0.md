@@ -735,7 +735,10 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    OPERATIONS for its retained evidence and exact resume point. A separately
    approved read-only diagnostic must explain the failed journal-health check
    before a corrected cutover is sealed. Preserve the executed stage and
-   acceptance requirements; NTS failure causes remain unverified.
+   acceptance requirements. Distinguish NTS transport failures from TLS/certificate
+   failures: the retained trial shows IPv6 TCP refusals before TLS. Establish the
+   rejecting component through separately approved, bounded transport inspection
+   before another cutover; do not infer a provider outage or bypass authentication.
    A diagnostic binds the recovered state and source archive, reads
    the existing command log under its shared lock, and bounds retrospective
    journal collection to the trial boot/time window. Matching dual-endpoint
