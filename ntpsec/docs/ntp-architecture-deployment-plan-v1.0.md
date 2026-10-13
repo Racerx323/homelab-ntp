@@ -594,6 +594,11 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    Confirm the HAT's PPS GPIO and RTC from board evidence. Review networking,
    boot/reboot and account/loader/runtime changes as distinct recoverable stages;
    network endpoint changes need timed restoration and console recovery.
+   Bind prepared network/boot transactions to the accepted supplemental
+   host-input report and exact affected configuration before-state; reject
+   intervening drift. Availability of overlay files does not establish that
+   devices are configured or working. Keep capture acceptance distinct from
+   configuration readiness and combined-service activation.
    Keep bootstrap time synchronization until the approved ntpd cutover. Use
    foreground GPSD with nowait polling so time service does not depend on a
    connected client. Derive daemon identities from the accepted build and

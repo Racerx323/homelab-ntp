@@ -852,3 +852,32 @@ The already sealed supplemental capture is unchanged and still awaits separate
 approval. Next accept its network/boot inputs, then prepare guarded networking,
 explicit GPIO18/rv3028 boot candidates and account/loader/runtime configuration.
 No target contact, receiver access, boot edit, reboot or activation occurred.
+
+### October 12: supplemental host-input capture accepted and cleaned
+
+Executed the approved `host-inputs-20261012-v1` bundle once for j2-svntp1:
+`2420d0276107b8a10c12da8ffefd3b245611fc0aa8383de5b36fca086f13603a`.
+Capture, conditional terminal readback/acceptance and scoped cleanup each
+completed with worker/transport status 0. Accepted runtime report SHA-256:
+`954736cd1068a48c4178001042dda8efc18f4b41bc1f5b9bac524003fc03279a`.
+Verified all 159 native entries and 686 package records plus target/boot/Python,
+parent and service continuity. Ethernet registry/properties remained unchanged
+across capture. Removed only `/var/lib/ntp-preflight-host-inputs-20261012-v1`;
+prior executed evidence, native journals/backups and source workspaces remain.
+Full streams, status records, report and acceptance remain in the private
+[operation directory](/home/aaron/code/.local-evidence/homelab-ntp/current/host-inputs-20261012-v1).
+
+Observed one eth0 Ethernet profile with autoconnect and automatic IPv4/IPv6
+configuration/DNS; no persistent static addresses, gateway or DNS overrides.
+nobody/nogroup and dialout exist; ntp/ntpd/gpsd accounts/groups remain absent.
+disable-bt, pps-gpio and i2c-rtc overlay files are present, including rv3028
+and gpiopin metadata. UART/PPS/RTC nodes remain absent. hciuart is absent;
+queried serial-getty units are disabled/inactive. Bootstrap timesyncd and
+Avahi remain enabled/running. These observations establish preparation inputs,
+not hardware operation, runtime readiness or activation acceptance.
+
+No package, network, boot, account, library cache, receiver or application
+configuration was changed. Next prepare fixed dual-stack networking with exact
+profile before-state, timed recovery and endpoint acceptance, then hardware
+GPIO18/rv3028 bring-up and account/loader/runtime stages. Each live mutation,
+reboot and service cutover still requires a separately approved sealed bundle.

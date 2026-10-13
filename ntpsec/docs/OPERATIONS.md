@@ -23,7 +23,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | V2 discovery accepted; supplemental network/boot discovery prepared offline; vendor PPS/RTC inputs recorded; configuration pending | Approve supplemental capture; verify overlay capabilities and mapping before sealing host mutations |
+| Runtime configuration | V2 and supplemental host-input capture accepted and cleaned; vendor PPS/RTC inputs recorded; configuration pending | Prepare fixed networking with recovery, then hardware and account/loader/runtime stages for separate approval |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Pending | Hardware, time, dual-stack clients, monitoring and reboot evidence |
 
@@ -597,7 +597,7 @@ are satisfied. Runtime execution tests, library-cache changes, account/device
 setup, fixed dual-stack networking, file deployment and activation require later
 explicit approval, backups and acceptance under Phase 3.
 
-The supplemental `host-inputs-20261012-v1` review uses the same guarded
+The supplemental `host-inputs-20261012-v1` review used the same guarded
 read-only collector and accepted native receipt. It adds all registered Ethernet
 profiles' connection/Ethernet/IPv4/IPv6 properties by UUID, with unchanged
 registry/properties required across capture. Wi-Fi, 802.1X and VPN settings,
@@ -605,6 +605,26 @@ secrets and raw NetworkManager profile files are excluded. It also records
 nobody/nogroup, serial-getty/Bluetooth enablement state and the installed
 disable-bt, pps-gpio and i2c-rtc overlay bytes/hashes. Overlay availability is
 not proof of board wiring. Prior v2 evidence remains preserved.
+
+The [supplemental review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-inputs-20261012-v1/review.md)
+was approved and executed once; capture, terminal readback/acceptance and scoped
+cleanup all returned worker/transport status 0. Approved bundle SHA-256:
+`2420d0276107b8a10c12da8ffefd3b245611fc0aa8383de5b36fca086f13603a`.
+Accepted runtime report SHA-256:
+`954736cd1068a48c4178001042dda8efc18f4b41bc1f5b9bac524003fc03279a`.
+Removed only its root observation stage. Raw evidence and prior native
+installation journals/source workspaces remain private and preserved.
+
+The one Ethernet profile is bound to eth0 with autoconnect enabled; both address
+families use automatic configuration, no explicit addresses/gateway/DNS, and
+automatic DNS is currently permitted. Its observed properties are the baseline
+for guarded networking preparation. nobody/nogroup and dialout exist; ntp,
+ntpd and gpsd accounts/groups remain absent. All three overlay files are
+present, including rv3028 and PPS gpiopin metadata. No UART/PPS/RTC device was
+observed. hciuart is absent; queried serial-getty units are disabled/inactive.
+Avahi and bootstrap timesyncd remain enabled/running. All 159 native entries
+and 686 package records retained accepted continuity. Configuration readiness
+and activation authorization remain false.
 
 Prepare subsequent mutations in this order: fixed networking with exact prior
 properties, timed recovery and new-address acceptance; hardware boot edits with
@@ -639,7 +659,8 @@ Treat the datasheet's Raspbian commands as historical examples. Do not infer
 the UART alias from `/dev/ttyS0`, copy `/boot/config.txt` paths, change hwclock
 udev rules, remove packages, scan I2C or open the receiver from this document.
 Those actions require a target-specific reviewed stage. The supplemental
-read-only bundle remains unchanged; this document review authorizes no execution.
+read-only bundle remains unchanged and has now been executed and accepted;
+the datasheet authorizes no additional execution.
 
 clockmaker configure takes a hash-bound profile with schema/hostname,
 ntp_config and unit path/hash objects, plus explicit timeservice gpsd/ntpd
