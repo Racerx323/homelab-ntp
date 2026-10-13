@@ -8,6 +8,46 @@ gate. Machine-readable recipes and manifests are supporting installation
 assets, not separate plans. A documented or tested procedure is not permission
 to contact a node, deploy files, send a notification or reboot it.
 
+## GPSD acquisition before final cutover
+
+The selected NTS association set is `time.cloudflare.com`,
+`ohio.time.system76.com` and `oregon.time.system76.com`. The initial time-service
+access scope is the governed Default LAN IPv4 subnet and IPv6 ULA subnet;
+administrative queries remain localhost-only. These choices do not activate
+services or authorize upstream contact during acquisition.
+
+The user selected a separate GPSD acquisition before final configuration.
+`configs/gpsd-acquisition-recipe.json` and `scripts/run-gpsd-acquisition.py`
+prepare one 900-second observation against the accepted runtime archive,
+receipt, cleanup state, exact boot and current governing input hashes. The
+[acquisition review](/home/aaron/code/.local-evidence/homelab-ntp/current/gpsd-acquisition-20261013-v1/review.md)
+is the next execution gate; its archive hash is in adjacent `sealing.json`.
+Preparation and tests are offline.
+
+The approved execution will temporarily initialize UART termios and start the
+pinned GPSD with `-b -N -n -D 3 -s 115200 /dev/serial0`. Receiver writes are
+disabled; TCP access remains loopback-only. Pinned `gpspipe` JSON and
+`ntpshmmon` samples, GPSD diagnostics and SHM metadata remain private. Do not
+infer SHM assignments from example unit numbers. Read-only mode may leave
+firmware identity unavailable; record missing evidence and resolve it before
+cutover rather than enabling receiver writes implicitly.
+
+The unique root-owned stage clones the accepted runtime context for checks,
+preserving original evidence. An independent systemd lifetime limit and
+ExecStopPost stop the operation's children and restore saved UART settings.
+One start, bounded numbered terminal readbacks, conditional stop/restore and
+transient-unit cleanup are defined in the review. Evidence and SHM segments
+remain preserved. Boot/identity drift or failed restoration holds acceptance
+and requires inspection; no recovery across reboot is claimed.
+
+Capture acceptance requires terminal evidence through both management
+endpoints, stopped GPSD, restored UART settings and retained runtime/network
+continuity. It does not establish GNSS time validity, PPS accuracy or SHM
+mapping. Review the observations before rendering a deployable ntp.conf.
+Bootstrap synchronization remains active; ntpd activation, leapfile setup,
+Avahi policy/advertisement and external client/NTS acceptance belong to the
+later separately approved cutover.
+
 ## Current state and remaining work
 
 j2-svntp1 is the renamed former j1-svntp1 physical node, now running Raspberry
@@ -23,7 +63,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation and account/runtime v2 accepted through both management endpoints; cleanup complete; account, loader and private service candidate validated; original evidence preserved | Prepare final NTP configuration and GPSD/NTPsec service cutover with acceptance/recovery for separate approval; clock services remain unactivated |
+| Runtime configuration | Hardware continuation and account/runtime v2 accepted through both management endpoints; cleanup complete; account, loader and private service candidate validated; original evidence preserved | Separate bounded GPSD acquisition is prepared for approval; accepted receiver/SHM observations precede final NTP configuration and service cutover |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

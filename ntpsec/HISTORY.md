@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation and account/runtime v2 accepted; cleanup complete; account, loader and private candidate validated; copied_not_activated | Prepare final NTP configuration and GPSD/NTPsec service cutover with acceptance/recovery for separate approval |
+| Runtime | Hardware continuation and account/runtime v2 accepted; cleanup complete; account, loader and private candidate validated; copied_not_activated | Separate bounded GPSD acquisition prepared for approval; accepted observations precede final configuration/cutover |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1484,3 +1484,24 @@ clock-service activation, reboot, GNSS/PPS/RTC sampling or device I/O occurred.
 Next prepare final NTP configuration and the GPSD/NTPsec service cutover with
 acceptance and recovery for separate execution approval. Physical timing,
 NTP client responses and service activation remain pending.
+
+### October 13: acquisition-first profile selected and prepared offline
+
+The user selected all three NTS candidates (Cloudflare, System76 Ohio and
+System76 Oregon), Default LAN IPv4/ULA time service and localhost-only
+administrative queries. The user also selected separate GPSD acquisition
+before rendering final NTP configuration. These are configuration decisions;
+no NTS association or client service is activated by preparation.
+
+Prepared the [GPSD acquisition review](/home/aaron/code/.local-evidence/homelab-ntp/current/gpsd-acquisition-20261013-v1/review.md)
+against accepted account/runtime v2, its cleanup receipt and candidate boot.
+The adjacent sealing.json binds the exact archive hash and execution window.
+The checked-in recipe/controller defines one receiver-read-only GPSD run,
+900-second JSON/SHM capture, protected staging, independent timeout and UART
+restoration, bounded conditional readback, recovery and transient-unit cleanup.
+Original executed stages, all evidence and SHM segments remain preserved.
+
+Next obtain separate execution approval for this acquisition. Then review
+actual receiver validity and SHM assignments/ownership before preparing the
+final ntp.conf and service-cutover review. No target contact, service start,
+receiver I/O or clock change occurred during this preparation.

@@ -658,9 +658,20 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    management endpoints; operation cleanup completed. The dedicated NTP
    account, backed-up/refreshed loader cache, native/Python access and private
    rendered service candidate passed validation. Preserve its specification,
-   receipt, backups and network/hardware provenance. Next prepare final NTP
-   configuration and the GPSD/NTPsec service cutover with acceptance and
-   recovery for separate execution approval. Clock services remain unactivated.
+   receipt, backups and network/hardware provenance. Before final cutover, perform a separately approved bounded GPSD acquisition
+   using the accepted runtime receipt and exact boot. The user selected a
+   separate acquisition, not conditional ntpd activation in the same stage.
+   Preserve receiver settings with GPSD read-only mode, observe actual SHM
+   assignments/ownership and receiver validity, then stop GPSD and restore
+   UART settings. Capture completion is distinct from timing acceptance.
+   The checked-in acquisition recipe/controller seals the 900-second window,
+   independent timeout, conditional recovery and private evidence readback.
+   Final NTP configuration and service cutover require subsequent approval.
+   Use all three selected authenticated associations: time.cloudflare.com,
+   ohio.time.system76.com and oregon.time.system76.com. Initial client service
+   is restricted to the governed Default LAN IPv4/IPv6 ULA subnets, with
+   administrative queries restricted to localhost. Bootstrap synchronization
+   remains active until the later ntpd cutover.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.
