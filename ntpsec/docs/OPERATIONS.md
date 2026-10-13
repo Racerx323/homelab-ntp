@@ -26,7 +26,7 @@ readback and cleanup. Its archive hash is in adjacent `sealing.json`.
 The capture does not accept PPS timing or final SHM mapping.
 
 The acquisition temporarily initializes UART termios and starts the
-pinned GPSD with `-b -N -n -D 3 -s 115200 /dev/serial0`. Receiver writes are
+pinned GPSD with `-b -N -n -D 3 -s 115200 /dev/serial0 /dev/pps0`. Receiver writes are
 disabled; TCP access remains loopback-only. Pinned `gpspipe` JSON and
 `ntpshmmon` samples, GPSD diagnostics and SHM metadata remain private. Do not
 infer SHM assignments from example unit numbers. Read-only mode may leave
@@ -56,13 +56,28 @@ Both IPv4 and IPv6 readback proved GPSD stopped, UART settings restored and
 runtime/network/bootstrap continuity intact. All SHM segments and evidence
 were preserved during transient-unit cleanup.
 
-Next prepare a corrected, separately approved acquisition that explicitly
-supplies the accepted GPIO PPS device `/dev/pps0`, with source-reviewed
-serial/PPS pairing and explicit PPS reporting. The pinned GPSD PPS code
-supports an explicit PPS device; serial-device autodiscovery failed in this
-capture. Do not infer missing physical pulses from that association failure.
+The [corrected v2 acquisition review](/home/aaron/code/.local-evidence/homelab-ntp/current/gpsd-acquisition-20261013-v2/review.md)
+is prepared offline for separate execution approval. It explicitly supplies
+`/dev/serial0` and the accepted GPIO PPS device `/dev/pps0`, and requests
+PPS/TOFF JSON with `gpspipe -P`. It binds v1's accepted terminal evidence,
+restoration, cleanup and retained SHM inventory as well as the runtime receipt.
+Preflight rejects changed segment identities/ownership or active attachments;
+normal GPSD writes may reuse its retained segments. Original evidence is verified
+without modification, and before/after continuity and UART restoration remain
+mandatory. The pinned GPSD PPS code
+supports an explicit PPS device; serial-device autodiscovery failed in v1. Do not infer missing physical pulses from that association failure.
 Receiver firmware identity and PPS-to-SHM mapping remain unestablished.
 Do not render a deployable PPS refclock or start ntpd until those gates close.
+
+The pinned GPSD source (`gpsd/gpsd.c`, `gpsd/timehint.c`,
+`gpsd/ppsthread.c` and `clients/gpspipe.c`) establishes the pairing contract:
+serial time is supplied to PPS-only devices, and PPS/TOFF reports name their
+SHM units when PPS watching is enabled. Allow exactly one serial source and
+one explicit PPS source. Correlate reports from each expected device with at
+least 60 distinct, matching leap-0 SHM timestamp pairs, requiring different
+units. The unit numbers are observed, not predetermined. A pairing observation
+does not establish timing accuracy, firmware identity or NTP client acceptance.
+Missing or ambiguous samples hold configuration without replaying acquisition.
 
 ## Current state and remaining work
 
@@ -79,7 +94,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation and account/runtime v2 accepted through both management endpoints; cleanup complete; account, loader and private service candidate validated; original evidence preserved | Acquisition capture and cleanup accepted; serial GNSS observed but kernel PPS association unresolved; prepare corrected acquisition for separate approval before final configuration/cutover |
+| Runtime configuration | Hardware continuation and account/runtime v2 accepted through both management endpoints; cleanup complete; account, loader and private service candidate validated; original evidence preserved | Acquisition capture and cleanup accepted; serial GNSS observed but kernel PPS association unresolved; corrected explicit-PPS acquisition v2 sealed for separate approval before final configuration/cutover |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

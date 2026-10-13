@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation and account/runtime v2 accepted; cleanup complete; account, loader and private candidate validated; copied_not_activated | Acquisition capture/cleanup accepted; serial GNSS observed; PPS association and final SHM mapping pending before configuration/cutover |
+| Runtime | Hardware continuation and account/runtime v2 accepted; cleanup complete; account, loader and private candidate validated; copied_not_activated | Acquisition v1 capture/cleanup accepted; corrected explicit-PPS v2 prepared for approval; PPS association and final SHM mapping pending |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1533,3 +1533,25 @@ pulses were absent. Next prepare a corrected acquisition using explicit
 `/dev/pps0`, source-reviewed serial/PPS pairing and explicit PPS reporting,
 then obtain its separate execution approval. Final NTP configuration and
 service cutover remain gated on accepted timing and SHM observations.
+
+### October 13: corrected explicit-PPS acquisition v2 prepared offline
+
+Prepared the [v2 acquisition review](/home/aaron/code/.local-evidence/homelab-ntp/current/gpsd-acquisition-20261013-v2/review.md)
+with `/dev/serial0` and explicit `/dev/pps0`, retaining receiver-read-only mode,
+115200, loopback access and the 900-second limit. Added `gpspipe -P` so PPS/TOFF
+reports expose device paths, timestamps and SHM unit names. Pinned-source
+review confirms serial time propagation to PPS-only devices; one serial input
+makes that relationship unambiguous. Unit numbers remain observation-driven.
+
+The new bundle binds accepted runtime and v1 capture/cleanup provenance,
+original terminal/restoration evidence and retained SHM inventory. Guards reject
+changed segment identities/ownership or attachments and preserve original
+executed inputs. Offline tests cover exact device/watch arguments, provenance
+drift, timestamp correlation, ambiguous/missing reports, duplicate samples,
+independent timeout and UART recovery. GPSD credentials are captured after the
+observation window rather than immediately after startup.
+
+Next approve v2 using its adjacent sealing.json hash. No target contact,
+receiver I/O, service activation or repeat acquisition occurred during this
+preparation. Final configuration/cutover remains gated on accepted PPS and SHM
+observations, with timing accuracy and firmware identity assessed separately.

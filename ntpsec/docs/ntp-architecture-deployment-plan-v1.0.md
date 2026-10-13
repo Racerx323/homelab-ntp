@@ -667,8 +667,11 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    The checked-in acquisition recipe/controller seals the 900-second window,
    independent timeout, conditional recovery and private evidence readback.
    For the accepted GPIO PPS topology, require a separately approved
-   acquisition with explicit `/dev/pps0`,
-   source-reviewed serial/PPS pairing and observed SHM assignments before
+   acquisition with exactly one serial input and explicit `/dev/pps0`.
+   Require PPS/TOFF reporting and independently matching SHM timestamp samples
+   from the two expected devices, with distinct observed SHM unit identities.
+   Bind retained segment ownership and prior capture/cleanup evidence; preserve
+   original executed stages. Require source-reviewed serial/PPS pairing before
    final configuration. GPIO metadata alone does not close physical timing
    acceptance; serial autodiscovery failure does not prove absent pulses.
    Final NTP configuration and service cutover require subsequent approval.

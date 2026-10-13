@@ -1,13 +1,41 @@
 {
-  "schema": 1,
+  "schema": 2,
   "duration_seconds": 900,
   "runtime_max_seconds": 1080,
   "log_limit_bytes": 8388608,
-  "gpsd": ["/usr/local/sbin/gpsd", "-b", "-N", "-n", "-D", "3", "-s", "115200", "/dev/serial0"],
-  "gpspipe": ["/usr/local/bin/gpspipe", "-B", "-w", "-x", "900", "127.0.0.1:2947"],
-  "ntpshmmon": ["/usr/local/bin/ntpshmmon", "-t", "900"],
-  "nts_candidates": ["time.cloudflare.com", "ohio.time.system76.com", "oregon.time.system76.com"],
+  "gpsd": [
+    "/usr/local/sbin/gpsd",
+    "-b",
+    "-N",
+    "-n",
+    "-D",
+    "3",
+    "-s",
+    "115200",
+    "/dev/serial0",
+    "/dev/pps0"
+  ],
+  "gpspipe": [
+    "/usr/local/bin/gpspipe",
+    "-B",
+    "-w",
+    "-P",
+    "-x",
+    "900",
+    "127.0.0.1:2947"
+  ],
+  "ntpshmmon": [
+    "/usr/local/bin/ntpshmmon",
+    "-t",
+    "900"
+  ],
+  "nts_candidates": [
+    "time.cloudflare.com",
+    "ohio.time.system76.com",
+    "oregon.time.system76.com"
+  ],
   "time_service_scope": "Default LAN IPv4 and IPv6 ULA only",
   "administrative_queries": "localhost only",
-  "cutover_requires": "separately accepted receiver and SHM observations"
+  "cutover_requires": "separately accepted receiver and SHM observations",
+  "pairing_min_samples": 60
 }
