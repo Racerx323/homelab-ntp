@@ -55,6 +55,27 @@ def measurement_checks(value,recipe):
     return checks
 
 
+MINSANE_MESSAGE='SYNC: Found 5 servers, suggest minsane at least 3'
+
+
+def journal_health(raw,boot_id,apply_monotonic,ntpd_pid):
+    """Permit one exact startup advisory; retain and reject all other errors."""
+    allowed=[];unexpected=[]
+    for line in raw.splitlines():
+        row=json.loads(line)
+        stamp=int(row['__MONOTONIC_TIMESTAMP'])/1_000_000
+        if row['_BOOT_ID']!=boot_id.replace('-',''):
+            raise ValueError('journal boot mismatch')
+        if stamp<apply_monotonic:continue
+        expected={'MESSAGE':MINSANE_MESSAGE,'PRIORITY':'3','_SYSTEMD_UNIT':'timeservice.service',
+                  '_EXE':'/usr/local/sbin/ntpd','_COMM':'ntpd','_TRANSPORT':'syslog',
+                  'SYSLOG_IDENTIFIER':'ntpd','_PID':str(ntpd_pid)}
+        if (all(row.get(k)==v for k,v in expected.items())
+                and stamp<=apply_monotonic+120 and not allowed):allowed.append(row)
+        else:unexpected.append(row)
+    return {'healthy':not unexpected,'allowed':allowed,'unexpected':unexpected}
+
+
 class Transaction:
     def __init__(self,spec,files):
         self.s=spec;self.f=files;self.root=Path(spec['stage'])
@@ -159,7 +180,7 @@ class Transaction:
         with self.lock():
             state=self.state()
             if state['phase']!='staged':raise ValueError('one staged apply required')
-            state['phase']='applying';state['apply_epoch']=int(time.time());self.write('state.json',state)
+            state['phase']='applying';state['apply_epoch']=int(time.time());state['apply_monotonic']=time.monotonic();self.write('state.json',state)
             try:
                 for name,(uid,gid,mode) in DIRECTORIES.items():
                     self.h.ancestors(Path(name).parent)
@@ -255,19 +276,23 @@ class Transaction:
         checks['no_restarts']=self.systemctl('show','timeservice.service','--property=NRestarts','--value').strip()=='0'
         checks['no_overrides']=not self.systemctl('show','timeservice.service','--property=DropInPaths','--value').strip()
         children=Path('/proc/'+str(pid)+'/task/'+str(pid)+'/children').read_text().split()
-        identities={}
+        identities={};ntpd_pid=None
         for child in children:
             executable=os.readlink('/proc/'+child+'/exe')
             status=Path('/proc/'+child+'/status').read_text().splitlines()
             ids={line.split(':',1)[0]:[int(v) for v in line.split(':',1)[1].split()] for line in status if line.startswith(('Uid:','Gid:'))}
             if executable in identities:raise ValueError('duplicate daemon child')
             identities[executable]=ids
+            if executable=='/usr/local/sbin/ntpd':ntpd_pid=int(child)
         checks['credentials']=identities=={'/usr/local/sbin/gpsd':{'Uid':[65534]*4,'Gid':[20]*4},
                                            '/usr/local/sbin/ntpd':{'Uid':[999]*4,'Gid':[985]*4}}
-        errors=self.run(['/usr/bin/journalctl','--quiet','--no-pager','--output=short-unix','--since=@'+str(self.state()['apply_epoch']),
+        errors=self.run(['/usr/bin/journalctl','--quiet','--no-pager','--output=json',
+                         '--boot='+self.s['boot_id'].replace('-',''),
                          '--unit=timeservice.service','--unit=avahi-daemon.service','--priority=0..3'],timeout=10)
-        checks['journal_health']=not errors.strip()
-        return {'checks':checks,'measurement':value}
+        journal=journal_health(errors,self.s['boot_id'],self.state()['apply_monotonic'],ntpd_pid)
+        checks['journal_health']=journal['healthy']
+        return {'checks':checks,'measurement':value,'journal':journal}
+
 
 
     def probe(self):

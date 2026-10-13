@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; corrected service cutover remains pending |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; corrected cutover v2 prepared offline; explicit minsane 1 and tested journal handling; separate execution approval pending |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -25,6 +25,27 @@ The current accepted source stage is
 `/home/ama/.ntp-source-build-mdns-20261012-v1`; the earlier v5 stage is preserved.
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
+
+## Corrected service cutover prepared — October 13, 2026
+
+Prepared the [v2 review](/home/aaron/code/.local-evidence/homelab-ntp/current/service-cutover-20261013-v2/review.md)
+for separate execution approval. Its adjacent sealing receipt identifies the
+archive SHA-256. No target or UniFi contact occurred during preparation.
+The accepted firewall v2 receipts and matching after-capture evidence are
+bound with the retained receiver/runtime inputs, without extending freshness.
+All earlier executed archives and evidence remain unchanged.
+
+The candidate explicitly selects `minsane 1` for local-reference availability,
+accepting the absence of a multi-source quorum. Tests cover the exact ntpd
+startup advisory, duplicate/unexpected/late errors, provenance and boot mismatch,
+malformed JSON, network evidence binding, early failure and recovery. Journal
+selection now uses a compact boot ID and monotonic apply time; the informational
+stderr duplicate is outside the error-priority gate.
+
+Next: separately approve one v2 cutover with the early functionality gate,
+three authenticated NTS associations, PPS selection, workstation dual-stack
+NTP/mDNS acceptance, backups, 30-minute timed recovery and conditional cleanup.
+TCP reachability alone does not establish UDP or authenticated NTS operation.
 
 ## Approved deviations and decisions
 

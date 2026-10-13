@@ -28,7 +28,7 @@ INPUT_PATHS={
  'tests.py':'tests/test_service_cutover.py','supervisor-tests.py':'tests/test_clockmaker.py',
  'architecture.md':'docs/ntp-architecture-deployment-plan-v1.0.md','operations.md':'docs/OPERATIONS.md','history.md':'HISTORY.md'}
 EXTRA={'reference.py','reference.tar','reference-report.json','reference-receipt.json','reference-cleanup.json',
-       'receiver-runtime.json','known_hosts','timeservice.json'}
+       'receiver-runtime.json','known_hosts','timeservice.json','network-evidence.json'}
 MODES=('start','probe','readback','accept','recover','cleanup')
 
 
@@ -56,6 +56,44 @@ def unpack(raw):
     return files
 
 
+NETWORK_RECORDS=('apply/accepted.json','after/inspection-acceptance.json',
+                 'after/readback-1-0-result.json','after/readback-1-1-result.json',
+                 'after/cleanup-0-result.json','after/unifi-report.json')
+
+
+def network_evidence(raw,spec):
+    proof=json.loads(raw);outcome=proof['outcome'];records=proof['records']
+    if set(records)!=set(NETWORK_RECORDS):raise ValueError('closed network evidence')
+    decoded={}
+    for name,body in records.items():
+        data=base64.b64decode(body,validate=True)
+        if sha(data)!=outcome['evidence_sha256'][name]:raise ValueError('network evidence digest')
+        decoded[name]=json.loads(data)
+    accepted={'state':'policy_and_tcp_accepted','time_service_accepted':False}
+    if (decoded['apply/accepted.json']!=accepted or outcome['state']!=accepted['state']
+            or outcome['time_service_accepted'] is not False or outcome['permits_remain_enabled'] is not True
+            or outcome['counts']['after']!={'ipv4_successes':6,'ipv6_successes':6}):
+        raise ValueError('accepted network policy and TCP receipt required')
+    first=decoded['after/readback-1-0-result.json']
+    if first!=decoded['after/readback-1-1-result.json']:raise ValueError('network dual readback mismatch')
+    receipt=decoded['after/inspection-acceptance.json']
+    if (receipt['node']['report_sha256']!=sha(encoded(first['result']))
+            or receipt['node']['spec_sha256']!=first['spec_sha256']
+            or receipt['node']['state']!='diagnostics_captured'
+            or receipt['controller']['report_sha256']!=sha(base64.b64decode(records['after/unifi-report.json']))):
+        raise ValueError('network acceptance binding')
+    evidence=first['result']['evidence']
+    for row in evidence.values():
+        if sha(base64.b64decode(row['base64'],validate=True))!=row['sha256']:raise ValueError('network node evidence digest')
+    metadata=json.loads(base64.b64decode(evidence['metadata.json']['base64']))
+    if metadata['boot_id']!=spec['boot_id'] or metadata['ntp_conf_exists'] is not False:
+        raise ValueError('network target boot/runtime mismatch')
+    cleanup=decoded['after/cleanup-0-result.json']
+    if cleanup['spec_sha256']!=first['spec_sha256'] or cleanup['result']['phase']!='cleaned':
+        raise ValueError('network diagnostic cleanup required')
+    return outcome
+
+
 def validate(spec,files):
     if set(files)!=set(INPUT_PATHS)|EXTRA|{'spec.json','manifest.json','review.md'}:raise ValueError('closed cutover archive required')
     if not re.fullmatch('[a-z][a-z0-9-]{0,47}',spec['operation_id']):raise ValueError('operation ID')
@@ -79,6 +117,7 @@ def validate(spec,files):
     if files['receiver-runtime.json']!=base64.b64decode(report['evidence']['receiver-runtime.json']['base64']):raise ValueError('runtime evidence mismatch')
     if any(spec[k]!=old[k] for k in ('hostname','kernel','boot_id','old_ipv4','endpoints')) or spec['expires_epoch']>old['expires_epoch'] or files['known_hosts']!=ref['known_hosts']:
         raise ValueError('accepted target/boot/window/key binding')
+    network_evidence(files['network-evidence.json'],spec)
     recipe=json.loads(files['recipe.json'])
     if spec['recipe']!=recipe or recipe['hostname']!=spec['hostname'] or json.loads(files['timeservice.json'])!=recipe['timeservice']:
         raise ValueError('rendered recipe binding')
@@ -87,6 +126,9 @@ def validate(spec,files):
             or recipe['timeservice']['startup_gate']!={'timeout_seconds':30,'matching_samples_per_source':5,'units':{'TOFF':'NTP0','PPS':'NTP2'}}
             or recipe['timeservice']['gpsd']!=['/usr/local/sbin/gpsd','-b','-N','-n','-s','115200','/dev/serial0','/dev/pps0']
             or recipe['timeservice']['ntpd']!=['/usr/local/sbin/ntpd','-n','-m','-c','/etc/ntp.conf','-u','ntp:ntp']):raise ValueError('closed runtime bounds/profile required')
+    if (recipe.get('minsane')!=1 or recipe.get('journal_policy')!='single-ntpd-startup-minsane-advisory'
+            or re.findall(rb'^tos[^#\n]*',files['ntp.conf'],re.M)!=[b'tos minsane 1']):
+        raise ValueError('explicit local-reference minsane and journal policy required')
     if sha(files['leap-seconds.list'])!=recipe['leapfile']['sha256']:raise ValueError('pinned leap input')
     for name in ('stage.py','client.py','measure.py','timeservice.py','gpsd-pairing.py'):
         compile(files[name],name,'exec')
@@ -133,7 +175,12 @@ collisions, changed boot, foreign SHM ownership/membership and unreviewed unit o
 Restart Avahi, stop bootstrap timesyncd, start supervised GPSD and NTPsec. This disciplines
 the system clock; recovery restores service/files, not elapsed time or clock corrections.
 GPSD uses -b and explicit serial0/pps0 at 115200; no GNSS configuration or IPC deletion.
-NTP0 serial NMEA is selectable without calibration; NTP2 PPS is preferred. All three
+The archive binds the accepted IPv6 permit/TCP receipts; those do not prove UDP or NTS.
+Explicit `tos minsane 1` permits a lone surviving source; it provides no multi-source quorum.
+Both local associations share one receiver. Journal checks use this boot and monotonic
+apply time, allowing at most one exact error-priority startup minsane advisory from the
+current ntpd child within 120 seconds; all other errors block acceptance. Raw records
+remain evidence. NTP0 serial NMEA is selectable without calibration; NTP2 PPS is preferred. All three
 reviewed NTS servers are configured. Serve only Default LAN IPv4/ULA clients;
 administrative queries remain localhost-only. ntpd -m publishes through eth0-only Avahi.
 
@@ -194,6 +241,9 @@ def seal(args):
                   'reference-receipt.json':receipt,'reference-cleanup.json':c.private_file(args.receiver_dir/'cleanup-0-result.json'),
                   'receiver-runtime.json':base64.b64decode(report['evidence']['receiver-runtime.json']['base64']),
                   'known_hosts':reference['known_hosts'],'timeservice.json':encoded(recipe['timeservice'])})
+    network={'outcome':json.loads(c.private_file(args.network_dir/'outcome.json')),
+             'records':{n:base64.b64encode(c.private_file(args.network_dir/n,32*1024**2)).decode() for n in NETWORK_RECORDS}}
+    files['network-evidence.json']=encoded(network)
     epoch=int(time.time());spec={k:old[k] for k in ('hostname','kernel','boot_id','endpoints','old_ipv4')}
     spec.update(schema=1,operation_id=args.operation_id,stage='/var/lib/ntp-acquire-'+args.operation_id,
                 apply_unit='ntp-cutover-'+args.operation_id,recovery_unit='ntp-cutover-'+args.operation_id+'-recovery',
@@ -273,6 +323,7 @@ def execute(args):
 def main():
     parser=argparse.ArgumentParser(description=__doc__);sub=parser.add_subparsers(dest='action',required=True)
     p=sub.add_parser('seal');p.add_argument('--receiver-dir',type=Path,required=True);p.add_argument('--receiver-sha256',required=True)
+    p.add_argument('--network-dir',type=Path,required=True)
     p.add_argument('--operation-id',required=True);p.add_argument('--output',type=Path,required=True)
     p=sub.add_parser('execute');p.add_argument('--bundle',type=Path,required=True);p.add_argument('--sha256',required=True)
     p.add_argument('--mode',choices=MODES,required=True);p.add_argument('--attempt',type=int,choices=range(1,61),default=1)

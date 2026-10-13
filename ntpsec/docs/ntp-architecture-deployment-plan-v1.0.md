@@ -760,9 +760,9 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    TCP acceptance before another cutover; retain UDP exchange, full NTS authentication and client
    acceptance in that cutover. OPERATIONS and HISTORY record diagnostic outcomes.
    Bind the next cutover to accepted network receipts and current host inputs;
-   do not replay an accepted firewall transaction. Resolve the explicit minsane
-   decision and test narrowly scoped expected-journal handling before sealing
-   that cutover, preserving all other acceptance and recovery requirements.
+   do not replay an accepted firewall transaction. The corrected candidate uses
+   explicit `tos minsane 1` and tested, narrowly scoped journal handling,
+   preserving all other acceptance and recovery requirements.
    If preflight detects an unrelated policy change, stop before writes and bind
    a new review to the accepted fresh capture. Preserve that observed policy;
    do not restore the older baseline or replay the registered operation.
@@ -779,13 +779,17 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    the journal trigger without completing diagnostic acceptance. Review any
    `minsane` recommendation against the intended source/fallback policy before
    changing configuration or journal acceptance; do not silently suppress it.
-   The reviewed recommendation is to retain `minsane=1` for local-reference
+   The approved candidate retains explicit `minsane=1` for local-reference
    availability: requiring three survivors would make two local GPS associations
    insufficient during loss of all network sources. NMEA and PPS from the same
-   receiver are not independent references. A future candidate must state the
-   availability/quorum tradeoff explicitly. Any proposed exception for the known
-   startup recommendation needs exact message matching, retained evidence and
-   tests rejecting unexpected errors; this review does not alter acceptance code.
+   receiver are not independent references. A lone survivor may synchronize;
+   this policy provides no multi-source quorum. Journal acceptance permits at
+   most one exact error-priority startup recommendation from the current ntpd
+   child's syslog transport within 120 seconds of apply. Use compact boot
+   identity and monotonic apply time to avoid wall-clock step ambiguity. Retain
+   raw records and reject all unexpected errors, malformed records, duplicates,
+   wrong provenance and late advisories. Test these cases before sealing.
+   Candidate preparation does not authorize installation or activation.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.

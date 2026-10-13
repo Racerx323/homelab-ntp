@@ -31,6 +31,25 @@ client=load(ROOT/'scripts/check-time-client.py');service=load(ROOT/'scripts/time
 pairing=load(ROOT/'scripts/gpsd-pairing.py');acqtest=load(ROOT/'tests/test_gpsd_acquisition.py')
 
 
+def network_fixture(spec):
+    metadata=c.encoded({'boot_id':spec['boot_id'],'ntp_conf_exists':False})
+    report={'phase':'captured','evidence':{'metadata.json':{
+        'base64':base64.b64encode(metadata).decode(),'sha256':c.sha(metadata)}}}
+    controller=c.encoded({'state':'captured'})
+    response={'spec_sha256':'a'*64,'result':report}
+    records={
+        'apply/accepted.json':c.encoded({'state':'policy_and_tcp_accepted','time_service_accepted':False}),
+        'after/inspection-acceptance.json':c.encoded({'node':{'report_sha256':c.sha(c.encoded(report)),
+            'spec_sha256':'a'*64,'state':'diagnostics_captured'},'controller':{'report_sha256':c.sha(controller)}}),
+        'after/readback-1-0-result.json':c.encoded(response),'after/readback-1-1-result.json':c.encoded(response),
+        'after/cleanup-0-result.json':c.encoded({'spec_sha256':'a'*64,'result':{'phase':'cleaned'}}),
+        'after/unifi-report.json':controller}
+    return c.encoded({'outcome':{'state':'policy_and_tcp_accepted','time_service_accepted':False,
+        'permits_remain_enabled':True,'counts':{'after':{'ipv4_successes':6,'ipv6_successes':6}},
+        'evidence_sha256':{n:c.sha(v) for n,v in records.items()}},
+        'records':{n:base64.b64encode(v).decode() for n,v in records.items()}})
+
+
 def fixture():
     old,ref=acqtest.fixture();old['purpose']='receiver-runtime-inputs'
     ref['recipe.json']=(ROOT/'configs/receiver-runtime-inputs.json').read_bytes()
@@ -51,6 +70,7 @@ def fixture():
     spec={k:old[k] for k in ('hostname','kernel','boot_id','old_ipv4','endpoints','prepared_epoch','expires_epoch')}
     spec.update(schema=1,operation_id='cutover-fixture',stage='/var/lib/ntp-acquire-cutover-fixture',
                 apply_unit='ntp-cutover-cutover-fixture',recovery_unit='ntp-cutover-cutover-fixture-recovery',recipe=recipe)
+    files['network-evidence.json']=network_fixture(spec)
     bind(spec,files);return spec,files
 
 
@@ -147,6 +167,47 @@ class StartupTests(unittest.TestCase):
     def test_wrong_mapping_or_dead_monitor_rejected_and_reaped(self):
         with self.assertRaises(ValueError):self.run_gate({'TOFF':'NTP0','PPS':'NTP1'})
         with self.assertRaises(ValueError):self.run_gate({'TOFF':'NTP0','PPS':'NTP2'},True)
+
+
+class JournalTests(unittest.TestCase):
+    def row(self):
+        return {'MESSAGE':stage.MINSANE_MESSAGE,'PRIORITY':'3','_SYSTEMD_UNIT':'timeservice.service',
+                '_EXE':'/usr/local/sbin/ntpd','_COMM':'ntpd','_TRANSPORT':'syslog',
+                'SYSLOG_IDENTIFIER':'ntpd','_PID':'123','_BOOT_ID':'a'*32,'__MONOTONIC_TIMESTAMP':'110000000'}
+
+    def check(self,rows):
+        return stage.journal_health('\n'.join(json.dumps(r) for r in rows),'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',100,123)
+
+    def test_one_exact_startup_advisory_or_no_errors(self):
+        self.assertTrue(self.check([])['healthy'])
+        result=self.check([self.row()]);self.assertTrue(result['healthy']);self.assertEqual(len(result['allowed']),1)
+        old=dict(self.row(),__MONOTONIC_TIMESTAMP='99000000',MESSAGE='old failure')
+        self.assertTrue(self.check([old])['healthy'])
+
+    def test_other_errors_provenance_duplicates_late_and_bad_json_fail(self):
+        for key,value in [('MESSAGE','unexpected failure'),('MESSAGE',stage.MINSANE_MESSAGE+' suffix'),
+                          ('PRIORITY','2'),('_SYSTEMD_UNIT','avahi-daemon.service'),('_PID','124'),
+                          ('_EXE','/usr/bin/other'),('_COMM','other'),('_TRANSPORT','stdout'),
+                          ('SYSLOG_IDENTIFIER','python3'),('__MONOTONIC_TIMESTAMP','221000000')]:
+            with self.subTest(key=key):self.assertFalse(self.check([dict(self.row(),**{key:value})])['healthy'])
+        self.assertFalse(self.check([self.row(),self.row()])['healthy'])
+        with self.assertRaises(ValueError):self.check([dict(self.row(),_BOOT_ID='b'*32)])
+        with self.assertRaises(ValueError):stage.journal_health('not json','a'*32,100,123)
+
+    def test_rebound_network_and_policy_failures(self):
+        for case in ('digest','pending','boot','readback','cleanup','policy','config'):
+            spec,files=fixture();proof=json.loads(files['network-evidence.json'])
+            if case=='policy':
+                spec['recipe']['minsane']=3;files['recipe.json']=c.encoded(spec['recipe'])
+            elif case=='config':files['ntp.conf']=files['ntp.conf'].replace(b'tos minsane 1',b'tos minsane 3')
+            elif case=='pending':proof['outcome']['permits_remain_enabled']=False
+            elif case=='digest':proof['outcome']['evidence_sha256']['apply/accepted.json']='0'*64
+            else:
+                name='after/readback-1-1-result.json' if case in ('boot','readback') else 'after/cleanup-0-result.json'
+                obj=json.loads(base64.b64decode(proof['records'][name]));obj['spec_sha256']='b'*64
+                raw=c.encoded(obj);proof['records'][name]=base64.b64encode(raw).decode();proof['outcome']['evidence_sha256'][name]=c.sha(raw)
+            files['network-evidence.json']=c.encoded(proof);bind(spec,files)
+            with self.subTest(case=case),self.assertRaises(ValueError):c.validate(spec,files)
 
 
 class ClientTests(unittest.TestCase):
@@ -274,6 +335,20 @@ class TransactionTests(unittest.TestCase):
                 else:
                     with self.assertRaisesRegex(ValueError,'early GPSD'):tx.apply()
                     tx.recover.assert_called_once_with(locked=True)
+
+    def test_measure_uses_json_compact_boot_and_retains_journal(self):
+        tx=self.transaction({'supervisor_pid':100,'apply_monotonic':100});tx.root=Path('/fixture')
+        tx.s['boot_id']='aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+        row=JournalTests().row();tx.run=Mock(side_effect=['{}',json.dumps(row)])
+        tx.systemctl.side_effect=['inactive','active','100','0','']
+        texts=['122 123','Uid: 65534 65534 65534 65534\nGid: 20 20 20 20',
+               'Uid: 999 999 999 999\nGid: 985 985 985 985']
+        with patch.object(stage,'measurement_checks',return_value={}),patch.object(stage.Path,'read_text',side_effect=texts),patch.object(stage.os,'readlink',side_effect=['/usr/local/sbin/gpsd','/usr/local/sbin/ntpd']):
+            result=stage.Transaction.measure(tx)
+        self.assertTrue(all(result['checks'].values()));self.assertEqual(result['journal']['allowed'],[row])
+        argv=tx.run.call_args.args[0]
+        self.assertIn('--boot='+'a'*32,argv);self.assertIn('--output=json',argv)
+        self.assertFalse(any(arg.startswith('--since') for arg in argv))
 
     def test_arm_timer_precedes_mutation_and_has_fixed_lifetime(self):
         tx=self.transaction();tx.root=Path('/var/lib/fixture');tx.run=Mock()

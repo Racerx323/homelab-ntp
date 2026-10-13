@@ -199,6 +199,7 @@ remain private. Execution must fit the accepted evidence window.
 python3 -I -B ntpsec/scripts/run-service-cutover.py seal \
     --receiver-dir "$accepted_receiver_directory" \
     --receiver-sha256 "$accepted_receiver_sha256" \
+    --network-dir "$accepted_network_directory" \
     --operation-id "$unique_operation_id" --output "$private_review_directory"
 ```
 
@@ -297,9 +298,23 @@ upstreams and root/NTP contexts. Before/after readbacks matched and cleanup
 completed. Both new rules remain enabled; no recovery or service start occurred.
 Preserve both executed bundles and v2's private acceptance/outcome receipts.
 
-Next prepare a corrected service-cutover bundle against the accepted network
-receipt and current node inputs. Resolve the explicit minsane policy and test
-the narrow expected-journal handling before requesting execution approval.
+The corrected [v2 cutover review](/home/aaron/code/.local-evidence/homelab-ntp/current/service-cutover-20261013-v2/review.md)
+is prepared offline for separate execution approval; its adjacent `sealing.json`
+identifies the archive digest. It binds the accepted network outcome, policy
+receipt, matching after-capture readbacks, controller receipt and diagnostic
+cleanup alongside the accepted receiver/runtime inputs. The original freshness
+window remains unchanged; live preflight must still reject target drift.
+
+The candidate explicitly sets `tos minsane 1`: a lone surviving source may
+synchronize the node, without a multi-source quorum. NMEA and PPS share one
+receiver. Raising the setting to three would prevent local-only operation.
+The tested journal checker queries JSON with the compact boot ID, then filters
+by the saved monotonic apply time. It permits at most one exact error-priority
+`SYNC: Found 5 servers, suggest minsane at least 3` record from the current ntpd
+child's syslog transport within 120 seconds of apply. Unexpected messages,
+provenance, duplicates and late advisories block acceptance. Malformed records
+or a boot mismatch fail closed. The informational stderr copy requires no
+exception. Raw journal records and classification remain private evidence.
 Retain early functionality, UDP/NTS authentication, clock discipline, workstation
 dual-stack NTP, mDNS and recovery requirements. TCP success alone does not accept
 the time service or authorize replaying the earlier cutover.
@@ -415,7 +430,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; corrected service cutover remains pending |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; corrected cutover v2 prepared offline with explicit minsane 1 and tested journal handling; separate execution approval pending |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 
