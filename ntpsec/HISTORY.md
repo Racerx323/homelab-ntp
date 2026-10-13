@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; scoped transport diagnosis pending |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection prepared, awaiting execution approval |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1826,3 +1826,34 @@ for the observed transport failures. Next inspection should establish the actual
 rule matches and IPv6 egress source, and distinguish TCP 4460 key exchange from
 UDP 123 time traffic. No UniFi inspection or firewall modification was performed
 or authorized by this diagnostic execution.
+
+### October 13: scoped UniFi/NTS transport inspection prepared offline
+
+The operator confirms there are no IPv6 permits for UDP 123 or TCP 4460 from
+Default LAN to External. This is operator-reported confirmation, not an agent
+inspection or a proved rule hit. The retained September 21 controller snapshot
+also shows separate IPv4 UDP 123 and TCP 4460 exceptions and a later dual-stack
+reject referencing both ports. Those historical facts are not current acceptance.
+
+Prepared `run-nts-transport-inspection.py`, its closed recipe and network helper,
+with offline tests for controller identity/TLS failure, credential redaction,
+pagination/ordering completeness, bounded public-address probes, NTP-account
+privilege drop, refused connections and protected evidence preservation. Reused
+the tested diagnostic staging/readback/closure controls. The
+[private review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-transport-inspection-20261013-v1/review.md)
+and adjacent `sealing.json` bind current inputs and the recovered cutover state.
+No target, controller or Doppler access occurred during preparation.
+
+Scope: one verified local-controller GET collection, then one protected node
+capture with at most 12 TCP 4460 attempts across the three names, both families
+and root/NTP accounts. Controller bounds are 40 requests, 400 rows per endpoint,
+16 referenced lists, 16 MiB total and 300 seconds. Node commands retain the
+90-second worker/20-second command bounds and two-second connect timeouts.
+Dual-endpoint readback and diagnostic closure preserve all previous evidence.
+No firewall changes, daemon start, TLS/NTS negotiation, UDP probes, receiver or
+clock writes are authorized by preparation. Account probes do not recreate the
+service sandbox, and an API snapshot cannot establish packet/rule-hit attribution.
+
+Next obtain separate execution approval for this two-target diagnostic. Review
+its current source-address and policy evidence before preparing any network-owner
+firewall change or another cutover. The diagnostic is not time-service acceptance.

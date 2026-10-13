@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "controller": "udmbt.local.theama.co",
+  "controller_ipv4": "10.1.0.1",
+  "site_id": "88f7af54-98f8-306a-a1c7-c9349722b1f6",
+  "network_name": "Default LAN",
+  "external_zone": "External",
+  "upstreams": ["time.cloudflare.com", "ohio.time.system76.com", "oregon.time.system76.com"],
+  "port": 4460,
+  "ntp_uid": 999,
+  "ntp_gid": 985,
+  "connect_timeout_seconds": 2,
+  "maximum_connections": 12,
+  "controller_request_limit": 40,
+  "controller_total_bytes": 16777216,
+  "controller_deadline_seconds": 300
+}

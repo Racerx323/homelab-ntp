@@ -739,6 +739,14 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    failures: the retained trial shows IPv6 TCP refusals before TLS. Establish the
    rejecting component through separately approved, bounded transport inspection
    before another cutover; do not infer a provider outage or bypass authentication.
+   Bind controller inspection to the network owner's local endpoint and verified
+   TLS policy. Read policies, their zone ordering and referenced lists without
+   modification; bind any node probes to named upstreams, explicit families,
+   accounts, port and attempt/time limits. Resolve the actual IPv6 egress source
+   rather than assuming ULA use. Distinguish configuration evidence from rule-hit
+   proof, account-context TCP success from service-sandbox success, and transport
+   reachability from authenticated NTP acceptance. Firewall changes remain a
+   separate network-owner operation after evidence review.
    A diagnostic binds the recovered state and source archive, reads
    the existing command log under its shared lock, and bounds retrospective
    journal collection to the trial boot/time window. Matching dual-endpoint
