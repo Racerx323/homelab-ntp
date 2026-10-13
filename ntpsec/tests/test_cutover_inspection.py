@@ -44,6 +44,8 @@ def fixture():
 
 class LocalFiles:
     @staticmethod
+    def ancestors(path):pass
+    @staticmethod
     def read(path,limit=m.LIMIT):
         raw=path.read_bytes()
         if len(raw)>limit:raise ValueError('bounded file exceeded')
@@ -151,18 +153,26 @@ class CaptureTests(unittest.TestCase):
             (source/'before.json').write_bytes(m.encoded({'files':{'/etc/ntp.conf':None}}))
             (source/'state.json').write_bytes(m.encoded({'phase':'recovered'}))
             (source/'commands.jsonl').write_bytes(m.encoded({'argv':journal,'stdout':'retained error','stderr':'','status':0}))
-            original={p.name:p.read_bytes() for p in source.iterdir()};calls=[]
+            if variant=='current':
+                journal=['/usr/bin/journalctl','--quiet','--no-pager','--output=json','--boot='+m.journal_boot_id(spec['boot_id']),
+                         '--unit=timeservice.service','--unit=avahi-daemon.service','--priority=0..3']
+                (source/'commands.jsonl').write_bytes(m.encoded({'argv':journal,'stdout':'{}','stderr':'','status':0})*5)
+            stats=source/'runtime-data';stats.mkdir(mode=0o700)
+            (stats/'ntpstats-loopstats').write_bytes(b'retained timing sample\n')
+            original={str(p.relative_to(source)):p.read_bytes() for p in source.rglob('*') if p.is_file()};calls=[]
             def command(h,r,name,argv):
                 calls.append(argv)
                 if variant=='command-failure':raise ValueError('diagnostic command failed')
-                raw=b'{}\n'*(400 if variant=='truncated' else 1) if name=='journal' else b'ActiveState=inactive\n'
+                raw=b'{}\n'*(m.JOURNAL_LINES if variant=='truncated' else 1) if name=='journal' else b'ActiveState=inactive\n'
                 h.create(r/(name+'.json'),m.encoded({'argv':argv,'status':0}))
                 h.create(r/(name+'.stdout'),raw);h.create(r/(name+'.stderr'),b'')
                 if variant=='drift' and name=='services':(source/'state.json').write_bytes(b'{}')
+                if variant=='stats-drift' and name=='services':(stats/'ntpstats-loopstats').write_bytes(b'changed')
                 return raw
             with patch.object(m,'source_lock',return_value=os.open(source,os.O_RDONLY)),patch.object(m,'command',side_effect=command):
                 report=m.capture(LocalFiles,spec,files)
-            if variant!='drift':self.assertEqual(original,{p.name:p.read_bytes() for p in source.iterdir()})
+            if variant not in ('drift','stats-drift'):
+                self.assertEqual(original,{str(p.relative_to(source)):p.read_bytes() for p in source.rglob('*') if p.is_file()})
             self.assertEqual(json.loads((root/'report.json').read_bytes()),report)
             return report,calls
 
@@ -175,10 +185,48 @@ class CaptureTests(unittest.TestCase):
         self.assertNotIn('MainPID',str(calls[1]));self.assertNotIn('restart',str(calls))
 
     def test_incomplete_or_failed_capture_holds(self):
-        for variant in ('truncated','command-failure','drift'):
+        for variant in ('truncated','command-failure','drift','stats-drift'):
             with self.subTest(variant=variant):
                 report,_=self.run_capture(variant)
                 self.assertEqual(report['phase'],'held');self.assertIsNone(report['source_preserved'])
+
+    def test_five_current_probes_and_retained_statistics(self):
+        report,calls=self.run_capture('current')
+        self.assertEqual(report['phase'],'captured')
+        self.assertEqual(report['summary']['retained_journal_probes'],5)
+        self.assertFalse(report['summary']['packet_counters_retrieved'])
+        data=json.loads(base64.b64decode(report['evidence']['runtime-data.json']['base64']))
+        self.assertEqual(base64.b64decode(data['files']['ntpstats-loopstats']['base64']),b'retained timing sample\n')
+        self.assertIn('--lines=2000',calls[0])
+
+    def test_retained_journal_scope_count_and_boot_drift_rejected(self):
+        spec,_=fixture()
+        argv=['/usr/bin/journalctl','--quiet','--no-pager','--output=json','--boot='+m.journal_boot_id(spec['boot_id']),
+              '--unit=timeservice.service','--unit=avahi-daemon.service','--priority=0..3']
+        row={'argv':argv,'stdout':'','stderr':'','status':0}
+        self.assertEqual(len(m.retained_journals([row]*41,spec)),41)
+        for rows in ([],[row]*42,[dict(row,argv=argv+['--follow'])],
+                     [dict(row,argv=[a.replace(m.journal_boot_id(spec['boot_id']),'0'*32) for a in argv])]):
+            with self.assertRaises(ValueError):m.retained_journals(rows,spec)
+
+    def test_runtime_file_names_links_types_and_bounds(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            source=Path(tmp);root=source/'runtime-data'
+            self.assertEqual(m.runtime_data(LocalFiles,source),{'exists':False,'files':{}})
+            root.mkdir(mode=0o700);self.assertEqual(m.runtime_data(LocalFiles,source),{'exists':True,'files':{}})
+            bad=root/'unexpected';bad.write_bytes(b'x')
+            with self.assertRaises(ValueError):m.runtime_data(LocalFiles,source)
+            bad.unlink();path=root/'ntpstats-peerstats';path.symlink_to(source/'absent')
+            with self.assertRaises(ValueError):m.runtime_data(LocalFiles,source)
+            path.unlink();path.mkdir()
+            with self.assertRaises(ValueError):m.runtime_data(LocalFiles,source)
+            path.rmdir();path.write_bytes(b'1234');second=root/'ntpstats-peerstats.20261013';os.link(path,second)
+            with self.assertRaises(ValueError):m.runtime_data(LocalFiles,source)
+            second.unlink();second.write_bytes(b'5678')
+            with patch.object(m,'STATS_LIMIT',7),self.assertRaises(ValueError):m.runtime_data(LocalFiles,source)
+            with patch.object(m,'STATS_LIMIT',3),self.assertRaises(ValueError):m.runtime_data(LocalFiles,source)
+            root.chmod(0o777)
+            with self.assertRaises(ValueError):m.runtime_data(LocalFiles,source)
 
     def test_aggregate_limit_holds_and_retains_files(self):
         with tempfile.TemporaryDirectory() as tmp:

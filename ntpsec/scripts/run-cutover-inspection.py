@@ -27,7 +27,9 @@ PATHS={'stage.py':'scripts/run-cutover-inspection.py','controller.py':'scripts/r
 EXTRA={'helper.py','source-spec.json','source-cleanup.json','source-receipt.json','known_hosts','launch.sh'}
 ENV={'PATH':'/usr/sbin:/usr/bin:/sbin:/bin','LC_ALL':'C','PYTHONDONTWRITEBYTECODE':'1'}
 LIMIT=8*1024**2
-FILE_LIMIT=2*1024**2
+FILE_LIMIT=8*1024**2
+STATS_LIMIT=2*1024**2
+JOURNAL_LINES=2000
 
 
 def encoded(value):return (json.dumps(value,sort_keys=True)+'\n').encode()
@@ -115,6 +117,36 @@ def command(h,root,name,argv):
     return h.read(root/(name+'.stdout'),limit=2*1024**2)
 
 
+def retained_journals(commands,spec):
+    journals=[row for row in commands if row['argv'][:1]==['/usr/bin/journalctl']]
+    legacy=['/usr/bin/journalctl','--quiet','--no-pager','--output=short-unix','--since=@'+str(spec['journal_since']),
+            '--unit=timeservice.service','--unit=avahi-daemon.service','--priority=0..3']
+    current=['/usr/bin/journalctl','--quiet','--no-pager','--output=json','--boot='+journal_boot_id(spec['boot_id']),
+             '--unit=timeservice.service','--unit=avahi-daemon.service','--priority=0..3']
+    if len(commands)>512 or not 1<=len(journals)<=41:raise ValueError('bounded retained journal probes required')
+    if any(row['argv'] not in (legacy,current) for row in journals):raise ValueError('retained journal scope mismatch')
+    return journals
+
+
+def runtime_data(h,source):
+    directory=source/'runtime-data'
+    try:info=directory.lstat()
+    except FileNotFoundError:return {'exists':False,'files':{}}
+    h.ancestors(directory)
+    if not stat.S_ISDIR(info.st_mode) or stat.S_IMODE(info.st_mode)!=0o700:raise ValueError('protected runtime evidence directory required')
+    paths=sorted(directory.iterdir());records={};total=0
+    if len(paths)>12:raise ValueError('runtime evidence file-count bound')
+    for path in paths:
+        if not re.fullmatch(r'(?:ntpstats-(?:loopstats|peerstats|clockstats)(?:\.\d{8})?|drift-ntp\.drift(?:\.TEMP)?|ntpsec-leap-seconds\.tmp)',path.name):
+            raise ValueError('unexpected runtime evidence filename')
+        info=path.lstat()
+        if not stat.S_ISREG(info.st_mode) or info.st_nlink!=1:raise ValueError('regular single-link runtime evidence required')
+        raw=h.read(path,limit=STATS_LIMIT);total+=len(raw)
+        if total>STATS_LIMIT:raise ValueError('runtime evidence total bound')
+        records[path.name]={'sha256':sha(raw),'base64':base64.b64encode(raw).decode(),'bytes':len(raw)}
+    return {'exists':True,'files':records}
+
+
 def collect(h,spec,files):
     root=Path(spec['stage']);source=Path(spec['source_stage']);fd=source_lock(h,spec,files)
     try:
@@ -123,30 +155,30 @@ def collect(h,spec,files):
         before=json.loads(saved['before.json'])
         if before['files']['/etc/ntp.conf'] is not None:raise ValueError('expected pre-cutover ntp.conf absence not established')
         commands=[json.loads(line) for line in saved['commands.jsonl'].splitlines()]
-        journals=[row for row in commands if row['argv'][:1]==['/usr/bin/journalctl']]
-        if len(commands)>512 or len(journals)!=1:raise ValueError('one retained journal probe required')
-        expected=['/usr/bin/journalctl','--quiet','--no-pager','--output=short-unix','--since=@'+str(spec['journal_since']),
-                  '--unit=timeservice.service','--unit=avahi-daemon.service','--priority=0..3']
-        if journals[0]['argv']!=expected:raise ValueError('retained journal scope mismatch')
+        journals=retained_journals(commands,spec)
         for n,raw in saved.items():h.create(root/('source-'+n),raw)
-        h.create(root/'retained-journal.json',encoded(journals[0]))
-        raw=command(h,root,'journal',['/usr/bin/journalctl','--quiet','--no-pager','--output=json','--lines=400',
+        h.create(root/'retained-journal.json',encoded(journals))
+        stats=runtime_data(h,source);h.create(root/'runtime-data.json',encoded(stats))
+        raw=command(h,root,'journal',['/usr/bin/journalctl','--quiet','--no-pager','--output=json','--lines='+str(JOURNAL_LINES),
                   '--boot='+journal_boot_id(spec['boot_id']),'--since=@'+str(spec['journal_since']),'--until=@'+str(spec['journal_until']),
                   '--unit=timeservice.service','--unit=avahi-daemon.service'])
         records=[json.loads(line) for line in raw.splitlines()]
-        if len(records)>=400:raise ValueError('journal line limit reached; completeness unproven')
+        if len(records)>=JOURNAL_LINES:raise ValueError('journal line limit reached; completeness unproven')
         command(h,root,'services',['/usr/bin/systemctl','show','--no-pager',
                   '--property=Id,LoadState,ActiveState,SubState,UnitFileState,FragmentPath,DropInPaths',
                   'timeservice.service','systemd-timesyncd.service','avahi-daemon.service','ntpleapfetch.timer'])
-        info={'ntp_conf':metadata(Path('/etc/ntp.conf')),'pre_cutover_ntp_conf_absent':True,'journal_records':len(records)}
+        info={'ntp_conf':metadata(Path('/etc/ntp.conf')),'pre_cutover_ntp_conf_absent':True,'journal_records':len(records),
+              'retained_journal_probes':len(journals),'runtime_files':len(stats['files']),
+              'packet_counters_retrieved':False,'packet_path_established':False}
         h.create(root/'current-metadata.json',encoded(info))
         for name,raw in saved.items():
             if h.read(source/name,limit=LIMIT)!=raw:raise ValueError('original evidence changed during capture')
+        if runtime_data(h,source)!=stats:raise ValueError('runtime evidence changed during capture')
         return info
     finally:os.close(fd)
 
 
-CAPTURE_FILES=('source-before.json','source-state.json','source-commands.jsonl','retained-journal.json',
+CAPTURE_FILES=('source-before.json','source-state.json','source-commands.jsonl','retained-journal.json','runtime-data.json',
                'journal.json','journal.stdout','journal.stderr','services.json','services.stdout','services.stderr','current-metadata.json')
 
 
@@ -224,7 +256,7 @@ def prepare(bundle,checksum):
 
 
 def review(spec):
-    return f'''# Retained cutover journal inspection: {spec['operation_id']}
+    return f'''# Retained NTS/PPS cutover diagnostics: {spec['operation_id']}
 
 Target **{spec['hostname']}**, boot `{spec['boot_id']}`. Expires {datetime.fromtimestamp(spec['expires_epoch'],timezone.utc).isoformat()}.
 Source: recovered and cleaned cutover `{spec['source_bundle_sha256']}`.
@@ -232,20 +264,32 @@ One capture into root-owned 0700 `{spec['stage']}` with 0600 evidence.
 Verify immutable source specification/members and exact recovered/cleaned state;
 acquire the existing source lock read-only. Preserve the source stage and backups.
 
-Copy bounded source before-state, terminal state and command journal; extract the
-saved journal-health command and its stdout/stderr/status (2 MiB per source file).
+Copy bounded source before-state, terminal state and command journal (8 MiB per
+source file); extract 1..41 saved journal-health commands and stdout/stderr/status.
+Recognize only the exact legacy time-window or current compact-boot command profiles.
+Copy retained runtime-data: loopstats, peerstats, clockstats, drift and leap temporary
+files under closed names, at most 12 regular single-link files and 2 MiB combined.
+Record absent/empty statistics explicitly; do not claim they existed or were complete.
+Retain bytes and hashes, and compare file membership/content again before closure.
 Retrieval is capped at 8 MiB raw evidence; exceeding it holds acceptance and retains
 the staged files. Run one retrospective
 journalctl query for timeservice/Avahi in boot {spec['boot_id']}, from epoch
-{spec['journal_since']} through {spec['journal_until']}, at most 399 complete records
+{spec['journal_since']} through {spec['journal_until']}, at most 1999 complete records
 and 2 MiB,
 using the compact boot filter `{journal_boot_id(spec['boot_id'])}` while retaining
 the canonical UUID for target identity checks.
-A 400-record response is incomplete and holds acceptance. Also inspect
+A 2000-record response is incomplete and holds acceptance. Also inspect
 metadata for /etc/ntp.conf without following links or reading unexpected contents,
 and fixed timeservice/bootstrap/Avahi/leap-timer unit states. Compare original saved
 files again after capture. No service/configuration change, daemon start, clock
 change, NTS retry, upstream access, receiver/device I/O or reboot.
+
+Purpose: reconstruct startup selection/frequency discipline and any logged NTS
+response/rejection information before a new trial. Earlier localhost probes did
+not retain NTS packet counters; stopped-daemon counters cannot be recreated here.
+No packet capture, network probe, controller access or service restart is covered.
+Missing historical records remain gaps; this capture alone does not establish the
+UDP packet path, loss location, calibration or steady-state PPS accuracy.
 
 The staged /bin/bash launcher has a 90-second process-group lifetime; commands
 have 20-second and 2-MiB output bounds. One start only; do not repeat after transport

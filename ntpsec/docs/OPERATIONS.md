@@ -383,6 +383,56 @@ where packets were lost/rejected or establish the cause of the PPS transient.
 Do not infer another firewall defect, calibrate serial time or relax acceptance
 from these samples. Do not replay v3.
 
+### Retained NTS/PPS diagnostics after v3
+
+The [retained NTS/PPS review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-retained-20261013-v1/review.md)
+is prepared offline for separate execution approval; adjacent `sealing.json`
+identifies its digest. It binds the executed v3 archive, specification, matching
+recovered-state readbacks and cleanup. No node/controller contact occurred.
+
+Local review of the five saved samples found system frequency zero through
+246 seconds, then 148.443 ppm at 334 seconds. The pinned NTPsec 1.2.5 source
+uses a default 300-second stepout interval; its NSET/FREQ path defers initial
+frequency estimation until that interval. This is consistent with startup
+training, not proof of the runtime state or a steady-state PPS error. Recovering
+at 334 seconds did not establish settled performance. Keep calibration and
+thresholds unchanged until the retained journal and statistics are evaluated.
+
+The v3 pairing evidence confirms serial NTP0 and GPIO PPS NTP2; the candidate
+already marks PPS preferred. Another host's NTP1 assignment does not replace
+this observed mapping. The user-supplied other-host snippet has no explicit
+`prefer` modifier despite its comment; its actual GPSD mapping was not inspected.
+
+`run-cutover-inspection.py` now accepts the exact legacy and compact-boot journal
+command profiles, with 1–41 retained probes, rather than assuming one legacy
+probe. It copies the before/state/command files and recovery-preserved
+loopstats, peerstats, clockstats, drift and leap temporary files. Statistics use
+closed names, at most 12 regular single-link files and 2 MiB combined; source
+files are capped at 8 MiB and aggregate retrieved evidence at 8 MiB. Missing or
+empty statistics are reported explicitly. Compare saved bytes and statistics
+membership again before acceptance. The original stage remains locked read-only.
+
+One retrospective timeservice/Avahi journal query covers the pinned boot and
+trial time window, bounded to 2 MiB and 1999 complete records; reaching 2000
+holds acceptance. Inspect only fixed service states and `/etc/ntp.conf` metadata
+otherwise. Use protected root-owned staging, a 90-second worker, matching
+dual-stack terminal readbacks and diagnostic cleanup. Preserve all evidence.
+
+```bash
+python3 -I -B ntpsec/scripts/run-cutover-inspection.py seal \
+    --source-dir "$recovered_v3_directory" \
+    --source-sha256 "$executed_v3_sha256" \
+    --operation-id "$unique_operation_id" --output "$private_review_directory"
+```
+
+The saved localhost queries did not collect NTS packet rejection counters, and
+stopped-daemon counters cannot be recreated. This first review does not include
+packet capture, network/controller queries, upstream probes, service activation,
+clock changes or receiver I/O. It may identify logged rejection or startup-state
+information; it cannot by itself locate packet loss or prove UDP reachability.
+After accepting the retained evidence, define any remaining active packet/counter
+capture separately. Do not label missing historical data a successful check.
+
 `run-nts-transport-inspection.py` seals the checked-in recipe, helpers, tests,
 governing documents and the network owner's `UNIFI_ACCESS.md`, bound to the
 original recovered cutover specification and live-revalidated boot/state. The
@@ -494,7 +544,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed but first probe rejected NTS response diagnostics logged at error priority; recovered through both endpoints and cleaned; v3 journal gate passed; five probes still failed NTS packet reach and PPS offset/jitter; dual-stack recovery and cleanup complete; scoped diagnostics pending |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed but first probe rejected NTS response diagnostics logged at error priority; recovered through both endpoints and cleaned; v3 journal gate passed; five probes still failed NTS packet reach and PPS offset/jitter; dual-stack recovery and cleanup complete; retained NTS/PPS diagnostic review prepared offline, execution pending |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

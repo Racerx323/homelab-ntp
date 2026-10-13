@@ -809,6 +809,13 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    Diagnose packet acceptance and startup clock discipline separately before
    another trial; cookie acquisition alone does not identify packet-path health.
    Retained-data collection does not authorize new probes or daemon activation.
+   Start with saved probes and recovery-preserved journal/statistics. Preserve
+   source bytes and bind their recovered-state receipts; bound file names,
+   types, sizes, command profiles and retrieval time. Distinguish missing data
+   from diagnostic acceptance. Early startup frequency estimation and peer
+   switching must be reconstructed before interpreting PPS samples as settled
+   error. Volatile packet counters absent from saved queries require a later
+   explicitly scoped capture; do not infer their values after daemon recovery.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.
