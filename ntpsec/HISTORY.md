@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation/readback/payload cleanup accepted; runtime discovery and configuration pending |
-| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware v3 recovered after sysfs validation hold; checker corrected offline; fresh baseline v3 awaiting approval; account/runtime unstarted |
+| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware v3 recovered; fresh baseline v3 accepted; corrected hardware v4 awaiting execution approval; account/runtime unstarted |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1292,3 +1292,26 @@ target contact occurred after the approved cleanup. Next approve the
 [fresh baseline v3 review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-baseline-20261013-v3/review.md)
 and its `sealing.json` SHA-256. After acceptance, seal the corrected hardware
 bundle for separate execution approval; do not replay consumed v3 modes.
+
+### October 13: fresh baseline v3 accepted; hardware v4 prepared
+
+Executed the approved `host-baseline-20261013-v3` capture once. Acceptance
+bound hardware v3's recovered boot, completed recovery/cleanup and stable
+fresh observations. Baseline SHA-256:
+`254c131c0f305911126b395ff72f4250083d81dce98264aa7a2c598e4248c840`.
+Conditional cleanup matched the accepted terminal hash and removed only the
+diagnostic stage. Earlier protected stages and all local records remain
+preserved; no device I/O, configuration change or reboot occurred.
+
+Prepared `host-hardware-20261013-v4` offline against the accepted baseline.
+It includes the tested tty-class/device-tree-root traversal correction and
+partial ancestry/error retention, while requiring one matching PL011 AMBA
+ancestor and retaining the network/native/PPS/RTC checks. No hardware or
+account/runtime execution occurred in this step.
+
+Next approve the [hardware v4 review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-hardware-20261013-v4/review.md)
+and its `sealing.json` SHA-256 for boot setup, one controlled reboot,
+dual-stack/device-metadata acceptance and conditional readback/recovery/cleanup.
+Console/media readiness is required before reboot. Account/runtime setup and
+clock-service activation remain pending hardware acceptance and their own
+execution approvals.

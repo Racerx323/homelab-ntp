@@ -23,7 +23,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware v3 held at sysfs path validation; original boot files restored, recovery reboot/network checks and cleanup complete; runtime stage unstarted | Tty-class traversal and partial-diagnostic retention corrected offline; fresh baseline v3 prepared for separate capture approval before hardware resealing |
+| Runtime configuration | Hardware v3 held at sysfs path validation; original boot files restored, recovery reboot/network checks and cleanup complete; runtime stage unstarted | Fresh baseline v3 accepted and cleaned; hardware v4 prepared with corrected tty-class traversal and partial-diagnostic retention; separate execution approval required |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

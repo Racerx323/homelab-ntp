@@ -635,8 +635,9 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    conditional recovery/cleanup. The bounded traversal must permit tty class
    subsystem links and the device-tree root while retaining exact AMBA driver
    and registry checks. Save partial ancestry and the rejected link before a
-   hold. These corrections are tested offline; fresh baseline v3 requires
-   separate capture approval before a replacement hardware bundle is sealed.
+   hold. These corrections are tested offline. Fresh baseline v3 was accepted
+   and cleaned on October 13; hardware v4 is prepared against that baseline
+   and requires separate execution approval.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Hardware/time-service/client acceptance remains pending.
