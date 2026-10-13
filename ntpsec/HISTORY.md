@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit correction requires separate network-owner review |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; Automated MAC-bound IPv6 permit candidate prepared; separate network-owner execution approval pending |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1887,3 +1887,33 @@ checks, ordering, return traffic, backups, recovery and bounded transport
 acceptance for separate approval. Resolve transport before another cutover;
 retain the pending explicit `minsane` policy and narrowly tested journal handling,
 NTS authentication, dual-stack client and mDNS acceptance requirements.
+
+### October 13: automated IPv6 permit candidate prepared offline
+
+The operator approved preparation and requested maintainable matching for the
+host's changing global IPv6 address. The candidate uses two IPv6-only source-MAC
+permits for the observed Ethernet interface, preserving RA/SLAAC and avoiding a
+global-address list or recurring credentialed updater. API support is based on
+the operator-supplied Ubiquiti Network v10.6.106 OpenAPI specification; the
+retained controller reports 11.0.83, so schema and packet behavior remain live gates.
+The operator also considered UniFi's IPv6 interface-ID selector and explicitly
+chose MAC matching with no host addressing change.
+
+The operator chose automated API execution and confirmed `AUDIT_LOCAL` has full
+read/write permissions. The network-owned `UNIFI_ACCESS.md` now records that
+capability separately from action authorization; existing diagnostics remain
+GET-only. No credential retrieval or controller/node contact occurred in this
+preparation.
+
+`homelab-network/Ubiquiti/ntp-ipv6/` owns offline sealing, exact policy creation,
+ordering, readback, recovery and tests. It reuses fresh NTP diagnostic bundles
+before/after the change and conditionally after recovery. Original rules/lists
+stay unchanged; restore only exact operation-owned additions. There is no
+independent gateway rollback timer. Interrupted work requires retained intent
+inspection and the approved recovery continuation, without resubmitting a create.
+
+Next obtain separate hash-bound execution approval for the private parent review
+under `homelab-network/ntp-ipv6-permit-20261013-v1`. It accepts only policy scope
+and root/NTP-account dual-stack TCP reachability. UDP exchange, authenticated
+NTS, explicit minsane/journal policy and client/mDNS acceptance remain pending
+for the service cutover. Prefix rollover itself is not tested by this stage.
