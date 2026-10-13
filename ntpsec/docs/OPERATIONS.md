@@ -76,8 +76,9 @@ passed without IPC cleanup.
 
 The private `pairing-review.json` binds the capture receipt, cleanup response
 and independently reproduced correlation. It records source pairing separately
-from timing accuracy. Receiver firmware identity, leapfile inputs and final
-service/client acceptance remain pending. The earlier private runtime candidate
+from timing accuracy. Receiver identity and current runtime/leapfile inputs
+are recorded by the short inspection below; final service/client acceptance
+remains pending. The earlier private runtime candidate
 contains only the serial argument; rerender it with the reviewed explicit-PPS
 profile rather than promoting it unchanged. Bind final SHM configuration to
 this observed device ordering and ownership; reassess any changed GPSD profile.
@@ -115,8 +116,10 @@ gate retroactively. Gate success proves source functionality, not UTC accuracy.
 ### Resolve the remaining cutover inputs
 
 The accepted v2 evidence identifies NMEA0183 at 115200 and the serial/PPS
-pairing. It contains no receiver software/hardware version response. Do not
-infer firmware from GPSD's VERSION message or the HAT model.
+pairing. The subsequent MON-VER inspection identifies ROM CORE 3.01 (107888),
+hardware 00080000, firmware SPG 3.01 and protocol 18.00. Do not infer firmware
+from GPSD's VERSION message or the HAT model. Capability strings do not prove
+enabled constellations, receiver settings or an exact module variant.
 
 `configs/receiver-runtime-inputs.json` and `scripts/inspect-receiver-runtime.py`
 define the short inspection, using the acquisition controller's existing
@@ -134,8 +137,10 @@ python3 -I -B ntpsec/scripts/run-gpsd-acquisition.py seal \
 
 Use the hashes from the corresponding accepted archives, not a historical
 example. The current [receiver/runtime input review](/home/aaron/code/.local-evidence/homelab-ntp/current/receiver-runtime-inputs-20261013-v1/review.md)
-awaits separate execution approval. Its adjacent sealing.json binds the exact
-bundle. No new target contact has occurred during preparation.
+was executed once and accepted through both management endpoints; UART
+restoration, continuity and cleanup passed. Its adjacent sealing.json binds
+the exact bundle. The private `inputs-review.json` independently verifies
+the response checksum/decoding and leap-list checksum against captured bytes.
 
 The operation sends exactly one MON-VER request, hex `b5620a0400000e34`, to the
 identity-checked UART at 115200, with a 10-second/65536-byte response bound.
@@ -157,18 +162,22 @@ Resolve the final inputs in this order:
 
 | Input | Established or required action |
 | --- | --- |
-| Receiver and GPSD profile | NMEA0183 at 115200; `/dev/serial0` then explicit `/dev/pps0`, receiver writes disabled and loopback-only. Capture MON-VER identity before rendering the final profile. |
+| Receiver and GPSD profile | NMEA0183 at 115200; `/dev/serial0` then explicit `/dev/pps0`, receiver writes disabled and loopback-only. MON-VER confirms SPG 3.01/protocol 18.00; retain the observed profile without receiver-setting changes. |
 | SHM | Observed serial NTP0 and PPS NTP2, root-owned 0600/0666. Bind the configuration to this exact ordering and verify NTPsec attachment/privilege behavior during cutover. |
 | Upstreams/access | All three selected NTS candidates; Default LAN IPv4/ULA service, localhost-only administrative queries. Render the governed subnets and validate both families. |
-| Leap maintenance | Pinned NTPsec 1.2.5 provides `/usr/local/bin/ntpleapfetch`, explicit source/config/temp/retry options and no default restart. Its timer code checks the leapfile hourly and reports expiry daily. Inspect current target inputs before selecting destination, permissions and an unexpired, verified installation asset. |
-| Service/mDNS/runtime paths | Inspect current files, directories, listeners and Avahi state; rerender the earlier serial-only candidate. Resolve writable drift/stats locations and Avahi interface scope before activation. |
+| Leap maintenance | Installed `/usr/local/bin/ntpleapfetch` is root-owned 0755; the distribution leap list is root-owned 0644, with valid checksum and expiry June 28, 2027 UTC. Select and pin the deployment asset, destination and maintenance command; the checksum alone does not authenticate origin. NTPsec 1.2.5 checks for updates hourly and reports expiry daily, without a default restart. |
+| Service/mDNS/runtime paths | `/etc/ntp.conf`, `/etc/ntpsec-timeservice.json`, the combined service unit and `/var/lib/ntp`, `/var/lib/ntpsec`, `/var/log/ntpstats` are absent. NTP account is UID 999/GID 985 with no login shell. Rerender the explicit-PPS candidate and create reviewed writable paths. Avahi is active with IPv4/IPv6 enabled and no explicit interface allowlist; settle its scope before activation. Bootstrap timesyncd remains active and UDP 123 has no listener. |
 
 The pinned source references for leap behavior are `ntpclients/ntpleapfetch`,
 `ntpd/ntp_timer.c` and `ntpd/ntp_util.c` in the authenticated 1.2.5 archive.
 Do not activate a timer, choose a restart action or accept a leapfile merely
 from its presence. Final configuration/cutover remains a separate review after
-these inputs are accepted; no repeat long acquisition is needed just to
-re-establish the accepted pairing.
+the captured inputs are incorporated; no repeat long acquisition is needed
+just to re-establish the accepted pairing. The next stage is offline rendering
+and sealing of final configuration/cutover, with backups, source attachment,
+NTS/mDNS and dual-stack client acceptance, and recovery. Its execution requires
+separate approval. This inspection changed no receiver settings, started no
+GPSD/NTPsec process and left bootstrap synchronization unchanged.
 
 ## Current state and remaining work
 
@@ -185,7 +194,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation and account/runtime v2 accepted through both management endpoints; cleanup complete; account, loader and private service candidate validated; original evidence preserved | Explicit-PPS v2 capture/cleanup accepted and NTP0/NTP2 pairing observed; short receiver/runtime-input inspection prepared for approval before final configuration/cutover |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Prepare final explicit-PPS configuration/cutover using the observed firmware, SHM, account, leap and service inputs; execution and timing/client acceptance remain pending |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

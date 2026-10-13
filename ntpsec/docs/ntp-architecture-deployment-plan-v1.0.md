@@ -695,6 +695,10 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    10-second/65536-byte response bound, no receiver configuration or retry,
    and independent UART restoration. Inspect final leapfile/runtime/Avahi
    inputs within a bounded stage before rendering cutover configuration.
+   Record software/hardware/protocol identity separately from active receiver
+   settings; capability strings do not establish enabled constellations or
+   an exact module variant. Verify leapfile checksum and expiry while retaining
+   package/source provenance; checksum validity alone is not authentication.
    Final NTP configuration and service cutover require subsequent approval.
    Use all three selected authenticated associations: time.cloudflare.com,
    ohio.time.system76.com and oregon.time.system76.com. Initial client service

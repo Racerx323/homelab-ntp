@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation and account/runtime v2 accepted; cleanup complete; account, loader and private candidate validated; copied_not_activated | Explicit-PPS v2 capture/cleanup accepted; serial NTP0 and GPIO PPS NTP2 pairing observed; short receiver/runtime-input inspection prepared for approval; final cutover pending |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Serial NTP0/GPIO PPS NTP2 pairing and SPG 3.01/protocol 18.00 observed; prepare final configuration/cutover for separate execution approval |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1619,3 +1619,32 @@ stopped; no long acquisition, leap download or clock-service change is prepared.
 Next approve that sealed inspection, review the receiver response and runtime
 inputs, then prepare final configuration/cutover for separate execution
 approval. No target contact or mutation occurred during this preparation.
+
+### October 13: receiver identity and runtime inputs accepted
+
+Executed the approved `receiver-runtime-inputs-20261013-v1` once. One MON-VER
+query and bounded runtime metadata capture completed; the worker recorded
+about 0.3 seconds. Both fixed management endpoints returned matching terminal
+evidence, restored UART settings and unchanged runtime/network/bootstrap/SHM
+continuity. Conditional cleanup completed, preserving all evidence and SHM
+segments. No recovery, receiver-setting change, daemon activation or repeat
+query was needed.
+
+The checksum-valid response reports ROM CORE 3.01 (107888), hardware 00080000,
+FWVER SPG 3.01 and PROTVER 18.00. Its constellation strings describe capabilities,
+not enabled settings or a confirmed module variant. A private `inputs-review.json`
+binds acceptance, cleanup and the independently decoded response.
+
+The installed ntpleapfetch is root-owned 0755. The root-owned 0644 distribution
+leap list has a valid internal checksum and expires June 28, 2027 UTC; no leap
+asset was downloaded or deployed. Final NTP/supervisor configuration and service
+unit are absent, as are the inspected drift/statistics directories. The NTP
+account is UID 999/GID 985. Avahi and bootstrap timesyncd are active, while UDP
+123 has no listener. GPSD/NTPsec remain stopped.
+
+Next prepare and seal final explicit-PPS configuration/service cutover using
+these observed inputs: select and pin the leap asset, render paths/permissions,
+SHM associations, selected NTS upstreams, LAN restrictions and Avahi scope;
+include backups, early functionality, timing/client acceptance and recovery.
+Execution requires separate approval. No new long acquisition is needed solely
+to reproduce the already accepted source pairing.
