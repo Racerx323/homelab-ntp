@@ -666,6 +666,11 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    UART settings. Capture completion is distinct from timing acceptance.
    The checked-in acquisition recipe/controller seals the 900-second window,
    independent timeout, conditional recovery and private evidence readback.
+   For the accepted GPIO PPS topology, require a separately approved
+   acquisition with explicit `/dev/pps0`,
+   source-reviewed serial/PPS pairing and observed SHM assignments before
+   final configuration. GPIO metadata alone does not close physical timing
+   acceptance; serial autodiscovery failure does not prove absent pulses.
    Final NTP configuration and service cutover require subsequent approval.
    Use all three selected authenticated associations: time.cloudflare.com,
    ohio.time.system76.com and oregon.time.system76.com. Initial client service

@@ -21,10 +21,11 @@ The user selected a separate GPSD acquisition before final configuration.
 prepare one 900-second observation against the accepted runtime archive,
 receipt, cleanup state, exact boot and current governing input hashes. The
 [acquisition review](/home/aaron/code/.local-evidence/homelab-ntp/current/gpsd-acquisition-20261013-v1/review.md)
-is the next execution gate; its archive hash is in adjacent `sealing.json`.
-Preparation and tests are offline.
+was executed once and accepted as a completed capture, with dual-endpoint
+readback and cleanup. Its archive hash is in adjacent `sealing.json`.
+The capture does not accept PPS timing or final SHM mapping.
 
-The approved execution will temporarily initialize UART termios and start the
+The acquisition temporarily initializes UART termios and starts the
 pinned GPSD with `-b -N -n -D 3 -s 115200 /dev/serial0`. Receiver writes are
 disabled; TCP access remains loopback-only. Pinned `gpspipe` JSON and
 `ntpshmmon` samples, GPSD diagnostics and SHM metadata remain private. Do not
@@ -48,6 +49,21 @@ Bootstrap synchronization remains active; ntpd activation, leapfile setup,
 Avahi policy/advertisement and external client/NTS acceptance belong to the
 later separately approved cutover.
 
+The October 13 acquisition observed 902 TPV reports, all mode 3, and 899 NTP0
+samples with leap 0. GPSD decoded NMEA0183 at 115200. Its diagnostic reported
+kernel PPS unavailable for `/dev/serial0`; no NTP1 samples were collected.
+Both IPv4 and IPv6 readback proved GPSD stopped, UART settings restored and
+runtime/network/bootstrap continuity intact. All SHM segments and evidence
+were preserved during transient-unit cleanup.
+
+Next prepare a corrected, separately approved acquisition that explicitly
+supplies the accepted GPIO PPS device `/dev/pps0`, with source-reviewed
+serial/PPS pairing and explicit PPS reporting. The pinned GPSD PPS code
+supports an explicit PPS device; serial-device autodiscovery failed in this
+capture. Do not infer missing physical pulses from that association failure.
+Receiver firmware identity and PPS-to-SHM mapping remain unestablished.
+Do not render a deployable PPS refclock or start ntpd until those gates close.
+
 ## Current state and remaining work
 
 j2-svntp1 is the renamed former j1-svntp1 physical node, now running Raspberry
@@ -63,7 +79,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation and account/runtime v2 accepted through both management endpoints; cleanup complete; account, loader and private service candidate validated; original evidence preserved | Separate bounded GPSD acquisition is prepared for approval; accepted receiver/SHM observations precede final NTP configuration and service cutover |
+| Runtime configuration | Hardware continuation and account/runtime v2 accepted through both management endpoints; cleanup complete; account, loader and private service candidate validated; original evidence preserved | Acquisition capture and cleanup accepted; serial GNSS observed but kernel PPS association unresolved; prepare corrected acquisition for separate approval before final configuration/cutover |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

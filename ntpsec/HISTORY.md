@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation and account/runtime v2 accepted; cleanup complete; account, loader and private candidate validated; copied_not_activated | Separate bounded GPSD acquisition prepared for approval; accepted observations precede final configuration/cutover |
+| Runtime | Hardware continuation and account/runtime v2 accepted; cleanup complete; account, loader and private candidate validated; copied_not_activated | Acquisition capture/cleanup accepted; serial GNSS observed; PPS association and final SHM mapping pending before configuration/cutover |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1505,3 +1505,31 @@ Next obtain separate execution approval for this acquisition. Then review
 actual receiver validity and SHM assignments/ownership before preparing the
 final ntp.conf and service-cutover review. No target contact, service start,
 receiver I/O or clock change occurred during this preparation.
+
+### October 13: GPSD acquisition captured, restored and cleaned
+
+Executed the approved `gpsd-acquisition-20261013-v1` start once. Readback 18
+returned matching terminal evidence through both fixed management endpoints;
+prior readbacks reported pending without replaying acquisition. The bounded
+window completed in approximately 901 seconds, and both monitoring clients
+exited successfully. GPSD stopped; the independent stop handler restored the
+saved UART settings. Post-capture runtime, native, hardware, network and
+bootstrap continuity passed. Conditional transient-unit cleanup completed;
+recovery was unnecessary. Original stages, raw evidence and all SHM segments
+remain preserved. NTPsec was not started and bootstrap synchronization remains
+unchanged.
+
+The private capture contains 902 TPV reports, all mode 3/status 2, decoded as
+NMEA0183 at 115200; 899 NTP0 samples reported leap 0 and precision -1. No NTP1
+samples were collected. GPSD reported kernel PPS unavailable for `/dev/serial0`.
+The accepted receipt therefore records capture acceptance while keeping
+receiver timing and SHM mapping acceptance false. Receiver firmware identity
+was not established. Raw receiver coordinates and logs remain outside Git.
+
+Offline inspection of the pinned GPSD source confirms that an explicit PPS
+device is supported; the serial-device lookup used by this capture did not
+associate the GPIO PPS device. This does not establish whether physical PPS
+pulses were absent. Next prepare a corrected acquisition using explicit
+`/dev/pps0`, source-reviewed serial/PPS pairing and explicit PPS reporting,
+then obtain its separate execution approval. Final NTP configuration and
+service cutover remain gated on accepted timing and SHM observations.
