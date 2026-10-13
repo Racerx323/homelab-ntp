@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation/readback/payload cleanup accepted; runtime discovery and configuration pending |
-| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware v2 recovered; UART inspection accepted; fresh baseline and corrected hardware acceptance pending; account/runtime unstarted |
+| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware v2 recovered; UART inspection and fresh baseline v2 accepted; hardware v3 awaiting execution approval; account/runtime unstarted |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1234,3 +1234,27 @@ Next approve the [fresh baseline review](/home/aaron/code/.local-evidence/homela
 and its `sealing.json` SHA-256. After capture acceptance and cleanup, seal the
 corrected hardware bundle for separate execution approval. Account/runtime
 setup and clock-service activation remain pending hardware acceptance.
+
+### October 13: fresh baseline v2 accepted; hardware v3 prepared
+
+Executed the approved `host-baseline-20261013-v2` capture once. Diagnostic
+acceptance bound the recovered boot, hardware v2 recovery/cleanup provenance
+and stable fresh observations. Baseline SHA-256:
+`a7581ff7a3fd21ed6dfbaa96315b924f20eedfe482625e623b0ad845ed0d08c3`.
+Conditional cleanup matched the accepted terminal hash and removed only the
+new diagnostic stage. Original protected stages and all local evidence remain
+preserved. No device I/O, configuration change or reboot occurred.
+
+Prepared `host-hardware-20261013-v3` offline against that accepted, cleaned
+baseline. It validates the selected UART through its PL011 AMBA ancestor,
+registry identity and device-tree compatibility, and records the observed
+mapping in protected state before any hold or recovery. The constrained
+loopback comparison and remaining network/native/PPS/RTC checks remain binding.
+No hardware execution or account/runtime setup occurred in this step.
+
+Next approve the [hardware v3 review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-hardware-20261013-v3/review.md)
+and its `sealing.json` SHA-256 for hardware/boot setup, one controlled reboot,
+dual-stack/device-metadata acceptance and conditional readback/recovery/cleanup.
+Console/media recovery readiness is required before reboot. Account/runtime
+setup remains separately approved and conditional on hardware acceptance;
+clock-service activation remains pending.

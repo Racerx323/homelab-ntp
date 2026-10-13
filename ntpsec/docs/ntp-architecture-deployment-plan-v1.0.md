@@ -629,9 +629,10 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    Validate the selected tty's bounded parent chain against exactly one PL011
    AMBA driver, device registry identity and compatible device-tree node.
    Preserve the observed chain and validation errors in protected state before
-   a hold or recovery. These checks are tested offline. The next fresh baseline
-   binds directly to hardware v2's completed recovery/cleanup; execute and
-   accept that separately approved capture before sealing replacement hardware.
+   a hold or recovery. These checks are tested offline. Fresh baseline v2, bound
+   to hardware v2's completed recovery/cleanup, was accepted and cleaned on
+   October 13. Hardware v3 uses that baseline and requires separate execution
+   approval.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Hardware/time-service/client acceptance remains pending.
