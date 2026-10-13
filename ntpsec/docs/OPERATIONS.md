@@ -211,8 +211,22 @@ original continuity; both endpoints agreed and terminal cleanup completed.
 No workstation acceptance was attempted. Do not replay v1.
 
 The underlying journal entries remain in the protected target command log;
-readback returned the failed boolean without those entries. Next prepare a
-separately approved, bounded read-only retrieval of the retained evidence.
+readback returned the failed boolean without those entries. The
+[retained-journal review](/home/aaron/code/.local-evidence/homelab-ntp/current/cutover-inspection-20261013-v1/review.md)
+is prepared offline and awaits separate execution approval, bound to its adjacent
+`sealing.json`. `run-cutover-inspection.py` verifies the recovered source state
+and immutable inputs, takes its existing lock read-only, retrieves the saved
+command log and a bounded trial journal window, and records current configuration
+metadata and service states. One capture, conditional dual-endpoint readbacks
+and diagnostic closure preserve all original evidence; they change no service
+or configuration and do not repeat receiver acquisition or NTS negotiation.
+An incomplete capture holds diagnostic acceptance. Diagnostic acceptance is
+not time-service acceptance.
+
+`/etc/ntp.conf` was absent before the trial. Recovery therefore removed the
+trial configuration; its absence is expected in the restored state. Do not
+recreate it outside a separately approved cutover.
+
 Establish the cause before changing criteria, source choices or preparing
 another live trial. Keep original artifacts immutable. A future approved
 archive must bind the corrected inputs and current target evidence.

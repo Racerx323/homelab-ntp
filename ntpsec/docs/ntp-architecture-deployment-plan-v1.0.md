@@ -736,6 +736,13 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    approved read-only diagnostic must explain the failed journal-health check
    before a corrected cutover is sealed. Preserve the executed stage and
    acceptance requirements; NTS failure causes remain unverified.
+   The prepared diagnostic binds the recovered state and source archive, reads
+   the existing command log under its shared lock, and bounds retrospective
+   journal collection to the trial boot/time window. Matching dual-endpoint
+   readback permits diagnostic closure while retaining all evidence; it does
+   not accept time service or authorize another trial. Recovery restores file
+   absence as well as contents: an originally absent `/etc/ntp.conf` remains
+   absent until a new cutover is approved.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.

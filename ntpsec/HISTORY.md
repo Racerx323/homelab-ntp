@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Serial NTP0/GPIO PPS NTP2 and SPG 3.01/protocol 18.00 observed; cutover v1 recovered without acceptance; journal diagnosis and a new review pending |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Serial NTP0/GPIO PPS NTP2 and SPG 3.01/protocol 18.00 observed; cutover v1 recovered without acceptance; retained-journal inspection prepared, awaiting execution approval |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1710,3 +1710,28 @@ readback omitted the underlying journal entries, so the failure's cause remains
 unverified. Next prepare a scoped read-only retrieval of that retained journal
 and command evidence for separate execution approval before correcting or
 retrying cutover. Do not relax acceptance or change upstreams without evidence.
+
+### October 13: retained cutover journal inspection prepared offline
+
+Prepared `run-cutover-inspection.py` and offline regression tests for one scoped
+read-only retrieval on `j2-svntp1`. The
+[private review](/home/aaron/code/.local-evidence/homelab-ntp/current/cutover-inspection-20261013-v1/review.md)
+and adjacent `sealing.json` bind the executed cutover archive, recovered/cleaned
+state, matching recovery receipts, current inputs, target boot and a unique
+operation ID. No target contact occurred during preparation.
+
+The stage reads the original protected source under its existing shared lock,
+retrieves before/state/command records and the saved journal-health result,
+and runs one retrospective journal query bounded to the trial boot/time window.
+It also records `/etc/ntp.conf` metadata and fixed service states. Source files
+are limited to 2 MiB each, journal output to 399 complete records/2 MiB, and
+retrieved evidence to 8 MiB before encoding. Overflow or incomplete evidence
+holds diagnostic acceptance. The worker is bounded to 90 seconds; individual
+queries to 20 seconds. Conditional matching dual-endpoint readbacks precede
+closure, which preserves all diagnostic and original evidence.
+
+Recovery removed `/etc/ntp.conf` because the pre-trial file was absent. GPSD/NTPsec
+remain stopped in the recovered record, with bootstrap synchronization restored.
+The journal failure's cause remains unknown. Next obtain separate execution
+approval for this inspection; do not retry the cutover or change acceptance
+criteria before reviewing its evidence.
