@@ -620,9 +620,9 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    allow only the observed lo identity and reserved addresses, methods,
    gateways and autoconnect state; preserve exact non-loopback registry and
    network/native checks. The corrected checker and fresh-baseline sealer
-   are tested offline; a post-recovery read-only capture is prepared for
-   separate approval. Accept and clean that capture before sealing a new
-   hardware/boot bundle. Bind its fresh baseline independently from historical
+   are tested offline; the post-recovery read-only capture was accepted and
+   cleaned on October 13. The corrected hardware/boot stage uses that fresh
+   baseline and requires separate execution approval. Bind it independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Hardware/time-service/client acceptance remains pending.
    Prepare hardware/boot and account/runtime prerequisites as separately

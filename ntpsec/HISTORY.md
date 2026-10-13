@@ -1124,3 +1124,25 @@ Next approve the [fresh baseline capture](/home/aaron/code/.local-evidence/homel
 and its `sealing.json` SHA-256 for one read-only capture with conditional
 readback and cleanup. After acceptance, seal the corrected hardware/boot
 bundle and obtain its separate execution approval.
+
+### October 13: fresh baseline accepted; corrected hardware review
+
+Executed the approved `host-baseline-20261013-v1` capture once. Acceptance
+bound the recovered boot, stable host observations and baseline SHA-256
+`8ae795f59e0c2bd39a7ef1a13295b2e991126aa60230c7ea2f348407b2138172`.
+Conditional cleanup removed its diagnostic stage after matching the accepted
+terminal hash. Original hardware/recovery stages and all local evidence remain
+preserved. No device I/O, host configuration change or reboot occurred.
+
+Prepared `host-hardware-20261013-v2` from this accepted, cleaned baseline and
+the original accepted networking provenance. Its corrected registry check
+permits only the constrained loopback UUID replacement. UART/PPS/RTC bring-up
+and account/runtime prerequisites remain unaccepted and unstarted respectively;
+clock services remain unactivated.
+
+Next approve the [corrected hardware review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-hardware-20261013-v2/review.md)
+and its `sealing.json` SHA-256 for hardware/boot setup, one controlled reboot,
+dual-stack/device-metadata acceptance and conditional recovery/cleanup.
+Console/media readiness is required before reboot. Account/runtime execution
+requires a separately reviewed bundle bound to this baseline and accepted
+hardware. This baseline approval does not authorize either mutation.
