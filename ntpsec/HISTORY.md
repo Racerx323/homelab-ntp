@@ -15,8 +15,8 @@ live inspection.
 | Rebuilt node | Former j1-svntp1 renamed j2-svntp1; spare-card first boot accepted | Full hardware/time/network acceptance |
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
-| Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation/readback/payload cleanup accepted; runtime discovery and configuration pending |
-| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware continuation accepted through both management endpoints and evidence closed; original v4 preserved; account/runtime v2 prepared for separate approval |
+| Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
+| Runtime | Hardware continuation and account/runtime v2 accepted; cleanup complete; account, loader and private candidate validated; copied_not_activated | Prepare final NTP configuration and GPSD/NTPsec service cutover with acceptance/recovery for separate approval |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1458,3 +1458,29 @@ Next approve the [account/runtime v2 review](/home/aaron/code/.local-evidence/ho
 using its exact `sealing.json` hash. No target contact or runtime mutation
 occurred during preparation. Hardware metadata remains accepted; final
 NTP configuration, physical timing and service activation remain later gates.
+
+### October 13: account/runtime v2 accepted and cleaned
+
+Executed the approved `host-runtime-20261013-v2` start once. Preflight accepted
+the bound hardware continuation and current boot, retained network/native
+state, loader inputs and absent NTP names. Created the dedicated `ntp:ntp`
+system identity (UID 999, GID 985), with `/nonexistent` home, nologin shell and
+no home creation. Backed up the loader cache and refreshed it with `ldconfig
+-X`, preserving native files/modes and library symlinks.
+
+Runtime validation passed libgps cache resolution, GPSD/NTPsec version probes,
+isolated root GPS/NTP imports, isolated NTP-user imports, UART dialout access
+and the private rendered timeservice candidate with target systemd validation.
+Both fixed management endpoints produced matching acceptance proofs. All eight
+checks passed: network, native, hardware gate, account, loader, Python,
+candidate and unchanged bootstrap clock-service state. The separate runtime
+receipt records acceptance; conditional operation cleanup completed.
+
+Complete terminal replies made separate readback and recovery unnecessary.
+Account and cache changes remain accepted; protected before-state, candidate,
+receipts and prior artifacts are preserved. No global service/config copy,
+clock-service activation, reboot, GNSS/PPS/RTC sampling or device I/O occurred.
+
+Next prepare final NTP configuration and the GPSD/NTPsec service cutover with
+acceptance and recovery for separate execution approval. Physical timing,
+NTP client responses and service activation remain pending.

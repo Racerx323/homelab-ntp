@@ -653,13 +653,14 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    recorded in its separate protected stage; original v4 stays immutable.
    Evidence-only cleanup closed the continuation and preserved both stages.
    No boot change, reboot, recovery, service activation or device I/O occurred.
-   Physical timing acceptance remains pending. Account/runtime prerequisites
-   are prepared against the accepted continuation for separate execution
-   approval. Bind its exact specification, archive and accepted current boot;
-   retain the accepted baseline and network provenance. Before mutation,
-   recheck hardware acceptance, package/native/service/configuration state,
-   loader inputs and absent NTP account names. Scope remains account creation,
-   cache backup/refresh, isolated validation and a rendered service candidate.
+   Physical timing acceptance remains pending. Account/runtime v2 was accepted
+   on October 13 against the accepted hardware continuation through both
+   management endpoints; operation cleanup completed. The dedicated NTP
+   account, backed-up/refreshed loader cache, native/Python access and private
+   rendered service candidate passed validation. Preserve its specification,
+   receipt, backups and network/hardware provenance. Next prepare final NTP
+   configuration and the GPSD/NTPsec service cutover with acceptance and
+   recovery for separate execution approval. Clock services remain unactivated.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.
