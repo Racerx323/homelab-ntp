@@ -7,7 +7,7 @@ observations and the next deployment gate. Entries do not authorize live action.
 
 ## Current deployment state
 
-Last reconciled: October 12, 2026. These are retained observations, not a new
+Last reconciled: October 13, 2026. These are retained observations, not a new
 live inspection.
 
 | Component | Accepted state | Still pending |
@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation/readback/payload cleanup accepted; runtime discovery and configuration pending |
-| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Networking accepted; hardware/boot and account/cache/candidate stages prepared offline; final service configuration/cutover pending |
+| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware v2 held at UART driver validation and recovered; read-only driver inspection next; account/runtime and service activation pending |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1146,3 +1146,29 @@ dual-stack/device-metadata acceptance and conditional recovery/cleanup.
 Console/media readiness is required before reboot. Account/runtime execution
 requires a separately reviewed bundle bound to this baseline and accepted
 hardware. This baseline approval does not authorize either mutation.
+
+### October 13: hardware v2 held; conditional recovery completed
+
+Executed the approved `host-hardware-20261013-v2` bundle once, SHA-256
+`2e121c4a4f83b87f3f8c6ee9814462b32205f1466db92867ded6965b9dc7abe5`.
+Boot changes and the controlled reboot completed. All six bounded acceptance
+probes held at `PL011 driver required`. The serial alias and ttyAMA character
+device checks preceding that comparison passed; the actual sysfs driver name
+was not included in the terminal error. Hardware failure is not established.
+The remaining device-tree, PPS and RTC checks did not complete.
+
+The approved conditional recovery inspected retained state, restored both
+original boot files, submitted one recovery reboot and reached `recovered`.
+The retained dual-stack network/native continuity checks passed. This recovery
+mode uses the reachable pinned endpoint; it does not produce the hardware
+acceptance mode's separate IPv4/IPv6 SSH proofs. Cleanup recorded
+`transient_units_cleaned=true`. No hardware acceptance receipt was issued.
+The protected root stage, before-state, journals and all private execution
+records remain preserved in the operation directory. Account/runtime setup
+and clock-service activation remain unstarted.
+
+Next prepare a scoped read-only UART/sysfs/driver inspection for separate
+execution approval. Establish the observed mapping before changing the recipe
+or checker; preserve this executed bundle unchanged. A replacement hardware
+stage needs fresh evidence and its own approval. Do not replay consumed modes
+or treat recovery as UART/PPS/RTC acceptance.

@@ -621,8 +621,11 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    gateways and autoconnect state; preserve exact non-loopback registry and
    network/native checks. The corrected checker and fresh-baseline sealer
    are tested offline; the post-recovery read-only capture was accepted and
-   cleaned on October 13. The corrected hardware/boot stage uses that fresh
-   baseline and requires separate execution approval. Bind it independently from historical
+   cleaned on October 13. Hardware v2 subsequently held at the PL011 driver-name
+   check; original boot files were restored and recovery reboot/network checks
+   and transient cleanup completed. Establish the observed UART driver identity
+   through a separately approved read-only inspection before correcting that
+   gate. Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Hardware/time-service/client acceptance remains pending.
    Prepare hardware/boot and account/runtime prerequisites as separately
