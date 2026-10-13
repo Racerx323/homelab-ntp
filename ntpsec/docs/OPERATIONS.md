@@ -23,9 +23,9 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Host-input capture and fixed dual-stack networking accepted; hardware/boot and account/loader prerequisite stages prepared offline | Approve hardware boot/reboot/metadata stage, then conditional account/cache/candidate stage; final service configuration and cutover remain separate |
+| Runtime configuration | Hardware boot edits and one reboot executed; acceptance held on network registry drift; original boot files restored, recovery reboot blocked by the same guard; runtime stage unstarted | Inspect registry drift through a separately reviewed capture, complete recovery and cleanup, then review replacement hardware/runtime stages |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
-| Node/network acceptance | Host dual-stack addresses, DNS, routes, egress and management access accepted | Hardware, time, dual-stack NTP clients, monitoring and reboot evidence |
+| Node/network acceptance | Pre-reboot networking accepted; IPv4 SSH returned after hardware reboot, but complete post-reboot acceptance is held | Resolve registry drift and recovery before hardware, time, dual-stack NTP clients and monitoring acceptance |
 
 On October 12, the earlier v2 foundation snapshot passed validation with the same
 679 package records, 197 protected inputs and eight configuration directories.

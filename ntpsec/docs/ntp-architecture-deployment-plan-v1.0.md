@@ -610,8 +610,11 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    host acceptance and transient cleanup on j2-svntp1. Fixed IPv4/ULA,
    retained RA, both DNS VIPs, routes, HTTPS egress and pinned-key management
    access were verified. The original DHCP profile and recovery evidence
-   remain retained. Next prepare separately reviewed hardware/boot and
-   account/loader/runtime stages; reboot persistence and time-service/client
+   remain retained. Hardware execution on October 13 subsequently held on
+   post-reboot network registry drift. Original boot files were restored, but
+   the same guard blocked recovery reboot submission. Complete scoped
+   inspection and recovery before replacement hardware/runtime stages; see
+   HISTORY for execution evidence. Reboot persistence and time-service/client
    acceptance remain pending.
    Prepare hardware/boot and account/runtime prerequisites as separately
    approved hash-bound stages. Boot edits preserve unrelated settings and

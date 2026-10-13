@@ -980,3 +980,33 @@ and its `sealing.json` SHA-256, followed by the conditional
 [runtime review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-runtime-20261013-v1/review.md)
 and its own SHA-256. Preserve the primary's antenna-power path and original
 Debian 11 card; declare console readiness before reboot submission.
+
+### October 13: hardware acceptance held; boot-file recovery incomplete
+
+Aaron approved the refreshed hardware and conditional runtime bundle hashes,
+and confirmed console/media recovery readiness with the original card retained.
+The approved hardware start completed with protected backups and candidate boot
+files; its one controlled reboot was submitted. IPv4 pinned-key SSH returned,
+but all subsequent acceptance probes held on `candidate registry drift`.
+Full dual-stack and hardware metadata acceptance were not reached. Conditional
+terminal readback completed and reported `reboot_submitted`.
+
+Guarded recovery restored both original boot files and recorded
+`recovery_files_restored`. The permitted recovery-reboot attempt was blocked
+by the same registry check before reboot submission. Thus the original boot
+files are on disk, while the running boot has not been reverted. Recovery
+verification and cleanup remain pending; no acceptance receipt was created.
+The conditional account/runtime bundle was not started, and no service
+activation occurred. Preserve the root stage, before-state, command journal,
+all controller/transport records and both sealed bundles unchanged.
+
+Evidence remains in the private `host-hardware-20261013-v1` operation directory,
+including `verify-controller.log`, `wait-1.stdout` through `wait-5.stdout`,
+`readback-result.json`, `recover-result.json`, and
+`recovery-reboot-action-result.json`. The exact registry difference has not
+been captured locally; do not assume it is harmless or relax the guard.
+Next prepare a separately reviewed read-only capture of the retained command
+journal, current network registry/profile identities, boot identity and boot
+file state. Use that evidence to review a bounded recovery continuation.
+Do not replay consumed controller modes or execute the conditional runtime
+stage before accepted hardware and a fresh applicable review.
