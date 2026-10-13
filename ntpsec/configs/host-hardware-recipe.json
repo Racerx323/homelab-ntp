@@ -1,0 +1,17 @@
+{
+  "schema": 1,
+  "hostname": "j2-svntp1",
+  "model_prefix": "Raspberry Pi 4 Model B ",
+  "config_path": "/boot/firmware/config.txt",
+  "cmdline_path": "/boot/firmware/cmdline.txt",
+  "uart_alias": "/dev/serial0",
+  "uart_driver": "uart-pl011",
+  "pps_gpio": 18,
+  "pps_edge": "rising",
+  "rtc_compatible": "microcrystal,rv3028",
+  "rtc_address": "0052",
+  "datasheet_sha256": "63ef89d93c79a939033ee5e0a7645ae56f5adf66d3f0393d5cbbf8e0755d9004",
+  "snapshot_max_age_seconds": 86400,
+  "reboot_delay_seconds": 5,
+  "receiver_io_authorized": false
+}

@@ -613,6 +613,23 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    remain retained. Next prepare separately reviewed hardware/boot and
    account/loader/runtime stages; reboot persistence and time-service/client
    acceptance remain pending.
+   Prepare hardware/boot and account/runtime prerequisites as separately
+   approved hash-bound stages. Boot edits preserve unrelated settings and
+   storage/root parameters, remove only the observed serial console, and use
+   byte-exact protected backups. Require declared console/media readiness for
+   one controlled reboot and, if needed, one guarded recovery reboot. A failed
+   boot or lost endpoints requires console recovery; do not claim an automatic
+   recovery timer survives reboot. Accept new-boot dual-stack management and
+   device-tree/node metadata separately from GNSS fix, physical PPS samples,
+   RTC time accuracy, PoE/thermal behavior and NTP client acceptance.
+   Bind account/runtime preparation to the exact accepted hardware specification
+   and its post-reboot boot ID. Use a dedicated `ntp:ntp` system identity with
+   nologin and no home creation; retain the pinned GPSD `nobody`/`dialout` defaults.
+   Refresh only the backed-up library cache with `ldconfig -X`, preserving
+   native files/modes, library symlinks and loader configuration. Require root
+   native/GPS/NTP checks and isolated NTP-user imports. Keep rendered service
+   candidates inside the private stage; final NTP configuration, global file
+   installation and daemon activation remain a separate reviewed cutover.
    Keep bootstrap time synchronization until the approved ntpd cutover. Use
    foreground GPSD with nowait polling so time service does not depend on a
    connected client. Derive daemon identities from the accepted build and

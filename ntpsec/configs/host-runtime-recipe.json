@@ -1,0 +1,18 @@
+{
+  "schema": 1,
+  "hostname": "j2-svntp1",
+  "ntp_user": "ntp",
+  "ntp_group": "ntp",
+  "account_home": "/nonexistent",
+  "account_shell": "/usr/sbin/nologin",
+  "gpsd_user": "nobody",
+  "gpsd_group": "dialout",
+  "cache_path": "/etc/ld.so.cache",
+  "cache_refresh": ["/usr/sbin/ldconfig", "-X"],
+  "python_modules_root": "/usr/local/lib/python3.13/dist-packages",
+  "gpsd_baud": 115200,
+  "installed_modes_preserved": true,
+  "service_installation_authorized": false,
+  "service_activation_authorized": false,
+  "receiver_io_authorized": false
+}

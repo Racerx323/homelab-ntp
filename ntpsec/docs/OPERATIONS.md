@@ -23,7 +23,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Host-input capture and fixed dual-stack networking accepted; transient cleanup complete; vendor PPS/RTC inputs recorded; application configuration pending | Prepare separately reviewed hardware and account/loader/runtime stages |
+| Runtime configuration | Host-input capture and fixed dual-stack networking accepted; hardware/boot and account/loader prerequisite stages prepared offline | Approve hardware boot/reboot/metadata stage, then conditional account/cache/candidate stage; final service configuration and cutover remain separate |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Host dual-stack addresses, DNS, routes, egress and management access accepted | Hardware, time, dual-stack NTP clients, monitoring and reboot evidence |
 
@@ -662,6 +662,113 @@ udev rules, remove packages, scan I2C or open the receiver from this document.
 Those actions require a target-specific reviewed stage. The supplemental
 read-only bundle remains unchanged and has now been executed and accepted;
 the datasheet authorizes no additional execution.
+
+### Hardware boot and runtime prerequisite transactions
+
+The checked-in [hardware recipe](../configs/host-hardware-recipe.json) and
+[runtime recipe](../configs/host-runtime-recipe.json) define separate stages.
+[run-host-configuration.py](../scripts/run-host-configuration.py) seals them
+without target contact; [host-configuration-stage.py](../scripts/host-configuration-stage.py)
+uses the existing protected file guards and networking checks. Bind an accepted
+network archive, its durable dual-endpoint acceptance and successful cleanup,
+current recipes, pinned asset/source/package manifests, native release and all
+three governing document hashes. Each stage uses a unique operation ID and an
+exclusive root-owned 0700 directory with 0600 inputs, before-state and receipts.
+Preserve prior executed archives, root journals and private evidence.
+
+Prepared reviews for j2-svntp1:
+
+- [Hardware/boot review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-hardware-20261013-v1/review.md):
+  two guarded boot-file edits, one console-ready controlled reboot, dual-stack
+  management and UART/PPS/RTC metadata acceptance, conditional readback, file
+  restoration, one recovery reboot when needed and transient cleanup.
+- [Account/runtime prerequisite review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-runtime-20261013-v1/review.md):
+  conditional on that exact hardware specification's accepted post-reboot state;
+  dedicated NTP account, cache refresh, isolated native/Python checks and a
+  private rendered service candidate, with guarded recovery and cleanup.
+
+Each private directory's `sealing.json` records its exact archive SHA-256.
+Preparation is not execution approval. Do not replay consumed operation modes.
+
+```bash
+python3 -I -B ntpsec/scripts/run-host-configuration.py seal \
+    --kind hardware --network-dir "$accepted_network_directory" \
+    --network-sha256 "$accepted_network_bundle_sha256" \
+    --operation-id "$unique_hardware_operation_id" --output "$new_hardware_output"
+python3 -I -B ntpsec/scripts/run-host-configuration.py seal \
+    --kind runtime --network-dir "$accepted_network_directory" \
+    --network-sha256 "$accepted_network_bundle_sha256" \
+    --hardware-dir "$sealed_hardware_directory" \
+    --hardware-sha256 "$sealed_hardware_bundle_sha256" \
+    --operation-id "$unique_runtime_operation_id" --output "$new_runtime_output"
+```
+
+Hardware preparation preserves unrelated boot settings and the storage/root
+command line. The candidate adds `enable_uart=1`, `dtparam=i2c_arm=on`,
+`dtoverlay=disable-bt`, `dtoverlay=pps-gpio,gpiopin=18` and
+`dtoverlay=i2c-rtc,rv3028` under `[all]`. Remove only the observed
+`console=serial0,115200`; retain the local display console. Existing hardware
+directives/includes and unexpected serial-getty/hciuart states hold preparation
+or execution for review. No service enablement change is included.
+
+After separately approved `execute --mode start`, use `--mode reboot
+--console-ready` only when console/media recovery is available. There is no
+automatic recovery timer across reboot. `--mode verify` requires a new boot ID,
+matching kernel, packages, native files and protected configuration, retained
+network profile/DNS/routes/HTTPS egress, and pinned SSH over both fixed addresses.
+Record the observed PL011 `serial0` target and driver, character-node permissions,
+BCM18/rising PPS device-tree mapping and RV3028 node at I2C 0x52. Do not infer
+numbered UART/PPS/RTC names. Enabling overlays includes normal kernel driver
+probing and RTC boot-time use. No user-space device probe or RTC-setting command
+is included; GNSS fix, physical pulse health,
+RTC time/accuracy, PoE/thermal behavior and NTP client responses remain later
+acceptance gates. This stage accepts boot/network persistence and device metadata.
+
+On failure, conditional `--mode readback` preserves terminal state. `--mode
+recover` restores both boot files only if each matches its before-state or
+sealed candidate with unchanged ownership/mode. Before reboot, no recovery
+reboot is needed. After reboot, `--mode recovery-reboot --console-ready` and
+`--mode verify-recovery` restore and verify the original boot configuration and
+retained management access. Lost endpoints/boot failure require console/media
+recovery using the retained before-state and original card. Unrelated drift
+holds recovery. Preserve the primary and its shared antenna-power path.
+
+If SSH is unavailable but the target boots, log in as `ama` on its console and
+invoke the preserved worker through `sudo /usr/bin/python3 -I -B
+/var/lib/ntp-host-OPERATION/host-configuration-stage.py --root
+/var/lib/ntp-host-OPERATION --mode readback`, substituting the reviewed operation
+ID. The same entry supports `recover`, `recovery-reboot --console-ready`,
+`verify-recovery` and `cleanup`; it cannot apply a new stage. Its protected file,
+identity and drift guards still apply. Do not repeat a reboot submission after
+an uncertain reply. If the OS will not boot, use console/media recovery and the
+preserved original card; do not touch the primary's power or splitter mapping.
+
+The runtime stage requires the exact hardware root specification, accepted
+checks and current accepted boot ID. Create only a dedicated `ntp:ntp` system
+identity, with `/nonexistent` home, no home creation and nologin shell. Retain
+GPSD's pinned-build `nobody`/`dialout` identities. Capture sanitized local
+identity fields; do not capture password/shadow data. Names already present
+require a fresh review. Back up `/etc/ld.so.cache` and run `ldconfig -X`, leaving
+library symlinks and loader configuration unchanged. Preserve all accepted
+native modes, including root-only GPSD/client files.
+
+Validate the libgps cache entry, root native versions, isolated root GPS/NTP
+imports and isolated NTP Python imports under `ntp`. Check observed UART group
+access against `dialout`. Render the service JSON using the accepted `serial0`
+alias, 115200 baud, foreground GPSD with nowait and foreground ntpd with `-m`
+and `ntp:ntp`. Validate it and the existing service template on the target. Keep
+both candidates inside the private stage; install no global service/config file
+and activate no daemon. Bootstrap timesyncd remains active. Final `ntp.conf`,
+SHM ownership/units, upstreams, restrictions, drift/leap paths, Avahi scope,
+service installation and clock cutover need their own reviewed stage.
+
+Runtime recovery restores the recorded cache only while it still matches its
+original or recorded refreshed bytes. Remove only the recorded newly created,
+unchanged, idle NTP identity/group. Unrecorded partial account/cache mutation or
+unrelated drift holds for inspection; do not delete an inferred identity. No
+home or data directory was created and no recursive deletion is used. Accepted
+stages require a new review for reversal. Terminal cleanup stops/resets only
+operation reboot timers/services, retaining before-state, candidates and all receipts.
 
 ### Fixed dual-stack networking transaction
 

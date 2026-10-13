@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation/readback/payload cleanup accepted; runtime discovery and configuration pending |
-| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Networking accepted; prepare hardware/accounts, loader validation and combined-service configuration from accepted observations |
+| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Networking accepted; hardware/boot and account/cache/candidate stages prepared offline; final service configuration/cutover pending |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -939,3 +939,41 @@ The three governing documents agree on accepted live host networking and the
 next hardware/boot and account/loader/runtime preparation gates. No reboot or
 application activation occurred. Reboot persistence, hardware/time service,
 dual-stack NTP clients and maintenance/reporting acceptance remain pending.
+
+### October 13: hardware/boot and account/runtime stages prepared offline
+
+Approved preparation of separate hardware/boot and account/runtime stages.
+Aaron selected account/runtime prerequisites and a rendered service candidate,
+leaving final NTP source/access configuration and service cutover for later.
+Added checked-in hardware/runtime recipes, an offline sealer/controller and a
+protected root worker reusing the existing native/file/network guards. Added
+regression coverage to the existing offline test runner.
+
+Prepared `host-hardware-20261013-v1` for j2-svntp1, bound to the accepted
+networking archive, target boot/kernel, fresh host-input baseline, installed
+release and current recipe/manifest/document hashes. Its reviewed scope is two
+boot-file edits, one console-ready reboot, new-boot dual-stack management and
+PL011/BCM18 PPS/RV3028 metadata acceptance, conditional readback, guarded
+restoration and a recovery reboot when needed, plus transient cleanup. The
+retained worker supports guarded console readback/recovery without SSH. No
+user-space GNSS/PPS/RTC device I/O or clock-service activation is included. Metadata
+acceptance does not establish pulse/fix health, RTC accuracy or thermal behavior.
+
+Prepared `host-runtime-20261013-v1`, conditional on that exact hardware bundle's
+accepted root specification and current post-reboot boot ID. It creates only a
+dedicated NTP system account/group, refreshes the backed-up loader cache without
+link changes, preserves GPSD nobody/dialout and every accepted native mode,
+validates native/Python execution contexts and renders private service
+candidates. It installs no global configuration, activates no service and does
+not change bootstrap timesyncd. Unrelated or unrecorded partial mutation holds
+recovery; all executed evidence remains retained.
+
+The three governing documents agree on accepted live networking, separately
+pending hardware/reboot and conditional runtime-prerequisite execution, and
+later GNSS/time-service/client and maintenance gates. Preparation contacted no
+target. Next obtain separate execution approval for the exact
+[hardware review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-hardware-20261013-v1/review.md)
+and its `sealing.json` SHA-256, followed by the conditional
+[runtime review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-runtime-20261013-v1/review.md)
+and its own SHA-256. Preserve the primary's antenna-power path and original
+Debian 11 card; declare console readiness before reboot submission.
