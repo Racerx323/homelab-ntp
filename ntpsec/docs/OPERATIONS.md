@@ -203,11 +203,25 @@ python3 -I -B ntpsec/scripts/run-service-cutover.py seal \
 ```
 
 The [cutover review](/home/aaron/code/.local-evidence/homelab-ntp/current/service-cutover-20261013-v1/review.md)
-and adjacent `sealing.json` are the concrete execution gate. After separate
-approval of its SHA-256, use the sealed controller's `execute` command with
-that exact archive/hash and `--mode start`. One start is allowed. The controller
-registers submissions before transport and retains stdout/stderr/status; lost
-responses require conditional readback, never a repeated start.
+and adjacent `sealing.json` are now preserved execution records. V1 ran once:
+the early pairing/ntpd gate passed, but the first convergence probe failed
+journal health while NTS associations were still pending. The cumulative
+journal criterion could not clear with waiting. Approved recovery restored
+original continuity; both endpoints agreed and terminal cleanup completed.
+No workstation acceptance was attempted. Do not replay v1.
+
+The underlying journal entries remain in the protected target command log;
+readback returned the failed boolean without those entries. Next prepare a
+separately approved, bounded read-only retrieval of the retained evidence.
+Establish the cause before changing criteria, source choices or preparing
+another live trial. Keep original artifacts immutable. A future approved
+archive must bind the corrected inputs and current target evidence.
+
+For a newly sealed and separately approved stage, use the controller's
+`execute` command with its exact archive/hash and `--mode start`. One start
+is allowed. The controller registers submissions before transport and retains
+stdout/stderr/status; lost responses require conditional readback, never a
+repeated start.
 
 The trial backs up and replaces the supervisor, pairing helper, NTP/supervisor
 configuration, systemd unit and Avahi configuration. It creates a root-owned
@@ -275,7 +289,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Final explicit-PPS cutover candidate prepared against accepted inputs; separate execution approval and timing/client acceptance pending |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 early gate passed, then recovered and cleaned after failed journal health; diagnose retained evidence before a new cutover review; timing/client acceptance pending |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

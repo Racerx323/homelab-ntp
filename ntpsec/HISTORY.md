@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Serial NTP0/GPIO PPS NTP2 and SPG 3.01/protocol 18.00 observed; final service cutover prepared, awaiting separate execution approval |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Serial NTP0/GPIO PPS NTP2 and SPG 3.01/protocol 18.00 observed; cutover v1 recovered without acceptance; journal diagnosis and a new review pending |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1678,3 +1678,35 @@ passed against the candidate, including an offline seal using the accepted
 receiver archive. Exact ntpleapfetch unit/executable validation remains a target
 pre-activation requirement because that pinned executable is absent from the
 workstation. These checks do not constitute live acceptance.
+
+### October 13: cutover v1 recovered without acceptance
+
+Executed the approved `service-cutover-20261013-v1` once. Protected backups,
+installation and target unit validation completed. The early functional gate
+matched six serial NTP0 samples and five GPIO PPS NTP2 samples, then ntpd
+answered its first localhost query. The independent recovery timer was armed.
+
+The first convergence probe observed selected/reachable PPS, reachable serial,
+leap 0 and stratum 1. Daemon credentials, unchanged supervisor and the configured
+PPS offset/jitter thresholds passed. The journal-health check was false;
+all three NTS associations were still unauthenticated and unreachable at that
+probe. This does not establish a persistent NTS failure or its cause. The sealed
+journal check covers the entire trial, so further waiting could not clear it.
+No long observation, acceptance attempt or workstation NTP/mDNS check followed.
+
+Invoked the approved explicit recovery. The runner restored backed-up files
+and UART settings, preserved generated statistics, restarted original Avahi
+and bootstrap timesyncd, and passed original runtime/network/hardware continuity.
+Both fixed management endpoints returned identical recovered state; the
+terminal receipt was recorded and conditional cleanup completed. GPSD/NTPsec
+are stopped and the cutover was not accepted. No reboot, receiver-setting
+change, leap maintenance fetch or repeat cutover occurred. Recovery does not
+undo any clock corrections already made during the trial.
+
+The private `outcome.json` binds the start, probe, recovery, both readbacks,
+terminal receipt and cleanup evidence. The executed archive and root-owned
+stage, including command/journal output and backups, remain preserved. Current
+readback omitted the underlying journal entries, so the failure's cause remains
+unverified. Next prepare a scoped read-only retrieval of that retained journal
+and command evidence for separate execution approval before correcting or
+retrying cutover. Do not relax acceptance or change upstreams without evidence.

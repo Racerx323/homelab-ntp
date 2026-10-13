@@ -731,6 +731,11 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    On failure restore backed-up files, UART and bootstrap synchronization;
    preserve statistics/evidence. Recovery cannot undo clock corrections and
    does not survive reboot. No reboot is part of this cutover approval.
+   The first cutover trial was recovered without acceptance; see HISTORY and
+   OPERATIONS for its retained evidence and exact resume point. A separately
+   approved read-only diagnostic must explain the failed journal-health check
+   before a corrected cutover is sealed. Preserve the executed stage and
+   acceptance requirements; NTS failure causes remain unverified.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.
