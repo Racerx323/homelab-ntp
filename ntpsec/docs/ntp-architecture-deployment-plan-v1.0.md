@@ -804,6 +804,11 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    acceptance. A cumulative journal failure that cannot clear with time calls
    for recovery rather than prolonged observation. Any classifier change needs
    rejection tests and a newly sealed review; preserve executed artifacts.
+   If journal health passes but NTS packet reach or timing thresholds remain
+   unsatisfied, retain the observations and recover within the approved scope.
+   Diagnose packet acceptance and startup clock discipline separately before
+   another trial; cookie acquisition alone does not identify packet-path health.
+   Retained-data collection does not authorize new probes or daemon activation.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.

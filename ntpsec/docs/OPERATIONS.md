@@ -340,7 +340,7 @@ dual-stack NTP, mDNS and recovery requirements. TCP success alone does not accep
 the time service or authorize replaying the earlier cutover.
 
 The corrected [v3 cutover review](/home/aaron/code/.local-evidence/homelab-ntp/current/service-cutover-20261013-v3/review.md)
-is prepared offline; the adjacent `sealing.json` identifies its digest. In
+ran once and recovered; the adjacent `sealing.json` identifies its preserved digest. In
 addition to accepted receiver/runtime and firewall evidence, it binds v2's
 archive identity, specification, matching recovered-state receipts and terminal
 cleanup. Original freshness bounds remain in force; live preflight must still
@@ -360,9 +360,28 @@ named associations to authenticate NTP packets, have reach and retain cookies.
 Tests replay the observed message sequence, verify source-bound endpoints and
 reject TLS/connection/AEAD/cookie failures and altered recovery receipts. An
 offline check of all seven retained v2 error-priority records also passes the
-new classifier. No receiver, firewall or running service changed. Next obtain
-separate approval for v3; retain early functionality, PPS, workstation and
-recovery gates. No new live diagnostic is needed to classify the saved records.
+new classifier. Preparation changed no receiver, firewall or running service.
+V3 subsequently executed once; its early gate passed and journal health passed
+at every probe. Five probes covered about 334 seconds from apply. PPS became
+reachable and selected, but its fifth-probe offset was +45.720453 ms and jitter
+38.583872 ms, outside the 5 ms/1 ms limits. Every NTS peer retained cookies but
+had reach zero throughout. Neither authenticated packet acceptance nor the
+three-consecutive-pass requirement was met; workstation checks were not run.
+
+The approved failure path recovered early, without exhausting the 40-probe
+budget. Both management endpoints confirmed the same recovered state, and
+cleanup completed. Bootstrap timesyncd and the original files/UART were restored;
+`/etc/ntp.conf` is absent again. Preserve the v3 archive, command log, generated
+runtime statistics, probes and private outcome. No classifier exception or
+acceptance threshold was changed during execution.
+
+Next prepare a scoped diagnostic review for retained logs/statistics, NTS packet
+accept/reject counters and the UDP request/response path, plus startup clock
+selection/discipline. Separate retained read-only collection from any probe or
+service restart needing explicit scope. The current evidence does not identify
+where packets were lost/rejected or establish the cause of the PPS transient.
+Do not infer another firewall defect, calibrate serial time or relax acceptance
+from these samples. Do not replay v3.
 
 `run-nts-transport-inspection.py` seals the checked-in recipe, helpers, tests,
 governing documents and the network owner's `UNIFI_ACCESS.md`, bound to the
@@ -475,7 +494,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed but first probe rejected NTS response diagnostics logged at error priority; recovered through both endpoints and cleaned; v3 classifier corrected/tested and review prepared offline; separate execution approval pending |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed but first probe rejected NTS response diagnostics logged at error priority; recovered through both endpoints and cleaned; v3 journal gate passed; five probes still failed NTS packet reach and PPS offset/jitter; dual-stack recovery and cleanup complete; scoped diagnostics pending |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

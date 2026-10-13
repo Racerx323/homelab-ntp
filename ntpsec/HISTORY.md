@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal classifier corrected/tested; replacement review prepared offline; separate execution approval pending |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; scoped diagnostics pending |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -25,6 +25,32 @@ The current accepted source stage is
 `/home/ama/.ntp-source-build-mdns-20261012-v1`; the earlier v5 stage is preserved.
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
+
+## Service cutover v3 recovered — October 13, 2026
+
+Executed the approved v3 bundle once. The short GPSD/SHM gate passed with five
+PPS and six serial matches, and localhost ntpd responded. Journal health passed
+all five probes, with one minsane advisory and three pairs of bounded NTS
+response diagnostics; there were no unexpected error-priority records.
+
+Across roughly 334 seconds from apply, PPS became reachable and selected.
+The fifth probe measured +45.720453 ms offset and 38.583872 ms jitter, beyond
+the configured limits. All three NTS peers retained cookies but reach stayed
+zero. Authenticated NTP packets and three consecutive passing observations were
+not accepted. No workstation acceptance was attempted. These samples do not
+identify a packet-path fault or explain the startup timing transient.
+
+Used the approved conditional recovery before exhausting the 40-probe budget.
+Both management endpoints returned matching recovered state; terminal cleanup
+completed. Original files, `/etc/ntp.conf` absence, UART and bootstrap timesyncd
+were restored. The private [outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/service-cutover-20261013-v3/outcome.json)
+binds all five probes, recovery, readbacks and cleanup. Preserve all stages,
+backups and generated timing statistics. The time service remains unaccepted.
+
+Next prepare a scoped diagnostic review covering retained logs/statistics,
+NTS packet counters and UDP request/response behavior, and startup clock
+selection/discipline. New probes or service activity require explicit scope;
+do not replay v3 or change calibration/thresholds from these observations.
 
 ## Service cutover v3 prepared — October 13, 2026
 
@@ -44,7 +70,7 @@ blocked. Cookie telemetry does not replace per-upstream packet acceptance.
 Offline tests cover observed success records, source-bound values, malformed
 messages, TLS/NTS failures, provenance, timing and recovered-receipt drift.
 All seven retained v2 error-priority records pass the revised classification.
-Next: separately approve v3's one cutover, early gate, complete NTS/PPS and
+The prepared scope covered one cutover, early gate, complete NTS/PPS and
 workstation acceptance, backups, timed recovery and conditional cleanup.
 
 ## Service cutover v2 recovered — October 13, 2026
