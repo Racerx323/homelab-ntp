@@ -599,6 +599,13 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    intervening drift. Availability of overlay files does not establish that
    devices are configured or working. Keep capture acceptance distinct from
    configuration readiness and combined-service activation.
+   Use a separate NetworkManager candidate profile with the original retained
+   for recovery. Arm root-owned timed recovery before persistent network changes;
+   require pinned-key management access through both fixed addresses and route,
+   DNS and dual-stack egress evidence before cancelling it. Recover original
+   profile settings on missed acceptance, preserving journals and holding on
+   unrelated drift. Reboot persistence remains a later independently approved
+   hardware/reboot check; do not claim it from live profile activation alone.
    Keep bootstrap time synchronization until the approved ntpd cutover. Use
    foreground GPSD with nowait polling so time service does not depend on a
    connected client. Derive daemon identities from the accepted build and

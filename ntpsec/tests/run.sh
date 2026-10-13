@@ -21,6 +21,7 @@ python3 -I -B "$test_dir/test_foundation_preflight.py"
 python3 -I -B "$test_dir/test_source_destinations.py"
 python3 -I -B "$test_dir/test_source_install.py"
 python3 -I -B "$test_dir/test_runtime_discovery.py"
+python3 -I -B "$test_dir/test_host_network.py"
 python3 -I -B "$test_dir/test_prepare_source_build.py"
 if command -v systemd-analyze >/dev/null 2>&1; then
     systemd-analyze verify "$test_dir/../templates/timeservice.service"

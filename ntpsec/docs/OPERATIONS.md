@@ -23,7 +23,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | V2 and supplemental host-input capture accepted and cleaned; vendor PPS/RTC inputs recorded; configuration pending | Prepare fixed networking with recovery, then hardware and account/loader/runtime stages for separate approval |
+| Runtime configuration | Host-input capture accepted; fixed-network transaction prepared offline; vendor PPS/RTC inputs recorded; configuration pending | Approve sealed networking stage, then prepare hardware and account/loader/runtime stages |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Pending | Hardware, time, dual-stack clients, monitoring and reboot evidence |
 
@@ -661,6 +661,79 @@ udev rules, remove packages, scan I2C or open the receiver from this document.
 Those actions require a target-specific reviewed stage. The supplemental
 read-only bundle remains unchanged and has now been executed and accepted;
 the datasheet authorizes no additional execution.
+
+### Fixed dual-stack networking transaction
+
+Use [host-network-recipe.json](../configs/host-network-recipe.json) with
+[run-host-network.py](../scripts/run-host-network.py) and
+[host-network-stage.py](../scripts/host-network-stage.py). Preparation consumes
+a fresh accepted host-input report, its immutable archive, terminal acceptance
+and cleanup receipts. It binds the original Ethernet UUID, MAC, DHCP endpoint,
+boot/kernel, package/native/service state, pinned SSH key and all three governing
+documents. No historical package counts or network profiles are hard-coded.
+
+```bash
+python3 -I -B ntpsec/scripts/run-host-network.py seal \
+    --snapshot-dir "$accepted_host_input_directory" \
+    --snapshot-sha256 "$accepted_host_input_bundle_sha256" \
+    --operation-id "$unique_operation_id" --output "$new_private_output"
+```
+
+`host-network-20261013-v1` is prepared offline for separate approval in the
+[private review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-network-20261013-v1/review.md).
+Its scope is one background apply job, endpoint acceptance, conditional
+readback/recovery and transient-unit cleanup on j2-svntp1. Before mutation,
+require original profile/registry/active-interface continuity, the recorded
+bootstrap address, protected executable locations and a negative IPv4 ARP
+duplicate probe. A negative probe does not establish administrative ownership;
+the governing plan allocates the addresses. Validate IPv6 DAD after activation.
+
+Clone the original profile under the unique operation name and record its
+allocated UUID. Configure manual IPv4, fixed ULA alongside automatic IPv6/RA,
+the two DNS VIPs, automatic-DNS rejection in both families, required IPv4/IPv6
+and candidate autoconnect priority 100. Preserve other observed settings.
+Disable original autoconnect and activate the candidate. Retain the original
+profile and exact observed properties as the recovery baseline; rollback restores
+settings rather than promising byte-identical NetworkManager keyfile formatting.
+Only connection.timestamp is volatile in profile comparisons.
+
+The isolated root apply service has a 180-second runtime bound. Before creating
+any profile, arm an independent root systemd timer that invokes recovery after
+300 seconds even if SSH is lost. Require exact candidate/retained-original
+properties, fixed addresses without DAD failure, a public IPv6 address and RA
+default route, correct IPv4 gateway, source-bound DNS routes, exact effective
+DNS VIPs and ICMP reachability to both VIPs. Source-bound HEAD HTTPS requests to
+`https://deb.debian.org/debian/` over both families prove DNS/TLS/egress without
+downloading payloads; disable curl configuration and proxies.
+Read protected resolver configuration and require the direct two-VIP nameserver
+view before and after activation. A local resolver stub or other upstream DNS
+holds preflight for separate review rather than assuming its forwarding policy.
+
+Use the approved bundle/hash with `execute --mode start` once. Then use
+`execute --mode verify`: bounded read-only polling waits for applied state;
+pinned-host-key SSH must succeed at both new fixed addresses before one
+conditional acceptance. Require all labelled checks to be true and at least
+45 seconds to remain. Persist acceptance before cancelling the timer, so a lost
+cancellation response cannot leave an uncommitted change without recovery.
+Conditional `--mode readback` can recover a durable acceptance receipt after
+transport loss. Never resubmit a lost start, acceptance or recovery action.
+
+Readback may locate the operation at new IPv4, new ULA or the old DHCP endpoint
+using the same pinned key. Conditional recovery first locates the stage with
+read-only calls, then submits one action. Restore original autoconnect, activate
+the original profile and remove only the proved operation candidate. Unexpected
+original/candidate drift holds recovery for review. DHCP restoration cannot
+guarantee the previous lease/address; console access is required if endpoints,
+the timer or recovery are unavailable. No reboot is authorised by this stage.
+
+After accepted/recovered state, `--mode cleanup` stops/resets only operation
+transient units. Keep the protected root stage, before-state, bounded command
+streams/status journal and receipts for recovery/audit. All controller streams
+and registered submissions remain private. Preserve prior executed evidence,
+native installation journals and source workspaces. Target NetworkManager and
+systemd execution remain untested during offline preparation; required queries,
+timer arming and state comparisons hold on errors. Reboot persistence belongs
+to the later hardware/reboot acceptance gate.
 
 clockmaker configure takes a hash-bound profile with schema/hostname,
 ntp_config and unit path/hash objects, plus explicit timeservice gpsd/ntpd

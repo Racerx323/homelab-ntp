@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "hostname": "j2-svntp1",
+  "interface": "eth0",
+  "ipv4_address": "10.1.0.51/22",
+  "ipv4_gateway": "10.1.0.1",
+  "ipv4_dns": "10.1.0.55",
+  "ipv6_address": "fd36:5aa8:6971:1::51/64",
+  "ipv6_dns": "fd36:5aa8:6971:1::55",
+  "recovery_seconds": 300,
+  "apply_max_seconds": 180,
+  "acceptance_reserve_seconds": 45,
+  "snapshot_max_age_seconds": 86400,
+  "egress_url": "https://deb.debian.org/debian/"
+}

@@ -881,3 +881,38 @@ configuration was changed. Next prepare fixed dual-stack networking with exact
 profile before-state, timed recovery and endpoint acceptance, then hardware
 GPIO18/rv3028 bring-up and account/loader/runtime stages. Each live mutation,
 reboot and service cutover still requires a separately approved sealed bundle.
+
+### October 13: fixed dual-stack networking prepared offline
+
+Approved preparation of the next networking stage. Added a checked-in desired
+network recipe, offline sealer/controller, guarded root transaction and regression
+tests using accepted host-inputs as the baseline. Prepared operation
+`host-network-20261013-v1` for j2-svntp1, bound to the accepted report, original
+Ethernet UUID/MAC/bootstrap endpoint, boot/kernel, native/package/service state
+and current architecture/operations/history hashes.
+
+The transaction retains the original DHCP profile, clones a unique candidate,
+records its allocated UUID, sets the governed fixed dual-stack addresses/DNS
+while retaining IPv6 RA, and disables original autoconnect before switching.
+A root timer is armed before profile mutation and restores original settings
+at 300 seconds without depending on SSH. Acceptance requires exact profile
+settings, DAD/address/route/DNS/source/egress evidence and pinned-key SSH at both
+new fixed addresses, with a 45-second reserve before recovery. Durable acceptance
+precedes timer cancellation; conditional readback recovers a lost acceptance
+response without replaying the mutation. Unrelated drift holds recovery.
+
+Offline tests cover early failures, activation faults, interrupted clone UUID
+recording, atomic-write interruption, deadline exhaustion, dual-endpoint/label
+requirements, state drift, lost responses, one-shot submission and receipt
+recovery. Existing native helper APIs and guarded file checks remain in use.
+The three governing documents agree on networking before hardware/account and
+runtime configuration. No target contact or live network change occurred.
+
+Next approve the exact [networking review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-network-20261013-v1/review.md)
+and bundle hash for one apply, conditional endpoint acceptance/readback,
+timed or conditional recovery and transient-unit cleanup. Root before-state,
+command streams/status records and receipts remain preserved. Original DHCP
+policy restoration does not promise the old lease; console recovery is required
+for lost endpoints or a held transaction. No reboot, DNS/controller changes,
+hardware bring-up or application cutover is included. Reboot persistence remains
+a later separately approved acceptance gate.
