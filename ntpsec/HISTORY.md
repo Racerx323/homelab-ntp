@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation and account/runtime v2 accepted; cleanup complete; account, loader and private candidate validated; copied_not_activated | Acquisition v1 capture/cleanup accepted; corrected explicit-PPS v2 prepared for approval; PPS association and final SHM mapping pending |
+| Runtime | Hardware continuation and account/runtime v2 accepted; cleanup complete; account, loader and private candidate validated; copied_not_activated | Explicit-PPS v2 capture/cleanup accepted; serial NTP0 and GPIO PPS NTP2 pairing observed; remaining receiver/runtime inputs and final cutover pending |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1555,3 +1555,37 @@ Next approve v2 using its adjacent sealing.json hash. No target contact,
 receiver I/O, service activation or repeat acquisition occurred during this
 preparation. Final configuration/cutover remains gated on accepted PPS and SHM
 observations, with timing accuracy and firmware identity assessed separately.
+
+### October 13: explicit-PPS v2 captured, restored and cleaned
+
+Executed the approved `gpsd-acquisition-20261013-v2` start once. The prior
+capture/cleanup, retained SHM inventory and runtime gates passed. Readback 19
+returned matching terminal evidence on both fixed management endpoints after
+approximately 900 seconds. Both monitoring clients exited successfully; GPSD
+stopped, saved UART settings were restored, and runtime/native/hardware/network
+and bootstrap continuity passed. Conditional cleanup retired transient unit
+state while preserving all original evidence and SHM segments. No recovery,
+NTPsec activation or bootstrap clock-service change was needed.
+
+PPS/TOFF JSON and independent SHM sampling established `/dev/serial0` on NTP0
+and `/dev/pps0` on NTP2, with 897 exact leap-0 timestamp matches per source.
+There were 899 serial SHM samples, 898 PPS SHM samples, 901 mode-3 TPV reports
+and one mode-2 report. GPSD confirmed kernel PPS use for `/dev/pps0`; its final
+UID/GID were 65534/20 (nobody/dialout). The retained root-owned NTP0/NTP2 modes
+were 0600/0666. A local hash-bound `pairing-review.json` independently reproduces
+the correlation and keeps timing-accuracy acceptance false. Raw coordinates
+and logs remain private.
+
+The user correctly challenged starting a full observation before checking
+initial functionality. The executed runner checked process/socket readiness
+but exposed only pending status until completion; that did not establish PPS
+functionality. The plan and operations recipe now require a short, visible
+functional gate before any further long observation. The executed runner and
+bundle remain unchanged; this requirement must be implemented in a future
+reviewed acquisition rather than claimed as part of v2.
+
+Next resolve the remaining receiver firmware and final runtime inputs, then
+prepare final NTP configuration and service cutover for separate execution
+approval. Rerender the earlier serial-only service candidate with the observed
+explicit-PPS profile and unit mapping. Source pairing is established; clock
+discipline, timing accuracy and dual-stack client acceptance remain pending.

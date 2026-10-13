@@ -674,6 +674,16 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    original executed stages. Require source-reviewed serial/PPS pairing before
    final configuration. GPIO metadata alone does not close physical timing
    acceptance; serial autodiscovery failure does not prove absent pulses.
+   Sequence future acquisition as a short functional gate before longer
+   observation. Require visible device access, PPS samples and serial/PPS SHM
+   pairing within a bounded short timeout; process/socket readiness or a
+   pending readback does not satisfy that gate. Longer observation follows
+   only after functionality passes and its execution scope is approved.
+   Bind final host configuration to the observed serial/PPS unit mapping
+   for its exact GPSD input profile and SHM ownership. Rerender earlier private
+   service candidates when the PPS input profile changes; do not carry forward
+   a serial-only candidate after explicit GPIO PPS acceptance. Keep source
+   pairing evidence separate from clock-discipline and client accuracy tests.
    Final NTP configuration and service cutover require subsequent approval.
    Use all three selected authenticated associations: time.cloudflare.com,
    ohio.time.system76.com and oregon.time.system76.com. Initial client service
