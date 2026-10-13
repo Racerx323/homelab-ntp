@@ -614,11 +614,14 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    post-reboot network registry drift. Original boot files were restored, but
    the same guard blocked recovery reboot submission. Complete scoped
    inspection and recovery before replacement hardware/runtime stages. The
-   prepared read-only registry inspection binds the executed hardware bundle
-   and recovered-file receipt, preserves its root stage, and captures exact
-   registry/profile differences without relaxing acceptance. Approve that
-   capture separately; prepare recovery from its findings. See HISTORY for
-   execution evidence. Reboot persistence and time-service/client
+   accepted read-only inspection established that only the loopback UUID
+   changed; non-loopback UUIDs/types were unchanged. Its diagnostic staging
+   was cleaned. A separate recovery continuation is prepared: permit only
+   the observed lo profile UUID replacement, with exact reserved addresses,
+   methods, gateways and autoconnect state; retain every non-loopback and
+   dual-stack/native continuity check. Apply this same constraint to future
+   hardware/reboot stages. The continuation needs separate execution approval.
+   See HISTORY for execution evidence. Reboot persistence and time-service/client
    acceptance remain pending.
    Prepare hardware/boot and account/runtime prerequisites as separately
    approved hash-bound stages. Boot edits preserve unrelated settings and

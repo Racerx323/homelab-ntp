@@ -1032,3 +1032,35 @@ incomplete and runtime/account setup remains unstarted. Next approve the
 and its `sealing.json` SHA-256. Recovery continuation cannot be sealed until
 the inspection is executed and its findings accepted; do not presume the
 registry difference is harmless or bypass the existing guard.
+
+### October 13: registry diagnosis accepted; recovery continuation prepared
+
+Executed the approved `host-registry-inspection-20261013-v1` capture once.
+The complete bound diagnostic report was accepted, then conditional cleanup
+removed only its new diagnostic root stage. Local evidence and the original
+hardware stage remain preserved. No network/profile/boot changes or reboot
+were performed by the inspection.
+
+The expected and current registries differed only in the loopback profile's
+UUID. Both Ethernet UUID/type pairs were unchanged. The observed loopback
+profile identifies `lo`, uses manual 127.0.0.1/8 and ::1/128, has no gateways,
+and disables autoconnect. This explains the exact-registry guard failure;
+it does not substitute for full post-reboot network/hardware acceptance.
+The retained original state remains `recovery_files_restored`.
+
+Prepared `host-recovery-continuation-20261013-v1` offline under the existing
+preparation approval. Its separate protected stage binds the accepted report,
+cleanup, diagnosed boot and original hardware archive. It invokes the sealed
+original worker with a constrained in-memory loopback comparison; it neither
+edits the worker nor changes NetworkManager profiles. It requires exact
+restored original boot files and retained evidence before one console-ready
+recovery reboot, then both pinned management endpoints and original network,
+package/native/service continuity before acceptance and transient cleanup.
+Regression tests cover loopback field/type/count changes, Ethernet drift,
+retained evidence drift, single reboot submission, new-boot/dual-endpoint
+acceptance and lost responses.
+
+Recovery remains incomplete; account/runtime setup remains unstarted.
+Next approve the [recovery review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-recovery-continuation-20261013-v1/review.md)
+and its `sealing.json` SHA-256. Retain console/media readiness and the original
+Debian 11 card. Do not replay the consumed hardware controller modes.
