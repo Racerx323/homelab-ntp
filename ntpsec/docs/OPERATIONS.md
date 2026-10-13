@@ -210,26 +210,27 @@ journal criterion could not clear with waiting. Approved recovery restored
 original continuity; both endpoints agreed and terminal cleanup completed.
 No workstation acceptance was attempted. Do not replay v1.
 
-The underlying journal entries remain in the protected target command log;
-readback returned the failed boolean without those entries. The
+The saved journal-health output was retrieved by the
 [retained-journal review](/home/aaron/code/.local-evidence/homelab-ntp/current/cutover-inspection-20261013-v1/review.md)
-is prepared offline and awaits separate execution approval, bound to its adjacent
-`sealing.json`. `run-cutover-inspection.py` verifies the recovered source state
-and immutable inputs, takes its existing lock read-only, retrieves the saved
-command log and a bounded trial journal window, and records current configuration
-metadata and service states. One capture, conditional dual-endpoint readbacks
-and diagnostic closure preserve all original evidence; they change no service
-or configuration and do not repeat receiver acquisition or NTS negotiation.
-An incomplete capture holds diagnostic acceptance. Diagnostic acceptance is
-not time-service acceptance.
+executed once. Its only retained error-priority entry was NTPsec's
+`SYNC: Found 5 servers, suggest minsane at least 3`; this made the cutover's
+empty-output journal criterion false. It does not establish an NTS failure.
+The supplemental journal query rejected the hyphenated boot descriptor, so
+diagnostic acceptance remains held. Current configuration/service metadata and
+the final source-file comparison were not reached. Both management endpoints
+returned matching partial evidence, and diagnostic cleanup completed while
+retaining all files. No services or configuration were changed. Preserve this
+executed archive; do not replay it.
 
 `/etc/ntp.conf` was absent before the trial. Recovery therefore removed the
 trial configuration; its absence is expected in the restored state. Do not
 recreate it outside a separately approved cutover.
 
-Establish the cause before changing criteria, source choices or preparing
-another live trial. Keep original artifacts immutable. A future approved
-archive must bind the corrected inputs and current target evidence.
+Next correct and test the journal boot-ID handling, and evaluate the `minsane`
+recommendation against the intended source/fallback policy before another trial.
+Do not suppress the entry or change source policy without review. Complete the
+bounded diagnostic through a new sealed review with separate execution approval.
+Keep original artifacts immutable; future cutover inputs need current evidence.
 
 For a newly sealed and separately approved stage, use the controller's
 `execute` command with its exact archive/hash and `--mode start`. One start
@@ -303,7 +304,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 early gate passed, then recovered and cleaned after failed journal health; diagnose retained evidence before a new cutover review; timing/client acceptance pending |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic held on boot-ID parsing, cleanup complete; corrected diagnostic and policy review pending |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

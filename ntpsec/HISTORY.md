@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Serial NTP0/GPIO PPS NTP2 and SPG 3.01/protocol 18.00 observed; cutover v1 recovered without acceptance; retained-journal inspection prepared, awaiting execution approval |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; inspection held on boot-ID parsing and cleaned; corrected diagnostic and source-policy review pending |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1735,3 +1735,33 @@ remain stopped in the recovered record, with bootstrap synchronization restored.
 The journal failure's cause remains unknown. Next obtain separate execution
 approval for this inspection; do not retry the cutover or change acceptance
 criteria before reviewing its evidence.
+
+### October 13: retained journal trigger retrieved; diagnostic held and cleaned
+
+Executed the approved `cutover-inspection-20261013-v1` capture once. The original
+protected specification, recovered/cleaned state and input hashes passed their
+initial checks. The saved before/state/command files and journal-health output
+were retrieved. The original error-priority query had returned exactly one
+entry: `SYNC: Found 5 servers, suggest minsane at least 3`. That nonempty output
+made the cutover journal-health criterion false. It does not explain the initial
+pending NTS associations or prove persistent NTS failure.
+
+The supplemental retrospective query failed with status 1 because `journalctl`
+rejected the hyphenated boot descriptor. This is a collector defect. No repeat
+capture was attempted. Current service/configuration metadata and final source
+comparison were not reached, so full diagnostic acceptance remains held and
+source-preservation verification is incomplete. The saved pre-trial record
+confirms `/etc/ntp.conf` was absent; current absence was not independently checked.
+
+Both pinned-key management endpoints returned identical partial reports with
+verified evidence digests. The held terminal receipt authorized diagnostic
+cleanup, which completed and retained all files. No services, configurations,
+receiver settings or clocks were changed. Original cutover and diagnostic
+artifacts remain preserved; private `outcome.json` binds the execution results,
+readbacks, held receipt and cleanup result.
+
+Next correct/test journal boot-ID handling and prepare a new bounded diagnostic
+for separate execution approval. Evaluate the `minsane` recommendation against
+the intended source/fallback policy before another cutover; do not suppress the
+journal entry or change upstream choices without review. Time-service acceptance
+remains pending.
