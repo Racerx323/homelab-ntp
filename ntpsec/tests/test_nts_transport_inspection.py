@@ -28,7 +28,10 @@ R=json.loads((ROOT/'configs/nts-transport-inspection.json').read_bytes())
 
 def fixture():
     spec,old=b.fixture();d=m.base()
-    files={name:(ROOT/path).read_bytes() for name,path in m.PATHS.items()}
+    # CI has only this repository. The real sealer still requires and hashes
+    # the network owner's access reference; the offline fixture supplies prose.
+    files={name:(b'# Synthetic network-owner access reference\n' if name=='network-access.md' else (ROOT/path).read_bytes())
+           for name,path in m.PATHS.items()}
     files.update({name:old[name] for name in d.EXTRA})
     spec['members']={name:m.sha(raw) for name,raw in files.items()}
     files['spec.json']=m.encoded(spec);files['review.md']=m.review(spec).encode()
@@ -41,6 +44,14 @@ def addresses():
 
 
 class BindingTests(unittest.TestCase):
+    def test_fixture_needs_no_sibling_checkout(self):
+        read=Path.read_bytes
+        def local_only(path):
+            if 'homelab-network' in path.parts:raise AssertionError('unexpected sibling dependency')
+            return read(path)
+        with patch.object(Path,'read_bytes',local_only):
+            spec,files=fixture();m.base().validate(spec,files)
+
     def test_archive_and_remote_payloads(self):
         spec,files=fixture();d=m.base();d.validate(spec,files)
         c=d.load(ROOT/'scripts/run-service-cutover.py')
