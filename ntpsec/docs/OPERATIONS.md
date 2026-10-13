@@ -23,7 +23,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware acceptance-only continuation accepted through both management endpoints; UART/PPS/RTC metadata and network/native checks passed; continuation evidence closed; original v4 preserved | Reseal account/runtime prerequisites against the accepted continuation for separate approval; runtime and clock-service activation remain unstarted |
+| Runtime configuration | Hardware acceptance-only continuation accepted through both management endpoints; UART/PPS/RTC metadata and network/native checks passed; continuation evidence closed; original v4 preserved | Account/runtime v2 prepared against the accepted continuation; separate execution approval pending; runtime and clock-service activation remain unstarted |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 
@@ -779,9 +779,27 @@ under the private evidence directory. Use that byte-exact controller with
 v4's original archive/hash for its remaining approved recovery modes;
 the current controller intentionally rejects older launcher bytes. The
 original console worker also remains available. Preparation did not invoke
-recovery or contact the target. Account/runtime must now be resealed against the
+recovery or contact the target. Account/runtime v2 is now prepared against the
 accepted hardware continuation specification and receipt for separate approval.
 Do not execute the older account/runtime bundle bound to hardware v1.
+
+The current [account/runtime v2 review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-runtime-20261013-v2/review.md)
+and its `sealing.json` bind the accepted hardware continuation, baseline v3,
+accepted networking and current repository inputs. The archive includes
+the complete hardware acceptance receipt and evidence-closure record;
+offline verification rechecks their hashes, boot identity and endpoint proofs;
+live preflight must still prove the exact accepted hardware stage and current
+boot before creating the account or refreshing the loader cache. One start,
+dual-stack acceptance, conditional readback, guarded recovery and cleanup
+require approval of this new archive. Preserve the original runtime v1 bundle
+and every prior executed record. No target contact occurred during preparation.
+
+Historical baseline/hardware archives are validated as executed provenance:
+exact archive and member hashes, closed membership, accepted terminal records
+and target bindings. Their older launchers need not equal current repository
+code. Execution still requires the exact current sealed launcher and
+transport. The runtime start window ends no later than the accepted hardware
+receipt's 24-hour gate; any live state drift holds before mutation.
 
 The runtime stage requires the exact hardware root specification, accepted
 checks and current accepted boot ID. Create only a dedicated `ntp:ntp` system

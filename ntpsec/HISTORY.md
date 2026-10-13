@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation/readback/payload cleanup accepted; runtime discovery and configuration pending |
-| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware continuation accepted through both management endpoints and evidence closed; original v4 preserved; account/runtime resealing next |
+| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware continuation accepted through both management endpoints and evidence closed; original v4 preserved; account/runtime v2 prepared for separate approval |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1426,3 +1426,35 @@ continuation for separate execution approval. The older runtime bundle is
 bound to hardware v1 and must not be executed. Dedicated account creation,
 loader validation and rendered service candidate remain pending; physical
 GNSS/PPS/RTC health and clock-service activation remain later gates.
+
+### October 13: account/runtime v2 prepared against accepted hardware
+
+Prepared `host-runtime-20261013-v2` offline using the checked-in runtime recipe,
+current helpers/templates/manifests and all three governing documents. Bound
+the exact accepted hardware continuation specification and archive, accepted
+baseline v3 and retained network acceptance. Offline checks revalidate the
+hardware receipt, both endpoint proofs and closed continuation evidence.
+Live execution must still pass the guarded hardware/current-boot, native,
+package, service, loader and account preflight before mutation.
+
+Separated historical-input validation from execution freshness checks: an
+accepted baseline predating the PPS inspector update remains valid provenance
+when its archive, manifest, target and accepted terminal records match.
+Current-controller matching remains mandatory for execution. The new runtime
+archive includes the hardware acceptance and cleanup records; the worker
+also rejects live gate state that differs from the sealed receipt. Regression
+tests cover old-launcher provenance, execution rejection of that launcher,
+receipt/cleanup drift and live accepted-boot/hardware mismatches.
+
+Scope remains dedicated `ntp:ntp` account creation, protected loader-cache
+backup and refresh without library-symlink changes, root and NTP-user native
+Python validation, and rendering/validation of a private service candidate.
+No global service/config installation, clock-service activation, boot changes,
+reboot or receiver/PPS/RTC I/O is authorized by preparation. Conditional
+readback, guarded account/cache recovery and operation cleanup are defined
+in the new review; prior artifacts remain preserved.
+
+Next approve the [account/runtime v2 review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-runtime-20261013-v2/review.md)
+using its exact `sealing.json` hash. No target contact or runtime mutation
+occurred during preparation. Hardware metadata remains accepted; final
+NTP configuration, physical timing and service activation remain later gates.

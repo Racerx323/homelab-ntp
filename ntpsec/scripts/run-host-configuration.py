@@ -31,7 +31,7 @@ COMMON={'host-configuration-stage.py','host-network-stage.py','foundation-instal
         'source-build-recipe.json','accepted-packages.tsv','accepted-source-release.json'}
 HARDWARE={'config-candidate.txt','cmdline-candidate.txt'}
 RUNTIME={'timeservice.py','timeservice-template.json','timeservice-template.service',
-         'hardware-spec.json','hardware-bundle-sha256.json'}
+         'hardware-spec.json','hardware-bundle-sha256.json','hardware-acceptance.json','hardware-cleanup.json'}
 FRESH={'fresh-baseline-spec.json','fresh-baseline-acceptance.json','fresh-baseline-cleanup.json'}
 CONTINUATION={'source-hardware.tar','source-spec.json','timing-inspection.tar',
               'timing-result.json','timing-acceptance.json','timing-cleanup.json'}
@@ -40,7 +40,12 @@ EXTRAS={'launcher.py','transport-controller.py','known_hosts','spec.json','manif
 
 def fresh_baseline_inputs(args):
     snapshot=module('run-host-registry-inspection.py')
-    spec,files=snapshot.prepare(args.baseline_dir/'registry-inspection.tar',args.baseline_sha256)
+    raw=c.private_file(args.baseline_dir/'registry-inspection.tar',32*1024**2)
+    if c.sha(raw)!=args.baseline_sha256:raise ValueError('baseline provenance archive hash mismatch')
+    files=snapshot.archive_inputs(raw);spec=json.loads(files['spec.json'])
+    if set(files)!=snapshot.inputs(spec)|snapshot.EXTRAS:
+        raise ValueError('closed baseline provenance required')
+    snapshot.validate(spec,files)
     result=json.loads(c.private_file(args.baseline_dir/'capture-result.json',32*1024**2))
     receipt=dict(snapshot.accept(spec,result),bundle_sha256=args.baseline_sha256)
     accepted=c.private_file(args.baseline_dir/'acceptance.json')
@@ -158,7 +163,34 @@ def validate(files, spec):
                           'bundle_sha256':json.loads(files['hardware-bundle-sha256.json']),
                           'boot_hashes':dict(zip(s.BOOT_PATHS,(hardware['members']['config-candidate.txt'],hardware['members']['cmdline-candidate.txt'])))}):
             raise ValueError('exact conditional hardware bundle required')
+        validate_hardware_receipt(files,hardware,gate['bundle_sha256'])
     return spec
+
+
+def historical_hardware(bundle, checksum):
+    """Validate executed source provenance without requiring today's launcher bytes."""
+    raw=c.private_file(bundle)
+    if c.sha(raw)!=checksum:raise ValueError('hardware provenance archive hash mismatch')
+    inspector=module('run-host-registry-inspection.py');files=inspector.archive_inputs(raw)
+    spec=json.loads(files['spec.json'])
+    expected=COMMON|HARDWARE|EXTRAS|(FRESH if spec['schema'] in (2,3) else set())|(CONTINUATION if spec['schema']==3 else set())
+    if spec['operation']!='hardware' or set(files)!=expected:
+        raise ValueError('closed historical hardware archive required')
+    validate(files,spec)
+    return spec,files
+
+
+def validate_hardware_receipt(files, hardware, checksum):
+    accepted=json.loads(files['hardware-acceptance.json']);cleanup=json.loads(files['hardware-cleanup.json'])
+    if hardware['schema']!=3 and accepted is None and cleanup is None:
+        return  # A prospective hardware gate still requires live acceptance before runtime mutation.
+    if accepted is None or cleanup is None:
+        raise ValueError('accepted hardware continuation receipt and cleanup required')
+    result=cleanup['result'];receipt=acceptance_receipt(hardware,checksum,result)
+    if (accepted!=receipt or cleanup['bundle_sha256']!=checksum
+            or hardware['schema']==3 and (result.get('evidence_closed') is not True
+                or receipt['boot_id']!=hardware['continuation']['candidate_boot_id'])):
+        raise ValueError('hardware acceptance/cleanup binding required')
 
 
 def prepare(bundle, checksum):
@@ -264,7 +296,7 @@ def review(spec):
                'card and primary antenna-power path. No primary contact/power/splitter changes.\n\n')
     else:
         scope=(f'Conditional on accepted hardware bundle {spec["hardware_prerequisite"]["bundle_sha256"]}, '
-               'its exact root specification, successful new-boot/device/dual-stack acceptance and current '
+               'its exact root specification, sealed acceptance/cleanup records when already accepted, successful new-boot/device/dual-stack acceptance and current '
                'accepted boot ID. Scope: create a dedicated ntp system user/group using useradd '
                '--system --user-group --no-create-home --home-dir /nonexistent --shell /usr/sbin/nologin. '
                'Names must be absent first; retain nobody/dialout for GPSD. Standard account databases '
@@ -306,7 +338,7 @@ def seal(args):
     kind=args.kind;epoch=int(time.time());baseline_raw=old['baseline.json']; fresh=None
     if getattr(args,'baseline_dir',None) is not None:
         fresh,baseline_raw=fresh_baseline_inputs(args)
-    baseline=json.loads(baseline_raw)
+    baseline=json.loads(baseline_raw);runtime_expiry=epoch+86400
     if kind=='hardware' and not epoch-86400<=baseline['collected_epoch']<=epoch+300:
         raise ValueError('fresh accepted host-input baseline required')
     inputs=COMMON | (HARDWARE if kind=='hardware' else RUNTIME) | (FRESH if fresh else set())
@@ -327,17 +359,24 @@ def seal(args):
         boot=[base64.b64decode(baseline['protected_files'][p]['base64'],validate=True).decode() for p in s.BOOT_PATHS]
         files['config-candidate.txt'],files['cmdline-candidate.txt']=s.render_boot(*boot)
     else:
-        hardware,previous=prepare(args.hardware_dir/'host-configuration.tar',args.hardware_sha256)
+        hardware,previous=historical_hardware(args.hardware_dir/'host-configuration.tar',args.hardware_sha256)
         files.update({'hardware-spec.json':previous['spec.json'],'hardware-bundle-sha256.json':c.encoded(args.hardware_sha256),
                       'timeservice-template.json':(ROOT/'templates/timeservice.json.example').read_bytes(),
                       'timeservice-template.service':(ROOT/'templates/timeservice.service').read_bytes()})
+        for name in ('acceptance.json','cleanup-result.json'):
+            key='hardware-acceptance.json' if name=='acceptance.json' else 'hardware-cleanup.json'
+            path=args.hardware_dir/name
+            files[key]=c.private_file(path) if path.exists() else c.encoded(None)
+        validate_hardware_receipt(files,hardware,args.hardware_sha256)
+        if hardware['schema']==3:
+            runtime_expiry=min(runtime_expiry,json.loads(files['hardware-cleanup.json'])['result']['accepted_epoch']+86400)
         gate={'stage':hardware['stage'],'spec_sha256':c.sha(previous['spec.json']),'bundle_sha256':args.hardware_sha256,
               'boot_hashes':dict(zip(s.BOOT_PATHS,(hardware['members']['config-candidate.txt'],hardware['members']['cmdline-candidate.txt'])))}
     spec={k:network[k] for k in ('hostname','kernel','boot_id','ssh','old_ipv4','mac','original_uuid','candidate_name','recipe')}
     spec.update(schema=1,operation=kind,operation_id=args.operation_id,stage='/var/lib/ntp-host-'+args.operation_id,
         network_candidate_uuid=json.loads(receipt)['candidate_uuid'],network_bundle_sha256=args.network_sha256,
         network_spec_sha256=c.sha(old['spec.json']),prepared_epoch=epoch,
-        expires_epoch=min(epoch+86400,baseline['collected_epoch']+86400) if kind=='hardware' else epoch+86400,
+        expires_epoch=min(epoch+86400,baseline['collected_epoch']+86400) if kind=='hardware' else runtime_expiry,
         host_recipe=json.loads(files['host-recipe.json']),hardware_prerequisite=gate,
         reference_hashes={label:c.sha(files[label+'.md']) for label in ('architecture','operations','history')},
         members={name:c.sha(files[name]) for name in sorted(inputs)})
@@ -437,7 +476,7 @@ def remote(directory,spec,files,host,mode,label,proofs=None,console_ready=False)
     return report['result']
 
 
-def record_acceptance(directory,spec,checksum,result):
+def acceptance_receipt(spec,checksum,result):
     labels=s.HARDWARE_LABELS if spec['operation']=='hardware' else s.RUNTIME_LABELS
     endpoints={spec['recipe'][k].split('/')[0] for k in ('ipv4_address','ipv6_address')}
     if (result['phase']!='accepted' or result['checks'].keys()!=labels or any(v is not True for v in result['checks'].values())
@@ -450,6 +489,11 @@ def record_acceptance(directory,spec,checksum,result):
              'spec_sha256':c.sha(s.encoded(spec)),'hostname':spec['hostname'],'boot_id':result['accepted_boot_id'],
              'checks':result['checks'],'hardware':result['hardware'],'service_activation_authorized':False,
              'receiver_timing_accepted':False}
+    return receipt
+
+
+def record_acceptance(directory,spec,checksum,result):
+    receipt=acceptance_receipt(spec,checksum,result)
     path=directory/'acceptance.json'
     if path.exists():
         if c.private_file(path)!=c.encoded(receipt):raise ValueError('conflicting configuration receipt')

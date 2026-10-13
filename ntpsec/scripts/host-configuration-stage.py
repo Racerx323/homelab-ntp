@@ -411,6 +411,14 @@ class Transaction:
                 or state['checks'].keys()!=HARDWARE_LABELS
                 or any(v is not True for v in state['checks'].values())):
             raise ValueError('accepted bound hardware/reboot gate required')
+        receipt_path=self.root/'hardware-acceptance.json'
+        if receipt_path.exists():
+            receipt=json.loads(self.h.read(receipt_path))
+            if receipt is not None and (receipt['spec_sha256']!=gate['spec_sha256']
+                    or receipt['bundle_sha256']!=gate['bundle_sha256']
+                    or receipt['boot_id']!=state['accepted_boot_id']
+                    or receipt['checks']!=state['checks'] or receipt['hardware']!=state['hardware']):
+                raise ValueError('sealed hardware acceptance receipt drift')
         previous=self.recipe;self.recipe=json.loads(raw)['host_recipe']
         try:actual=self.hardware_metadata()
         finally:self.recipe=previous

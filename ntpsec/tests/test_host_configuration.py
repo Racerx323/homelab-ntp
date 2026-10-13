@@ -340,6 +340,17 @@ class Transaction(unittest.TestCase):
         self.tx.write('state.json',state)
         with patch.object(s,'boot_id',return_value='new'):self.assertEqual(self.tx.hardware_gate(),state)
         with patch.object(s,'boot_id',return_value='old'),self.assertRaisesRegex(ValueError,'hardware'):self.tx.hardware_gate()
+        gate=self.tx.spec['hardware_prerequisite'];gate['bundle_sha256']='b'*64
+        receipt={'spec_sha256':gate['spec_sha256'],'bundle_sha256':gate['bundle_sha256'],'boot_id':'new',
+                 'checks':state['checks'],'hardware':state['hardware']}
+        (self.root/'hardware-acceptance.json').write_bytes(s.encoded(receipt))
+        with patch.object(s,'boot_id',return_value='new'):self.assertEqual(self.tx.hardware_gate(),state)
+        for key,value in [('boot_id','other'),('bundle_sha256','wrong'),('hardware',{}),('checks',{})]:
+            changed=dict(receipt);changed[key]=value
+            (self.root/'hardware-acceptance.json').write_bytes(s.encoded(changed))
+            with self.subTest(key=key),patch.object(s,'boot_id',return_value='new'),self.assertRaisesRegex(ValueError,'receipt drift'):
+                self.tx.hardware_gate()
+        (self.root/'hardware-acceptance.json').write_bytes(s.encoded(receipt))
         state['checks']['rtc']=False;self.tx.write('state.json',state)
         with patch.object(s,'boot_id',return_value='new'),self.assertRaises(ValueError):self.tx.hardware_gate()
 
@@ -583,16 +594,69 @@ class Preparation(unittest.TestCase):
                 with self.subTest(name=name),self.assertRaises(ValueError):c.validate_continuation(changed,cspec)
             changed=copy.deepcopy(cspec);changed['continuation']['candidate_boot_id']='other'
             with self.assertRaises(ValueError):c.validate_continuation(cfiles,changed)
+            proof={'hostname':cspec['hostname'],'boot_id':candidate,'spec_sha256':c.c.sha(cfiles['spec.json']),
+                   'checks':dict.fromkeys(s.HARDWARE_LABELS,True),'hardware':{'pps':{'name':'pps@12.-1'}}}
+            hwresult={'phase':'accepted','accepted_boot_id':candidate,'accepted_epoch':int(s.time.time()),
+                      'checks':proof['checks'],'hardware':proof['hardware'],'evidence_closed':True,
+                      'ssh_proofs':{cspec['recipe'][k].split('/')[0]:proof for k in ('ipv4_address','ipv6_address')}}
+            c.record_acceptance(args.output,cspec,continuation['sha256'],hwresult)
+            (args.output/'cleanup-result.json').write_bytes(c.c.encoded({'bundle_sha256':continuation['sha256'],'result':hwresult}))
             # A subsequent runtime candidate can bind the separate accepted hardware stage.
             runtime_args=argparse.Namespace(**vars(self.args));runtime_args.kind='runtime'
             runtime_args.output=self.root/'runtime-continuation';runtime_args.operation_id='fixture-runtime'
             runtime_args.hardware_dir=args.output;runtime_args.hardware_sha256=continuation['sha256']
-            runtime=c.seal(runtime_args);rspec,_=c.prepare(Path(runtime['bundle']),runtime['sha256'])
+            runtime=c.seal(runtime_args);rspec,rfiles=c.prepare(Path(runtime['bundle']),runtime['sha256'])
             self.assertEqual(rspec['hardware_prerequisite']['stage'],cspec['stage'])
+            for name in ('hardware-acceptance.json','hardware-cleanup.json'):
+                altered=dict(rfiles);altered[name]=c.c.encoded(None)
+                with self.subTest(name=name),self.assertRaises(ValueError):
+                    c.validate_hardware_receipt(altered,cspec,continuation['sha256'])
+            altered=dict(rfiles);changed_receipt=json.loads(rfiles['hardware-acceptance.json']);changed_receipt['boot_id']='wrong'
+            altered['hardware-acceptance.json']=c.c.encoded(changed_receipt)
+            with self.assertRaises(ValueError):c.validate_hardware_receipt(altered,cspec,continuation['sha256'])
+            altered=dict(rfiles);changed_cleanup=json.loads(rfiles['hardware-cleanup.json'])
+            changed_cleanup['result']['evidence_closed']=False;altered['hardware-cleanup.json']=c.c.encoded(changed_cleanup)
+            with self.assertRaises(ValueError):c.validate_hardware_receipt(altered,cspec,continuation['sha256'])
             changed=dict(files,**{'fresh-baseline-cleanup.json':c.c.encoded({'phase':'held'})})
             with self.assertRaisesRegex(ValueError,'fresh baseline'):c.validate_fresh_baseline(changed,spec)
             changed=dict(files,**{'baseline.json':self.old['baseline.json']})
             with self.assertRaises((KeyError,ValueError)):c.validate_fresh_baseline(changed,spec)
+
+    def test_historical_hardware_allows_old_launcher_but_execution_rejects_it(self):
+        with patch.object(n,'prepare',return_value=(self.network,self.old)),patch.object(c.c,'host_key',return_value='fixture'):
+            result=c.seal(self.args);spec,files=c.prepare(Path(result['bundle']),result['sha256'])
+            files['launcher.py']=b'# historical launcher, never executed during preparation\n'
+            files['manifest.json']=c.c.encoded({k:c.c.sha(v) for k,v in files.items() if k!='manifest.json'})
+            bundle=self.args.output/'historical.tar'
+            with c.tarfile.open(bundle,'w') as archive:
+                for name,data in sorted(files.items()):
+                    item=c.tarfile.TarInfo(name);item.size=len(data);archive.addfile(item,c.io.BytesIO(data))
+            checksum=c.c.sha(bundle.read_bytes())
+            historical,_=c.historical_hardware(bundle,checksum);self.assertEqual(historical,spec)
+            with self.assertRaisesRegex(ValueError,'controller'):c.prepare(bundle,checksum)
+            with self.assertRaisesRegex(ValueError,'hash mismatch'):c.historical_hardware(bundle,'0'*64)
+
+    def test_baseline_provenance_does_not_require_current_inspector_launcher(self):
+        directory=self.root/'baseline';directory.mkdir(mode=0o700)
+        spec={'operation':'host-baseline'};receipt={'state':'diagnostic_accepted','terminal_sha256':'d'*64}
+        result={'report':{'baseline':{'fixture':'accepted'}}}
+        raw=b'archived snapshot bytes';checksum=c.c.sha(raw)
+        for name,data in {'registry-inspection.tar':raw,'capture-result.json':c.c.encoded(result),
+                          'acceptance.json':c.c.encoded(dict(receipt,bundle_sha256=checksum)),
+                          'cleanup-result.json':c.c.encoded({'phase':'cleaned','terminal_sha256':'d'*64}),
+                          'baseline.json':c.c.encoded(result['report']['baseline'])}.items():
+            path=directory/name;path.write_bytes(data);path.chmod(0o600)
+        snapshot=SimpleNamespace(archive_inputs=Mock(return_value={'spec.json':c.c.encoded(spec)}),
+            inputs=Mock(return_value={'spec.json'}),EXTRAS=set(),validate=Mock(),accept=Mock(return_value=receipt),
+            prepare=Mock(side_effect=AssertionError('must not validate old launcher as new execution')))
+        args=argparse.Namespace(baseline_dir=directory,baseline_sha256=checksum)
+        with patch.object(c,'module',return_value=snapshot):
+            _,baseline=c.fresh_baseline_inputs(args);self.assertEqual(baseline,c.c.encoded(result['report']['baseline']))
+            snapshot.prepare.assert_not_called();snapshot.validate.assert_called_once()
+            (directory/'cleanup-result.json').write_bytes(c.c.encoded({'phase':'held'}))
+            with self.assertRaises(ValueError):c.fresh_baseline_inputs(args)
+            args.baseline_sha256='0'*64
+            with self.assertRaisesRegex(ValueError,'hash mismatch'):c.fresh_baseline_inputs(args)
 
     def test_old_baseline_or_failed_network_cleanup_holds_sealing(self):
         self.baseline['collected_epoch']=int(s.time.time())-90000
