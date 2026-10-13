@@ -276,5 +276,112 @@ class Controller(unittest.TestCase):
         self.assertFalse((self.root/'capture-execution.json').exists())
 
 
+class FreshBaseline(unittest.TestCase):
+    def setUp(self):
+        import types
+        self.boot = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
+        self.spec = {'stage': '/fixture/new', 'recovered_boot_id': self.boot, 'recovery_bundle_sha256': 'a'*64}
+        self.observed = {'boot_id': self.boot, 'active_daemons': [], 'inventory': {'fixture': ['1','installed']},
+                         'python': {}, 'services': ''}
+        previous = dict(self.observed, boot_id='old')
+        self.baseline = {'observation': previous, 'installed_state': {'files': {}}, 'parents': {},
+                         'protected_files': {'boot': None}, 'hostname': 'fixture'}
+        release = {'files': {n: {'type': 'file'} for n in ('usr/local/sbin/gpsd', 'usr/local/sbin/ntpd')}}
+        self.raw = {'baseline.json': m.encoded(self.baseline), 'release.json': m.encoded(release)}
+        self.helper = types.SimpleNamespace(read=lambda path, **kw: self.raw[path.name])
+        self.source = types.SimpleNamespace(observation=unittest.mock.Mock(return_value=self.observed))
+        self.inspector = types.SimpleNamespace(recipe=unittest.mock.Mock(),
+            installed_state=unittest.mock.Mock(return_value=({'files': {}}, {})),
+            verify_parents=unittest.mock.Mock(), protected_files=unittest.mock.Mock(return_value={'boot':None}),
+            devices=unittest.mock.Mock(return_value={'nodes': {}, 'sysfs': {}}),
+            QUERIES={'profile_registry':['registry']},
+            query=unittest.mock.Mock(return_value={'exit_status':0,'stdout':UUID+':802-3-ethernet\n'}),
+            ethernet_profiles=unittest.mock.Mock(return_value={UUID:{}}),
+            python_environment=unittest.mock.Mock(return_value={'context':'isolated_root'}))
+        self.stage = m.module('host-configuration-stage.py')
+        self.addCleanup(patch.stopall)
+        patch.object(m,'private_root_file',side_effect=lambda h,p,**kw:self.raw[p.name]).start()
+        patch.object(m,'load_path',side_effect=lambda p:{'inspect-runtime.py':self.inspector,
+            'inspect-source-destinations.py':self.source,'host-configuration-stage.py':self.stage}[p.name]).start()
+
+    def capture(self):
+        return m.fresh_baseline(self.helper,self.spec,{'runtime-recipe.json':b'{}'},
+                                {'stage':'/fixture/original','members':{}})
+
+    def test_new_boot_is_explicit_not_rewritten_historical_evidence(self):
+        result=self.capture()
+        self.assertEqual(result['observation']['boot_id'],self.boot)
+        self.assertEqual(result['recovery_bundle_sha256'],'a'*64)
+        self.assertEqual(self.baseline['observation']['boot_id'],'old')
+        self.assertEqual(self.inspector.installed_state.call_count,2)
+
+    def test_changed_recovery_boot_holds(self):
+        self.spec['recovered_boot_id']='different'
+        with self.assertRaisesRegex(ValueError,'recovered boot'):self.capture()
+        self.source.observation.assert_not_called()
+
+    def test_package_drift_holds(self):
+        self.observed['inventory']={'unexpected':['2','installed']}
+        with self.assertRaisesRegex(ValueError,'package/service'):self.capture()
+
+    def test_native_drift_holds(self):
+        self.inspector.installed_state.return_value=({'files':{'unexpected':{}}},{})
+        with self.assertRaisesRegex(ValueError,'installed release'):self.capture()
+
+    def test_protected_configuration_drift_holds(self):
+        self.inspector.protected_files.return_value={'boot':'changed'}
+        with self.assertRaisesRegex(ValueError,'protected configuration'):self.capture()
+
+    def test_changes_during_capture_hold(self):
+        self.source.observation.side_effect=[self.observed,dict(self.observed,boot_id='changed')]
+        with self.assertRaisesRegex(ValueError,'changed during capture'):self.capture()
+
+
+class RecoveredBindings(unittest.TestCase):
+    def archive(self,files):
+        import io,tarfile
+        files=dict(files,**{'manifest.json':m.encoded({n:m.sha(v) for n,v in files.items()})})
+        out=io.BytesIO()
+        with tarfile.open(fileobj=out,mode='w') as t:
+            for name,data in files.items():
+                info=tarfile.TarInfo(name);info.size=len(data);t.addfile(info,io.BytesIO(data))
+        return out.getvalue()
+
+    def setUp(self):
+        hardware=m.encoded({'network_bundle_sha256':'a'*64,'network_spec_sha256':'b'*64})
+        rawhardware=self.archive({'spec.json':hardware})
+        recovery={'operation':'host-recovery-continuation','stage':'/var/lib/ntp-recovery-fixture',
+                  'hostname':'fixture','kernel':'fixture','ssh':{},'old_ipv4':'192.0.2.2','endpoints':['v4','v6'],
+                  'hardware_sha256':m.sha(rawhardware)}
+        rawspec=m.encoded(recovery);rawrecovery=self.archive({'spec.json':rawspec,'hardware.tar':rawhardware})
+        proof={'boot_id':'recovered','checks':{'original_boot_files':True,'new_boot':True,'network_and_native_continuity':True}}
+        receipt={'state':'recovery_accepted','bundle_sha256':m.sha(rawrecovery),'spec_sha256':m.sha(rawspec),
+                 'proof':proof,'endpoint_proofs':{'v4':proof,'v6':proof}}
+        cleanup={'phase':'accepted','transient_units_cleaned':True,'proof':proof,'endpoint_proofs':receipt['endpoint_proofs']}
+        self.files={'recovery.tar':rawrecovery,'hardware-spec.json':hardware,'recovery-acceptance.json':m.encoded(receipt),
+                    'recovery-cleanup.json':m.encoded(cleanup)}
+        self.spec={k:recovery[k] for k in ('hostname','kernel','ssh','old_ipv4','endpoints')}
+        self.spec.update(recovery_bundle_sha256=m.sha(rawrecovery),hardware_bundle_sha256=m.sha(rawhardware),
+                         recovered_boot_id='recovered',network_bundle_sha256='a'*64,network_spec_sha256='b'*64)
+
+    def test_exact_completed_recovery_provenance(self):
+        self.assertEqual(m.recovery_inputs(self.files,self.spec)[0]['hostname'],'fixture')
+
+    def test_incomplete_cleanup_rejected(self):
+        cleanup=json.loads(self.files['recovery-cleanup.json']);cleanup['transient_units_cleaned']=False
+        self.files['recovery-cleanup.json']=m.encoded(cleanup)
+        with self.assertRaisesRegex(ValueError,'provenance'):m.recovery_inputs(self.files,self.spec)
+
+    def test_boot_network_or_archive_substitution_rejected(self):
+        for name in ('recovered_boot_id','network_bundle_sha256','recovery_bundle_sha256'):
+            with self.subTest(name=name),self.assertRaises(ValueError):
+                m.recovery_inputs(self.files,dict(self.spec,**{name:'changed'}))
+
+    def test_missing_endpoint_proof_rejected(self):
+        receipt=json.loads(self.files['recovery-acceptance.json']);del receipt['endpoint_proofs']['v6']
+        self.files['recovery-acceptance.json']=m.encoded(receipt)
+        with self.assertRaisesRegex(ValueError,'provenance'):m.recovery_inputs(self.files,self.spec)
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -292,6 +292,29 @@ class Preparation(unittest.TestCase):
             rspec['hardware_prerequisite']['spec_sha256']='0'*64
             with self.assertRaisesRegex(ValueError,'conditional hardware'):c.validate(rfiles,rspec)
 
+    def test_fresh_recovered_baseline_binds_new_boot_without_rewriting_network(self):
+        baseline=dict(self.baseline,observation={'boot_id':'recovered-boot'},
+                      recovery_bundle_sha256='d'*64,release_sha256=c.c.sha(self.old['release.json']))
+        raw=c.c.encoded(baseline)
+        source={'operation':'host-baseline','hostname':self.network['hostname'],'kernel':self.network['kernel'],
+                'recovered_boot_id':'recovered-boot','recovery_bundle_sha256':'d'*64,
+                'network_bundle_sha256':'a'*64,'network_spec_sha256':c.c.sha(self.old['spec.json'])}
+        rawsource=c.c.encoded(source)
+        receipt={'state':'diagnostic_accepted','bundle_sha256':'e'*64,'boot_id':'recovered-boot',
+                 'spec_sha256':c.c.sha(rawsource),'baseline_sha256':c.c.sha(raw),'terminal_sha256':'f'*64}
+        fresh={'fresh-baseline-spec.json':rawsource,'fresh-baseline-acceptance.json':c.c.encoded(receipt),
+               'fresh-baseline-cleanup.json':c.c.encoded({'phase':'cleaned','terminal_sha256':'f'*64})}
+        self.args.baseline_dir=self.root/'snapshot';self.args.baseline_sha256='e'*64
+        with patch.object(n,'prepare',return_value=(self.network,self.old)),patch.object(c.c,'host_key',return_value='fixture'),patch.object(c,'fresh_baseline_inputs',return_value=(fresh,raw)):
+            result=c.seal(self.args);spec,files=c.prepare(Path(result['bundle']),result['sha256'])
+            self.assertEqual(spec['schema'],2);self.assertEqual(spec['boot_id'],'recovered-boot')
+            self.assertEqual(json.loads(files['network-spec.json'])['boot_id'],'fixture-boot')
+            self.assertEqual(files['baseline.json'],raw)
+            changed=dict(files,**{'fresh-baseline-cleanup.json':c.c.encoded({'phase':'held'})})
+            with self.assertRaisesRegex(ValueError,'fresh baseline'):c.validate_fresh_baseline(changed,spec)
+            changed=dict(files,**{'baseline.json':self.old['baseline.json']})
+            with self.assertRaises((KeyError,ValueError)):c.validate_fresh_baseline(changed,spec)
+
     def test_old_baseline_or_failed_network_cleanup_holds_sealing(self):
         self.baseline['collected_epoch']=int(s.time.time())-90000
         self.old['baseline.json']=c.c.encoded(self.baseline)

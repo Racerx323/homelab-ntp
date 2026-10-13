@@ -337,4 +337,27 @@ class Sealing(unittest.TestCase):
         self.assertTrue((self.args.output/'acceptance.json').exists())
 
 
+
+
+class LoopbackRecoveryPolicy(unittest.TestCase):
+    def test_only_loopback_uuid_may_change(self):
+        expected={'old':'loopback','ethernet':'802-3-ethernet'}
+        current={'new':'loopback','ethernet':'802-3-ethernet'}
+        fields=dict(s.LOOPBACK_SETTINGS,**{'connection.uuid':'new'})
+        self.assertIsNone(s.verify_loopback_registry(expected,current,fields))
+        for key in fields:
+            with self.subTest(key=key),self.assertRaises(ValueError):
+                s.verify_loopback_registry(expected,current,dict(fields,**{key:'changed'}))
+        for changed in ({'new':'loopback'},dict(current,extra='bridge'),dict(current,second='loopback')):
+            with self.assertRaises(ValueError):s.verify_loopback_registry(expected,changed,fields)
+
+    def test_hardware_calls_opt_in_gate(self):
+        hardware=load('loopback_hardware',ROOT/'scripts/host-configuration-stage.py')
+        tx=hardware.Transaction.__new__(hardware.Transaction)
+        tx.spec={'network_candidate_uuid':'candidate'};tx.net=s
+        tx.core=SimpleNamespace(checks=Mock(return_value=dict.fromkeys(s.LABELS,True)))
+        tx.network_checks()
+        tx.core.checks.assert_called_once_with({'candidate_uuid':'candidate'},allow_loopback_uuid_change=True)
+
+
 if __name__=='__main__':unittest.main()

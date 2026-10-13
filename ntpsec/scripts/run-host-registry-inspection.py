@@ -21,6 +21,14 @@ BOOT = ('/boot/firmware/config.txt', '/boot/firmware/cmdline.txt')
 FIELDS = 'connection.id,connection.uuid,connection.type,connection.interface-name,connection.autoconnect,ipv4.method,ipv4.addresses,ipv4.gateway,ipv6.method,ipv6.addresses,ipv6.gateway'
 INPUTS = {'worker.py', 'helper.py', 'hardware-spec.json', 'hardware-recovery.json',
           'architecture.md', 'operations.md', 'history.md'}
+BASELINE_INPUTS = {'recovery.tar', 'recovery-acceptance.json', 'recovery-cleanup.json',
+                   'inspect-runtime.py', 'inspect-source-destinations.py', 'runtime-recipe.json'}
+
+
+def inputs(spec):
+    return INPUTS | BASELINE_INPUTS if spec.get('operation') == 'host-baseline' else INPUTS
+
+
 EXTRAS = {'spec.json', 'manifest.json', 'review.md', 'known_hosts', 'tests.py', 'transport.py'}
 
 
@@ -56,7 +64,7 @@ def registry(text):
 def validate(spec, files):
     old = json.loads(files['hardware-spec.json'])
     receipt = json.loads(files['hardware-recovery.json'])
-    if (spec['schema'] != 1 or spec['operation'] != 'host-registry-inspection'
+    if (spec['schema'] != 1 or spec['operation'] not in ('host-registry-inspection', 'host-baseline')
             or not re.fullmatch('[a-z][a-z0-9-]{0,47}', spec['operation_id'])
             or spec['stage'] != '/var/lib/ntp-inspect-'+spec['operation_id']
             or not re.fullmatch('/var/lib/ntp-host-[a-z][a-z0-9-]{0,47}', old['stage'])
@@ -66,10 +74,12 @@ def validate(spec, files):
             or spec['endpoints'] != [old['recipe'][key].split('/')[0] for key in ('ipv4_address', 'ipv6_address')]
             or receipt['bundle_sha256'] != spec['hardware_bundle_sha256']
             or receipt['result']['phase'] != 'recovery_files_restored'
-            or spec['members'].keys() != INPUTS
+            or spec['members'].keys() != inputs(spec)
             or any(sha(files[n]) != v for n, v in spec['members'].items())
             or not 0 < spec['expires_epoch']-spec['prepared_epoch'] <= 86400):
         raise ValueError('held hardware/target/input binding required')
+    if spec['operation'] == 'host-baseline':
+        recovery_inputs(files, spec)
     return old
 
 
@@ -97,7 +107,14 @@ def collect(h, spec, files):
             if not re.fullmatch('[a-z][a-z0-9.-]+', name) or sha(private_root_file(h, root/name)) != digest:
                 raise ValueError('retained member drift')
         retained = {name: private_root_file(h, root/name) for name in ('state.json', 'before.json', 'commands.jsonl')}
-        if json.loads(retained['state.json']) != json.loads(files['hardware-recovery.json'])['result']:
+        if spec.get('operation') == 'host-baseline':
+            recovery, recovery_files = recovery_inputs(files, spec)
+            verify_recovery_stage(h, recovery, recovery_files, files)
+            state = json.loads(retained['state.json'])
+            if (state['phase'] != 'recovered' or state.get('transient_units_cleaned') is not True
+                    or state['recovered_boot_id'] != spec['recovered_boot_id']):
+                raise ValueError('completed original recovery required')
+        elif json.loads(retained['state.json']) != json.loads(files['hardware-recovery.json'])['result']:
             raise ValueError('recovered state drift; inspect scope needs review')
         boot = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
         report = {'schema': 1, 'hostname': socket.gethostname(), 'kernel': os.uname().release,
@@ -142,6 +159,10 @@ def collect(h, spec, files):
             raise ValueError('boot changed during capture')
         if any(private_root_file(h, root/n) != data for n, data in retained.items()):
             raise ValueError('retained state changed during capture')
+        if spec.get('operation') == 'host-baseline':
+            report['baseline'] = fresh_baseline(h, spec, files, old)
+            if any(private_root_file(h, root/n) != data for n, data in retained.items()):
+                raise ValueError('retained operation changed during baseline')
         report['checks'] = {'read_only_capture': True, 'retained_state_stable': True, 'registry_stable': True}
         return report
     finally:
@@ -176,7 +197,7 @@ def worker(spec, files, mode, terminal_sha=None):
     elif mode not in ('readback', 'cleanup'):
         raise ValueError('closed inspection mode required')
     h.ancestors(root)
-    expected = INPUTS | {'spec.json', 'started.json', 'terminal.json'}
+    expected = inputs(spec) | {'spec.json', 'started.json', 'terminal.json'}
     if stat.S_IMODE(root.stat().st_mode) != 0o700 or {p.name for p in root.iterdir()} != expected:
         raise ValueError('incomplete or unknown inspection entries; preserve stage')
     for name, data in {**files, 'spec.json': encoded(spec)}.items():
@@ -203,8 +224,8 @@ def prepare(bundle, checksum):
         raise ValueError('approved archive hash mismatch')
     with tarfile.open(fileobj=io.BytesIO(raw), mode='r:') as archive:
         members = archive.getmembers()
-        if ({m.name for m in members} != INPUTS | EXTRAS or len(members) != len(INPUTS | EXTRAS)
-                or any(not m.isfile() or m.size > 2*1024**2 for m in members)):
+        if (len({m.name for m in members}) != len(members) or len(members) > 64
+                or any(not m.isfile() or m.size > 16*1024**2 for m in members)):
             raise ValueError('closed bounded archive required')
         files = {m.name: archive.extractfile(m).read() for m in members}
     manifest = json.loads(files['manifest.json'])
@@ -215,6 +236,8 @@ def prepare(bundle, checksum):
             or bundle.parent.stat().st_uid != os.getuid() or bundle.parent.stat().st_mode & 0o077):
         raise ValueError('manifest/launcher/transport/private path drift')
     spec = json.loads(files['spec.json'])
+    if set(files) != inputs(spec) | EXTRAS:
+        raise ValueError('closed baseline/inspection membership required')
     validate(spec, files)
     if c.host_key(files['known_hosts'], spec['old_ipv4']) != spec['ssh']['fingerprint']:
         raise ValueError('pinned host key mismatch')
@@ -283,7 +306,7 @@ def payload(spec, files, mode, terminal_sha):
     return ('import base64,json,hashlib\n'
         'spec=json.loads('+repr(json.dumps(spec))+')\n'
         'files={n:base64.b64decode(v,validate=True) for n,v in json.loads('+repr(json.dumps(
-            {n: base64.b64encode(files[n]).decode() for n in INPUTS}))+').items()}\n'
+            {n: base64.b64encode(files[n]).decode() for n in inputs(spec)}))+').items()}\n'
         'ns={"__name__":"sealed_registry","__file__":spec["stage"]+"/worker.py"}\n'
         'exec(compile(files["worker.py"],"sealed-registry","exec"),ns)\n'
         'status=0\ntry:\n result=ns["worker"](spec,files,'+repr(mode)+','+repr(terminal_sha)+')\n'
@@ -305,8 +328,21 @@ def accept(spec, result):
             or report['retained_sha256'] != {n: sha(base64.b64decode(v, validate=True)) for n, v in report['retained'].items()}
             or any(q['status'] != 0 for q in report['queries'].values())):
         raise ValueError('complete bound diagnostic report required')
-    return {'state': 'diagnostic_accepted', 'terminal_sha256': result['terminal_sha256'],
-            'spec_sha256': sha(encoded(spec)), 'boot_id': report['boot_id']}
+    if spec.get('operation') == 'host-baseline':
+        baseline = report['baseline']
+        if (baseline['observation']['boot_id'] != spec['recovered_boot_id']
+                or baseline['observation']['boot_id'] != report['boot_id']
+                or baseline['hostname'] != spec['hostname'] or baseline['kernel'] != spec['kernel']
+                or baseline['continuity_unchanged'] is not True
+                or baseline['queries']['profile_registry']['exit_status'] != 0
+                or registry(baseline['queries']['profile_registry']['stdout']) != report['current_registry']
+                or baseline['recovery_bundle_sha256'] != spec['recovery_bundle_sha256']):
+            raise ValueError('fresh recovered baseline binding required')
+    receipt = {'state': 'diagnostic_accepted', 'terminal_sha256': result['terminal_sha256'],
+               'spec_sha256': sha(encoded(spec)), 'boot_id': report['boot_id']}
+    if spec.get('operation') == 'host-baseline':
+        receipt['baseline_sha256'] = sha(encoded(report['baseline']))
+    return receipt
 
 
 def execute(args):
@@ -361,9 +397,179 @@ def execute(args):
                         raise ValueError('conflicting acceptance')
                 else:
                     c.write_new(path, receipt)
+            if spec['operation'] == 'host-baseline' and args.mode != 'cleanup':
+                baseline_path = directory/'baseline.json'
+                raw_baseline = encoded(result['report']['baseline'])
+                if baseline_path.exists():
+                    if c.private_file(baseline_path) != raw_baseline:
+                        raise ValueError('baseline conflict')
+                else:
+                    with baseline_path.open('xb') as out: out.write(raw_baseline)
             c.write_new(directory/(args.mode+'-result.json'), result)
             return {'mode': args.mode, 'phase': result['phase'], 'target': spec['hostname']}
     raise ValueError('terminal unavailable; preserve evidence and do not replay capture/cleanup')
+
+
+def archive_inputs(raw):
+    with tarfile.open(fileobj=io.BytesIO(raw), mode='r:') as archive:
+        members = archive.getmembers()
+        if (len(members) > 64 or len({m.name for m in members}) != len(members)
+                or any(not m.isfile() or not re.fullmatch('[a-z][a-z0-9._-]+', m.name)
+                       or m.size > 16*1024**2 for m in members)):
+            raise ValueError('bounded closed provenance archive required')
+        files = {m.name: archive.extractfile(m).read() for m in members}
+    if json.loads(files['manifest.json']) != {n: sha(v) for n, v in files.items() if n != 'manifest.json'}:
+        raise ValueError('provenance manifest mismatch')
+    return files
+
+
+def recovery_inputs(files, spec):
+    if sha(files['recovery.tar']) != spec['recovery_bundle_sha256']:
+        raise ValueError('accepted recovery archive required')
+    recovered = archive_inputs(files['recovery.tar']); recovery = json.loads(recovered['spec.json'])
+    receipt = json.loads(files['recovery-acceptance.json']); cleanup = json.loads(files['recovery-cleanup.json'])
+    hardware = archive_inputs(recovered['hardware.tar'])
+    if (recovery['operation'] != 'host-recovery-continuation'
+            or not re.fullmatch('/var/lib/ntp-recovery-[a-z][a-z0-9-]{0,47}', recovery['stage'])
+            or any(recovery[k] != spec[k] for k in ('hostname', 'kernel', 'ssh', 'old_ipv4', 'endpoints'))
+            or receipt['bundle_sha256'] != spec['recovery_bundle_sha256']
+            or receipt['spec_sha256'] != sha(recovered['spec.json']) or receipt['state'] != 'recovery_accepted'
+            or receipt['proof']['boot_id'] != spec['recovered_boot_id']
+            or receipt['proof']['checks'] != {'original_boot_files': True, 'new_boot': True, 'network_and_native_continuity': True}
+            or set(receipt['endpoint_proofs']) != set(spec['endpoints'])
+            or any(v != receipt['proof'] for v in receipt['endpoint_proofs'].values())
+            or cleanup['phase'] != 'accepted' or cleanup['transient_units_cleaned'] is not True
+            or cleanup['proof'] != receipt['proof'] or cleanup['endpoint_proofs'] != receipt['endpoint_proofs']
+            or recovery['hardware_sha256'] != spec['hardware_bundle_sha256']
+            or sha(recovered['hardware.tar']) != spec['hardware_bundle_sha256']
+            or hardware['spec.json'] != files['hardware-spec.json']
+            or any(spec[k] != json.loads(hardware['spec.json'])[k] for k in ('network_bundle_sha256','network_spec_sha256'))):
+        raise ValueError('accepted recovery/cleanup/boot/hardware provenance mismatch')
+    return recovery, recovered
+
+
+def verify_recovery_stage(h, recovery, recovered, files):
+    root = Path(recovery['stage']); h.ancestors(root)
+    if stat.S_IMODE(root.stat().st_mode) != 0o700:
+        raise ValueError('protected recovery stage required')
+    if private_root_file(h, root/'spec.json') != recovered['spec.json']:
+        raise ValueError('recovery specification drift')
+    for name, digest in recovery['members'].items():
+        if not re.fullmatch('[a-z][a-z0-9._-]+', name) or sha(private_root_file(h, root/name, 32*1024**2)) != digest:
+            raise ValueError('recovery source drift')
+    if private_root_file(h, root/'state.json') != files['recovery-cleanup.json']:
+        raise ValueError('accepted recovery state drift')
+
+
+def load_path(path):
+    info = importlib.util.spec_from_file_location('baseline_'+path.stem.replace('-', '_'), path)
+    result = importlib.util.module_from_spec(info); info.loader.exec_module(result); return result
+
+
+def fresh_baseline(h, spec, files, old):
+    if Path('/proc/sys/kernel/random/boot_id').read_text().strip() != spec['recovered_boot_id']:
+        raise ValueError('accepted recovered boot required')
+    root = Path(old['stage']); local = Path(spec['stage'])
+    inspector = load_path(local/'inspect-runtime.py'); inspector.recipe(files['runtime-recipe.json'])
+    stage = load_path(root/'host-configuration-stage.py')
+    source = load_path(root/'inspect-source-destinations.py')
+    previous = json.loads(private_root_file(h, root/'baseline.json'))
+    release = json.loads(private_root_file(h, root/'release.json'))
+    observed = source.observation()
+    if not stage.observation_equal(observed, previous['observation'], new_boot=True) or observed['active_daemons']:
+        raise ValueError('post-recovery package/service/Python drift')
+    installed, parents = inspector.installed_state(root, old, h, source, release)
+    if installed != previous['installed_state']:
+        raise ValueError('installed release drift')
+    inspector.verify_parents(parents, previous['parents'])
+    configs = inspector.protected_files(h); devices = inspector.devices(h)
+    if configs != previous['protected_files']:
+        raise ValueError('post-recovery protected configuration drift')
+    queries = {n: inspector.query(argv, n if n in ('accounts', 'groups') else None) for n, argv in inspector.QUERIES.items()}
+    queries['ethernet_profiles'] = inspector.ethernet_profiles(queries['profile_registry'])
+    elf = [n for n, r in release['files'].items() if r['type'] == 'file' and
+           (n in ('usr/local/sbin/gpsd', 'usr/local/sbin/ntpd') or re.search(r'\.so(?:\.[0-9.]+)?$', n))]
+    if not 2 <= len(elf) <= 16:
+        raise ValueError('bounded ELF set required')
+    queries['elf_dependencies'] = {n: inspector.query(['/usr/bin/readelf', '-d', '--', '/'+n]) for n in sorted(elf)}
+    if len(encoded(queries)) > 2*1024**2:
+        raise ValueError('baseline query bound exceeded')
+    if (source.observation() != observed or inspector.protected_files(h) != configs or inspector.devices(h) != devices
+            or inspector.installed_state(root, old, h, source, release) != (installed, parents)
+            or inspector.query(inspector.QUERIES['profile_registry']) != queries['profile_registry']
+            or inspector.ethernet_profiles(queries['profile_registry']) != queries['ethernet_profiles']):
+        raise ValueError('fresh baseline changed during capture')
+    return dict(previous, collected_epoch=int(time.time()), observation=observed, installed_state=installed,
+                parents=parents, protected_files=configs, devices=devices, queries=queries,
+                python_environment=inspector.python_environment(), runtime_recipe_sha256=sha(files['runtime-recipe.json']),
+                recovery_bundle_sha256=spec['recovery_bundle_sha256'], continuity_unchanged=True)
+
+
+def seal_baseline(args):
+    c = module('run-foundation-preflight.py')
+    raw = c.private_file(args.recovery_dir/'recovery-continuation.tar', 32*1024**2)
+    if sha(raw) != args.recovery_sha256:
+        raise ValueError('exact accepted recovery bundle required')
+    recovered = archive_inputs(raw); recovery = json.loads(recovered['spec.json'])
+    hardware = archive_inputs(recovered['hardware.tar']); old = json.loads(hardware['spec.json'])
+    receipt = c.private_file(args.recovery_dir/'acceptance.json')
+    cleanup = c.private_file(args.recovery_dir/'cleanup-result.json')
+    files = {'worker.py': Path(__file__).read_bytes(), 'helper.py': hardware['foundation-install.py'],
+             'hardware-spec.json': hardware['spec.json'],
+             'hardware-recovery.json': c.private_file(args.recovery_dir.parent/old['operation_id']/'recover-result.json'),
+             'known_hosts': hardware['known_hosts'], 'tests.py': (ROOT/'tests/test_host_registry_inspection.py').read_bytes(),
+             'transport.py': (ROOT/'scripts/run-foundation-preflight.py').read_bytes(),
+             'recovery.tar': raw, 'recovery-acceptance.json': receipt, 'recovery-cleanup.json': cleanup,
+             'inspect-runtime.py': (ROOT/'scripts/inspect-runtime.py').read_bytes(),
+             'inspect-source-destinations.py': (ROOT/'scripts/inspect-source-destinations.py').read_bytes(),
+             'runtime-recipe.json': (ROOT/'configs/runtime-discovery-recipe.json').read_bytes()}
+    for label, path in (('architecture', 'docs/ntp-architecture-deployment-plan-v1.0.md'),
+                        ('operations', 'docs/OPERATIONS.md'), ('history', 'HISTORY.md')):
+        files[label+'.md'] = (ROOT/path).read_bytes()
+    epoch = int(time.time()); spec = {k: old[k] for k in ('hostname', 'kernel', 'ssh', 'old_ipv4')}
+    spec.update(schema=1, operation='host-baseline', operation_id=args.operation_id,
+                stage='/var/lib/ntp-inspect-'+args.operation_id, prepared_epoch=epoch, expires_epoch=epoch+86400,
+                endpoints=recovery['endpoints'], hardware_bundle_sha256=recovery['hardware_sha256'],
+                recovery_bundle_sha256=args.recovery_sha256, recovered_boot_id=json.loads(receipt)['proof']['boot_id'],
+                network_bundle_sha256=old['network_bundle_sha256'], network_spec_sha256=old['network_spec_sha256'])
+    spec['members'] = {n: sha(files[n]) for n in inputs(spec)}
+    validate(spec, files); files['spec.json'] = encoded(spec)
+    files['review.md'] = (f'# Fresh post-recovery baseline\n\nTarget: {spec["hostname"]}. Operation: {args.operation_id}.\n'
+        f'Protected stage: `{spec["stage"]}`. Capture expires epoch {spec["expires_epoch"]}.\n'
+        f'Accepted recovery SHA-256: `{args.recovery_sha256}`.\n\n'
+        'One read-only capture, bound to the exact accepted recovery boot, source archive, receipt, cleanup '
+        'and retained protected stages. Reuse the registry inspector: preserve the original journals and '
+        'before-state under its shared lock; capture registry/profile identities, addresses/routes and boot files. '
+        'Additionally verify all installed native entries and parent identities twice; capture fresh package, '
+        'Python and service observations, protected boot/time/loader files, account/group identifiers without '
+        'password fields, UART/PPS/RTC metadata, static ELF dependencies and isolated Python search paths. '
+        'Only boot ID and service PID/restart counters may differ from the old observation; bind the new boot '
+        'to the accepted recovery receipt. Other drift holds acceptance. No application imports, device I/O, '
+        'profile changes, account changes, boot edits, service activation or reboot.\n\n'
+        'Create only a separate root-owned 0700 stage with 0600 inputs and terminal evidence. '
+        'Conditional readback may use either pinned fixed endpoint and never repeats capture. '
+        'Accept only stable complete source/boot/registry observations and a bound fresh baseline. '
+        'Conditional cleanup removes only this new diagnostic stage after accepted terminal hashing; '
+        'preserve both original hardware/recovery stages and every local execution record. '
+        'Incomplete captures remain preserved for a new review. SSH transport is bounded to 180 seconds; '
+        'fixed subprocesses retain their existing bounded timeouts.\n\n'
+        'Use run-host-registry-inspection.py execute --bundle ABSOLUTE_BUNDLE --sha256 APPROVED_HASH '
+        '--mode capture once; conditional modes are readback and cleanup. '
+        'Hardware/boot replacement can be sealed only after this baseline is executed, accepted and cleaned. '
+        'That later mutation requires separate execution approval.\n').encode()
+    files['manifest.json'] = encoded({n: sha(v) for n, v in files.items()})
+    os.umask(0o077); args.output.mkdir(mode=0o700)
+    for n in ('spec.json', 'review.md', 'known_hosts'):
+        (args.output/n).write_bytes(files[n])
+    bundle = args.output/'registry-inspection.tar'
+    with tarfile.open(bundle, 'w', format=tarfile.USTAR_FORMAT) as archive:
+        for n, data in sorted(files.items()):
+            item = tarfile.TarInfo(n); item.size=len(data); item.mode=0o600; item.mtime=epoch
+            archive.addfile(item, io.BytesIO(data))
+    result = {'bundle': str(bundle), 'sha256': sha(bundle.read_bytes()), 'target': spec['hostname'],
+              'expires_epoch': spec['expires_epoch'], 'execution_authorized': False, 'target_contact': False}
+    prepare(bundle, result['sha256']); c.write_new(args.output/'sealing.json', result)
+    return result
 
 
 def main():
@@ -376,8 +582,11 @@ def main():
     p = sub.add_parser('execute')
     p.add_argument('--bundle', type=Path, required=True); p.add_argument('--sha256', required=True)
     p.add_argument('--mode', choices=('capture', 'readback', 'cleanup'), required=True)
+    p = sub.add_parser('seal-baseline')
+    p.add_argument('--recovery-dir', type=Path, required=True); p.add_argument('--recovery-sha256', required=True)
+    p.add_argument('--operation-id', required=True); p.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()
-    print(json.dumps(seal(args) if args.action == 'seal' else execute(args)))
+    print(json.dumps(seal_baseline(args) if args.action == 'seal-baseline' else seal(args) if args.action == 'seal' else execute(args)))
 
 
 if __name__ == '__main__':

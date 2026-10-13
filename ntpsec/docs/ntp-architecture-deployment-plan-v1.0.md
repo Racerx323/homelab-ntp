@@ -619,8 +619,11 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    Keep the constrained loopback comparison in future hardware/reboot stages:
    allow only the observed lo identity and reserved addresses, methods,
    gateways and autoconnect state; preserve exact non-loopback registry and
-   network/native checks. Next prepare a fresh baseline and corrected
-   hardware/boot stage for separate execution approval. See HISTORY for
+   network/native checks. The corrected checker and fresh-baseline sealer
+   are tested offline; a post-recovery read-only capture is prepared for
+   separate approval. Accept and clean that capture before sealing a new
+   hardware/boot bundle. Bind its fresh baseline independently from historical
+   networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Hardware/time-service/client acceptance remains pending.
    Prepare hardware/boot and account/runtime prerequisites as separately
    approved hash-bound stages. Boot edits preserve unrelated settings and

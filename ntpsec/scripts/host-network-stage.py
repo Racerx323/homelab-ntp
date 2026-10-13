@@ -23,6 +23,21 @@ LABELS = {'profile', 'original_retained', 'registry', 'addresses', 'ipv6_ra',
           'dns', 'routes', 'dns_reachability', 'https_egress', 'continuity'}
 
 
+LOOPBACK_FIELDS = 'connection.id,connection.uuid,connection.type,connection.interface-name,connection.autoconnect,ipv4.method,ipv4.addresses,ipv4.gateway,ipv6.method,ipv6.addresses,ipv6.gateway'
+LOOPBACK_SETTINGS = {'connection.id':'lo','connection.type':'loopback','connection.interface-name':'lo',
+    'connection.autoconnect':'no','ipv4.method':'manual','ipv4.addresses':'127.0.0.1/8','ipv4.gateway':'',
+    'ipv6.method':'manual','ipv6.addresses':'::1/128','ipv6.gateway':''}
+
+
+def verify_loopback_registry(expected, actual, fields):
+    previous=[key for key,kind in expected.items() if kind=='loopback']
+    current=[key for key,kind in actual.items() if kind=='loopback']
+    if (len(previous)!=1 or len(current)!=1
+            or {k:v for k,v in expected.items() if v!='loopback'}!={k:v for k,v in actual.items() if v!='loopback'}
+            or fields!=dict(LOOPBACK_SETTINGS,**{'connection.uuid':current[0]})):
+        raise ValueError('non-loopback registry or lo settings drift')
+
+
 def encoded(value):
     return (json.dumps(value, sort_keys=True) + '\n').encode()
 
@@ -324,7 +339,7 @@ class Transaction:
                 state=self.state();state.update(phase='apply_held',error=str(error)[:500]);self.write('state.json',state)
                 raise
 
-    def checks(self, state):
+    def checks(self, state, allow_loopback_uuid_change=False):
         self.continuity();uuid=state['candidate_uuid'];candidate=self.profile(uuid)
         desired=stable(dict(self.original,**settings(self.r)))
         desired.update({'connection.id':self.spec['candidate_name'],'connection.uuid':uuid})
@@ -334,7 +349,13 @@ class Transaction:
         if stable(self.profile(self.spec['original_uuid']))!=original:
             raise ValueError('retained original profile drift')
         registry=json.loads(self.h.read(self.root/'before.json'))['registry'];registry[uuid]='802-3-ethernet'
-        if self.registry()!=registry: raise ValueError('candidate registry drift')
+        actual_registry=self.registry()
+        if allow_loopback_uuid_change:
+            loopbacks=[key for key,kind in actual_registry.items() if kind=='loopback']
+            if len(loopbacks)!=1: raise ValueError('exactly one loopback profile required')
+            fields=properties(self.run([NM,'-t','-f',LOOPBACK_FIELDS,'connection','show','uuid',loopbacks[0]]))
+            verify_loopback_registry(registry,actual_registry,fields)
+        elif actual_registry!=registry: raise ValueError('candidate registry drift')
         net=self.network();device=net['addresses']
         if len(device)!=1 or device[0]['address'].lower()!=self.spec['mac'] or 'UP' not in device[0]['flags']:
             raise ValueError('candidate link/MAC mismatch')

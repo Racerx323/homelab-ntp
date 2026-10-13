@@ -1093,3 +1093,34 @@ incorporates the tested loopback comparison, followed by conditional runtime
 prerequisites. Obtain separate execution approval for those exact bundles.
 Do not reuse consumed hardware/recovery modes or claim hardware acceptance
 from the recovery receipt.
+
+### October 13: fresh baseline capture and corrected hardware preparation
+
+Approved offline preparation of a fresh baseline and corrected hardware/boot
+stage for separate execution approval. Extended the existing registry
+inspector with a post-recovery baseline capture bound to the accepted recovery
+archive, receipt, cleanup and current boot. The capture preserves original
+root stages and journals, verifies installed native files and parent identities
+twice, and records fresh host/configuration/network/device metadata. It performs
+no application imports or device I/O and creates only its own protected stage.
+
+Corrected the hardware/reboot registry check to permit only the verified lo
+UUID replacement; all non-loopback identities and existing continuity checks
+remain binding. The network mutation stage retains strict registry equality.
+The hardware preparer now supports schema 2 with a required accepted/cleaned
+fresh-baseline input for the CLI. It binds the new boot and observation hashes
+separately from historical networking provenance; runtime candidates must bind
+the same fresh baseline. Historical artifacts remain unchanged.
+
+Prepared `host-baseline-20261013-v1` offline. Regression coverage includes
+recovery provenance/cleanup, changed boot, package/native/configuration drift,
+capture stability, constrained loopback replacement, fresh baseline sealing,
+and preserved historical boot identity. No target contact occurred during
+preparation. The replacement hardware mutation bundle is deliberately not
+sealed without the new live observations; runtime/account setup remains
+unstarted.
+
+Next approve the [fresh baseline capture](/home/aaron/code/.local-evidence/homelab-ntp/current/host-baseline-20261013-v1/review.md)
+and its `sealing.json` SHA-256 for one read-only capture with conditional
+readback and cleanup. After acceptance, seal the corrected hardware/boot
+bundle and obtain its separate execution approval.

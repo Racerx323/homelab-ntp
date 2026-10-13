@@ -193,7 +193,7 @@ class Transaction:
 
     def network_checks(self):
         # Reuse the accepted networking contract, without changing any profiles.
-        result = self.core.checks({'candidate_uuid':self.spec['network_candidate_uuid']})
+        result = self.core.checks({'candidate_uuid':self.spec['network_candidate_uuid']}, allow_loopback_uuid_change=True)
         if set(result) != self.net.LABELS or any(v is not True for v in result.values()):
             raise ValueError('complete retained dual-stack network checks required')
 

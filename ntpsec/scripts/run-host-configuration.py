@@ -32,7 +32,39 @@ COMMON={'host-configuration-stage.py','host-network-stage.py','foundation-instal
 HARDWARE={'config-candidate.txt','cmdline-candidate.txt'}
 RUNTIME={'timeservice.py','timeservice-template.json','timeservice-template.service',
          'hardware-spec.json','hardware-bundle-sha256.json'}
+FRESH={'fresh-baseline-spec.json','fresh-baseline-acceptance.json','fresh-baseline-cleanup.json'}
 EXTRAS={'launcher.py','transport-controller.py','known_hosts','spec.json','manifest.json','review.md','tests.py'}
+
+
+def fresh_baseline_inputs(args):
+    snapshot=module('run-host-registry-inspection.py')
+    spec,files=snapshot.prepare(args.baseline_dir/'registry-inspection.tar',args.baseline_sha256)
+    result=json.loads(c.private_file(args.baseline_dir/'capture-result.json',32*1024**2))
+    receipt=dict(snapshot.accept(spec,result),bundle_sha256=args.baseline_sha256)
+    accepted=c.private_file(args.baseline_dir/'acceptance.json')
+    cleanup=c.private_file(args.baseline_dir/'cleanup-result.json')
+    baseline=c.private_file(args.baseline_dir/'baseline.json')
+    if (spec['operation']!='host-baseline' or json.loads(accepted)!=receipt
+            or json.loads(cleanup)!={'phase':'cleaned','terminal_sha256':receipt['terminal_sha256']}
+            or baseline!=c.encoded(result['report']['baseline'])):
+        raise ValueError('accepted and cleaned fresh baseline required')
+    return {'fresh-baseline-spec.json':files['spec.json'],'fresh-baseline-acceptance.json':accepted,
+            'fresh-baseline-cleanup.json':cleanup},baseline
+
+
+def validate_fresh_baseline(files,spec):
+    source=json.loads(files['fresh-baseline-spec.json']);receipt=json.loads(files['fresh-baseline-acceptance.json'])
+    cleanup=json.loads(files['fresh-baseline-cleanup.json']);baseline=json.loads(files['baseline.json'])
+    if (source['operation']!='host-baseline' or source['hostname']!=spec['hostname'] or source['kernel']!=spec['kernel']
+            or source['recovered_boot_id']!=spec['boot_id'] or receipt['boot_id']!=spec['boot_id']
+            or receipt['state']!='diagnostic_accepted' or receipt['bundle_sha256']!=spec['fresh_baseline_sha256']
+            or receipt['spec_sha256']!=c.sha(files['fresh-baseline-spec.json'])
+            or receipt['baseline_sha256']!=c.sha(files['baseline.json'])
+            or cleanup!={'phase':'cleaned','terminal_sha256':receipt['terminal_sha256']}
+            or baseline['recovery_bundle_sha256']!=source['recovery_bundle_sha256']
+            or baseline['release_sha256']!=c.sha(files['release.json'])
+            or any(source[k]!=spec[k] for k in ('network_bundle_sha256','network_spec_sha256'))):
+        raise ValueError('fresh baseline provenance/acceptance/cleanup mismatch')
 
 
 def validate(files, spec):
@@ -45,7 +77,10 @@ def validate(files, spec):
           'network_spec_sha256','prepared_epoch','expires_epoch','host_recipe','reference_hashes','members',
           'hardware_prerequisite'}
     inputs=COMMON | (HARDWARE if kind=='hardware' else RUNTIME)
-    if (set(spec)!=keys or spec['schema']!=1 or not re.fullmatch('[a-z][a-z0-9-]{0,47}',spec['operation_id'])
+    if spec['schema']==2:
+        keys.add('fresh_baseline_sha256'); inputs |= FRESH
+        validate_fresh_baseline(files,spec)
+    if (set(spec)!=keys or spec['schema'] not in (1,2) or not re.fullmatch('[a-z][a-z0-9-]{0,47}',spec['operation_id'])
             or spec['stage']!='/var/lib/ntp-host-'+spec['operation_id']
             or set(spec['members'])!=inputs or any(c.sha(files[name])!=digest for name,digest in spec['members'].items())
             or not 0<spec['expires_epoch']-spec['prepared_epoch']<=86400
@@ -57,12 +92,13 @@ def validate(files, spec):
             or cleanup['result']['candidate_uuid']!=receipt['candidate_uuid'] or cleanup['result']['transient_units_cleaned'] is not True
             or spec['network_spec_sha256']!=c.sha(files['network-spec.json'])
             or spec['host_recipe']!=json.loads(files['host-recipe.json'])
-            or any(spec[k]!=network[k] for k in ('hostname','kernel','boot_id','ssh','old_ipv4','mac','original_uuid','candidate_name','recipe'))
+            or any(spec[k]!=network[k] for k in ('hostname','kernel','ssh','old_ipv4','mac','original_uuid','candidate_name','recipe'))
+            or spec['schema']==1 and spec['boot_id']!=network['boot_id']
             or spec['host_recipe']['hostname']!=spec['hostname']
             or spec['reference_hashes'].keys()!={'architecture','operations','history'}
             or any(c.sha(files[label+'.md'])!=digest for label,digest in spec['reference_hashes'].items())
             or baseline['observation']['boot_id']!=spec['boot_id']
-            or c.sha(files['baseline.json'])!=network['members']['baseline.json']
+            or spec['schema']==1 and c.sha(files['baseline.json'])!=network['members']['baseline.json']
             or c.sha(files['release.json'])!=network['members']['release.json']
             or json.loads(files['accepted-source-release.json'])!=json.loads(files['release.json'])
             or c.host_key(files['known_hosts'],spec['old_ipv4'])!=spec['ssh']['fingerprint']):
@@ -78,6 +114,7 @@ def validate(files, spec):
         hardware=json.loads(files['hardware-spec.json']);gate=spec['hardware_prerequisite']
         if (hardware['operation']!='hardware' or hardware['hostname']!=spec['hostname']
                 or hardware['network_bundle_sha256']!=spec['network_bundle_sha256']
+                or hardware.get('fresh_baseline_sha256')!=spec.get('fresh_baseline_sha256')
                 or gate!={'stage':hardware['stage'],'spec_sha256':c.sha(files['hardware-spec.json']),
                           'bundle_sha256':json.loads(files['hardware-bundle-sha256.json']),
                           'boot_hashes':dict(zip(s.BOOT_PATHS,(hardware['members']['config-candidate.txt'],hardware['members']['cmdline-candidate.txt'])))}):
@@ -95,7 +132,7 @@ def prepare(bundle, checksum):
             raise ValueError('closed regular bounded configuration archive required')
         files={m.name:archive.extractfile(m).read() for m in members}
     spec=json.loads(files['spec.json'])
-    inputs=COMMON | (HARDWARE if spec['operation']=='hardware' else RUNTIME)
+    inputs=COMMON | (HARDWARE if spec['operation']=='hardware' else RUNTIME) | (FRESH if spec['schema']==2 else set())
     if set(files)!=inputs|EXTRAS:
         raise ValueError('closed configuration archive membership required')
     manifest=json.loads(files['manifest.json'])
@@ -124,6 +161,11 @@ def review(spec):
             'recipes and all three governing document hashes. Recheck drift before mutation. '
             'One apply; controller registers each submission before SSH and preserves complete private streams. '
             'Never replay a consumed mode after uncertain output.\n\n')
+    if spec['schema']==2:
+        common+=f'Accepted fresh baseline bundle: {spec["fresh_baseline_sha256"]}.\n\n'
+    common+=('Registry checks permit UUID replacement only for one verified lo profile with the observed '
+             'reserved addresses, methods, gateways and autoconnect state; all non-loopback identities '
+             'and existing network/native checks remain strict. No profile is rewritten.\n\n')
     if spec['operation']=='hardware':
         scope=('Scope: replace only /boot/firmware/config.txt and cmdline.txt, preserving byte-exact originals '
                'in protected before-state. Add enable_uart=1, i2c_arm=on, disable-bt, PPS GPIO18 rising '
@@ -189,12 +231,17 @@ def seal(args):
     receipt=c.private_file(args.network_dir/'acceptance.json');cleanup=c.private_file(args.network_dir/'cleanup-result.json')
     # Validate the existing local receipt against full durable endpoint proofs, without creating one.
     n.record_acceptance(args.network_dir,network,argparse.Namespace(sha256=args.network_sha256),json.loads(cleanup)['result'])
-    kind=args.kind;epoch=int(time.time());baseline=json.loads(old['baseline.json'])
+    kind=args.kind;epoch=int(time.time());baseline_raw=old['baseline.json']; fresh=None
+    if getattr(args,'baseline_dir',None) is not None:
+        fresh,baseline_raw=fresh_baseline_inputs(args)
+    baseline=json.loads(baseline_raw)
     if kind=='hardware' and not epoch-86400<=baseline['collected_epoch']<=epoch+300:
         raise ValueError('fresh accepted host-input baseline required')
-    inputs=COMMON | (HARDWARE if kind=='hardware' else RUNTIME)
+    inputs=COMMON | (HARDWARE if kind=='hardware' else RUNTIME) | (FRESH if fresh else set())
     files={name:(ROOT/'scripts'/name).read_bytes() for name in inputs if name.endswith('.py')}
     files.update({name:old[name] for name in ('baseline.json','release.json','known_hosts')})
+    files['baseline.json']=baseline_raw
+    if fresh: files.update(fresh)
     files.update({'network-spec.json':old['spec.json'],'network-acceptance.json':receipt,'network-cleanup.json':cleanup,
                   'host-recipe.json':(ROOT/'configs'/('host-'+kind+'-recipe.json')).read_bytes(),
                   'launcher.py':Path(__file__).read_bytes(),'transport-controller.py':(ROOT/'scripts/run-foundation-preflight.py').read_bytes(),
@@ -222,6 +269,8 @@ def seal(args):
         host_recipe=json.loads(files['host-recipe.json']),hardware_prerequisite=gate,
         reference_hashes={label:c.sha(files[label+'.md']) for label in ('architecture','operations','history')},
         members={name:c.sha(files[name]) for name in sorted(inputs)})
+    if fresh:
+        spec.update(schema=2,boot_id=baseline['observation']['boot_id'],fresh_baseline_sha256=args.baseline_sha256)
     validate(files,spec);files['spec.json']=c.encoded(spec);files['review.md']=review(spec)
     files['manifest.json']=c.encoded({name:c.sha(data) for name,data in sorted(files.items())})
     os.umask(0o077);args.output.mkdir(mode=0o700)
@@ -333,6 +382,7 @@ def main():
     os.umask(0o077);parser=argparse.ArgumentParser(description=__doc__);sub=parser.add_subparsers(dest='action',required=True)
     p=sub.add_parser('seal');p.add_argument('--kind',choices=('hardware','runtime'),required=True)
     p.add_argument('--network-dir',type=Path,required=True);p.add_argument('--network-sha256',required=True)
+    p.add_argument('--baseline-dir',type=Path,required=True);p.add_argument('--baseline-sha256',required=True)
     p.add_argument('--hardware-dir',type=Path);p.add_argument('--hardware-sha256')
     p.add_argument('--operation-id',required=True);p.add_argument('--output',type=Path,required=True)
     p=sub.add_parser('execute');p.add_argument('--bundle',type=Path,required=True);p.add_argument('--sha256',required=True)

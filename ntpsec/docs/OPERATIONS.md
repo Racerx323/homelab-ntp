@@ -23,7 +23,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware attempt recovered to original boot configuration; recovery reboot, dual-stack acceptance and transient cleanup complete; runtime stage unstarted | Prepare a fresh baseline and corrected hardware/boot stage, then conditional runtime prerequisites; obtain separate execution approval |
+| Runtime configuration | Hardware attempt recovered to original boot configuration; recovery reboot, dual-stack acceptance and transient cleanup complete; runtime stage unstarted | Fresh post-recovery baseline capture prepared; corrected hardware checks tested offline; approve capture before sealing replacement hardware/runtime bundles |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 
@@ -1337,3 +1337,34 @@ Recovery acceptance restores the pre-hardware boot configuration; it does not
 accept UART/PPS/RTC metadata or authorize runtime/account activation. Future
 hardware/reboot stages must incorporate this tested, constrained comparison
 and receive fresh approval instead of replaying the original consumed modes.
+
+## Fresh post-recovery baseline and replacement hardware stage
+
+`host-baseline-20261013-v1` is prepared offline for separate capture approval.
+The existing registry inspector's `seal-baseline` command takes the accepted
+recovery directory and exact bundle hash. It binds that recovery's receipt,
+cleanup, current boot, original hardware source and retained protected stages.
+It captures current package/service/Python observations, installed native files
+and parent identities, boot/time/loader files, account identifiers, device
+metadata, network profiles and static ELF dependencies. Capture makes no
+application imports, device accesses or configuration changes. Only its new
+protected diagnostic stage is created; conditional readback and cleanup follow
+the existing single-use transport and terminal-hash rules.
+
+The resulting `baseline.json` is new evidence. Historical installation,
+networking and recovery records retain their original boot IDs and bytes.
+Across the accepted reboot, only boot ID and service PID/restart counters may
+differ from the old observation; other package/native/service or protected
+configuration drift holds the capture. Acceptance checks bind the new boot to
+the completed recovery receipt and require stable observations during capture.
+
+After capture acceptance and cleanup, use `run-host-configuration.py seal`
+with required `--baseline-dir` and `--baseline-sha256`, plus the existing
+network provenance and target/kind arguments. Schema 2 binds the fresh baseline
+hash, receipt and cleanup independently from the historical network receipt.
+Both replacement hardware and conditional runtime bundles must bind the same
+fresh baseline. The corrected hardware checker uses the constrained loopback
+comparison directly; original networking mutation checks remain strict.
+Do not seal or execute a replacement from the old pre-reboot baseline. The
+new hardware/boot mutation bundle remains unsealed until fresh capture data is
+accepted, and requires separate execution approval afterward.
