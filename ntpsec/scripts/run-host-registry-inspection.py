@@ -529,6 +529,21 @@ def recovery_inputs(files, spec):
         raise ValueError('accepted recovery archive required')
     recovered = archive_inputs(files['recovery.tar']); recovery = json.loads(recovered['spec.json'])
     receipt = json.loads(files['recovery-acceptance.json']); cleanup = json.loads(files['recovery-cleanup.json'])
+    if recovery['operation'] == 'hardware':
+        if (spec['recovery_bundle_sha256'] != spec['hardware_bundle_sha256']
+                or recovered['spec.json'] != files['hardware-spec.json']
+                or not re.fullmatch('/var/lib/ntp-host-[a-z][a-z0-9-]{0,47}', recovery['stage'])
+                or any(recovery[k] != spec[k] for k in ('hostname','kernel','ssh','old_ipv4',
+                                                       'network_bundle_sha256','network_spec_sha256'))
+                or spec['endpoints'] != [recovery['recipe'][k].split('/')[0] for k in ('ipv4_address','ipv6_address')]
+                or receipt['bundle_sha256'] != spec['hardware_bundle_sha256']
+                or receipt['result'] != {'phase':'recovered','boot_id':spec['recovered_boot_id']}
+                or cleanup['bundle_sha256'] != spec['hardware_bundle_sha256']
+                or cleanup['result']['phase'] != 'recovered'
+                or cleanup['result'].get('recovered_boot_id') != spec['recovered_boot_id']
+                or cleanup['result'].get('transient_units_cleaned') is not True):
+            raise ValueError('completed hardware recovery/cleanup provenance mismatch')
+        return recovery, recovered
     hardware = archive_inputs(recovered['hardware.tar'])
     if (recovery['operation'] != 'host-recovery-continuation'
             or not re.fullmatch('/var/lib/ntp-recovery-[a-z][a-z0-9-]{0,47}', recovery['stage'])
@@ -558,7 +573,10 @@ def verify_recovery_stage(h, recovery, recovered, files):
     for name, digest in recovery['members'].items():
         if not re.fullmatch('[a-z][a-z0-9._-]+', name) or sha(private_root_file(h, root/name, 32*1024**2)) != digest:
             raise ValueError('recovery source drift')
-    if private_root_file(h, root/'state.json') != files['recovery-cleanup.json']:
+    cleanup = files['recovery-cleanup.json']
+    if recovery['operation'] == 'hardware':
+        cleanup = encoded(json.loads(cleanup)['result'])
+    if private_root_file(h, root/'state.json') != cleanup:
         raise ValueError('accepted recovery state drift')
 
 
@@ -608,12 +626,14 @@ def fresh_baseline(h, spec, files, old):
 
 def seal_baseline(args):
     c = module('run-foundation-preflight.py')
-    raw = c.private_file(args.recovery_dir/'recovery-continuation.tar', 32*1024**2)
+    direct = getattr(args, 'hardware_recovery', False)
+    raw = c.private_file(args.recovery_dir/('host-configuration.tar' if direct else 'recovery-continuation.tar'), 32*1024**2)
     if sha(raw) != args.recovery_sha256:
         raise ValueError('exact accepted recovery bundle required')
     recovered = archive_inputs(raw); recovery = json.loads(recovered['spec.json'])
-    hardware = archive_inputs(recovered['hardware.tar']); old = json.loads(hardware['spec.json'])
-    receipt = c.private_file(args.recovery_dir/'acceptance.json')
+    hardware = recovered if direct else archive_inputs(recovered['hardware.tar'])
+    old = json.loads(hardware['spec.json'])
+    receipt = c.private_file(args.recovery_dir/('verify-recovery-result.json' if direct else 'acceptance.json'))
     cleanup = c.private_file(args.recovery_dir/'cleanup-result.json')
     files = {'worker.py': Path(__file__).read_bytes(), 'helper.py': hardware['foundation-install.py'],
              'hardware-spec.json': hardware['spec.json'],
@@ -630,8 +650,10 @@ def seal_baseline(args):
     epoch = int(time.time()); spec = {k: old[k] for k in ('hostname', 'kernel', 'ssh', 'old_ipv4')}
     spec.update(schema=1, operation='host-baseline', operation_id=args.operation_id,
                 stage='/var/lib/ntp-inspect-'+args.operation_id, prepared_epoch=epoch, expires_epoch=epoch+86400,
-                endpoints=recovery['endpoints'], hardware_bundle_sha256=recovery['hardware_sha256'],
-                recovery_bundle_sha256=args.recovery_sha256, recovered_boot_id=json.loads(receipt)['proof']['boot_id'],
+                endpoints=[old['recipe'][k].split('/')[0] for k in ('ipv4_address','ipv6_address')],
+                hardware_bundle_sha256=args.recovery_sha256 if direct else recovery['hardware_sha256'],
+                recovery_bundle_sha256=args.recovery_sha256,
+                recovered_boot_id=json.loads(receipt)['result' if direct else 'proof']['boot_id'],
                 network_bundle_sha256=old['network_bundle_sha256'], network_spec_sha256=old['network_spec_sha256'])
     spec['members'] = {n: sha(files[n]) for n in inputs(spec)}
     validate(spec, files); files['spec.json'] = encoded(spec)
@@ -685,6 +707,7 @@ def main():
     p.add_argument('--bundle', type=Path, required=True); p.add_argument('--sha256', required=True)
     p.add_argument('--mode', choices=('capture', 'readback', 'cleanup'), required=True)
     p = sub.add_parser('seal-baseline')
+    p.add_argument('--hardware-recovery', action='store_true', help='Bind completed recovery in a hardware stage')
     p.add_argument('--recovery-dir', type=Path, required=True); p.add_argument('--recovery-sha256', required=True)
     p.add_argument('--operation-id', required=True); p.add_argument('--output', type=Path, required=True)
     args = parser.parse_args()

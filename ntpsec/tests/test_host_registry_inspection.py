@@ -516,5 +516,44 @@ class RecoveredBindings(unittest.TestCase):
         with self.assertRaisesRegex(ValueError,'provenance'):m.recovery_inputs(self.files,self.spec)
 
 
+class HardwareRecoveryBindings(unittest.TestCase):
+    archive=RecoveredBindings.archive
+
+    def setUp(self):
+        old={'operation':'hardware','stage':'/var/lib/ntp-host-fixture','hostname':'fixture','kernel':'fixture',
+             'ssh':{},'old_ipv4':'192.0.2.2','network_bundle_sha256':'a'*64,'network_spec_sha256':'b'*64,
+             'recipe':{'ipv4_address':'192.0.2.1/24','ipv6_address':'2001:db8::1/64'}}
+        rawspec=m.encoded(old);raw=self.archive({'spec.json':rawspec})
+        self.spec={k:old[k] for k in ('hostname','kernel','ssh','old_ipv4','network_bundle_sha256','network_spec_sha256')}
+        self.spec.update(endpoints=['192.0.2.1','2001:db8::1'],recovered_boot_id=UUID,
+                         recovery_bundle_sha256=m.sha(raw),hardware_bundle_sha256=m.sha(raw))
+        self.receipt={'bundle_sha256':m.sha(raw),'result':{'phase':'recovered','boot_id':UUID}}
+        self.cleanup={'bundle_sha256':m.sha(raw),'result':{'phase':'recovered','recovered_boot_id':UUID,
+                                                        'transient_units_cleaned':True}}
+        self.files={'recovery.tar':raw,'hardware-spec.json':rawspec,
+                    'recovery-acceptance.json':m.encoded(self.receipt),'recovery-cleanup.json':m.encoded(self.cleanup)}
+
+    def test_completed_hardware_recovery(self):
+        self.assertEqual(m.recovery_inputs(self.files,self.spec)[0]['operation'],'hardware')
+
+    def test_cleanup_and_boot_substitution_rejected(self):
+        for key,value in [('phase','recovery_files_restored'),('transient_units_cleaned',False),('recovered_boot_id',OTHER)]:
+            changed=json.loads(m.encoded(self.cleanup));changed['result'][key]=value
+            files=dict(self.files,**{'recovery-cleanup.json':m.encoded(changed)})
+            with self.subTest(key=key),self.assertRaisesRegex(ValueError,'provenance'):
+                m.recovery_inputs(files,self.spec)
+
+    def test_wrong_archive_network_endpoint_or_boot_rejected(self):
+        for key,value in [('recovery_bundle_sha256','c'*64),('network_spec_sha256','c'*64),
+                          ('endpoints',['192.0.2.3']),('recovered_boot_id',OTHER)]:
+            with self.subTest(key=key),self.assertRaises(ValueError):
+                m.recovery_inputs(self.files,dict(self.spec,**{key:value}))
+
+    def test_recovery_receipt_required(self):
+        changed=dict(self.receipt,result={'phase':'recovery_reboot_submitted','boot_id':UUID})
+        with self.assertRaisesRegex(ValueError,'provenance'):
+            m.recovery_inputs(dict(self.files,**{'recovery-acceptance.json':m.encoded(changed)}),self.spec)
+
+
 if __name__ == '__main__':
     unittest.main()

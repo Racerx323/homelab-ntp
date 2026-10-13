@@ -623,12 +623,16 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    are tested offline; the post-recovery read-only capture was accepted and
    cleaned on October 13. Hardware v2 subsequently held at the PL011 driver-name
    check; original boot files were restored and recovery reboot/network checks
-   and transient cleanup completed. Establish the observed UART driver identity
-   through a separately approved read-only inspection before correcting that
-   gate. The prepared inspection records bounded tty parent/driver chains and
-   AMBA/device-tree metadata without device I/O or sysfs writes, bound to the
-   recovered boot and completed cleanup. It cannot reconstruct the failed
-   boot mapping or establish hardware acceptance. Bind replacement stages independently from historical
+   and transient cleanup completed. The accepted read-only inspection found
+   the PL011 driver bound to the AMBA UART on the recovered boot, without a
+   serial0 alias or ttyAMA/ttyS nodes; the failed-boot mapping remains unknown.
+   Validate the selected tty's bounded parent chain against exactly one PL011
+   AMBA driver, device registry identity and compatible device-tree node.
+   Preserve the observed chain and validation errors in protected state before
+   a hold or recovery. These checks are tested offline. The next fresh baseline
+   binds directly to hardware v2's completed recovery/cleanup; execute and
+   accept that separately approved capture before sealing replacement hardware.
+   Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Hardware/time-service/client acceptance remains pending.
    Prepare hardware/boot and account/runtime prerequisites as separately

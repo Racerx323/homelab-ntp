@@ -25,6 +25,65 @@ def module(name):
 s=module('host-configuration-stage.py');c=module('run-host-configuration.py');n=c.n
 
 
+class UartAncestry(unittest.TestCase):
+    def setUp(self):
+        self.temp=tempfile.TemporaryDirectory();self.addCleanup(self.temp.cleanup)
+        self.root=Path(self.temp.name)
+        self.node=self.root/'devices/platform/uart';self.tty=self.node/'serial/port/tty/ttyAMA0'
+        self.tty.mkdir(parents=True)
+        for name in ('bus/amba/drivers/uart-pl011','bus/serial-base/drivers/port','bus/amba/devices',
+                     'firmware/devicetree/base/uart'):
+            (self.root/name).mkdir(parents=True)
+        (self.node/'driver').symlink_to(self.root/'bus/amba/drivers/uart-pl011')
+        (self.node/'subsystem').symlink_to(self.root/'bus/amba')
+        (self.node/'of_node').symlink_to(self.root/'firmware/devicetree/base/uart')
+        (self.root/'firmware/devicetree/base/uart/compatible').write_bytes(b'arm,pl011-axi\0arm,pl011\0')
+        (self.root/'bus/amba/devices/uart').symlink_to(self.node)
+        (self.tty.parent.parent/'driver').symlink_to(self.root/'bus/serial-base/drivers/port')
+
+    def test_serial_layer_does_not_hide_pl011(self):
+        chain=s.uart_ancestry(self.tty,self.root)
+        self.assertEqual([Path(x['driver']).name for x in chain if x['driver']],['port','uart-pl011'])
+        self.assertEqual(s.pl011_parent(chain,'uart-pl011',self.root)['path'],str(self.node))
+
+    def test_wrong_driver_compatibility_or_bus_rejected(self):
+        for key,value in [('driver','wrong'),('compatible',['arm,primecell']),('subsystem','wrong')]:
+            chain=s.uart_ancestry(self.tty,self.root)
+            next(x for x in chain if x['path']==str(self.node))[key]=value
+            with self.subTest(key=key),self.assertRaisesRegex(ValueError,'one PL011'):
+                s.pl011_parent(chain,'uart-pl011',self.root)
+
+    def test_ambiguous_ancestors_rejected(self):
+        chain=s.uart_ancestry(self.tty,self.root)
+        chain.append(next(x for x in chain if x['path']==str(self.node)))
+        with self.assertRaisesRegex(ValueError,'one PL011'):
+            s.pl011_parent(chain,'uart-pl011',self.root)
+
+    def test_amba_registry_mismatch_rejected(self):
+        (self.root/'bus/amba/devices/uart').unlink()
+        (self.root/'bus/amba/devices/uart').symlink_to(self.tty)
+        with self.assertRaisesRegex(ValueError,'registry identity'):
+            s.pl011_parent(s.uart_ancestry(self.tty,self.root),'uart-pl011',self.root)
+
+    def test_escape_and_unbounded_property_rejected(self):
+        prop=self.root/'firmware/devicetree/base/uart/compatible';prop.write_bytes(b'x'*4097)
+        with self.assertRaisesRegex(ValueError,'bounded UART compatibility'):
+            s.uart_ancestry(self.tty,self.root)
+        (self.node/'driver').unlink();(self.node/'driver').symlink_to('/tmp')
+        with self.assertRaisesRegex(ValueError,'escaped'):
+            s.uart_ancestry(self.tty,self.root)
+
+    def test_failure_saved_in_state_before_recovery(self):
+        tx=s.Transaction.__new__(s.Transaction);tx.recipe={'uart_alias':str(self.root/'missing')}
+        state={'phase':'reboot_submitted'};tx.state=lambda:dict(state)
+        tx.write=lambda name,value:state.update(value)
+        with patch.object(s,'boot_id',return_value='candidate'),self.assertRaisesRegex(ValueError,'serial0 alias'):
+            tx.hardware_metadata()
+        self.assertEqual(state['uart_observation']['boot_id'],'candidate')
+        self.assertIn('serial0 alias',state['uart_observation']['error'])
+        self.assertEqual(state['phase'],'reboot_submitted')
+
+
 class Recipes(unittest.TestCase):
     def test_recipes_and_no_activation_boundary(self):
         for kind in ('hardware','runtime'):

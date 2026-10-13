@@ -128,6 +128,51 @@ def load_module(root, name, digest, helper):
     return module
 
 
+def uart_ancestry(tty, sysroot=Path('/sys')):
+    node = tty.resolve(strict=True)
+    if not node.is_relative_to(sysroot/'devices'):
+        raise ValueError('UART must resolve within sysfs devices')
+    chain = []
+    while node != sysroot/'devices':
+        if len(chain) >= 16:
+            raise ValueError('bounded UART ancestry required')
+        item = {'path': str(node), 'driver': None, 'subsystem': None, 'of_node': None, 'compatible': []}
+        for name, parent in [('driver', sysroot/'bus'), ('subsystem', sysroot/'bus'),
+                             ('of_node', sysroot/'firmware/devicetree/base')]:
+            link = node/name
+            if link.is_symlink():
+                resolved = link.resolve(strict=True)
+                if not resolved.is_relative_to(parent) or resolved == parent:
+                    raise ValueError('UART metadata link escaped sysfs tree')
+                item[name] = str(resolved)
+        if item['of_node']:
+            prop = Path(item['of_node'])/'compatible'
+            if prop.exists():
+                if prop.is_symlink() or not prop.is_file():
+                    raise ValueError('regular UART compatibility property required')
+                with prop.open('rb') as stream:
+                    raw = stream.read(4097)
+                if len(raw) > 4096:
+                    raise ValueError('bounded UART compatibility required')
+                item['compatible'] = raw.rstrip(b'\0').decode('ascii').split('\0')
+        chain.append(item)
+        node = node.parent
+    return chain
+
+
+def pl011_parent(chain, driver, sysroot=Path('/sys')):
+    matches = [item for item in chain
+               if item['driver'] == str(sysroot/'bus/amba/drivers'/driver)
+               and item['subsystem'] == str(sysroot/'bus/amba')
+               and 'arm,pl011' in item['compatible']]
+    if len(matches) != 1:
+        raise ValueError('one PL011 AMBA ancestor required')
+    item = matches[0]
+    if (sysroot/'bus/amba/devices'/Path(item['path']).name).resolve(strict=True) != Path(item['path']):
+        raise ValueError('PL011 AMBA registry identity mismatch')
+    return item
+
+
 class Transaction:
     def __init__(self, spec):
         self.spec = spec; self.root = Path(spec['stage']); self.recipe = spec['host_recipe']
@@ -276,17 +321,21 @@ class Transaction:
 
     def hardware_metadata(self):
         alias=Path(self.recipe['uart_alias'])
-        if not alias.is_symlink() or alias.lstat().st_uid!=0:
-            raise ValueError('protected serial0 alias required')
-        uart=alias.resolve(strict=True)
-        if not re.fullmatch('/dev/ttyAMA[0-9]+',str(uart)) or not stat.S_ISCHR(uart.stat().st_mode):
-            raise ValueError('PL011 character UART required')
-        tty=Path('/sys/class/tty')/uart.name
-        driver=(tty/'device/driver').resolve(strict=True).name
-        if driver != self.recipe['uart_driver']:
-            raise ValueError('PL011 driver required')
-        if b'arm,pl011' not in (tty/'device/of_node/compatible').read_bytes().split(b'\0'):
-            raise ValueError('PL011 device-tree compatibility required')
+        observation={'boot_id':boot_id(),'alias':str(alias),'uart':None,'ancestors':[]}
+        try:
+            if not alias.is_symlink() or alias.lstat().st_uid!=0:
+                raise ValueError('protected serial0 alias required')
+            uart=alias.resolve(strict=True);observation['uart']=str(uart)
+            if not re.fullmatch('/dev/ttyAMA[0-9]+',str(uart)) or not stat.S_ISCHR(uart.stat().st_mode):
+                raise ValueError('PL011 character UART required')
+            observation['ancestors']=uart_ancestry(Path('/sys/class/tty')/uart.name)
+            parent=pl011_parent(observation['ancestors'],self.recipe['uart_driver'])
+        except (OSError, ValueError) as error:
+            observation['error']=str(error)[:500]
+            raise
+        finally:
+            state=self.state();state['uart_observation']=observation;self.write('state.json',state)
+        driver=self.recipe['uart_driver']
         uinfo=uart.stat()
         # Metadata only: no stty, GNSS polling, PPS ioctls or RTC read/write.
         pps=[];rtc=[]
@@ -312,7 +361,8 @@ class Transaction:
             rtc.append({'device':str(dev),'of_node':str(node.resolve()),'address':address,'name':(path/'name').read_text().strip()})
         if len(pps)!=1 or len(rtc)!=1:
             raise ValueError('one observed BCM18 PPS and RV3028 RTC required')
-        return {'uart':str(uart),'uart_alias':str(alias),'uart_driver':driver,'uart_uid':uinfo.st_uid,
+        return {'uart':str(uart),'uart_alias':str(alias),'uart_driver':driver,'uart_parent':parent['path'],
+                'uart_of_node':parent['of_node'],'uart_uid':uinfo.st_uid,
                 'uart_gid':uinfo.st_gid,'uart_mode':stat.S_IMODE(uinfo.st_mode),'pps':pps[0],'rtc':rtc[0]}
 
     def hardware_gate(self):

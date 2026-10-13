@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation/readback/payload cleanup accepted; runtime discovery and configuration pending |
-| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware v2 held at UART driver validation and recovered; read-only driver inspection next; account/runtime and service activation pending |
+| Runtime | Native files reverified; v2 runtime discovery and cleanup accepted; copied_not_activated | Hardware v2 recovered; UART inspection accepted; fresh baseline and corrected hardware acceptance pending; account/runtime unstarted |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -1199,3 +1199,38 @@ Next approve the [UART/sysfs review](/home/aaron/code/.local-evidence/homelab-nt
 and its `sealing.json` SHA-256 for one read-only capture with conditional
 readback and cleanup. Receiver timing, hardware acceptance, account/runtime
 setup and clock-service activation remain pending.
+
+### October 13: UART inspection accepted; ancestry correction prepared
+
+Executed the approved `host-uart-inspection-20261013-v1` capture once.
+Diagnostic acceptance bound the recovered boot and stable retained state,
+original boot files and UART metadata. Conditional cleanup matched the terminal
+hash and removed only the new diagnostic stage. Original hardware/recovery
+stages and all private execution evidence remain preserved.
+
+The recovered boot reports `uart-pl011` bound to AMBA device
+`fe201000.serial`, with `arm,pl011-axi`, `arm,pl011` and `arm,primecell`
+compatibility and device-tree status `okay`. No serial0 alias or ttyAMA/ttyS
+nodes were observed. This confirms the AMBA driver exists on the recovered
+boot; it does not reconstruct the failed candidate boot's tty mapping.
+
+Approved offline correction now follows the selected tty's bounded sysfs
+parent chain and requires exactly one PL011 AMBA ancestor with matching
+registry identity and device-tree compatibility. It no longer assumes the
+driver sits directly under the tty device. The worker records the observed
+chain and any UART validation error in protected state before subsequent
+checks or recovery. Tests cover intermediate serial layers, wrong/ambiguous
+ancestors, registry mismatch, path/property bounds and saved failure evidence.
+Executed bundles remain unchanged.
+
+Extended fresh-baseline preparation to bind directly to a hardware stage's
+completed recovery verification and cleanup, retaining support for the older
+recovery-continuation provenance. Prepared `host-baseline-20261013-v2` for one
+read-only capture with conditional readback and cleanup. No target contact
+occurred during this preparation; no replacement hardware bundle has been
+sealed against stale observations.
+
+Next approve the [fresh baseline review](/home/aaron/code/.local-evidence/homelab-ntp/current/host-baseline-20261013-v2/review.md)
+and its `sealing.json` SHA-256. After capture acceptance and cleanup, seal the
+corrected hardware bundle for separate execution approval. Account/runtime
+setup and clock-service activation remain pending hardware acceptance.
