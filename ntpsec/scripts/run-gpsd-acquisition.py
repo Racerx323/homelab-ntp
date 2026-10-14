@@ -26,6 +26,13 @@ INPUTS = {'worker.py', 'runtime.tar', 'runtime-acceptance.json', 'runtime-cleanu
           'transport.py', 'known_hosts', 'prior.tar', 'prior-acceptance.json', 'prior-cleanup.json',
           'prior-terminal.json', 'prior-restoration.json', 'prior-shm-after.txt', 'receiver-inputs.py', 'gpsd-pairing.py'}
 
+LEGACY_INPUTS = frozenset(INPUTS)
+CODE_PATHS = {name: 'scripts/'+name for name in (
+    'foundation-install.py', 'host-configuration-stage.py', 'check-pps.py',
+    'host-network-stage.py', 'inspect-source-destinations.py', 'clockmaker.py',
+    'timeservice.py', 'runtime-artifacts.py')}
+INPUTS = INPUTS | set(CODE_PATHS)
+
 
 def encoded(value):
     return (json.dumps(value, sort_keys=True)+'\n').encode()
@@ -73,8 +80,8 @@ def validate_recipe(r):
 
 def validate(spec, files, historical=False):
     names = INPUTS
-    if historical and set(spec['members']) == INPUTS-{'gpsd-pairing.py'}:
-        names = INPUTS-{'gpsd-pairing.py'}
+    if historical and set(spec['members']) in (LEGACY_INPUTS, LEGACY_INPUTS-{'gpsd-pairing.py'}):
+        names = set(spec['members'])
     old = unpack(files['runtime.tar']); runtime = json.loads(old['spec.json'])
     receipt = json.loads(files['runtime-acceptance.json']); cleanup = json.loads(files['runtime-cleanup.json'])
     state = cleanup['result']; recipe = json.loads(files['recipe.json']); validate_recipe(recipe)
@@ -215,15 +222,20 @@ def context(h, spec, files, create=False):
         expected = json.loads(files['runtime-cleanup.json'])['result']
         if json.loads(retained['state.json']) != expected:
             raise ValueError('accepted runtime state changed')
-        sub = root/'runtime-check'; runtime = dict(runtime, stage=str(sub))
+        sub = root/'runtime-check'
+        reader = load(root/'runtime-artifacts.py')
+        code = {member: files[name] for name, member in reader.RUNTIME_CODE.items()}
+        runtime, current = reader.runtime_inputs(runtime, old, code, sub)
         if create:
             sub.mkdir(mode=0o700)
             for name in runtime['members']:
-                h.create(sub/name, old[name])
+                h.create(sub/name, current[name])
             for name, raw in retained.items():
                 h.create(sub/name, raw)
             h.create(sub/'spec.json', encoded(runtime))
         else:
+            if h.read(sub/'spec.json') != encoded(runtime):
+                raise ValueError('runtime validation specification drift')
             for name, digest in runtime['members'].items():
                 if sha(h.read(sub/name)) != digest:
                     raise ValueError('runtime validation helper drift')
@@ -372,9 +384,9 @@ def capture(h, spec, files):
 
 
 def bootstrap(spec, files):
-    _, old = validate(spec, files)
+    validate(spec, files)
     ns = {'__name__': 'protected_helper'}
-    exec(compile(old['foundation-install.py'],'sealed-helper','exec'), ns)
+    exec(compile(files['foundation-install.py'],'sealed-helper','exec'), ns)
     import types
     return types.SimpleNamespace(**ns)
 
@@ -470,6 +482,7 @@ def prepare(bundle, checksum):
     if sha(raw) != checksum: raise ValueError('approved acquisition archive required')
     files = unpack(raw); spec = json.loads(files['spec.json'])
     if (set(files) != INPUTS|{'spec.json','manifest.json','review.md'}
+            or any(files[n] != (ROOT/p).read_bytes() for n,p in CODE_PATHS.items())
             or files['worker.py'] != Path(__file__).read_bytes()
             or files['receiver-inputs.py'] != (ROOT/'scripts/inspect-receiver-runtime.py').read_bytes()
             or files['gpsd-pairing.py'] != (ROOT/'scripts/gpsd-pairing.py').read_bytes()
@@ -526,6 +539,7 @@ def seal(args):
                                           else 'gpsd-acquisition-recipe.json')).read_bytes()}
     for n,p in [('architecture.md','docs/ntp-architecture-deployment-plan-v1.0.md'),
                 ('operations.md','docs/OPERATIONS.md'),('history.md','HISTORY.md')]: files[n]=(ROOT/p).read_bytes()
+    files.update({name: (ROOT/path).read_bytes() for name, path in CODE_PATHS.items()})
     files.update(prior_inputs(c,args))
     epoch=int(time.time()); spec={'schema':3,'purpose':args.purpose,'operation_id':args.operation_id,
         'stage':'/var/lib/ntp-acquire-'+args.operation_id,'unit':'ntp-acquire-'+args.operation_id+'.service',

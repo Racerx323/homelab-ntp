@@ -674,18 +674,21 @@ inputs. A current baseline means an explicitly accepted revision, never a mutabl
 supply executable implementations. This applies to all deployment artifacts,
 not only the PPS checker. Historical executed bundles remain immutable.
 
-The active revalidation/monitor path now implements this contract:
+New revalidation, monitor and standalone lifecycle bundles implement this contract:
 
 | Path | Maintained implementation and data boundary |
 | --- | --- |
 | Acquisition and restoration readers | `runtime-artifacts.py` validates historical manifests, target identity, receipts and closure using current acquisition/restoration schema readers. Archived code is never imported. |
 | Runtime reconstruction | Current manifest members supply the helper, hardware/PPS checkers, network checker, inventory reader and supervisors. Historical configuration/baseline members remain unchanged; an effective specification pins the substituted code. Unknown historical Python members reject. |
 | Revalidation and monitor preflight | Both seal current repository sources. Monitor requires identical code to the accepted prerequisite, including receipt readers and runtime dependencies. Preflight, handoff and recovery use the resulting runtime copy. |
+| Standalone acquisition | Pins the helper and complete runtime implementation set; rebuilds runtime checks from unchanged historical data and current code. Rechecks the effective specification and member hashes. |
+| Standalone restoration and hardware recovery | Pins maintained receipt readers, recovery implementation and runtime checkers. The historical stage remains the data/state root; executable imports use the new code root. |
+| Retained inspection and fresh baseline | Pins current helpers and continuity observer. A historical observer digest binds retained bytes as data, independently of the observer executed now. |
 
 The superseded `run-service-cutover.py seal` entry point rejects new trials.
 Historical bundles retain their original execution behavior and evidence; this
-migration does not retroactively validate them. Older standalone lifecycle
-controllers must satisfy the same contract before being used to prepare new work.
+migration does not retroactively validate them. New preparation rejects changed
+repository code, including the transitive runtime helpers.
 Next: prepare a fresh revalidation review using these maintained sources, then
 obtain separate execution approval. No prior approval transfers to changed code.
 
@@ -702,6 +705,25 @@ The private audit supplies an exact deletion manifest; auditing is not deletion
 authorization. Removing a duplicate package can make its original local command
 unusable until that package is restored. Do not remove entire operation directories
 or infer that unique logs are disposable merely because the operation failed.
+
+The approved October 14 retention sequence is complete: 8,439 exact duplicates
+removed; 4,010 unique files and nine symlinks archived, restore-tested and retired
+from their old paths; all 328 protected files reverified. The private archive's
+member manifest, recovery-location ledger and Git bundle preserve retrieval.
+Original directories remain. The audit inventory describes the pre-cleanup state
+and must not be replayed as another deletion plan.
+
+All 117 pinned installation assets and both publisher signatures now verify in
+one explicitly supplied private cache. The three missing payloads were fetched;
+the other 114 were reused. Verification does not install packages. A clean checkout
+needs that cache, repository verification keys and explicit target observations;
+it does not need duplicate historical package directories.
+
+Clean-directory offline tests exercise maintained code with synthetic historical
+data. They do not prove a fresh host deployment end to end: acquisition still
+requires a previous accepted capture, and monitor preparation requires restoration
+and revalidation receipts. These continuation prerequisites need a separately
+implemented first-install entry path before claiming an unattended fresh install.
 
 The old-action audit covers these reachable dependencies:
 
@@ -1186,9 +1208,10 @@ hardware/network acceptance remain pending.
 Required reusable assets belong in this repo. Large publisher binaries are
 obtained through the checked-in verification tool, not copied repeatedly into
 operation folders. Keep credentials, raw host captures, recovery-card data and
-execution receipts private. The current private index is
+execution receipts private. The historical private index is
 `/home/aaron/code/.local-evidence/homelab-ntp/current/catalog.json`; it identifies
-verified accepted package/Python/source records by hash and provenance.
+the earlier October 10 package/Python/source records by hash and provenance;
+it is not the current mDNS build inventory or an executable installation input.
 The current accepted target files remain under ama's retained
 `.ntp-source-build-mdns-20261012-v1/candidate/stage`. The earlier v5 workspace
 is preserved as prior executed evidence.

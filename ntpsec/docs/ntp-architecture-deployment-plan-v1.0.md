@@ -935,8 +935,14 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    from historical operation archives. Preserve retained archives unchanged. Revalidation and monitor operations use
    maintained data readers and current manifest code for every reconstructed
    runtime dependency; the successor requires code equality with its accepted
-   prerequisite. The old cutover sealer is retired. Duplicate package copies may
-   be pruned only against a reviewed path/hash manifest with a verified retained
+   prerequisite. The old cutover sealer is retired.
+   Standalone acquisition, restoration, hardware recovery and retained inspection
+   also pin maintained helpers. Separate historical state roots from executable
+   code roots; verify both without importing historical implementations. Validate
+   the offline workflow from a clean checkout with an explicit verified asset
+   cache. Such tests do not replace target observations or establish first-install
+   support where a controller requires continuation receipts.
+   Duplicate package copies may be pruned only against a reviewed path/hash manifest with a verified retained
    copy and recovery location; unique acceptance/recovery evidence remains.
    Validate the accepted GPIO PPS source by bound driver, device-tree mapping,
    source identity and character-device identity. Other PPS class entries are

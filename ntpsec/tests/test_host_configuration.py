@@ -271,6 +271,31 @@ class Recipes(unittest.TestCase):
 
 
 class Transaction(unittest.TestCase):
+    def test_constructor_uses_pinned_code_root_and_original_data(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)/'original';code=Path(tmp)/'code'
+            root.mkdir(mode=0o700);code.mkdir(mode=0o700)
+            names=('foundation-install.py','host-network-stage.py','inspect-source-destinations.py','clockmaker.py','timeservice.py')
+            members={}
+            for name in names:
+                raw=(ROOT/'scripts'/name).read_bytes()
+                if name=='foundation-install.py':
+                    raw+=b'\nOWNER=os.getuid()\nancestors=lambda path: None\n'
+                (code/name).write_bytes(raw);(code/name).chmod(0o600)
+                (root/name).write_bytes(b'raise AssertionError("historical code executed")\n')
+                members[name]=c.c.sha(raw)
+            baseline={'queries':{'ethernet_profiles':{'fixture':{'stdout':'\n'.join('connection.field'+str(i)+':value' for i in range(10))}}}}
+            (root/'baseline.json').write_bytes(s.encoded(baseline));(root/'baseline.json').chmod(0o600)
+            spec={'stage':str(root),'host_recipe':{},'members':{},'recipe':{},'original_uuid':'fixture'}
+            tx=s.Transaction(spec,code_root=code,code_members=members)
+            self.assertEqual(tx.root,root);self.assertEqual(tx.core.root,root)
+            self.assertEqual(tx.baseline,baseline);self.assertEqual(tx.code_root,code)
+            for obj in (tx.h,tx.net,tx.core.i,tx.core.cm):
+                self.assertEqual(Path(obj.__file__).parent,code)
+            (code/'foundation-install.py').write_bytes(b'raise AssertionError("drift executed")')
+            with self.assertRaisesRegex(ValueError,'helper digest'):
+                s.Transaction(spec,code_root=code,code_members=members)
+
     def setUp(self):
         temp=tempfile.TemporaryDirectory();self.addCleanup(temp.cleanup);self.root=Path(temp.name)/'stage';self.root.mkdir(mode=0o700)
         self.tx=s.Transaction.__new__(s.Transaction);self.tx.root=self.root
@@ -278,6 +303,7 @@ class Transaction(unittest.TestCase):
                       'prepared_epoch':1,'expires_epoch':9999999999,'members':{},
                       'recipe':{'ipv4_address':'10.1.0.51/22','ipv6_address':'fd36:5aa8:6971:1::51/64'}}
         self.tx.recipe={};self.calls=[]
+        self.tx.code_root=self.root;self.tx.code_members=self.tx.spec['members']
         self.tx.h=SimpleNamespace(read=lambda p,**kw:p.read_bytes(),sha=c.c.sha,sync=Mock(),OWNER=os.getuid())
         def create(path,data,mode=0o600):
             with path.open('xb') as f:f.write(data)

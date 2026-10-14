@@ -191,16 +191,22 @@ def pl011_parent(chain, driver, sysroot=Path('/sys')):
 
 
 class Transaction:
-    def __init__(self, spec):
+    def __init__(self, spec, code_root=None, code_members=None):
         self.spec = spec; self.root = Path(spec['stage']); self.recipe = spec['host_recipe']
+        code_root = self.root if code_root is None else Path(code_root)
+        code_members = spec['members'] if code_members is None else code_members
+        self.code_root = code_root; self.code_members = code_members
+        import hashlib
+        if hashlib.sha256((code_root/'foundation-install.py').read_bytes()).hexdigest() != code_members['foundation-install.py']:
+            raise ValueError('maintained helper digest mismatch')
         # Bootstrap executes this helper from sealed bytes; later entry verifies it before import.
-        helper_spec = importlib.util.spec_from_file_location('host_guard',self.root/'foundation-install.py')
+        helper_spec = importlib.util.spec_from_file_location('host_guard',code_root/'foundation-install.py')
         self.h = importlib.util.module_from_spec(helper_spec); helper_spec.loader.exec_module(self.h)
-        self.net = load_module(self.root,'host-network-stage.py',spec['members']['host-network-stage.py'],self.h)
+        self.net = load_module(code_root,'host-network-stage.py',code_members['host-network-stage.py'],self.h)
         self.core = self.net.Transaction.__new__(self.net.Transaction)
         self.core.spec = spec; self.core.root = self.root; self.core.r = spec['recipe']; self.core.h = self.h
-        self.core.i = load_module(self.root,'inspect-source-destinations.py',spec['members']['inspect-source-destinations.py'],self.h)
-        self.core.cm = load_module(self.root,'clockmaker.py',spec['members']['clockmaker.py'],self.h)
+        self.core.i = load_module(code_root,'inspect-source-destinations.py',code_members['inspect-source-destinations.py'],self.h)
+        self.core.cm = load_module(code_root,'clockmaker.py',code_members['clockmaker.py'],self.h)
         self.core.baseline = json.loads(self.h.read(self.root/'baseline.json'))
         self.core.original = self.net.properties(self.core.baseline['queries']['ethernet_profiles'][spec['original_uuid']]['stdout'])
         self.core.continuity = self.continuity
@@ -439,7 +445,7 @@ class Transaction:
         hardware=self.hardware_gate();template=json.loads(self.h.read(self.root/'timeservice-template.json'))
         raw=json.dumps(template).replace('@UART_DEVICE@',hardware['hardware']['uart_alias']).replace('@NTP_USER@','ntp').replace('@NTP_GROUP@','ntp')
         candidate=json.loads(raw)
-        validator=load_module(self.root,'timeservice.py',self.spec['members']['timeservice.py'],self.h)
+        validator=load_module(self.code_root,'timeservice.py',self.code_members['timeservice.py'],self.h)
         validator.validate(candidate)
         self.h.create(self.root/'timeservice-candidate.json',encoded(candidate))
         self.h.create(self.root/'timeservice.service',self.h.read(self.root/'timeservice-template.service'))
@@ -471,7 +477,7 @@ class Transaction:
         identity_code=('import os\nassert (os.getuid(),os.getgid())=='+repr((account['uid'],account['gid']))+'\n')
         self.run(['/usr/sbin/runuser','--user','ntp','--','/usr/bin/python3','-I','-B','-c',identity_code+code,'ntp.packet','ntp.ntpc'])
         self.run(['/usr/bin/systemd-analyze','verify',str(self.root/'timeservice.service')])
-        validator=load_module(self.root,'timeservice.py',self.spec['members']['timeservice.py'],self.h)
+        validator=load_module(self.code_root,'timeservice.py',self.code_members['timeservice.py'],self.h)
         validator.validate(json.loads(self.h.read(self.root/'timeservice-candidate.json')))
         if self.h.read(self.root/'timeservice.service')!=self.h.read(self.root/'timeservice-template.service'):
             raise ValueError('rendered service candidate drift')

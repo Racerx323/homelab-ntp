@@ -55,12 +55,30 @@ def fixture():
          'old_ipv4':'192.0.2.1','stage':'/var/lib/ntp-acquire-trial','operation_id':'trial',
          'apply_unit':'ntp-cutover-trial','recovery_unit':'ntp-cutover-trial-recovery','members':{}}
     baseline=observation();baseline['boot_id']=BASE
-    runtime=archive({'spec.json':m.encoded({'boot_id':BASE}),'baseline.json':m.encoded({'observation':baseline}),
-                     'host-configuration-stage.py':(ROOT/'scripts/host-configuration-stage.py').read_bytes()})
-    # Other lifecycle validators have their own complete fixtures; this fixture isolates restoration binding.
+    fixture_spec=importlib.util.spec_from_file_location('acquisition_fixture',ROOT/'tests/test_gpsd_acquisition.py')
+    fixtures=importlib.util.module_from_spec(fixture_spec);fixture_spec.loader.exec_module(fixtures)
+    refspec,ref=fixtures.fixture()
+    old.update({k:refspec[k] for k in ('hostname','kernel','endpoints','old_ipv4')})
+    refspec['boot_id']=BOOT
+    rs=json.loads(c.unpack(ref['runtime.tar'])['spec.json']);rs['boot_id']=BASE
+    runtime=archive({'spec.json':m.encoded(rs),'baseline.json':m.encoded({'observation':baseline}),
+                     'host-configuration-stage.py':b'raise AssertionError("historical hardware code executed")'})
+    ref['runtime.tar']=runtime;refspec['runtime_sha256']=m.sha(runtime)
+    accepted=json.loads(ref['runtime-acceptance.json']);accepted.update(bundle_sha256=m.sha(runtime),spec_sha256=m.sha(m.encoded(rs)),boot_id=BOOT)
+    ref['runtime-acceptance.json']=m.encoded(accepted)
+    closure=json.loads(ref['runtime-cleanup.json']);closure['bundle_sha256']=m.sha(runtime);closure['result']['accepted_boot_id']=BOOT
+    ref['runtime-cleanup.json']=m.encoded(closure)
+    prior=json.loads(c.unpack(ref['prior.tar'])['spec.json']);prior.update(runtime_sha256=m.sha(runtime),boot_id=BOOT)
+    ref['prior.tar']=archive({'spec.json':m.encoded(prior)})
+    for name in ('prior-acceptance.json','prior-cleanup.json'):
+        value=json.loads(ref[name]);value['spec_sha256']=m.sha(m.encoded(prior))
+        if 'bundle_sha256' in value:value['bundle_sha256']=m.sha(ref['prior.tar'])
+        ref[name]=m.encoded(value)
+    value=json.loads(ref['prior-restoration.json']);value['boot_id']=BOOT;ref['prior-restoration.json']=m.encoded(value)
+    refspec['members']={n:m.sha(v) for n,v in ref.items()};ref['spec.json']=m.encoded(refspec)
     source={'spec.json':m.encoded(old),'known_hosts':b'fixture key',
-            'reference.py':b'def validate(spec,files): pass\n',
-            'reference.tar':archive({'spec.json':b'{}','runtime.tar':runtime})}
+            'reference.py':b'raise AssertionError("historical acquisition code executed")',
+            'reference.tar':archive(ref)}
     rawsource=archive(source)
     ispec={k:old[k] for k in ('hostname','kernel','boot_id','endpoints','old_ipv4')}
     ispec.update(schema=1,purpose='recovery-inspection',operation_id='inspection-fixture',
@@ -87,7 +105,7 @@ def fixture():
                            'argv':['ssh','ama@'+e]} for e in old['endpoints']]}
     files={n:(ROOT/p).read_bytes() for n,p in m.PATHS.items()}
     files.update({'source.tar':rawsource,'inspection.tar':rawinspection,'inspection-proof.json':m.encoded(proof),
-                  'helper.py':inspected['helper.py'],'inspector.py':inspected['stage.py'],'known_hosts':source['known_hosts']})
+                  'known_hosts':source['known_hosts']})
     spec={k:old[k] for k in ('hostname','kernel','boot_id','endpoints','old_ipv4')}
     spec.update(schema=1,purpose='cutover-restoration',operation_id='restore-fixture',stage='/var/lib/ntp-restore-restore-fixture',
                 source_stage=old['stage'],source_sha256=m.sha(rawsource),inspection_sha256=m.sha(rawinspection),
@@ -228,19 +246,19 @@ class RecoveryGuards(unittest.TestCase):
                     return ''
                 fake_a=SimpleNamespace(source_guard=lambda *a:(os.open('/dev/null',os.O_RDONLY),retained))
                 tx=SimpleNamespace(a=fake_a,systemctl=systemctl)
-                original=SimpleNamespace(Transaction=lambda *a:tx,DESTINATIONS={},DIRECTORIES={})
+                original=SimpleNamespace(Transaction=lambda *a,**kw:tx,DESTINATIONS={},DIRECTORIES={},clear_restored_failure=stage.clear_restored_failure)
                 observed=observation(True)
                 if failure=='observation':observed['inventory']={}
                 checker=SimpleNamespace(core=SimpleNamespace(i=SimpleNamespace(observation=Mock(side_effect=[observed,observation()]))),
                     network_checks=Mock(side_effect=ValueError('network drift') if failure=='network' else None),
                     accounts=lambda:accepted['created_account'],snapshot_file=lambda p:accepted['cache_after'],hardware_metadata=lambda:accepted['hardware'])
                 inspector=SimpleNamespace(held_state=Mock(),runtime_data=lambda *a:{})
-                files={'corrected-stage.py':b'corrected'};source={'stage.py':b'original'}
+                files={n:(ROOT/path).read_bytes() for n,path in m.PATHS.items()};files['corrected-stage.py']=b'corrected';source={'stage.py':b'raise AssertionError("old stage")'}
                 values=(None,inspector,{}, {},old,source,ref,runtime,report)
                 clocks={'timer':{'LoadState':'loaded','ActiveState':'active'}}
                 stopped={'timer':{'LoadState':'loaded','ActiveState':'inactive'}}
                 with patch.object(m,'validate',return_value=values),patch.object(m,'source_lock',side_effect=lambda *a:os.open('/dev/null',os.O_RDONLY)), \
-                     patch.object(m,'frozen',side_effect=lambda raw:original if raw==b'original' else stage), \
+                     patch.object(m,'frozen',side_effect=lambda raw:original if raw==b'corrected' else load('runtime-artifacts.py')), \
                      patch.object(m,'load',return_value=SimpleNamespace(Transaction=lambda s:checker)), \
                      patch.object(m,'restored_files',side_effect=ValueError('file drift') if failure=='files' else None), \
                      patch.object(m,'timer_state',side_effect=ValueError('active worker') if failure=='active-worker' else [clocks,stopped,stopped]):

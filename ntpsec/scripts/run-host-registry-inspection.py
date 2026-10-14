@@ -386,6 +386,7 @@ def prepare(bundle, checksum):
     manifest = json.loads(files['manifest.json'])
     if (manifest != {n: sha(v) for n, v in files.items() if n != 'manifest.json'}
             or files['worker.py'] != Path(__file__).read_bytes()
+            or files['helper.py'] != (ROOT/'scripts/foundation-install.py').read_bytes()
             or files['transport.py'] != (ROOT/'scripts/run-foundation-preflight.py').read_bytes()
             or files['known_hosts'] != c.private_file(bundle.parent/'known_hosts', 4096)
             or bundle.parent.stat().st_uid != os.getuid() or bundle.parent.stat().st_mode & 0o077):
@@ -746,7 +747,7 @@ def seal_baseline(args):
     old = json.loads(hardware['spec.json'])
     receipt = c.private_file(args.recovery_dir/('verify-recovery-result.json' if direct else 'acceptance.json'))
     cleanup = c.private_file(args.recovery_dir/'cleanup-result.json')
-    files = {'worker.py': Path(__file__).read_bytes(), 'helper.py': hardware['foundation-install.py'],
+    files = {'worker.py': Path(__file__).read_bytes(), 'helper.py': (ROOT/'scripts/foundation-install.py').read_bytes(),
              'hardware-spec.json': hardware['spec.json'],
              'hardware-recovery.json': c.private_file(args.recovery_dir.parent/old['operation_id']/'recover-result.json'),
              'known_hosts': hardware['known_hosts'], 'tests.py': (ROOT/'tests/test_host_registry_inspection.py').read_bytes(),

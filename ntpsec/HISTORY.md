@@ -26,6 +26,30 @@ The current accepted source stage is
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
 
+## Standalone artifact migration and retention completion — October 14, 2026
+
+Completed the approved retention sequence: 8,439 duplicate files removed;
+4,010 unique files and nine symlinks archived, fully restored and verified before
+retiring their old copies. All 328 protected files were reverified. A private
+member manifest, recovery-location ledger and verified Git bundle preserve access.
+The earlier audit snapshots below describe their original observation times.
+
+Fetched the three missing pinned payloads and verified all 117 assets plus both
+source signatures in one explicit cache. No package installation occurred.
+
+New standalone acquisition, restoration, hardware recovery, registry/baseline
+and retained-inspection bundles now pin repository implementations. Historical
+archives remain data/provenance inputs. Recovery separates the original state
+directory from the current executable directory; runtime reconstruction pins its
+effective specification and transitive helpers. Historical executable sentinels,
+code drift and real constructor tests cover these boundaries.
+
+No target contact or new execution review occurred. Fresh-install automation is
+not yet complete: acquisition and monitor still have continuation-only receipt
+requirements. Offline clean-directory validation must not be described as a live
+fresh installation. Next: implement first-install entry paths using fresh accepted
+observations, then prepare fresh revalidation for this host's continuation.
+
 ## Runtime artifact migration and private storage audit — October 14, 2026
 
 Revalidation and monitor preparation now bind maintained repository implementations

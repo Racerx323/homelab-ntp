@@ -19,14 +19,21 @@ import tarfile
 import time
 
 ROOT=Path(__file__).resolve().parents[1]
-PATHS={'stage.py':'scripts/run-cutover-restoration.py',
+PATHS={'helper.py':'scripts/foundation-install.py',
+       'inspector.py':'scripts/run-cutover-inspection.py',
+       'reference.py':'scripts/run-gpsd-acquisition.py',
+       'hardware-checker.py':'scripts/host-configuration-stage.py','pps-checker.py':'scripts/check-pps.py',
+       'runtime-artifacts.py':'scripts/runtime-artifacts.py','host-network-stage.py':'scripts/host-network-stage.py',
+       'inspect-source-destinations.py':'scripts/inspect-source-destinations.py',
+       'clockmaker.py':'scripts/clockmaker.py','timeservice.py':'scripts/timeservice.py',
+       'stage.py':'scripts/run-cutover-restoration.py',
        'controller.py':'scripts/run-service-cutover.py','transport.py':'scripts/run-foundation-preflight.py',
        'corrected-stage.py':'scripts/service-cutover-stage.py','tests.py':'tests/test_cutover_restoration.py',
        'cutover-tests.py':'tests/test_service_cutover.py',
        'diagnostic-tests.py':'tests/test_runtime_diagnostic.py','test-runner.sh':'tests/run.sh',
        'architecture.md':'docs/ntp-architecture-deployment-plan-v1.0.md',
        'operations.md':'docs/OPERATIONS.md','history.md':'HISTORY.md'}
-EXTRA={'source.tar','inspection.tar','inspection-proof.json','helper.py','inspector.py','known_hosts'}
+EXTRA={'source.tar','inspection.tar','inspection-proof.json','known_hosts'}
 ENV={'PATH':'/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin','LC_ALL':'C','PYTHONDONTWRITEBYTECODE':'1'}
 LIMIT=32*1024**2
 CHECKS={'files','uart','observation','network','native','accounts','loader','hardware','statistics','timer'}
@@ -80,10 +87,10 @@ def inputs(files):
     inspected=c.unpack(files['inspection.tar']);ins=frozen(files['inspector.py']);ispec=json.loads(inspected['spec.json'])
     proof=json.loads(files['inspection-proof.json']);responses=proof['responses']
     ins.validate(ispec,inspected)
-    if (files['inspector.py']!=inspected['stage.py'] or len(responses)!=2 or responses[0]!=responses[1]
+    if (len(responses)!=2 or responses[0]!=responses[1]
             or any(r['spec_sha256']!=sha(inspected['spec.json']) for r in responses)
             or inspected['source-spec.json']!=source['spec.json'] or ispec['source_bundle_sha256']!=sha(files['source.tar'])
-            or files['helper.py']!=inspected['helper.py'] or files['known_hosts']!=source['known_hosts']
+            or files['known_hosts']!=source['known_hosts']
             or files['known_hosts']!=inspected['known_hosts']):raise ValueError('bound original/inspection inputs required')
     result=responses[0]['result']
     receipt=ins.terminal_receipt(ispec,inspected,sha(files['inspection.tar']),dict(zip(ispec['endpoints'],[result,result])))
@@ -97,9 +104,9 @@ def inputs(files):
                 or 'ama@'+endpoint not in submission['argv']):raise ValueError('inspection submission binding')
     if len(proof['submissions'])!=2:raise ValueError('two endpoint submissions required')
     ref=c.unpack(source['reference.tar']);runtime=c.unpack(ref['runtime.tar']);rs=json.loads(runtime['spec.json'])
-    a=frozen(source['reference.py']);a.validate(json.loads(ref['spec.json']),ref)
+    a=frozen(files['reference.py']);a.validate(json.loads(ref['spec.json']),ref,historical=True)
     observation=json.loads(evidence(result,'continuity.json'))
-    stage=frozen(runtime['host-configuration-stage.py'])
+    stage=frozen(files['hardware-checker.py'])
     if (observation['baseline']!=json.loads(runtime['baseline.json'])['observation']
             or observation['current']['boot_id']!=old['boot_id']
             or not stage.observation_equal(normalized_observation(observation['current']),observation['baseline'],
@@ -203,7 +210,7 @@ def restore(h,spec,files):
         before_raw=h.read(src/'before.json');before=json.loads(before_raw)
         if before_raw!=evidence(report,'source-before.json'):raise ValueError('source backup drift')
         h.create(root/'source-state-before.json',encoded(initial));h.create(root/'source-before.json',before_raw)
-        original=frozen(source['stage.py']);tx=original.Transaction(old,source)
+        original=frozen(files['corrected-stage.py']);tx=original.Transaction(old,source,code_root=root)
         tx.run=lambda argv,timeout=20:command(h,root,argv,timeout)
         tx.a.run=tx.run
         tx.frozen_destinations=original.DESTINATIONS;tx.frozen_directories=original.DIRECTORIES
@@ -215,9 +222,10 @@ def restore(h,spec,files):
             if json.loads(retained['state.json'])!=json.loads(ref['runtime-cleanup.json'])['result']:
                 raise ValueError('accepted runtime state drift')
             sub=root/'runtime-check';sub.mkdir(mode=0o700)
-            for name in runtime_spec['members']:h.create(sub/name,runtime[name])
+            rs,current=frozen(files['runtime-artifacts.py']).runtime_inputs(runtime_spec,runtime,files,sub)
+            for name,raw in current.items():h.create(sub/name,raw)
             for name,data in retained.items():h.create(sub/name,data)
-            rs=dict(runtime_spec,stage=str(sub));h.create(sub/'spec.json',encoded(rs))
+            h.create(sub/'spec.json',encoded(rs))
             check=load(sub/'host-configuration-stage.py').Transaction(rs)
             check.run=tx.run;check.core.run=tx.run;check.core.i.command=tx.run
             current=check.core.i.observation()
@@ -370,7 +378,7 @@ def seal(args):
            'cleanup':json.loads(t.private_file(args.inspection_dir/'cleanup-0-result.json'))}
     files={n:(ROOT/p).read_bytes() for n,p in PATHS.items()}
     files.update({'source.tar':source_raw,'inspection.tar':inspection_raw,'inspection-proof.json':encoded(proof),
-                  'helper.py':inspected['helper.py'],'inspector.py':inspected['stage.py'],'known_hosts':source['known_hosts']})
+                  'known_hosts':source['known_hosts']})
     epoch=int(time.time());spec={k:old[k] for k in ('hostname','kernel','boot_id','endpoints','old_ipv4')}
     spec.update(schema=1,purpose='cutover-restoration',operation_id=args.operation_id,stage='/var/lib/ntp-restore-'+args.operation_id,
                 source_stage=old['stage'],source_sha256=sha(source_raw),inspection_sha256=sha(inspection_raw),

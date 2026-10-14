@@ -15,6 +15,10 @@ import time
 ROOT = Path(__file__).resolve().parents[1]
 INPUTS = {'worker.py', 'helper.py', 'hardware.tar', 'diagnostic.json', 'diagnostic-acceptance.json',
           'diagnostic-cleanup.json', 'architecture.md', 'operations.md', 'history.md'}
+CODE_PATHS = {name: 'scripts/'+name for name in (
+    'foundation-install.py', 'host-configuration-stage.py', 'check-pps.py',
+    'host-network-stage.py', 'inspect-source-destinations.py', 'clockmaker.py', 'timeservice.py')}
+INPUTS |= set(CODE_PATHS)
 EXTRAS = {'spec.json', 'manifest.json', 'review.md', 'known_hosts', 'transport.py', 'controller.py', 'tests.py'}
 FIELDS = 'connection.id,connection.uuid,connection.type,connection.interface-name,connection.autoconnect,ipv4.method,ipv4.addresses,ipv4.gateway,ipv6.method,ipv6.addresses,ipv6.gateway'
 LOOPBACK = {'connection.id': 'lo', 'connection.type': 'loopback', 'connection.interface-name': 'lo',
@@ -94,8 +98,8 @@ def worker(spec, files, mode, proofs=None, console_ready=False):
     ns = {'__name__': 'recovery_helper'}
     exec(compile(files['helper.py'], 'sealed-helper', 'exec'), ns)
     h = type('Helper', (), ns)
-    ns = {'__name__': 'retained_worker', '__file__': old['stage']+'/host-configuration-stage.py'}
-    exec(compile(oldfiles['host-configuration-stage.py'], 'retained-worker', 'exec'), ns)
+    ns = {'__name__': 'maintained_worker', '__file__': spec['stage']+'/host-configuration-stage.py'}
+    exec(compile(files['host-configuration-stage.py'], 'maintained-worker', 'exec'), ns)
     ns['identity'](old)
     root = Path(spec['stage']); os.umask(0o077)
     if mode == 'reboot':
@@ -122,7 +126,7 @@ def worker(spec, files, mode, proofs=None, console_ready=False):
         state = json.loads(h.read(root/'state.json'))
         def save():
             h.replace(root/'state.json', encoded(state), 0o600)
-        tx = ns['Transaction'](old)
+        tx = ns['Transaction'](old, code_root=root, code_members={n: sha(files[n]) for n in CODE_PATHS})
         tx.verify({n: oldfiles[n] for n in old['members']})
         expected_registry = diagnosis['expected_registry']
         original_registry = tx.core.registry
@@ -189,6 +193,8 @@ def prepare(bundle, checksum):
         raise ValueError('approved recovery hash mismatch')
     files = unpack(raw)
     if (set(files) != INPUTS | EXTRAS or files['worker.py'] != Path(__file__).read_bytes()
+            or any(files[n] != (ROOT/path).read_bytes() for n, path in CODE_PATHS.items())
+            or files['helper.py'] != (ROOT/'scripts/foundation-install.py').read_bytes()
             or files['controller.py'] != (ROOT/'scripts/run-host-configuration.py').read_bytes()
             or files['transport.py'] != (ROOT/'scripts/run-foundation-preflight.py').read_bytes()
             or c.private_file(bundle.parent/'known_hosts', 4096) != files['known_hosts']
@@ -215,14 +221,19 @@ def payload(spec, files, mode, proofs=None, console_ready=False):
 
 def seal(args):
     c = module('run-foundation-preflight.py'); inspection = module('run-host-registry-inspection.py')
-    inspected, _ = inspection.prepare(args.inspection_dir/'registry-inspection.tar', args.inspection_sha256)
-    old, previous = module('run-host-configuration.py').prepare(args.hardware_dir/'host-configuration.tar', args.hardware_sha256)
+    inspection_raw = c.private_file(args.inspection_dir/'registry-inspection.tar', 32*1024**2)
+    hardware_raw = c.private_file(args.hardware_dir/'host-configuration.tar', 32*1024**2)
+    if sha(inspection_raw) != args.inspection_sha256 or sha(hardware_raw) != args.hardware_sha256:
+        raise ValueError('approved historical input digest mismatch')
+    inspected_files = unpack(inspection_raw); inspected = json.loads(inspected_files['spec.json'])
+    inspection.validate(inspected, inspected_files)
+    previous = unpack(hardware_raw); old = json.loads(previous['spec.json'])
     report = json.loads(c.private_file(args.inspection_dir/'capture-result.json', 20*1024**2))
     receipt = inspection.accept(inspected, report)
     stored = json.loads(c.private_file(args.inspection_dir/'acceptance.json'))
     if stored != dict(receipt, bundle_sha256=args.inspection_sha256) or inspected['hardware_bundle_sha256'] != args.hardware_sha256:
         raise ValueError('accepted inspection binding required')
-    files = {'worker.py': Path(__file__).read_bytes(), 'helper.py': previous['foundation-install.py'],
+    files = {'worker.py': Path(__file__).read_bytes(), 'helper.py': (ROOT/'scripts/foundation-install.py').read_bytes(),
              'hardware.tar': c.private_file(args.hardware_dir/'host-configuration.tar'),
              'diagnostic.json': encoded(report), 'diagnostic-acceptance.json': encoded(stored),
              'diagnostic-cleanup.json': c.private_file(args.inspection_dir/'cleanup-result.json'),
@@ -231,6 +242,7 @@ def seal(args):
              'tests.py': (ROOT/'tests/test_host_recovery_continuation.py').read_bytes()}
     for label, path in (('architecture', 'docs/ntp-architecture-deployment-plan-v1.0.md'), ('operations', 'docs/OPERATIONS.md'), ('history', 'HISTORY.md')):
         files[label+'.md'] = (ROOT/path).read_bytes()
+    files.update({n: (ROOT/path).read_bytes() for n, path in CODE_PATHS.items()})
     epoch = int(time.time()); spec = {k: old[k] for k in ('hostname', 'kernel', 'ssh', 'old_ipv4')}
     spec.update(operation='host-recovery-continuation', operation_id=args.operation_id,
                 stage='/var/lib/ntp-recovery-'+args.operation_id, prepared_epoch=epoch,
@@ -250,8 +262,8 @@ def seal(args):
         'no gateways and autoconnect=no. Every non-loopback UUID/type must match exactly. Existing Ethernet '
         'profile, active interface, address, RA, DNS, route, HTTPS, package/native/service checks remain in force. '
         'No profile is modified, no boot file edited, and no service activated.\n\n'
-        'Create a separate root-owned 0700 stage with 0600 inputs/state. Run the sealed original worker '
-        'with an in-memory registry adapter; preserve its code and before-state byte-for-byte. Its command '
+        'Create a separate root-owned 0700 stage with 0600 inputs/state. Run the pinned maintained worker '
+        'with an in-memory registry adapter and explicit code root; preserve historical code and before-state byte-for-byte. Its command '
         'journal and recovery state advance normally. Register submission locally and durably record '
         'reboot_submitting before scheduling the original recovery timer. Never retry uncertain submission. '
         'Verify a new boot and restored original boot files over both pinned fixed endpoints, then record '

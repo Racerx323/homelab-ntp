@@ -123,11 +123,12 @@ def journal_health(raw,boot_id,apply_monotonic,ntpd_pid,promoted_monotonic=None,
 
 
 class Transaction:
-    def __init__(self,spec,files):
+    def __init__(self,spec,files,code_root=None):
         self.s=spec;self.f=files;self.root=Path(spec['stage'])
-        self.a=load(self.root/'reference.py');self.rf=self.a.unpack(files['reference.tar'])
+        code = self.root if code_root is None else Path(code_root)
+        self.a=load(code/'reference.py');self.rf=self.a.unpack(files['reference.tar'])
         self.rs=json.loads(self.rf['spec.json'])
-        self.h=load(self.root/'helper.py') if spec.get('purpose')=='service-monitor' else self.a.bootstrap(self.rs,self.rf)
+        self.h=load(code/'helper.py') if code_root is not None or spec.get('purpose')=='service-monitor' else self.a.bootstrap(self.rs,self.rf)
         self.alias=dict(self.rs,operation_id=spec['operation_id'],stage=spec['stage'],unit='ntp-acquire-'+spec['operation_id']+'.service')
 
     def write(self,name,value):

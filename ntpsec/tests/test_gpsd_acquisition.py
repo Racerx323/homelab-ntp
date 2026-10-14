@@ -59,6 +59,25 @@ def fixture():
 
 
 class AcquisitionTests(unittest.TestCase):
+    def test_bootstrap_uses_current_helper_not_runtime_archive(self):
+        spec,files=fixture()
+        old=a.unpack(files['runtime.tar']);old.pop('manifest.json')
+        old['foundation-install.py']=b'raise AssertionError("historical helper executed")'
+        files['runtime.tar']=archive(old);spec['runtime_sha256']=a.sha(files['runtime.tar'])
+        for name in ('runtime-acceptance.json','runtime-cleanup.json'):
+            value=json.loads(files[name]);value['bundle_sha256']=spec['runtime_sha256'];files[name]=a.encoded(value)
+        prior=a.unpack(files['prior.tar']);previous=json.loads(prior['spec.json'])
+        previous['runtime_sha256']=spec['runtime_sha256'];prior['spec.json']=a.encoded(previous)
+        files['prior.tar']=archive({n:v for n,v in prior.items() if n!='manifest.json'})
+        for name in ('prior-acceptance.json','prior-cleanup.json'):
+            value=json.loads(files[name]);value['spec_sha256']=a.sha(prior['spec.json'])
+            if name=='prior-acceptance.json':value['bundle_sha256']=a.sha(files['prior.tar'])
+            files[name]=a.encoded(value)
+        files['foundation-install.py']=(ROOT/'scripts/foundation-install.py').read_bytes()
+        spec['members']={n:a.sha(v) for n,v in files.items()}
+        helper=a.bootstrap(spec,files)
+        self.assertEqual(helper.sha(b'current'),a.sha(b'current'))
+
     def test_bound_runtime(self):
         spec,files=fixture();a.validate(spec,files)
         for key,value in [('boot_id','different'),('source_stage','/tmp/untrusted'),

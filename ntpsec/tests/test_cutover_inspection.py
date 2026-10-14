@@ -153,6 +153,14 @@ class BindingTests(unittest.TestCase):
 
 
 class HeldInspectionTests(unittest.TestCase):
+    def test_current_schema_binds_historical_observer_as_data(self):
+        spec,files=held_fixture();spec['schema']=2
+        files['source-observer.sha256']=m.sha(b'historical observer').encode()
+        spec['members']={n:m.sha(files[n]) for n in set(m.PATHS)|m.HELD_EXTRA|{'source-observer.sha256'}}
+        m.validate(spec,files)
+        files['source-observer.sha256']=b'invalid'
+        with self.assertRaisesRegex(ValueError,'observer digest'):m.validate(spec,files)
+
     def test_binding_payloads_and_authorized_recovery_transitions(self):
         spec,files=held_fixture();m.validate(spec,files)
         for mode in ('start','readback','cleanup'):compile(c.payload(spec,files,mode),mode,'exec')
@@ -170,6 +178,9 @@ class HeldInspectionTests(unittest.TestCase):
 
     def capture_held(self,variant='good'):
         spec,files=held_fixture()
+        spec['schema']=2
+        historical=b'raise AssertionError("historical observer executed")\n'
+        files['source-observer.sha256']=m.sha(historical).encode()
         with tempfile.TemporaryDirectory() as tmp:
             root=Path(tmp)/'inspection';source=Path(tmp)/'source';root.mkdir();source.mkdir()
             spec.update(stage=str(root),source_stage=str(source));check=source/'runtime-check';check.mkdir()
@@ -177,7 +188,7 @@ class HeldInspectionTests(unittest.TestCase):
             for name,raw in {'before.json':b'{}','state.json':m.encoded(state),'commands.jsonl':b'{}\n','recovery-commands.jsonl':b'{}\n'}.items():
                 (source/name).write_bytes(raw)
             (check/'baseline.json').write_bytes(files['source-baseline.json'])
-            (check/'inspect-source-destinations.py').write_bytes(files['observation.py'])
+            (check/'inspect-source-destinations.py').write_bytes(historical)
             original={str(p.relative_to(source)):p.read_bytes() for p in source.rglob('*') if p.is_file()}
             observer=m.load(ROOT/'scripts/inspect-source-destinations.py');calls=[]
             def command(h,directory,name,argv):
@@ -191,13 +202,14 @@ class HeldInspectionTests(unittest.TestCase):
                 if variant=='missing' and name=='journal':raw=b''
                 if variant=='drift' and name=='timer':(source/'state.json').write_bytes(b'{}')
                 if variant=='baseline-drift' and name=='timer':(check/'baseline.json').write_bytes(b'{}')
+                if variant=='observer-drift' and name=='timer':(check/'inspect-source-destinations.py').write_bytes(b'changed')
                 h.create(directory/(name+'.json'),m.encoded({'argv':argv,'status':0}))
                 h.create(directory/(name+'.stdout'),raw);h.create(directory/(name+'.stderr'),b'')
                 return raw
             with patch.object(m,'source_lock',return_value=os.open(source,os.O_RDONLY)),patch.object(m,'command',side_effect=command),patch.object(m,'load',return_value=observer),patch.object(observer,'Path') as paths:
                 paths.return_value.glob.return_value=[];paths.return_value.read_text.return_value=spec['boot_id']
                 report=m.capture(LocalFiles,spec,files)
-            if variant not in ('drift','baseline-drift'):
+            if variant not in ('drift','baseline-drift','observer-drift'):
                 self.assertEqual(original,{str(p.relative_to(source)):p.read_bytes() for p in source.rglob('*') if p.is_file()})
             return report,calls,spec,files
 
@@ -216,7 +228,7 @@ class HeldInspectionTests(unittest.TestCase):
         with self.assertRaises(ValueError):m.terminal_receipt(spec,files,'a'*64,dict.fromkeys(spec['endpoints'],incomplete))
 
     def test_partial_failed_changed_or_incomplete_capture_holds(self):
-        for variant in ('command-failure','wrong-boot','truncated','missing','drift','baseline-drift'):
+        for variant in ('command-failure','wrong-boot','truncated','missing','drift','baseline-drift','observer-drift'):
             with self.subTest(variant=variant):
                 report,_,_,_=self.capture_held(variant)
                 self.assertEqual(report['phase'],'held');self.assertIsNone(report['source_preserved'])

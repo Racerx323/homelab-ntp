@@ -82,8 +82,11 @@ def validate(spec,files):
 def validate_held(spec,files):
     old=json.loads(files['source-spec.json']);proof=json.loads(files['source-proof.json'])
     state=proof['responses'][0]['result']
-    if (set(files)!=set(PATHS)|HELD_EXTRA|{'spec.json','manifest.json','review.md'}
-            or spec['schema']!=1 or old.get('purpose')!='runtime-diagnostic'
+    extras = HELD_EXTRA | ({'source-observer.sha256'} if spec['schema'] == 2 else set())
+    if spec['schema'] == 2 and not re.fullmatch(rb'[0-9a-f]{64}', files['source-observer.sha256']):
+        raise ValueError('historical observer digest required')
+    if (set(files)!=set(PATHS)|extras|{'spec.json','manifest.json','review.md'}
+            or spec['schema'] not in (1,2) or old.get('purpose')!='runtime-diagnostic'
             or not re.fullmatch('[a-z][a-z0-9-]{0,47}',spec['operation_id'])
             or spec['stage']!='/var/lib/ntp-inspect-'+spec['operation_id']
             or spec['source_stage']!=old['stage']
@@ -102,7 +105,7 @@ def validate_held(spec,files):
             or spec['journal_until']!=state['apply_epoch']+3600
             or not 0<spec['expires_epoch']-spec['prepared_epoch']<=86400
             or files['launch.sh']!=launcher(spec['stage'])
-            or spec['members']!={n:sha(files[n]) for n in set(PATHS)|HELD_EXTRA}):
+            or spec['members']!={n:sha(files[n]) for n in set(PATHS)|extras}):
         raise ValueError('closed held-operation inspection binding required')
 
 
@@ -258,8 +261,11 @@ def collect_held(h,spec,files):
                 old['recovery_unit']+'.timer'])
         # Reuse the exact read-only observation that the original continuity gate compared.
         h.ancestors(source/'runtime-check')
-        for name,member in (('baseline.json','source-baseline.json'),('inspect-source-destinations.py','observation.py')):
-            if h.read(source/'runtime-check'/name,limit=FILE_LIMIT)!=files[member]:raise ValueError('original continuity input drift')
+        if h.read(source/'runtime-check'/'baseline.json',limit=FILE_LIMIT)!=files['source-baseline.json']:
+            raise ValueError('original continuity input drift')
+        expected_observer = files['source-observer.sha256'].decode() if spec['schema']==2 else sha(files['observation.py'])
+        if sha(h.read(source/'runtime-check'/'inspect-source-destinations.py',limit=FILE_LIMIT))!=expected_observer:
+            raise ValueError('original observer data drift')
         observer=load(root/'observation.py');calls=[]
         expected=[['/usr/bin/dpkg-query','-W','-f=${binary:Package}\t${Version}\t${db:Status-Abbrev}\n'],
                   ['/usr/bin/dpkg','--audit'],
@@ -353,7 +359,10 @@ def prepare(bundle,checksum):
     raw=t.private_file(bundle,16*1024**2)
     if sha(raw)!=checksum:raise ValueError('approved diagnostic archive required')
     files=c.unpack(raw);spec=json.loads(files['spec.json']);validate(spec,files)
-    if any(files[n]!=(ROOT/p).read_bytes() for n,p in PATHS.items()) or t.private_file(bundle.parent/'known_hosts',4096)!=files['known_hosts']:
+    code = dict(PATHS, **{'helper.py':'scripts/foundation-install.py'})
+    if 'observation.py' in files:
+        code['observation.py'] = 'scripts/inspect-source-destinations.py'
+    if any(files[n]!=(ROOT/p).read_bytes() for n,p in code.items()) or t.private_file(bundle.parent/'known_hosts',4096)!=files['known_hosts']:
         raise ValueError('reviewed controller/input drift; reseal required')
     for mode in ('start','readback','cleanup'):compile(c.payload(spec,files,mode),'sealed-diagnostic-payload','exec')
     return spec,files
@@ -434,7 +443,7 @@ records and 2 MiB; missing, truncated or wrong-boot evidence holds acceptance.
 Inspect these service units and the exact recovery timer, including its trigger
 and next-elapse properties. Do not cancel or change any unit/timer.
 
-Use the pinned original read-only continuity observer: dpkg-query, dpkg audit,
+Use the pinned maintained read-only continuity observer: dpkg-query, dpkg audit,
 fixed service/socket show commands, bounded ntpd/gpsd process metadata, boot and
 Python metadata. Compare against the original runtime baseline and retain actual
 differences; a mismatch is a diagnostic finding, not authorization to change it.
@@ -486,15 +495,17 @@ def seal(args):
     ref=c.unpack(source['reference.tar']);runtime=c.unpack(ref['runtime.tar'])
     files={n:(ROOT/p).read_bytes() for n,p in PATHS.items()}
     operation_stage='/var/lib/ntp-inspect-'+args.operation_id
-    files.update({'helper.py':runtime['foundation-install.py'],'source-spec.json':source['spec.json'],
+    files.update({'helper.py':(ROOT/'scripts/foundation-install.py').read_bytes(),'source-spec.json':source['spec.json'],
                   'known_hosts':source['known_hosts'],'launch.sh':launcher(operation_stage)})
     if held:
         files.update({'source-proof.json':encoded({'bundle_sha256':args.source_sha256,'attempt':attempt,'responses':responses}),
-                      'source-baseline.json':runtime['baseline.json'],'observation.py':runtime['inspect-source-destinations.py']})
+                      'source-baseline.json':runtime['baseline.json'],
+                      'source-observer.sha256':sha(runtime['inspect-source-destinations.py']).encode(),
+                      'observation.py':(ROOT/'scripts/inspect-source-destinations.py').read_bytes()})
     else:files.update({'source-cleanup.json':cleanup,'source-receipt.json':receipt})
     now=int(time.time());state=responses[0]['result'] if held else json.loads(cleanup)['result']
     spec={k:old[k] for k in ('hostname','kernel','boot_id','endpoints','old_ipv4')}
-    spec.update(schema=1,operation_id=args.operation_id,stage=operation_stage,source_stage=old['stage'],source_bundle_sha256=args.source_sha256,
+    spec.update(schema=2 if held else 1,operation_id=args.operation_id,stage=operation_stage,source_stage=old['stage'],source_bundle_sha256=args.source_sha256,
                 prepared_epoch=now,expires_epoch=now+86400,journal_since=state['apply_epoch'],
                 journal_until=state['apply_epoch']+3600 if held else state['recovered_epoch']+1,
                 members={n:sha(v) for n,v in files.items()})

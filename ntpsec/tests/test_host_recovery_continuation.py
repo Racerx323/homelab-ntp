@@ -140,7 +140,7 @@ from pathlib import Path
 def identity(spec): pass
 def boot_id(): return os.environ['TEST_RECOVERY_BOOT']
 class Transaction:
-    def __init__(self,spec):
+    def __init__(self,spec,code_root=None,code_members=None):
         self.spec=spec;self.root=Path(spec['stage'])
         self.core=types.SimpleNamespace(registry=lambda:spec['actual'])
     def verify(self,files): pass
@@ -178,9 +178,10 @@ class Worker(unittest.TestCase):
         self.spec={'stage':str(self.parent/'continuation'),'prepared_epoch':0,'expires_epoch':9999999999,
                    'diagnosed_boot_id':'diagnosed','endpoints':['v4','v6']}
         self.files=dict.fromkeys(m.INPUTS,b'fixture')
+        self.files['host-configuration-stage.py']=FAKE_WORKER
         self.files['helper.py']=(SCRIPT.parent/'foundation-install.py').read_bytes()+b'\nOWNER=os.getuid()\nancestors=lambda path: None\n'
         self.addCleanup(patch.stopall)
-        patch.object(m,'bindings',return_value=(self.old,{'host-configuration-stage.py':FAKE_WORKER},self.diag)).start()
+        patch.object(m,'bindings',return_value=(self.old,{'host-configuration-stage.py':b'raise AssertionError("historical code executed")'},self.diag)).start()
         patch.dict(os.environ,{'TEST_RECOVERY_BOOT':'diagnosed'}).start()
         self.mask=os.umask(0o077);self.addCleanup(os.umask,self.mask)
 
