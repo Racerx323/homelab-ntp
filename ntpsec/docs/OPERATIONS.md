@@ -446,14 +446,26 @@ capture separately. Do not label missing historical data a successful check.
 ### Bounded NTS/PPS runtime diagnostic
 
 The [sealed runtime review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-runtime-20261013-v3/review.md)
-is prepared offline and awaits separate execution approval. Use the existing
+was executed once and recovered, with matching dual-stack readback and cleanup.
+Its saved rejecting sample identified a changed Cloudflare address outside the
+sealed scope; its journal was retrieved successfully. Diagnostic acceptance
+remains false. Do not replay it. Use the existing
 `run-service-cutover.py seal --diagnostic` path with the accepted receiver,
 network and latest recovered-transaction directories plus `--retained-dir` and its exact
 `--retained-sha256`. The checked-in `runtime-diagnostic-recipe.json` and current
 input hashes define the scope; do not reuse a historical executable bundle.
-V2 completed recovery, dual-stack readback and cleanup with partial diagnostic
+V3 completed recovery, dual-stack readback and cleanup with partial diagnostic
 evidence; see HISTORY. A successor binds that recovery and the original accepted
 retained proof by its immutable member hash.
+
+Before preparing a successor, review the pinned implementation's source
+restriction semantics. V3's system bad-auth events preceded any NTS receive
+counter increment; `notrust` enters the legacy MAC check before the NTS response
+handler in the retained 1.2.5 source. Correct/test that candidate policy while
+preserving explicit `nts` associations and existing serving/admin restrictions.
+Also review the observed changed Cloudflare address and packet-capture drop;
+do not silently broaden capture scope or claim missing responses from a partial
+capture. Preparation does not authorize another activation.
 
 This profile temporarily installs the same candidate file set and starts the
 same selectable NMEA, preferred SHM2 PPS and three NTS associations. The rendered
