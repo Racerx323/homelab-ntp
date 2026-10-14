@@ -845,6 +845,11 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    numbered readback matching its terminal receipt; preserve earlier nonterminal
    attempts without relabeling them. Review retained startup/discipline statistics
    before changing calibration, polling, observation duration or timing limits.
+   Distinguish successful SHM ingestion, physical pulse accuracy and peer jitter
+   during startup discipline. Do not seed drift from an unqualified startup
+   estimate. Any PPS-led startup selection proposal must explicitly preserve or
+   separately review the user-selected final selectable-NMEA behavior. Real local
+   capture tests must precede claims that an observer buffering change fixes loss.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.

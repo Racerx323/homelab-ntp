@@ -480,6 +480,20 @@ still prevents complete evidence. Review retained observer and timing statistics
 before preparing another trial. Do not infer network loss from observer drops.
 Preparation does not authorize another activation.
 
+Retained v4 analysis is complete; see HISTORY and its private report. Clockstats
+show complete SHM2 ingestion, while startup loopstats show cold frequency
+initialization after an uncalibrated NMEA correction. Peer jitter during that
+transition must not be labeled pulse-edge jitter or used to calibrate serial
+time. Do not reuse the startup frequency estimate as a drift seed.
+
+Before another trial, test the proposed larger observer buffer on a real local
+Linux/libpcap fixture and record backend/drop metadata. A one-block TPACKET_V3
+ring is a source-backed hypothesis, not a confirmed live backend. Review an
+explicit startup selection policy while preserving the user's final selectable
+NMEA choice. These are proposed preparation steps, not permission to change the
+candidate or activate it. Use measured calibration and timing milestones within
+hard recovery bounds rather than treating elapsed startup time as convergence.
+
 This profile temporarily installs the same candidate file set and starts the
 same selectable NMEA, preferred SHM2 PPS and three NTS associations. The rendered
 supervisor unit uses `Restart=no`. It always restores files, service state and
