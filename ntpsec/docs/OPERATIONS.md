@@ -691,9 +691,15 @@ migration does not retroactively validate them. New preparation rejects changed
 repository code, including the transitive runtime helpers.
 Read-only revalidation v4 was accepted on October 14 through matching IPv4/IPv6
 readbacks using maintained sources; diagnostic closure completed. Hardware,
-runtime, restoration, continuity and idle-worker checks passed. Next: prepare
-the PPS-first activation/recovery review against that accepted receipt and obtain
-separate execution approval. No prior approval transfers to changed code.
+runtime, restoration, continuity and idle-worker checks passed. Monitor v4 then
+passed structural handoff and reached PPS qualification at about 963 seconds.
+Promotion commands were acknowledged, but its immediate membership snapshot
+lacked NMEA. The checker triggered automatic recovery; dual-stack readback
+attempt 1 matched recovered state and transient cleanup completed. Preserve the
+terminal monitor evidence and monitor-v4 recovery records. Next: review promotion
+acknowledgments, actual association creation and the immediate membership check
+offline before another sealed operation. No prior approval transfers to changed
+code; sustained timing and production acceptance remain pending.
 
 ### Evidence retention and package pruning
 
