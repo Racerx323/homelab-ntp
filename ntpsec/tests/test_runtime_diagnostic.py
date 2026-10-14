@@ -73,6 +73,17 @@ class BindingTests(unittest.TestCase):
             files['diagnostic-evidence.json']=c.encoded(proof);base.bind(spec,files)
             with self.subTest(case=case),self.assertRaises(ValueError):c.validate(spec,files)
 
+    def test_latest_diagnostic_preserves_retained_anchor(self):
+        spec,files=fixture();raw=files['diagnostic-evidence.json']
+        recovery=json.loads(files['recovery-evidence.json'])
+        recovery['spec.json'].update(purpose='runtime-diagnostic',members={'diagnostic-evidence.json':c.sha(raw)})
+        c.diagnostic_evidence(raw,spec,recovery)
+        recovery['spec.json']['members']['diagnostic-evidence.json']='0'*64
+        with self.assertRaises(ValueError):c.diagnostic_evidence(raw,spec,recovery)
+        recovery['spec.json']['members']['diagnostic-evidence.json']=c.sha(raw)
+        bad=copy.deepcopy(spec);bad['boot_id']='0'*36
+        with self.assertRaises(ValueError):c.diagnostic_evidence(raw,bad,recovery)
+
     def test_receipt_requires_recovery_and_marks_partial_diagnostics(self):
         spec,_=fixture();state={'phase':'recovered','observation_completed':True,
             'diagnostic_samples':[{}],'packet_observation':{'complete':True},'diagnostic_statistics':{'loopstats':{}},
@@ -172,7 +183,7 @@ class LifecycleTests(unittest.TestCase):
     def transaction(self,elapsed=100):
         tx=base.TransactionTests().transaction({'phase':'observing','supervisor_pid':100,
             'apply_monotonic':time.monotonic()-elapsed,'stable':0,'diagnostic_samples':[],
-            'early_ntpd':{'counters':{'nts_client_send':0}}})
+            'journal_cursor':'s=abc;i=1','early_ntpd':{'counters':{'nts_client_send':0}}})
         tx.s,tx.f=fixture();tx.network_observation=Mock(return_value={'addresses':[]})
         checks=dict.fromkeys(('bootstrap_stopped','pair_running','same_supervisor','no_restarts','no_overrides','credentials','journal_health','nts','offset','jitter'),True)
         measurement={'peers':[{'variables':{'srchost':tx.s['recipe']['nts_servers'][0],
@@ -201,6 +212,47 @@ class LifecycleTests(unittest.TestCase):
             elif case=='counter':tx.current['early_ntpd']['counters']['nts_client_send']=5
             else:tx.systemctl.return_value='inactive'
             with self.subTest(case=case),self.assertRaises(ValueError):tx.diagnostic_sample()
+
+    def test_pending_setup_grace_and_retained_timeout(self):
+        for elapsed,allowed in ((20,True),(61,False)):
+            tx=self.transaction(elapsed)
+            peer=tx.measure.return_value['measurement']['peers'][0]['variables']
+            peer.update(srcadr=None,refid='NTS')
+            if allowed:self.assertTrue(tx.diagnostic_sample())
+            else:
+                with self.assertRaisesRegex(ValueError,'setup deadline'):tx.diagnostic_sample()
+            sample=tx.current['diagnostic_samples'][0]
+            self.assertEqual(sample['pending_upstreams'],[peer])
+            self.assertEqual('error' in sample,not allowed)
+            self.assertEqual(tx.current['stable'],0)
+
+    def test_rejecting_and_ancillary_failures_preserve_sample(self):
+        for case in ('address','counter','network'):
+            tx=self.transaction()
+            if case=='address':tx.measure.return_value['measurement']['peers'][0]['variables']['srcadr']='2001:db8::1'
+            elif case=='counter':tx.current['early_ntpd']['counters']['nts_client_send']=5
+            else:tx.network_observation.side_effect=ValueError('network failed')
+            with self.assertRaises(ValueError):tx.diagnostic_sample()
+            self.assertEqual(len(tx.current['diagnostic_samples']),1)
+            self.assertIn('error',tx.current['diagnostic_samples'][0])
+            self.assertIn('measurement',tx.current['diagnostic_samples'][0]['result'])
+
+    def test_journal_cursor_is_boot_bound_and_scopes_queries(self):
+        tx=self.transaction()
+        row={'__CURSOR':'s=abc;i=1','_BOOT_ID':tx.s['boot_id'].replace('-',''),
+             '__MONOTONIC_TIMESTAMP':str(int(time.monotonic()*1_000_000))}
+        tx.run=Mock(return_value=json.dumps(row))
+        self.assertEqual(tx.journal_cursor(),row['__CURSOR'])
+        self.assertIn('--lines=1',tx.run.call_args.args[0])
+        self.assertIn('--after-cursor='+row['__CURSOR'],tx.journal_scope())
+        for change in ({'__CURSOR':None},{'__CURSOR':'bad\nvalue'},{'_BOOT_ID':'0'*32},
+                       {'__MONOTONIC_TIMESTAMP':'9999999999999999999'}):
+            tx.run.return_value=json.dumps(dict(row,**change))
+            with self.assertRaises(ValueError):tx.journal_cursor()
+        tx.run.return_value=''
+        with self.assertRaises(ValueError):tx.journal_cursor()
+        tx.current.pop('journal_cursor')
+        with self.assertRaises(ValueError):tx.journal_scope()
 
     def test_lifetime_and_sample_bounds(self):
         tx=self.transaction(901);self.assertFalse(tx.diagnostic_sample());tx.measure.assert_not_called()
@@ -237,7 +289,7 @@ class LifecycleTests(unittest.TestCase):
             self.assertEqual('diagnostic_error' in tx.current,fail)
 
     def test_apply_orders_observer_then_gate_then_bounded_worker(self):
-        for failure in ('none','observer','gate'):
+        for failure in ('none','cursor','observer','gate'):
             tx=self.transaction();tx.current={'phase':'staged','created_directories':[],'installed':[]}
             tx.root=Path('/fixture');tx.replace=Mock();tx.recover=Mock();events=[]
             gate={'state':'failed' if failure=='gate' else 'passed','supervisor_pid':100}
@@ -247,6 +299,11 @@ class LifecycleTests(unittest.TestCase):
                 events.append(('observer',))
                 if failure=='observer':raise ValueError('observer failed')
             tx.start_packet_capture=observer
+            def cursor():
+                events.append(('cursor',))
+                if failure=='cursor':raise ValueError('cursor failed')
+                return 's=abc;i=1'
+            tx.journal_cursor=cursor
             tx.run=Mock(return_value=json.dumps({'system':{'leap':3},'counters':{'nts_client_send':0}}))
             with patch.dict(stage.DIRECTORIES,{},clear=True),patch.object(stage.Path,'exists',return_value=True),patch.object(stage.time,'sleep'):
                 if failure!='none':
@@ -255,6 +312,7 @@ class LifecycleTests(unittest.TestCase):
                     self.assertFalse(any('worker' in call.args[0] and 'diagnose' in call.args[0] for call in tx.run.call_args_list))
                 else:
                     self.assertEqual(tx.apply()['phase'],'observing')
+                    self.assertLess(events.index(('cursor',)),events.index(('observer',)))
                     self.assertLess(events.index(('observer',)),events.index(('start','timeservice.service')))
                     worker=tx.run.call_args.args[0]
                     self.assertIn('--property=RuntimeMaxSec=1200',worker)

@@ -228,6 +228,8 @@ class Transaction:
             if state['phase']!='staged':raise ValueError('one staged apply required')
             state['phase']='applying';state['apply_epoch']=int(time.time());state['apply_monotonic']=time.monotonic();self.write('state.json',state)
             try:
+                if self.s['recipe'].get('diagnostic'):
+                    state['journal_cursor']=self.journal_cursor();self.write('state.json',state)
                 for name,(uid,gid,mode) in DIRECTORIES.items():
                     self.h.ancestors(Path(name).parent)
                     # Claim each mutation before execution so interruption remains recoverable.
@@ -348,10 +350,31 @@ class Transaction:
                                            '/usr/local/sbin/ntpd':{'Uid':[999]*4,'Gid':[985]*4}}
         errors=self.run(['/usr/bin/journalctl','--quiet','--no-pager','--output=json',
                          '--boot='+self.s['boot_id'].replace('-',''),
-                         '--unit=timeservice.service','--unit=avahi-daemon.service','--priority=0..3'],timeout=10)
+                         '--unit=timeservice.service','--unit=avahi-daemon.service','--priority=0..3']
+                         +(self.journal_scope() if self.s['recipe'].get('diagnostic') else []),timeout=10)
         journal=journal_health(errors,self.s['boot_id'],self.state()['apply_monotonic'],ntpd_pid)
         checks['journal_health']=journal['healthy']
         return {'checks':checks,'measurement':value,'journal':journal}
+
+    def journal_cursor(self):
+        raw=self.run(['/usr/bin/journalctl','--quiet','--no-pager','--output=json','--lines=1',
+                      '--boot='+self.s['boot_id'].replace('-',''),
+                      '--output-fields=__CURSOR,_BOOT_ID,__MONOTONIC_TIMESTAMP'],timeout=10)
+        rows=[json.loads(line) for line in raw.splitlines()]
+        if len(rows)!=1:raise ValueError('one journal cursor required')
+        row=rows[0];cursor=row.get('__CURSOR')
+        if (row.get('_BOOT_ID')!=self.s['boot_id'].replace('-','')
+                or not isinstance(cursor,str) or not re.fullmatch(r'[A-Za-z0-9;=:_-]{1,1024}',cursor)
+                or not 0<=int(row['__MONOTONIC_TIMESTAMP'])/1_000_000<=time.monotonic()):
+            raise ValueError('current boot journal cursor required')
+        return cursor
+
+    def journal_scope(self):
+        cursor=self.state().get('journal_cursor')
+        if not isinstance(cursor,str) or not re.fullmatch(r'[A-Za-z0-9;=:_-]{1,1024}',cursor):
+            raise ValueError('saved journal cursor required')
+        return ['--after-cursor='+cursor,
+                '--output-fields=MESSAGE,PRIORITY,_SYSTEMD_UNIT,_EXE,_COMM,_TRANSPORT,SYSLOG_IDENTIFIER,_PID']
 
     def diagnostic_sample(self):
         with self.lock():
@@ -362,21 +385,33 @@ class Transaction:
             self.command_deadline=state['apply_monotonic']+recipe['observation_seconds']
             value=self.measure();measurement=value['measurement']
             upstreams=[p['variables'] for p in measurement['peers'] if p['variables'].get('srchost') in self.s['recipe']['nts_servers']]
-            if any(p.get('srcadr') not in recipe['upstream_addresses'] for p in upstreams):
-                raise ValueError('upstream address outside sealed packet scope')
+            pending=[p for p in upstreams if p.get('srcadr') is None and p.get('refid')=='NTS']
+            outside=[p for p in upstreams if p not in pending and p.get('srcadr') not in recipe['upstream_addresses']]
             counters=measurement['counters'];previous=state['diagnostic_samples'][-1]['result']['measurement']['counters'] if state['diagnostic_samples'] else state['early_ntpd']['counters']
-            if any(counters[k]<v for k,v in previous.items()):raise ValueError('diagnostic counters reset')
-            capture_active=self.systemctl('is-active',self.s['apply_unit']+'-packets.service').strip()=='active'
-            safety=('bootstrap_stopped','pair_running','same_supervisor','no_restarts','no_overrides','credentials','journal_health')
-            healthy=capture_active and all(value['checks'][k] for k in safety)
+            error=None
+            if outside:error='upstream address outside sealed packet scope'
+            elif pending and elapsed>=recipe['nts_setup_seconds']:error='NTS association setup deadline elapsed'
+            elif any(counters[k]<v for k,v in previous.items()):error='diagnostic counters reset'
             settled=elapsed>=recipe['settling_seconds']
-            state['stable']=state['stable']+1 if settled and all(value['checks'].values()) else 0
             sample={'elapsed_seconds':elapsed,'settling_window_elapsed':settled,'result':value,
-                    'counter_delta':{k:counters[k]-v for k,v in previous.items()},'network':self.network_observation()}
+                    'pending_upstreams':pending,'outside_upstreams':outside,
+                    'counter_delta':{k:counters[k]-v for k,v in previous.items()}}
             state['diagnostic_samples'].append(sample)
             state.update(last_measurement=value,probe_count=len(state['diagnostic_samples']))
+            # Persist the rejecting measurement before fallible ancillary collection.
+            if error:sample['error']=error
             self.write('state.json',state)
-            if not healthy:raise ValueError('runtime diagnostic safety/observer gate failed')
+            if error:raise ValueError(error)
+            try:
+                capture_active=self.systemctl('is-active',self.s['apply_unit']+'-packets.service').strip()=='active'
+                safety=('bootstrap_stopped','pair_running','same_supervisor','no_restarts','no_overrides','credentials','journal_health')
+                if not capture_active or not all(value['checks'][k] for k in safety):
+                    raise ValueError('runtime diagnostic safety/observer gate failed')
+                sample['network']=self.network_observation()
+                state['stable']=state['stable']+1 if settled and not pending and all(value['checks'].values()) else 0
+            except BaseException as failure:
+                sample['error']=str(failure)[:500];self.write('state.json',state);raise
+            self.write('state.json',state)
             return state['stable']<self.s['recipe']['stable_probes']
 
     def diagnose(self):
@@ -503,7 +538,7 @@ class Transaction:
                     state['network_after']=self.network_observation()
                     raw=self.run(['/usr/bin/journalctl','--quiet','--no-pager','--output=json','--lines=2000',
                         '--boot='+self.s['boot_id'].replace('-',''),'--unit=timeservice.service','--unit=avahi-daemon.service',
-                        '--unit='+self.s['apply_unit']+'-diagnostic.service','--unit='+self.s['apply_unit']+'-packets.service'],timeout=10)
+                        '--unit='+self.s['apply_unit']+'-diagnostic.service','--unit='+self.s['apply_unit']+'-packets.service']+self.journal_scope(),timeout=10)
                     rows=[json.loads(line) for line in raw.splitlines()]
                     if len(rows)>=2000 or any(row['_BOOT_ID']!=self.s['boot_id'].replace('-','') for row in rows):
                         raise ValueError('bounded complete diagnostic journal required')

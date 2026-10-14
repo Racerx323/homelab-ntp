@@ -132,12 +132,16 @@ def diagnostic_evidence(raw,spec,recovery):
     archive=base64.b64decode(proof['archive'],validate=True);files=unpack(archive)
     old=json.loads(files['spec.json']);first=proof['readback-1-0-result.json'];report=first['result']
     digest=sha(encoded(report));receipt=proof['acceptance.json']
+    latest=recovery['spec.json']
+    direct=(old['source_bundle_sha256']==recovery['terminal-receipt.json']['bundle_sha256']
+            and files['source-spec.json']==encoded(latest))
+    chained=(latest.get('purpose')=='runtime-diagnostic'
+             and latest.get('members',{}).get('diagnostic-evidence.json')==sha(raw))
     if (first!=proof['readback-1-1-result.json'] or first['spec_sha256']!=sha(files['spec.json'])
             or receipt!={'bundle_sha256':sha(archive),'report_sha256':digest,
                          'spec_sha256':sha(files['spec.json']),'state':'diagnostics_captured','time_service_accepted':False}
             or report.get('phase')!='captured' or report.get('source_preserved') is not True
-            or old['source_bundle_sha256']!=recovery['terminal-receipt.json']['bundle_sha256']
-            or files['source-spec.json']!=encoded(recovery['spec.json'])
+            or not (direct or chained)
             or any(old[k]!=spec[k] for k in ('hostname','boot_id','kernel','endpoints'))):
         raise ValueError('accepted retained diagnostic binding required')
     for row in report['evidence'].values():
@@ -181,9 +185,9 @@ def validate(spec,files):
     if spec.get('purpose')=='runtime-diagnostic':
         diagnostic=json.loads(files['diagnostic-recipe.json']);recipe['diagnostic']=diagnostic
         if (set(diagnostic)!={'observation_seconds','settling_seconds','interval_seconds','maximum_samples',
-                              'capture_seconds','maximum_packets','interface','upstream_addresses'}
+                              'capture_seconds','maximum_packets','interface','upstream_addresses','nts_setup_seconds'}
                 or [diagnostic[k] for k in ('observation_seconds','settling_seconds','interval_seconds','maximum_samples','capture_seconds','maximum_packets')]!=[900,600,30,30,1020,512]
-                or diagnostic['interface']!='eth0' or len(set(diagnostic['upstream_addresses']))!=3):
+                or diagnostic['nts_setup_seconds']!=60 or diagnostic['interface']!='eth0' or len(set(diagnostic['upstream_addresses']))!=3):
             raise ValueError('closed diagnostic bounds')
         for address in diagnostic['upstream_addresses']:
             if not ipaddress.ip_address(address).is_global:raise ValueError('public diagnostic upstream required')
@@ -312,11 +316,14 @@ def diagnostic_review(spec,expiry):
 Target **{spec['hostname']}**, boot `{spec['boot_id']}`; management endpoints
 {', '.join(spec['endpoints'])}. Start before **{latest}**; inputs expire **{expiry}**.
 One diagnostic activation; mandatory recovery even when timing checks pass.
+Pending NTS associations have a 60-second setup grace, checked on each 30-second
+sample; resolved addresses outside scope fail immediately. Rejecting samples are
+saved before recovery. Journal queries start after a pre-activation boot-bound cursor.
 No service acceptance, persistent enablement, workstation probes, controller
 access, firewall changes, package installation, receiver writes or reboot.
 
 This archive binds current scripts/tests/recipes/documents, accepted receiver
-and network inputs, recovered cutover v3 and accepted retained diagnostics.
+and network inputs, latest recovered transaction and accepted retained diagnostics.
 Preflight checks identity, retained inputs and unchanged baseline before mutation.
 Root-owned 0700 stage `{spec['stage']}`, 0600 evidence, exact file/metadata
 backups and an independently armed 1800-second recovery timer precede mutation.

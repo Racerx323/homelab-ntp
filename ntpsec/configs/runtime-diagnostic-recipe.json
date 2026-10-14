@@ -1,6 +1,7 @@
 {
   "observation_seconds": 900,
   "settling_seconds": 600,
+  "nts_setup_seconds": 60,
   "interval_seconds": 30,
   "maximum_samples": 30,
   "capture_seconds": 1020,

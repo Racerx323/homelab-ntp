@@ -445,12 +445,15 @@ capture separately. Do not label missing historical data a successful check.
 
 ### Bounded NTS/PPS runtime diagnostic
 
-The [sealed runtime review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-runtime-20261013-v2/review.md)
+The [sealed runtime review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-runtime-20261013-v3/review.md)
 is prepared offline and awaits separate execution approval. Use the existing
 `run-service-cutover.py seal --diagnostic` path with the accepted receiver,
-network and recovered-cutover directories plus `--retained-dir` and its exact
+network and latest recovered-transaction directories plus `--retained-dir` and its exact
 `--retained-sha256`. The checked-in `runtime-diagnostic-recipe.json` and current
 input hashes define the scope; do not reuse a historical executable bundle.
+V2 completed recovery, dual-stack readback and cleanup with partial diagnostic
+evidence; see HISTORY. A successor binds that recovery and the original accepted
+retained proof by its immutable member hash.
 
 This profile temporarily installs the same candidate file set and starts the
 same selectable NMEA, preferred SHM2 PPS and three NTS associations. The rendered
@@ -466,7 +469,12 @@ upstream IPs. Save only selected NTP/IP/UDP headers, not payload or NTS cookies.
 Cap collection at 512 packets/1020 seconds, backed by a 1040-second service limit;
 unsupported or incomplete headers, capacity exhaustion and reported drops mark
 packet evidence incomplete. An unexpected DNS-selected address ends the trial
-rather than expanding the approved capture scope. The observation point cannot
+rather than expanding the approved capture scope. Pending NTS associations
+without an address have a 60-second setup grace, checked at each 30-second
+sample; they cannot count toward acceptance. Save rejecting measurements before
+ancillary queries or recovery. Capture a boot-bound journal cursor before
+activation and query after it with bounded fields/output. Retain monotonic and
+boot checks; journal failure must not block restoration. The observation point cannot
 by itself locate a network drop or prove remote receipt/authentication.
 
 The existing short matched GPSD/SHM gate and early localhost NTP response remain

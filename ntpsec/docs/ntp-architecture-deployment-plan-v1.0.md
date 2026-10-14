@@ -828,6 +828,10 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    and route/address observations with NTS counters before attributing `.XFAC.`
    or zero reach to boot ordering or a firewall. Missing/partial diagnostic data
    remains a gap even when recovery and dual-stack readback succeed.
+   Distinguish pending NTS setup from a resolved out-of-scope address using a
+   bounded setup grace. Persist rejecting samples before ancillary collection.
+   Bind journal retrieval to a pre-activation cursor and the current boot, with
+   bounded output; evidence collection failure must not obstruct restoration.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.
