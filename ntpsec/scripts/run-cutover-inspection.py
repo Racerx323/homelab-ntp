@@ -25,6 +25,7 @@ PATHS={'stage.py':'scripts/run-cutover-inspection.py','controller.py':'scripts/r
        'transport.py':'scripts/run-foundation-preflight.py','tests.py':'tests/test_cutover_inspection.py',
        'architecture.md':'docs/ntp-architecture-deployment-plan-v1.0.md','operations.md':'docs/OPERATIONS.md','history.md':'HISTORY.md'}
 EXTRA={'helper.py','source-spec.json','source-cleanup.json','source-receipt.json','known_hosts','launch.sh'}
+HELD_EXTRA={'helper.py','source-spec.json','source-proof.json','source-baseline.json','observation.py','known_hosts','launch.sh'}
 ENV={'PATH':'/usr/sbin:/usr/bin:/sbin:/bin','LC_ALL':'C','PYTHONDONTWRITEBYTECODE':'1'}
 LIMIT=8*1024**2
 FILE_LIMIT=8*1024**2
@@ -54,6 +55,8 @@ def launcher(stage):
 
 def validate(spec,files):
     journal_boot_id(spec['boot_id'])
+    if spec.get('purpose')=='recovery-inspection':
+        validate_held(spec,files);return
     old=json.loads(files['source-spec.json']);cleanup=json.loads(files['source-cleanup.json']);receipt=json.loads(files['source-receipt.json'])
     state=cleanup['result'];prior=dict(state);prior.pop('transient_cleanup',None)
     if any(type(spec[k]) is not int or spec[k]<=0 for k in ('journal_since','journal_until','prepared_epoch','expires_epoch')):
@@ -76,6 +79,43 @@ def validate(spec,files):
         raise ValueError('closed diagnostic/recovered target/input binding required')
 
 
+def validate_held(spec,files):
+    old=json.loads(files['source-spec.json']);proof=json.loads(files['source-proof.json'])
+    state=proof['responses'][0]['result']
+    if (set(files)!=set(PATHS)|HELD_EXTRA|{'spec.json','manifest.json','review.md'}
+            or spec['schema']!=1 or old.get('purpose')!='runtime-diagnostic'
+            or not re.fullmatch('[a-z][a-z0-9-]{0,47}',spec['operation_id'])
+            or spec['stage']!='/var/lib/ntp-inspect-'+spec['operation_id']
+            or spec['source_stage']!=old['stage']
+            or not re.fullmatch('/var/lib/ntp-acquire-[a-z][a-z0-9-]{0,47}',old['stage'])
+            or old['apply_unit']!='ntp-cutover-'+old['operation_id']
+            or old['recovery_unit']!=old['apply_unit']+'-recovery'
+            or any(spec[k]!=old[k] for k in ('hostname','kernel','boot_id','endpoints','old_ipv4'))
+            or proof['bundle_sha256']!=spec['source_bundle_sha256']
+            or not re.fullmatch('[0-9a-f]{64}',spec['source_bundle_sha256'])
+            or len(proof['responses'])!=2 or proof['responses'][0]!=proof['responses'][1]
+            or proof['responses'][0]['spec_sha256']!=sha(files['source-spec.json'])
+            or state['phase']!='recovery_held' or state.get('transient_cleanup')
+            or type(proof['attempt']) is not int or not 1<=proof['attempt']<=60
+            or any(type(spec[k]) is not int for k in ('prepared_epoch','expires_epoch','journal_since','journal_until'))
+            or spec['journal_since']!=state['apply_epoch']
+            or spec['journal_until']!=state['apply_epoch']+3600
+            or not 0<spec['expires_epoch']-spec['prepared_epoch']<=86400
+            or files['launch.sh']!=launcher(spec['stage'])
+            or spec['members']!={n:sha(files[n]) for n in set(PATHS)|HELD_EXTRA}):
+        raise ValueError('closed held-operation inspection binding required')
+
+
+def held_state(spec,files,current):
+    retained=json.loads(files['source-proof.json'])['responses'][0]['result']
+    mutable={'phase','error','startup_promotion','packet_observation','diagnostic_statistics',
+             'network_after','diagnostic_journal','diagnostic_evidence_error','recovered_epoch'}
+    if (current.get('phase') not in ('recovery_held','recovered')
+            or {k:v for k,v in current.items() if k not in mutable}!=
+               {k:v for k,v in retained.items() if k not in mutable}):
+        raise ValueError('unexpected source operation transition')
+
+
 def source_lock(h,spec,files):
     root=Path(spec['source_stage']);h.ancestors(root)
     fd=os.open(root/'.lock',os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK)
@@ -85,7 +125,9 @@ def source_lock(h,spec,files):
         fcntl.flock(fd,fcntl.LOCK_SH|fcntl.LOCK_NB)
         if stat.S_IMODE(root.stat().st_mode)!=0o700 or h.read(root/'spec.json')!=files['source-spec.json']:
             raise ValueError('original protected specification drift')
-        if json.loads(h.read(root/'state.json'))!=json.loads(files['source-cleanup.json'])['result']:
+        current=json.loads(h.read(root/'state.json'))
+        if spec.get('purpose')=='recovery-inspection':held_state(spec,files,current)
+        elif current!=json.loads(files['source-cleanup.json'])['result']:
             raise ValueError('original recovered/cleaned state drift')
         old=json.loads(files['source-spec.json'])
         for name,digest in old['members'].items():
@@ -148,6 +190,7 @@ def runtime_data(h,source):
 
 
 def collect(h,spec,files):
+    if spec.get('purpose')=='recovery-inspection':return collect_held(h,spec,files)
     root=Path(spec['stage']);source=Path(spec['source_stage']);fd=source_lock(h,spec,files)
     try:
         # Read saved evidence without appending to or rewriting the executed stage.
@@ -180,6 +223,67 @@ def collect(h,spec,files):
 
 CAPTURE_FILES=('source-before.json','source-state.json','source-commands.jsonl','retained-journal.json','runtime-data.json',
                'journal.json','journal.stdout','journal.stderr','services.json','services.stdout','services.stderr','current-metadata.json')
+HELD_CAPTURE_FILES=('source-before.json','source-state.json','source-commands.jsonl','source-recovery-commands.jsonl',
+                    'runtime-data.json','continuity.json','current-metadata.json',
+                    *(name+suffix for name in ('journal','services','timer',*[f'observation-{i}' for i in range(4)])
+                      for suffix in ('.json','.stdout','.stderr')))
+
+
+def capture_files(spec):
+    return HELD_CAPTURE_FILES if spec.get('purpose')=='recovery-inspection' else CAPTURE_FILES
+
+
+def collect_held(h,spec,files):
+    root=Path(spec['stage']);source=Path(spec['source_stage']);fd=source_lock(h,spec,files)
+    try:
+        names=('before.json','state.json','commands.jsonl','recovery-commands.jsonl')
+        saved={n:h.read(source/n,limit=FILE_LIMIT) for n in names}
+        for name,raw in saved.items():h.create(root/('source-'+name),raw)
+        state=json.loads(saved['state.json']);old=json.loads(files['source-spec.json'])
+        stats=runtime_data(h,source);h.create(root/'runtime-data.json',encoded(stats))
+        services=['timeservice.service','systemd-timesyncd.service','avahi-daemon.service','ntpleapfetch.service',
+                  old['apply_unit']+'.service',old['apply_unit']+'-diagnostic.service',
+                  old['apply_unit']+'-packets.service',old['recovery_unit']+'.service']
+        raw=command(h,root,'journal',['/usr/bin/journalctl','--quiet','--no-pager','--output=json',
+                    '--lines='+str(JOURNAL_LINES),'--boot='+journal_boot_id(spec['boot_id']),
+                    '--since=@'+str(spec['journal_since']),'--until=@'+str(spec['journal_until']),
+                    *['--unit='+unit for unit in services]])
+        rows=[json.loads(line) for line in raw.splitlines()]
+        if not rows or len(rows)>=JOURNAL_LINES or any(r.get('_BOOT_ID')!=journal_boot_id(spec['boot_id']) for r in rows):
+            raise ValueError('complete bounded operation journal required')
+        command(h,root,'services',['/usr/bin/systemctl','show','--no-pager',
+                '--property=Id,LoadState,ActiveState,SubState,UnitFileState,FragmentPath,DropInPaths,MainPID,NRestarts,Result,ExecMainCode,ExecMainStatus',*services])
+        command(h,root,'timer',['/usr/bin/systemctl','show','--no-pager',
+                '--property=Id,LoadState,ActiveState,SubState,UnitFileState,FragmentPath,DropInPaths,TimersMonotonic,NextElapseUSecMonotonic,LastTriggerUSec,Result',
+                old['recovery_unit']+'.timer'])
+        # Reuse the exact read-only observation that the original continuity gate compared.
+        h.ancestors(source/'runtime-check')
+        for name,member in (('baseline.json','source-baseline.json'),('inspect-source-destinations.py','observation.py')):
+            if h.read(source/'runtime-check'/name,limit=FILE_LIMIT)!=files[member]:raise ValueError('original continuity input drift')
+        observer=load(root/'observation.py');calls=[]
+        expected=[['/usr/bin/dpkg-query','-W','-f=${binary:Package}\t${Version}\t${db:Status-Abbrev}\n'],
+                  ['/usr/bin/dpkg','--audit'],
+                  ['/usr/bin/systemctl','show','--no-pager','--property=Id,LoadState,ActiveState,SubState,MainPID,NRestarts,FragmentPath,DropInPaths',
+                   'ssh.service','NetworkManager.service','ntpsec.service','ntpd.service','gpsd.service','timeservice.service'],
+                  ['/usr/bin/systemctl','show','--no-pager','--property=Id,LoadState,ActiveState,SubState,FragmentPath,DropInPaths','gpsd.socket']]
+        def observed_command(argv):
+            if len(calls)>=len(expected) or argv!=expected[len(calls)]:raise ValueError('closed continuity observation command required')
+            name='observation-'+str(len(calls));calls.append(argv)
+            return command(h,root,name,argv).decode()
+        observer.command=observed_command;current=observer.observation()
+        if calls!=expected:raise ValueError('incomplete continuity observation')
+        baseline=json.loads(files['source-baseline.json'])['observation']
+        difference={k:{'baseline':baseline.get(k),'current':current.get(k)} for k in set(baseline)|set(current) if baseline.get(k)!=current.get(k)}
+        h.create(root/'continuity.json',encoded({'baseline':baseline,'current':current,'matches':current==baseline,'differences':difference}))
+        info={'source_phase':state['phase'],'journal_records':len(rows),'continuity_matches':current==baseline,
+              'different_fields':sorted(difference),'ntp_conf':metadata(Path('/etc/ntp.conf')),
+              'runtime_files':len(stats['files']),'restoration_accepted':False,'time_service_accepted':False}
+        h.create(root/'current-metadata.json',encoded(info))
+        for name,raw in saved.items():
+            if h.read(source/name,limit=FILE_LIMIT)!=raw:raise ValueError('original evidence changed during capture')
+        if runtime_data(h,source)!=stats:raise ValueError('runtime evidence changed during capture')
+        return info
+    finally:os.close(fd)
 
 
 def capture(h,spec,files):
@@ -189,7 +293,7 @@ def capture(h,spec,files):
     except BaseException as error:
         terminal={'phase':'held','error':str(error)[:500],'source_preserved':None}
     evidence={};total=0
-    for name in CAPTURE_FILES:
+    for name in capture_files(spec):
         if (root/name).exists():
             data=h.read(root/name,limit=FILE_LIMIT);total+=len(data)
             if total>LIMIT:
@@ -256,6 +360,7 @@ def prepare(bundle,checksum):
 
 
 def review(spec):
+    if spec.get('purpose')=='recovery-inspection':return held_review(spec)
     return f'''# Retained NTS/PPS cutover diagnostics: {spec['operation_id']}
 
 Target **{spec['hostname']}**, boot `{spec['boot_id']}`. Expires {datetime.fromtimestamp(spec['expires_epoch'],timezone.utc).isoformat()}.
@@ -307,33 +412,93 @@ Then `--mode readback --attempt 1` and `--mode cleanup` with the same archive/ha
 '''
 
 
+def held_review(spec):
+    return f'''# Read-only recovery inspection: {spec['operation_id']}
+
+Target **{spec['hostname']}**, boot `{spec['boot_id']}`; pinned-key endpoints {', '.join(spec['endpoints'])}.
+Expires **{datetime.fromtimestamp(spec['expires_epoch'],timezone.utc).isoformat()}**.
+Bind source archive `{spec['source_bundle_sha256']}` and its matching held readback.
+One capture into root-owned 0700 `{spec['stage']}`, with 0600 evidence.
+Verify target identity, source specification and all immutable source members.
+Acquire the existing source lock read-only/nonblocking; a busy lock holds capture.
+Allow only held/recovered state changes from the original automatic recovery;
+all non-recovery state fields must match the retained snapshot. Record the current
+phase without interpreting it as restored-state acceptance. Never repeat start.
+
+Copy before/state/command/recovery-command records (8 MiB per source file) and
+bounded runtime statistics (12 closed-name single-link files, 2 MiB combined).
+Retrieve one retrospective journal for timeservice, bootstrap, Avahi, leap service,
+the operation's apply/diagnostic/packet workers and recovery service, for this boot
+and epochs {spec['journal_since']}..{spec['journal_until']}. Cap at 1999 complete
+records and 2 MiB; missing, truncated or wrong-boot evidence holds acceptance.
+Inspect these service units and the exact recovery timer, including its trigger
+and next-elapse properties. Do not cancel or change any unit/timer.
+
+Use the pinned original read-only continuity observer: dpkg-query, dpkg audit,
+fixed service/socket show commands, bounded ntpd/gpsd process metadata, boot and
+Python metadata. Compare against the original runtime baseline and retain actual
+differences; a mismatch is a diagnostic finding, not authorization to change it.
+Verify the runtime-check baseline and observer bytes against sealed inputs.
+Record /etc/ntp.conf metadata without opening its contents. No key file is read.
+Compare retained source records/statistics again before releasing the lock.
+
+Aggregate raw evidence is capped at 8 MiB. Each command has a 20-second/2-MiB
+bound; the worker has a 90-second process-group lifetime. Failure preserves partial
+evidence. Conditional dual-stack readback (three numbered attempts) retrieves the
+same stored report. Acceptance means complete preserved diagnostic retrieval only,
+never restoration, timing or service acceptance. Diagnostic cleanup records closure
+and preserves both stages, backups and evidence, even for a held capture.
+No recovery, configuration/package changes, daemon activation, device/receiver I/O,
+clock changes, network probes, controller access or reboot are authorized.
+
+Execute only after separate approval of this archive's SHA-256:
+`python3 -I -B ntpsec/scripts/run-cutover-inspection.py execute --bundle <archive> --sha256 <approved-hash> --mode start`
+Then conditional `--mode readback --attempt N` and `--mode cleanup` with the same
+archive/hash. No mutation rollback is needed for this read-only scope.
+'''
+
+
 def seal(args):
     c=load(ROOT/'scripts/run-service-cutover.py');t=load(ROOT/'scripts/run-foundation-preflight.py')
     raw=t.private_file(args.source_dir/'service-cutover.tar',64*1024**2)
     if sha(raw)!=args.source_sha256:raise ValueError('exact executed cutover archive required')
     source=c.unpack(raw);old=json.loads(source['spec.json']);c.validate(old,source)
-    cleanup=t.private_file(args.source_dir/'cleanup-0-result.json');receipt=t.private_file(args.source_dir/'terminal-receipt.json')
+    held=getattr(args,'recovery_held',False);attempt=getattr(args,'source_attempt',1)
+    if not held and attempt!=1:raise ValueError('legacy recovered inspection uses readback 1')
+    if not held:
+        cleanup=t.private_file(args.source_dir/'cleanup-0-result.json');receipt=t.private_file(args.source_dir/'terminal-receipt.json')
     results={}
+    responses=[]
     for index,endpoint in enumerate(old['endpoints']):
-        response=json.loads(t.private_file(args.source_dir/('readback-1-'+str(index)+'-result.json')))
-        submitted=json.loads(t.private_file(args.source_dir/('readback-1-'+str(index)+'-submission.json')))
+        response=json.loads(t.private_file(args.source_dir/(f'readback-{attempt}-'+str(index)+'-result.json')))
+        submitted=json.loads(t.private_file(args.source_dir/(f'readback-{attempt}-'+str(index)+'-submission.json')))
         expected=t.transport(args.source_dir,endpoint);expected[3]='240s'
         expected[expected.index('ama@'+endpoint):expected.index('ama@'+endpoint)]=['-o','HostKeyAlias='+old['old_ipv4']]
         if (submitted['argv']!=expected or submitted['bundle_sha256']!=args.source_sha256
                 or submitted['payload_sha256']!=sha(c.payload(old,source,'readback'))):raise ValueError('recovery endpoint/submission binding')
         if response['spec_sha256']!=sha(source['spec.json']):raise ValueError('recovery readback binding')
         results[endpoint]=response['result']
-    if c.terminal_receipt(old,args.source_sha256,results)!=json.loads(receipt):raise ValueError('matching recovered readbacks required')
+        responses.append(response)
+    if held:
+        if len(responses)!=2 or responses[0]!=responses[1] or responses[0]['result']['phase']!='recovery_held':
+            raise ValueError('matching held readbacks required')
+    elif c.terminal_receipt(old,args.source_sha256,results)!=json.loads(receipt):raise ValueError('matching recovered readbacks required')
     ref=c.unpack(source['reference.tar']);runtime=c.unpack(ref['runtime.tar'])
     files={n:(ROOT/p).read_bytes() for n,p in PATHS.items()}
     operation_stage='/var/lib/ntp-inspect-'+args.operation_id
     files.update({'helper.py':runtime['foundation-install.py'],'source-spec.json':source['spec.json'],
-                  'source-cleanup.json':cleanup,'source-receipt.json':receipt,'known_hosts':source['known_hosts'],'launch.sh':launcher(operation_stage)})
-    now=int(time.time());state=json.loads(cleanup)['result']
+                  'known_hosts':source['known_hosts'],'launch.sh':launcher(operation_stage)})
+    if held:
+        files.update({'source-proof.json':encoded({'bundle_sha256':args.source_sha256,'attempt':attempt,'responses':responses}),
+                      'source-baseline.json':runtime['baseline.json'],'observation.py':runtime['inspect-source-destinations.py']})
+    else:files.update({'source-cleanup.json':cleanup,'source-receipt.json':receipt})
+    now=int(time.time());state=responses[0]['result'] if held else json.loads(cleanup)['result']
     spec={k:old[k] for k in ('hostname','kernel','boot_id','endpoints','old_ipv4')}
     spec.update(schema=1,operation_id=args.operation_id,stage=operation_stage,source_stage=old['stage'],source_bundle_sha256=args.source_sha256,
-                prepared_epoch=now,expires_epoch=now+86400,journal_since=state['apply_epoch'],journal_until=state['recovered_epoch']+1,
+                prepared_epoch=now,expires_epoch=now+86400,journal_since=state['apply_epoch'],
+                journal_until=state['apply_epoch']+3600 if held else state['recovered_epoch']+1,
                 members={n:sha(v) for n,v in files.items()})
+    if held:spec['purpose']='recovery-inspection'
     files['spec.json']=encoded(spec);files['review.md']=review(spec).encode();files['manifest.json']=encoded({n:sha(v) for n,v in files.items()})
     validate(spec,files);os.umask(0o077);args.output.mkdir(mode=0o700)
     for name in ('spec.json','known_hosts','review.md'):(args.output/name).write_bytes(files[name])
@@ -352,7 +517,7 @@ def terminal_receipt(spec,files,checksum,results):
     if report['phase'] not in ('captured','held'):raise ValueError('terminal diagnostic capture required')
     for row in report['evidence'].values():
         if sha(base64.b64decode(row['base64'],validate=True))!=row['sha256']:raise ValueError('evidence digest mismatch')
-    if report['phase']=='captured' and (set(report['evidence'])!=set(CAPTURE_FILES) or report['source_preserved'] is not True):raise ValueError('complete preserved capture required')
+    if report['phase']=='captured' and (set(report['evidence'])!=set(capture_files(spec)) or report['source_preserved'] is not True):raise ValueError('complete preserved capture required')
     return {'state':'diagnostics_captured' if report['phase']=='captured' else 'diagnostics_held',
             'bundle_sha256':checksum,'spec_sha256':sha(files['spec.json']),'report_sha256':sha(encoded(report)),'time_service_accepted':False}
 
@@ -386,6 +551,7 @@ def main():
         files={n:(root/n).read_bytes() for n in spec['members']};h=protected(spec,files);capture(h,spec,files);return
     parser=argparse.ArgumentParser(description=__doc__);sub=parser.add_subparsers(dest='action',required=True)
     p=sub.add_parser('seal');p.add_argument('--source-dir',type=Path,required=True);p.add_argument('--source-sha256',required=True)
+    p.add_argument('--recovery-held',action='store_true');p.add_argument('--source-attempt',type=int,choices=range(1,61),default=1)
     p.add_argument('--operation-id',required=True);p.add_argument('--output',type=Path,required=True)
     p=sub.add_parser('execute');p.add_argument('--bundle',type=Path,required=True);p.add_argument('--sha256',required=True)
     p.add_argument('--mode',choices=('start','readback','cleanup'),required=True);p.add_argument('--attempt',type=int,choices=range(1,4),default=1)

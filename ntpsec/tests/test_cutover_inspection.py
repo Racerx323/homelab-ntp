@@ -42,6 +42,24 @@ def fixture():
     bind(spec,files);return spec,files
 
 
+def held_fixture():
+    spec,files=fixture();old=json.loads(files['source-spec.json'])
+    old.update(purpose='runtime-diagnostic',operation_id='trial',apply_unit='ntp-cutover-trial',recovery_unit='ntp-cutover-trial-recovery')
+    files['source-spec.json']=m.encoded(old)
+    state={'phase':'recovery_held','apply_epoch':100,'apply_monotonic':90,'deadline':1890,
+           'diagnostic_samples':[{'elapsed_seconds':10}],'error':'package/service/Python/process drift'}
+    response={'spec_sha256':m.sha(files['source-spec.json']),'result':state}
+    files.pop('source-cleanup.json');files.pop('source-receipt.json')
+    files.update({'source-proof.json':m.encoded({'responses':[response,response],'attempt':13,'bundle_sha256':'a'*64}),
+                  'source-baseline.json':m.encoded({'observation':{}}),
+                  'observation.py':(ROOT/'scripts/inspect-source-destinations.py').read_bytes()})
+    spec.update(purpose='recovery-inspection',journal_until=3700)
+    spec['members']={n:m.sha(files[n]) for n in set(m.PATHS)|m.HELD_EXTRA}
+    files['spec.json']=m.encoded(spec);files['review.md']=m.review(spec).encode()
+    files['manifest.json']=m.encoded({n:m.sha(v) for n,v in files.items() if n!='manifest.json'})
+    return spec,files
+
+
 class LocalFiles:
     @staticmethod
     def ancestors(path):pass
@@ -132,6 +150,76 @@ class BindingTests(unittest.TestCase):
              patch.object(m.time,'time',return_value=spec['expires_epoch']),patch.object(m.Path,'mkdir') as mkdir:
             with self.assertRaises(ValueError):m.entry(spec,files,'start')
             mkdir.assert_not_called()
+
+
+class HeldInspectionTests(unittest.TestCase):
+    def test_binding_payloads_and_authorized_recovery_transitions(self):
+        spec,files=held_fixture();m.validate(spec,files)
+        for mode in ('start','readback','cleanup'):compile(c.payload(spec,files,mode),mode,'exec')
+        retained=json.loads(files['source-proof.json'])['responses'][0]['result']
+        m.held_state(spec,files,retained)
+        m.held_state(spec,files,dict(retained,phase='recovered',recovered_epoch=2000,diagnostic_statistics={}))
+        for change in ({'phase':'observing'},{'phase':'accepted'},{'transient_cleanup':True},
+                       {'apply_epoch':101},{'diagnostic_samples':[]},{'unexpected':True}):
+            with self.subTest(change=change),self.assertRaises(ValueError):m.held_state(spec,files,dict(retained,**change))
+        for field,value in (('journal_until',3701),('source_stage','/tmp/other'),('hostname','other')):
+            with self.subTest(field=field),self.assertRaises(ValueError):m.validate(dict(spec,**{field:value}),files)
+        bad=dict(files);proof=json.loads(bad['source-proof.json']);proof['responses'][1]['result']['phase']='recovered'
+        bad['source-proof.json']=m.encoded(proof)
+        with self.assertRaises(ValueError):m.validate(spec,bad)
+
+    def capture_held(self,variant='good'):
+        spec,files=held_fixture()
+        with tempfile.TemporaryDirectory() as tmp:
+            root=Path(tmp)/'inspection';source=Path(tmp)/'source';root.mkdir();source.mkdir()
+            spec.update(stage=str(root),source_stage=str(source));check=source/'runtime-check';check.mkdir()
+            state=json.loads(files['source-proof.json'])['responses'][0]['result']
+            for name,raw in {'before.json':b'{}','state.json':m.encoded(state),'commands.jsonl':b'{}\n','recovery-commands.jsonl':b'{}\n'}.items():
+                (source/name).write_bytes(raw)
+            (check/'baseline.json').write_bytes(files['source-baseline.json'])
+            (check/'inspect-source-destinations.py').write_bytes(files['observation.py'])
+            original={str(p.relative_to(source)):p.read_bytes() for p in source.rglob('*') if p.is_file()}
+            observer=m.load(ROOT/'scripts/inspect-source-destinations.py');calls=[]
+            def command(h,directory,name,argv):
+                calls.append(argv)
+                if variant=='command-failure':raise ValueError('bounded command failed')
+                if name=='journal':raw=m.encoded({'_BOOT_ID':m.journal_boot_id(spec['boot_id']) if variant!='wrong-boot' else 'b'*32})
+                elif name=='observation-0':raw=b'fixture\t1\tii \n'
+                elif name=='observation-1':raw=b''
+                else:raw=b'Id=fixture.service\nActiveState=inactive\n'
+                if variant=='truncated' and name=='journal':raw*=m.JOURNAL_LINES
+                if variant=='missing' and name=='journal':raw=b''
+                if variant=='drift' and name=='timer':(source/'state.json').write_bytes(b'{}')
+                if variant=='baseline-drift' and name=='timer':(check/'baseline.json').write_bytes(b'{}')
+                h.create(directory/(name+'.json'),m.encoded({'argv':argv,'status':0}))
+                h.create(directory/(name+'.stdout'),raw);h.create(directory/(name+'.stderr'),b'')
+                return raw
+            with patch.object(m,'source_lock',return_value=os.open(source,os.O_RDONLY)),patch.object(m,'command',side_effect=command),patch.object(m,'load',return_value=observer),patch.object(observer,'Path') as paths:
+                paths.return_value.glob.return_value=[];paths.return_value.read_text.return_value=spec['boot_id']
+                report=m.capture(LocalFiles,spec,files)
+            if variant not in ('drift','baseline-drift'):
+                self.assertEqual(original,{str(p.relative_to(source)):p.read_bytes() for p in source.rglob('*') if p.is_file()})
+            return report,calls,spec,files
+
+    def test_read_only_diff_timer_and_journal_capture_is_not_restoration(self):
+        report,calls,spec,files=self.capture_held()
+        self.assertEqual(report['phase'],'captured',report.get('error'));self.assertTrue(report['source_preserved'])
+        self.assertEqual(set(report['evidence']),set(m.HELD_CAPTURE_FILES))
+        self.assertFalse(report['summary']['continuity_matches']);self.assertFalse(report['summary']['restoration_accepted'])
+        self.assertIn('services',report['summary']['different_fields']);self.assertEqual(len(calls),7)
+        self.assertIn('--unit=ntp-cutover-trial-recovery.service',calls[0]);self.assertIn('--until=@3700',calls[0])
+        self.assertEqual(calls[2][-1],'ntp-cutover-trial-recovery.timer');self.assertNotIn('MainPID',' '.join(calls[2]))
+        self.assertFalse(any(word in ('restart','stop','start','disable','enable','set-time') for argv in calls for word in argv))
+        result=m.terminal_receipt(spec,files,'a'*64,dict.fromkeys(spec['endpoints'],report))
+        self.assertFalse(result['time_service_accepted'])
+        incomplete=copy.deepcopy(report);incomplete['evidence'].pop('continuity.json')
+        with self.assertRaises(ValueError):m.terminal_receipt(spec,files,'a'*64,dict.fromkeys(spec['endpoints'],incomplete))
+
+    def test_partial_failed_changed_or_incomplete_capture_holds(self):
+        for variant in ('command-failure','wrong-boot','truncated','missing','drift','baseline-drift'):
+            with self.subTest(variant=variant):
+                report,_,_,_=self.capture_held(variant)
+                self.assertEqual(report['phase'],'held');self.assertIsNone(report['source_preserved'])
 
 
 class CaptureTests(unittest.TestCase):

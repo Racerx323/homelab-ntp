@@ -869,6 +869,10 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    A continuity-drift recovery hold blocks cleanup and successor trials. Identify
    the mismatch and confirm restoration through a scoped inspection/recovery
    stage; do not treat partial restoration or elapsed timer time as acceptance.
+   A read-only recovery inspection may observe expected automatic recovery
+   transitions while preserving immutable inputs and non-recovery state. Retain
+   baseline/current differences without treating retrieval as restored-state
+   acceptance or authorization to change services, timers or the source stage.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.
