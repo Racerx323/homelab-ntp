@@ -866,6 +866,9 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    promotion or timing acceptance. See HISTORY for qualification and outcomes.
    Successor reviews must bind the corrected classifier and latest matching
    recovered receipt/cleanup; retained evidence does not extend the input window.
+   A continuity-drift recovery hold blocks cleanup and successor trials. Identify
+   the mismatch and confirm restoration through a scoped inspection/recovery
+   stage; do not treat partial restoration or elapsed timer time as acceptance.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.

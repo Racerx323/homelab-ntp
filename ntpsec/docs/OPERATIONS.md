@@ -547,22 +547,22 @@ duplicate, reordered, late, altered and wrong-origin records. This allowance
 does not establish timing, promotion or NTS authentication.
 
 The [v6 diagnostic review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-runtime-20261013-v6/review.md)
-is sealed offline against v5's matching terminal readback attempt 1 and cleanup,
-with current input hashes and the corrected classifier. Its adjacent sealing
-receipt supplies the exact digest. It retains the accepted receiver/network
-bindings and original diagnostic evidence; no target/controller contact occurred.
+was executed once. Serial/PPS functionality and journal classification passed;
+cold-start frequency initialization was recorded. Thirty samples were retained,
+but three qualifying fresh PPS updates were not established and no promotion
+commands were submitted. A subsequent measurement failed. Automatic restoration
+reached `recovery_held` on `package/service/Python/process drift`.
 
-Scope remains one cold-start diagnostic with short functionality and distinct
-PPS-update gates, authenticated promotion of selectable NMEA and three NTS
-upstreams, the 2 MiB observer, a 1500-second observation bound and independent
-1800-second recovery timer. Every outcome restores the baseline. Conditional
-dual-stack readback, recovery and cleanup are included. Target preflight must
-recheck identity and baseline before activation.
+Readback attempt 13 returned matching held state over IPv4 and IPv6, following a
+sample-update mismatch in attempt 12. There is no recovered terminal receipt and
+cleanup is blocked. Preserve the stage, backups and all local/target evidence.
+Do not repeat start or force recovery through an unidentified continuity mismatch.
+Independent timer cancellation is not confirmed; its later result remains unknown.
 
-Start before **October 14, 2026, at 11:11:04 a.m. CDT**; inputs expire at
-**11:41:04 a.m. CDT**. Preparation does not extend this window. Separate execution
-approval must name v6's sealed digest. Warm-restart policy and persistent service
-cutover remain pending.
+Next prepare a separately approved read-only inspection of operation/supervisor
+journals, recovery commands, timer state and baseline/current continuity. Establish
+the cause and restoration state before proposing further mutation or another
+trial. Warm-restart policy and persistent service cutover remain pending.
 
 The [sealed runtime review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-runtime-20261013-v3/review.md)
 was executed once and recovered, with matching dual-stack readback and cleanup.
@@ -776,7 +776,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. Journal classifier corrected and tested offline; v6 sealed against recovered v5 evidence, awaiting separate execution approval. Persistent warm-restart policy and service cutover remain pending. |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. V6 journal gate passed, but restoration is held on continuity drift; readback 13 matches on both endpoints. Cleanup blocked; timer outcome unconfirmed; scoped inspection required. Persistent warm-restart policy and service cutover remain pending. |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 
