@@ -665,7 +665,7 @@ The actual hardware checker now participates in the handoff regression fixture;
 an additional unrelated PPS class passes, while missing/duplicate sources,
 character-device changes and accepted mapping drift fail.
 
-### Deployment artifact contract and remaining migration
+### Deployment artifact contract and historical data
 
 All executable artifacts come from maintained repository sources. Configuration,
 baselines, target identity and code versions are explicit hash-bound manifest
@@ -674,18 +674,34 @@ inputs. A current baseline means an explicitly accepted revision, never a mutabl
 supply executable implementations. This applies to all deployment artifacts,
 not only the PPS checker. Historical executed bundles remain immutable.
 
-The PPS path now follows that contract. Remaining legacy orchestration does not:
+The active revalidation/monitor path now implements this contract:
 
-| Existing path | Required successor change |
+| Path | Maintained implementation and data boundary |
 | --- | --- |
-| `service-cutover-stage.py` constructor loads `reference.py`; `unchanged()` loads the historical runtime checker | Bind maintained acquisition/runtime libraries as explicit code inputs; consume historical observations as data. |
-| `runtime-continuity.py` reconstructs a transaction from the old runtime archive | Replace inherited transaction construction with a repository-owned runtime validator and explicit baseline schema. |
-| Revalidation and monitor preflight load predecessor/restoration executable validators | Validate historical receipts/state using maintained schema readers; do not import prior operation implementations. |
+| Acquisition and restoration readers | `runtime-artifacts.py` validates historical manifests, target identity, receipts and closure using current acquisition/restoration schema readers. Archived code is never imported. |
+| Runtime reconstruction | Current manifest members supply the helper, hardware/PPS checkers, network checker, inventory reader and supervisors. Historical configuration/baseline members remain unchanged; an effective specification pins the substituted code. Unknown historical Python members reject. |
+| Revalidation and monitor preflight | Both seal current repository sources. Monitor requires identical code to the accepted prerequisite, including receipt readers and runtime dependencies. Preflight, handoff and recovery use the resulting runtime copy. |
 
-These are migration requirements, not completed fixes. Remove and test these
-remaining executable dependencies before sealing another activation review.
-The offline PPS fix does not authorize target contact, a new baseline capture or
-activation. Preserve monitor v3's terminal recovery evidence.
+The superseded `run-service-cutover.py seal` entry point rejects new trials.
+Historical bundles retain their original execution behavior and evidence; this
+migration does not retroactively validate them. Older standalone lifecycle
+controllers must satisfy the same contract before being used to prepare new work.
+Next: prepare a fresh revalidation review using these maintained sources, then
+obtain separate execution approval. No prior approval transfers to changed code.
+
+### Evidence retention and package pruning
+
+Retain unique observations, receipts, manifests, approvals, recovery records and
+current operation inputs. A failed operation does not require every duplicate
+package to be kept at every historical pathname. Before pruning a package, record
+its exact path and SHA-256, verify a byte-identical retained copy, and document
+how to recover it. Preserve nested archive member paths and the retained archive's
+hash. Never remove the sole copy or alter executed bundle bytes.
+
+The private audit supplies an exact deletion manifest; auditing is not deletion
+authorization. Removing a duplicate package can make its original local command
+unusable until that package is restored. Do not remove entire operation directories
+or infer that unique logs are disposable merely because the operation failed.
 
 The old-action audit covers these reachable dependencies:
 

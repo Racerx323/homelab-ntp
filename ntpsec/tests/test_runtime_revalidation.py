@@ -114,14 +114,16 @@ class ContextTests(unittest.TestCase):
         for changed in (False, True):
             with tempfile.TemporaryDirectory() as temporary:
                 root = Path(temporary); sub = root/'runtime-check'; sub.mkdir()
-                runtime = {'stage': '/source', 'members': {'code.py': c.sha(b'code')}}
+                runtime = {'stage': '/source', 'members': {'clockmaker.py': c.sha(b'historical code')}}
+                code = {n: (ROOT/path).read_bytes() for n, path in c.PATHS.items()}
+                effective, current = load('runtime-artifacts.py').runtime_inputs(runtime, {'clockmaker.py': b'historical code'}, code, sub)
                 state = {'phase': 'accepted'}; retained = {'state.json': c.encoded(state)}
-                data = {str(sub/'code.py'): b'code', str(sub/'spec.json'): c.encoded(dict(runtime, stage=str(sub))),
+                data = {**{str(sub/n): v for n, v in current.items()}, str(sub/'spec.json'): c.encoded(effective),
                         '/source/state.json': b'changed' if changed else retained['state.json']}
-                a = types.SimpleNamespace(validate=Mock(return_value=(runtime, {})), source_guard=Mock(return_value=(17, retained)),
+                a = types.SimpleNamespace(validate=Mock(return_value=(runtime, {'clockmaker.py': b'historical code'})), source_guard=Mock(return_value=(17, retained)),
                     load=Mock(), sha=c.sha, encoded=c.encoded)
                 tx = types.SimpleNamespace(a=a, h=types.SimpleNamespace(read=lambda p, **kw: data[str(p)]),
-                    rf={'runtime-cleanup.json': c.encoded({'result': state})}, alias={'source_stage': '/source'}, root=root, run=Mock())
+                    rf={'runtime-cleanup.json': c.encoded({'result': state})}, alias={'source_stage': '/source'}, root=root, run=Mock(), f=code)
                 observer = Mock(return_value='strict observer')
                 check = types.SimpleNamespace(probe=Mock(return_value={'hardware': {}}), core=types.SimpleNamespace(i=types.SimpleNamespace(command=observer, observation=lambda: {'boot': 'same'})))
                 with patch.object(continuity, 'transaction', return_value=check), patch.object(continuity.os, 'close') as close:
@@ -239,12 +241,12 @@ class CaptureTests(unittest.TestCase):
                 def frozen(raw):
                     if raw == files['base.py']: return base
                     if raw == files['continuity.py']: return continuity
-                    if raw == b'restoration': return restoration
+                    if raw == files['restoration-controller.py']: return restoration
                     return original_frozen(raw)
                 for module, name, value in (
                     (c, 'inputs', lambda _: (old, monitor_files, rspec, {'stage.py': b'restoration'}, report, source)),
                     (c, 'Path', mapped), (base, 'Path', mapped), (continuity, 'Path', mapped),
-                    (c, 'frozen', frozen), (base, 'load', lambda _: acquisition),
+                    (c, 'frozen', frozen), (base, 'load', lambda path: h if path.name == 'helper.py' else acquisition),
                     (acquisition, 'bootstrap', bootstrap), (acquisition, 'source_guard', source_guard),
                     (acquisition, 'idle', Mock()), (acquisition, 'prior_guard', Mock()),
                     (acquisition, 'serial_identity', lambda: {'target': '/dev/ttyAMA0'}),
@@ -488,9 +490,13 @@ class ReceiptTests(unittest.TestCase):
         proof = {'readbacks': [response, copy.deepcopy(response)], 'acceptance': receipt, 'cleanup': {
             'spec_sha256': response['spec_sha256'], 'result': {'phase': 'cleaned', 'evidence_preserved': True,
                 'report_sha256': receipt['report_sha256']}}}
+        reader = load('runtime-artifacts.py')
+        code = {n: ('current '+n).encode() for n in reader.CODE_PATHS}
+        archive.update(code)
         origin = {name: name.encode() for name in (*successor.REFERENCE, 'restoration.tar', 'restoration-proof.json')}
         for case in ('valid', 'closure', 'checker', 'pps_checker', 'hardware_checker', 'readback', 'origin'):
             files = dict(origin, **{'revalidation-controller.py': raw, 'runtime-continuity.py': b'checker', 'hardware-checker.py': b'host', 'pps-checker.py': b'pps', 'revalidation.tar': b'archive'})
+            files.update(code)
             value = copy.deepcopy(proof)
             if case == 'closure': value['cleanup']['result']['evidence_preserved'] = False
             if case == 'checker': files['runtime-continuity.py'] = b'other'
@@ -499,7 +505,7 @@ class ReceiptTests(unittest.TestCase):
             if case == 'readback': value['readbacks'][1]['result']['epoch'] += 1
             if case == 'origin': files['reference.tar'] = b'other'
             files['revalidation-proof.json'] = c.encoded(value)
-            with self.subTest(case=case), patch.object(successor, 'frozen', return_value=c), \
+            with self.subTest(case=case), patch.object(successor, 'frozen', side_effect=lambda raw: reader if raw == code['runtime-artifacts.py'] else c), \
                     patch.object(c, 'validate'), patch.object(successor, 'unpack', side_effect=[archive, origin]):
                 if case == 'valid': self.assertEqual(successor.revalidation(files)[2], report)
                 else:

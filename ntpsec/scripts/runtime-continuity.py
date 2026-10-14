@@ -7,6 +7,12 @@ import time
 import types
 
 
+def module(raw):
+    result = types.ModuleType("runtime_data"); result.__file__ = "/sealed/runtime-artifacts.py"
+    exec(compile(raw, result.__file__, "exec"), result.__dict__)
+    return result
+
+
 def checker(host_raw, pps_raw):
     """Load the two explicitly sealed current checkers, never a historical copy."""
     host = types.ModuleType('current_hardware'); pps = types.ModuleType('current_pps')
@@ -55,15 +61,16 @@ def transaction(host, spec, checker):
 def context(tx, checker, create=False):
     """Check private runtime copies; preserve every original accepted source byte."""
     a, h, files, alias = tx.a, tx.h, tx.rf, tx.alias
-    runtime, old = a.validate(alias, files)
+    runtime, old = a.validate(alias, files, historical=True)
     fd, retained = a.source_guard(h, alias, old)
     try:
         if json.loads(retained['state.json']) != json.loads(files['runtime-cleanup.json'])['result']:
             raise ValueError('accepted runtime source state changed')
-        sub = tx.root/'runtime-check'; runtime = dict(runtime, stage=str(sub))
+        sub = tx.root/'runtime-check'
+        runtime, current = module(tx.f['runtime-artifacts.py']).runtime_inputs(runtime, old, tx.f, sub)
         if create:
             sub.mkdir(mode=0o700)
-            for name in runtime['members']: h.create(sub/name, old[name])
+            for name in runtime['members']: h.create(sub/name, current[name])
             for name, raw in retained.items(): h.create(sub/name, raw)
             h.create(sub/'spec.json', a.encoded(runtime))
         else:

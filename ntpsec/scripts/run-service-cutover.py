@@ -436,63 +436,7 @@ and `--mode cleanup` using the same archive/hash. Never replay start.
 
 
 def seal(args):
-    c=load(ROOT/'scripts/run-foundation-preflight.py')
-    raw=c.private_file(args.receiver_dir/'gpsd-acquisition.tar',32*1024**2)
-    if sha(raw)!=args.receiver_sha256:raise ValueError('accepted receiver archive digest')
-    reference=unpack(raw);old=json.loads(reference['spec.json'])
-    receipt=c.private_file(args.receiver_dir/'acceptance.json');accepted=json.loads(receipt);reports={}
-    for path in sorted(args.receiver_dir.glob('readback-*-result.json')):
-        response=json.loads(c.private_file(path,96*1024**2));report=response.get('result',{})
-        if sha(encoded(report))!=accepted['report_sha256']:continue
-        submitted=json.loads(c.private_file(path.with_name(path.name.replace('-result.json','-submission.json'))))
-        endpoint=next(x[4:] for x in submitted['argv'] if x.startswith('ama@'))
-        if response['spec_sha256']==sha(reference['spec.json']) and endpoint in old['endpoints']:reports[endpoint]=report
-    if set(reports)!=set(old['endpoints']):raise ValueError('both accepted endpoint reports required')
-    report=next(iter(reports.values()))
-    files=current_inputs(getattr(args,'diagnostic',False));recipe=json.loads(files['recipe.json'])
-    files.update({'reference.tar':raw,'reference.py':reference['worker.py'],'reference-report.json':encoded(report),
-                  'reference-receipt.json':receipt,'reference-cleanup.json':c.private_file(args.receiver_dir/'cleanup-0-result.json'),
-                  'receiver-runtime.json':base64.b64decode(report['evidence']['receiver-runtime.json']['base64']),
-                  'known_hosts':reference['known_hosts'],'timeservice.json':encoded(recipe['timeservice'])})
-    network={'outcome':json.loads(c.private_file(args.network_dir/'outcome.json')),
-             'records':{n:base64.b64encode(c.private_file(args.network_dir/n,32*1024**2)).decode() for n in NETWORK_RECORDS}}
-    files['network-evidence.json']=encoded(network)
-    recovered_raw=c.private_file(args.recovered_dir/'service-cutover.tar',64*1024**2)
-    recovered=unpack(recovered_raw)
-    recovery=select_recovery(c,args.recovered_dir)
-    if (recovery['terminal-receipt.json']['bundle_sha256']!=sha(recovered_raw)
-            or encoded(recovery['spec.json'])!=recovered['spec.json']):raise ValueError('recovered archive binding')
-    files['recovery-evidence.json']=encoded(recovery)
-    files['diagnostic-evidence.json']=encoded(None)
-    diagnostic=getattr(args,'diagnostic',False)
-    if diagnostic:
-        if not args.retained_dir or not args.retained_sha256:raise ValueError('accepted retained diagnostics required')
-        retained=c.private_file(args.retained_dir/'cutover-inspection.tar',64*1024**2)
-        if sha(retained)!=args.retained_sha256:raise ValueError('retained archive digest')
-        proof={n:json.loads(c.private_file(args.retained_dir/n,16*1024**2)) for n in
-               ('acceptance.json','readback-1-0-result.json','readback-1-1-result.json','cleanup-0-result.json')}
-        proof['archive']=base64.b64encode(retained).decode();files['diagnostic-evidence.json']=encoded(proof)
-        recipe['diagnostic']=json.loads(files['diagnostic-recipe.json'])
-        recipe['timeservice']['pps_startup']=recipe['diagnostic']['pps_startup']
-        files['timeservice.json']=encoded(recipe['timeservice'])
-    epoch=int(time.time());spec={k:old[k] for k in ('hostname','kernel','boot_id','endpoints','old_ipv4')}
-    spec.update(schema=1,operation_id=args.operation_id,stage='/var/lib/ntp-acquire-'+args.operation_id,
-                apply_unit='ntp-cutover-'+args.operation_id,recovery_unit='ntp-cutover-'+args.operation_id+'-recovery',
-                prepared_epoch=epoch,expires_epoch=min(epoch+86400,old['expires_epoch']),recipe=recipe,
-                members={n:sha(v) for n,v in files.items()})
-    spec['purpose']='runtime-diagnostic' if diagnostic else 'service-cutover'
-    files['spec.json']=encoded(spec);files['review.md']=review(spec).encode();files['manifest.json']=encoded({n:sha(v) for n,v in files.items()})
-    validate(spec,files)
-    if spec['expires_epoch']-epoch<3600:raise ValueError('insufficient accepted input freshness for cutover')
-    os.umask(0o077);args.output.mkdir(mode=0o700)
-    for n in ('spec.json','review.md','known_hosts'):(args.output/n).write_bytes(files[n])
-    bundle=args.output/'service-cutover.tar'
-    with tarfile.open(bundle,'w',format=tarfile.USTAR_FORMAT) as archive:
-        for name,data in sorted(files.items()):
-            item=tarfile.TarInfo(name);item.mode=0o600;item.size=len(data);item.mtime=epoch;archive.addfile(item,io.BytesIO(data))
-    checksum=sha(bundle.read_bytes());prepare(bundle,checksum)
-    result={'bundle':str(bundle),'sha256':checksum,'target':spec['hostname'],'expires_epoch':spec['expires_epoch'],'target_contact':False,'execution_authorized':False}
-    c.write_new(args.output/'sealing.json',result);return result
+    raise ValueError('legacy cutover sealing retired; use run-service-monitor.py with current code and accepted revalidation')
 
 
 def request(c,directory,spec,files,checksum,mode,stem,endpoint,proofs=None):

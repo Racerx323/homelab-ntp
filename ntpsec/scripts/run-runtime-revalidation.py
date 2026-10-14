@@ -20,7 +20,15 @@ import time
 import types
 
 ROOT = Path(__file__).resolve().parents[1]
-PATHS = {'pps-checker.py': 'scripts/check-pps.py', 'hardware-checker.py': 'scripts/host-configuration-stage.py', 'stage.py': 'scripts/run-runtime-revalidation.py',
+PATHS = {
+    'reference.py': 'scripts/run-gpsd-acquisition.py', 'helper.py': 'scripts/foundation-install.py',
+    'restoration-controller.py': 'scripts/run-cutover-restoration.py',
+    'runtime-artifacts.py': 'scripts/runtime-artifacts.py',
+    'artifact-tests.py': 'tests/test_runtime_artifacts.py',
+    'host-network-stage.py': 'scripts/host-network-stage.py',
+    'inspect-source-destinations.py': 'scripts/inspect-source-destinations.py',
+    'clockmaker.py': 'scripts/clockmaker.py', 'timeservice.py': 'scripts/timeservice.py',
+    'pps-checker.py': 'scripts/check-pps.py', 'hardware-checker.py': 'scripts/host-configuration-stage.py', 'stage.py': 'scripts/run-runtime-revalidation.py',
          'continuity.py': 'scripts/runtime-continuity.py', 'base.py': 'scripts/service-cutover-stage.py',
          'controller.py': 'scripts/run-service-cutover.py', 'transport.py': 'scripts/run-foundation-preflight.py',
          'monitor-controller.py': 'scripts/run-service-monitor.py',
@@ -28,7 +36,7 @@ PATHS = {'pps-checker.py': 'scripts/check-pps.py', 'hardware-checker.py': 'scrip
          'acquisition-tests.py': 'tests/test_gpsd_acquisition.py',
          'architecture.md': 'docs/ntp-architecture-deployment-plan-v1.0.md',
          'operations.md': 'docs/OPERATIONS.md', 'history.md': 'HISTORY.md'}
-EXTRA = {'monitor.tar', 'monitor-proof.json', 'helper.py', 'inspector.py', 'known_hosts', 'reference.py'}
+EXTRA = {'monitor.tar', 'monitor-proof.json', 'known_hosts'}
 CHECKS = {'restoration', 'failed_stage', 'idle_workers', 'runtime', 'hardware', 'continuity', 'source_preserved'}
 EVIDENCE = ('current-runtime.json', 'before.json', 'commands.jsonl', 'failed-stage.json')
 LIMIT = 32*1024**2
@@ -53,9 +61,11 @@ def load(path):
 
 
 def inputs(files):
-    c = frozen(files['monitor-controller.py']); monitor = c.unpack(files['monitor.tar'])
-    old = json.loads(monitor['spec.json']); validator = frozen(monitor['controller.py'])
-    validator.validate(old, monitor)
+    c = frozen(files['monitor-controller.py'])
+    reader = frozen(files['runtime-artifacts.py'])
+    old, monitor = reader.archive(files['monitor.tar'], 'service-monitor')
+    if old['schema'] != 2 or old['apply_unit'] != 'ntp-monitor-'+old['operation_id'] or old['recovery_unit'] != old['apply_unit']+'-watchdog':
+        raise ValueError('historical monitor worker identity')
     proof = json.loads(files['monitor-proof.json'])
     if 'recovered' in proof:
         recovered_source(old, monitor, proof)
@@ -65,10 +75,12 @@ def inputs(files):
             or proof['readback'] != {'spec_sha256': sha(monitor['spec.json']), 'result': {
                 'phase': 'held', 'error': "[Errno 2] No such file or directory: '"+old['stage']+"/state.json'"}}):
         raise ValueError('bound preflight-only rejection and missing-state readback required')
-    rspec, restoration, report, source = validator.restoration(monitor)
-    if (files['helper.py'] != restoration['helper.py'] or files['inspector.py'] != restoration['inspector.py']
-            or files['known_hosts'] != monitor['known_hosts'] or files['reference.py'] != monitor['reference.py']):
-        raise ValueError('frozen protection helpers/key binding')
+    rspec, restoration, report, source = c.restoration(dict(monitor, **{n: files[n] for n in reader.CODE_PATHS}))
+    receiver, _ = reader.receiver(dict(monitor, **{'reference.py': files['reference.py']}), frozen(files['reference.py']))
+    if any(old[k] != rspec[k] or old[k] != receiver[k] for k in ('hostname', 'kernel', 'boot_id', 'endpoints', 'old_ipv4')):
+        raise ValueError('historical receiver/restoration target drift')
+    if files['known_hosts'] != monitor['known_hosts']:
+        raise ValueError('retained host key binding')
     return old, monitor, rspec, restoration, report, source
 
 
@@ -109,7 +121,7 @@ def validate(spec, files):
     acquisition = reference.unpack(rest[0]['reference.tar'])
     alias = dict(json.loads(acquisition['spec.json']), operation_id=spec['operation_id'],
                  stage=spec['stage'], unit='ntp-acquire-'+spec['operation_id']+'.service')
-    reference.validate(alias, acquisition)
+    reference.validate(alias, acquisition, historical=True)
     return (old, *rest)
 
 
@@ -137,7 +149,7 @@ def failed_stage(h, old, monitor, run, proof=None):
 
 def capture(h, spec, files):
     old, monitor, rspec, archive, report, source = validate(spec, files)
-    root = Path(spec['stage']); restoration = frozen(archive['stage.py'])
+    root = Path(spec['stage']); restoration = frozen(files['restoration-controller.py'])
     held = json.loads(source['spec.json']); restored = Path(rspec['stage'])
     h.ancestors(restored)
     for name, digest in rspec['members'].items():
@@ -156,7 +168,7 @@ def capture(h, spec, files):
                 self.write('current-runtime.json', result)
                 return result
         candidate = dict(old, stage=spec['stage'], operation_id=spec['operation_id'])
-        tx = Transaction(candidate, monitor)
+        tx = Transaction(candidate, dict(monitor, **{n: files[n] for n in frozen(files['runtime-artifacts.py']).CODE_PATHS}))
         clocks = restoration.timer_state(tx.run, held)
         if clocks['timer']['ActiveState'] != 'inactive': raise ValueError('old timer active')
         proof = json.loads(files['monitor-proof.json'])
@@ -332,7 +344,6 @@ def seal(args):
     raw = t.private_file(args.source_dir/'service-monitor.tar', ARCHIVE_LIMIT)
     if sha(raw) != args.source_sha256: raise ValueError('executed monitor archive digest')
     monitor = c.unpack(raw); old = json.loads(monitor['spec.json'])
-    archive = c.unpack(monitor['restoration.tar'])
     if args.recovered_attempt is not None:
         proof = {'recovered': json.loads(t.private_file(args.source_dir/'recovered-receipt.json')),
                  'readbacks': [json.loads(t.private_file(args.source_dir/f'readback-{args.recovered_attempt}-{i}-result.json')) for i in range(2)],
@@ -341,9 +352,7 @@ def seal(args):
         proof = {'start': json.loads(t.private_file(args.source_dir/'start-0-result.json')),
                  'readback': json.loads(t.private_file(args.source_dir/'readback-1-0-result.json'))}
     files = {n: (ROOT/path).read_bytes() for n, path in PATHS.items()}
-    files.update({'monitor.tar': raw, 'monitor-proof.json': encoded(proof), 'helper.py': archive['helper.py'],
-                  'inspector.py': archive['inspector.py'], 'known_hosts': monitor['known_hosts'],
-                  'reference.py': monitor['reference.py']})
+    files.update({'monitor.tar': raw, 'monitor-proof.json': encoded(proof), 'known_hosts': monitor['known_hosts']})
     now = int(time.time()); spec = {k: old[k] for k in ('hostname', 'boot_id', 'kernel', 'endpoints', 'old_ipv4')}
     spec.update(schema=1, purpose='runtime-revalidation', operation_id=args.operation_id,
         stage='/var/lib/ntp-acquire-'+args.operation_id, source_stage=old['stage'], source_sha256=sha(raw),

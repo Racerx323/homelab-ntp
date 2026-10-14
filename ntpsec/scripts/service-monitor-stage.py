@@ -61,7 +61,7 @@ def transaction_class(base, controller):
             if (json.loads(self.h.read(fresh_root/'report.json', limit=32*1024**2)) != fresh_report
                     or json.loads(self.h.read(fresh_root/'cleanup.json')) != json.loads(self.f['revalidation-proof.json'])['cleanup']['result']):
                 raise ValueError('accepted revalidation report/closure drift')
-            checker = module(fresh_files['stage.py'], 'accepted_revalidation')
+            checker = module(self.f['revalidation-controller.py'], 'accepted_revalidation')
             prior, prior_files, *_ = checker.validate(fresh, fresh_files)
             prior_proof = json.loads(fresh_files['monitor-proof.json'])
             checker.failed_stage(self.h, prior, prior_files, self.run, prior_proof)
@@ -75,7 +75,7 @@ def transaction_class(base, controller):
             if (json.loads(self.h.read(restored/'report.json', limit=32*1024**2)) != report
                     or json.loads(self.h.read(restored/'cleanup.json')) != proof['cleanup']['result']):
                 raise ValueError('retained restoration report/closure drift')
-            validator = module(archive['stage.py'], 'restoration')
+            validator = module(self.f['restoration-controller.py'], 'restoration')
             old = json.loads(source['spec.json'])
             fd = validator.source_lock(self.h, rspec, old, source)
             try:

@@ -127,7 +127,7 @@ class Transaction:
         self.s=spec;self.f=files;self.root=Path(spec['stage'])
         self.a=load(self.root/'reference.py');self.rf=self.a.unpack(files['reference.tar'])
         self.rs=json.loads(self.rf['spec.json'])
-        self.h=self.a.bootstrap(self.rs,self.rf)
+        self.h=load(self.root/'helper.py') if spec.get('purpose')=='service-monitor' else self.a.bootstrap(self.rs,self.rf)
         self.alias=dict(self.rs,operation_id=spec['operation_id'],stage=spec['stage'],unit='ntp-acquire-'+spec['operation_id']+'.service')
 
     def write(self,name,value):

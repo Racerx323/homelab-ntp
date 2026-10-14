@@ -87,9 +87,12 @@ class BindingTests(unittest.TestCase):
                     (root/name).write_bytes(files[name])
 
     def test_real_restoration_terminal_api_and_closure(self):
-        # Exercise the frozen helper API rather than replacing restoration().
+        # Exercise maintained receipt validation; archive integrity has separate tests.
         helper = c.frozen((ROOT/'scripts/run-cutover-restoration.py').read_bytes())
-        spec = {'endpoints': ['192.0.2.1', '2001:db8::1']}
+        spec = {'endpoints': ['192.0.2.1', '2001:db8::1'], 'schema': 1, 'source_sha256': c.sha(b'source'),
+                'source_stage': '/var/lib/source', 'hostname': 'fixture', 'kernel': 'kernel', 'boot_id': 'boot', 'old_ipv4': '192.0.2.1'}
+        reader = load('runtime-artifacts.py')
+        source_spec = dict(spec, stage='/var/lib/source')
         archive = {'stage.py': b'fixture helper', 'spec.json': c.encoded(spec), 'source.tar': b'source'}
         result = {'phase': 'restoration_verified', 'restoration_accepted': True,
                   'source_preserved': True, 'time_service_accepted': False,
@@ -109,17 +112,21 @@ class BindingTests(unittest.TestCase):
             if case == 'evidence':
                 for row in changed['readbacks']: row['result']['evidence']['commands.jsonl']['sha256'] = '0'*64
             if case == 'receipt': changed['acceptance']['state'] = 'restoration_held'
-            files = {'restoration.tar': b'archive', 'restoration-proof.json': c.encoded(changed)}
-            with self.subTest(case=case), patch.object(c, 'unpack', side_effect=[archive, {}]), \
-                    patch.object(c, 'frozen', return_value=helper), patch.object(helper, 'validate'):
+            files = {'restoration.tar': b'archive', 'restoration-proof.json': c.encoded(changed),
+                     'runtime-artifacts.py': b'reader', 'restoration-controller.py': b'helper'}
+            with self.subTest(case=case), patch.object(reader, 'archive', side_effect=[(spec, archive), (source_spec, {})]), \
+                    patch.object(c, 'frozen', side_effect=lambda raw: reader if raw == b'reader' else helper):
                 if case == 'valid': self.assertEqual(c.restoration(files)[2], result)
                 else:
                     with self.assertRaises(ValueError): c.restoration(files)
 
     def test_closed_profile_has_independent_watchdog_and_no_restart(self):
         spec, files, restored = fixture()
+        original_frozen = c.frozen
         with patch.object(c, 'restoration', return_value=restored), \
-                patch.object(c, 'revalidation', return_value=(restored[0], {}, {'epoch': 400})):
+                patch.object(c, 'revalidation', return_value=(restored[0], {}, {'epoch': 400})), \
+                patch.object(c, 'frozen', side_effect=lambda raw: types.SimpleNamespace(receiver=lambda *a: (restored[0], {}))
+                    if raw == files['runtime-artifacts.py'] else original_frozen(raw)):
             c.validate(spec, files)
         self.assertEqual(spec['recipe']['recovery_seconds'], 600)
         self.assertNotIn('completion_seconds', spec['recipe']['timeservice']['pps_startup'])

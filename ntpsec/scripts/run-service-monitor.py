@@ -15,11 +15,19 @@ import time
 import types
 
 ROOT = Path(__file__).resolve().parents[1]
-PATHS = {'pps-checker.py': 'scripts/check-pps.py', 'hardware-checker.py': 'scripts/host-configuration-stage.py',
+PATHS = {
+    'reference.py': 'scripts/run-gpsd-acquisition.py', 'helper.py': 'scripts/foundation-install.py',
+    'restoration-controller.py': 'scripts/run-cutover-restoration.py',
+    'runtime-artifacts.py': 'scripts/runtime-artifacts.py',
+    'artifact-tests.py': 'tests/test_runtime_artifacts.py',
+    'host-network-stage.py': 'scripts/host-network-stage.py',
+    'inspect-source-destinations.py': 'scripts/inspect-source-destinations.py',
+    'clockmaker.py': 'scripts/clockmaker.py', 'timeservice.py': 'scripts/timeservice.py',
+    'pps-checker.py': 'scripts/check-pps.py', 'hardware-checker.py': 'scripts/host-configuration-stage.py',
     'controller.py': 'scripts/run-service-monitor.py', 'stage.py': 'scripts/service-monitor-stage.py',
     'base-stage.py': 'scripts/service-cutover-stage.py', 'base-controller.py': 'scripts/run-service-cutover.py',
     'transport.py': 'scripts/run-foundation-preflight.py', 'client.py': 'scripts/check-time-client.py',
-    'measure.py': 'scripts/measure-time-service.py', 'timeservice.py': 'scripts/timeservice.py',
+    'measure.py': 'scripts/measure-time-service.py',
     'pps-startup.py': 'scripts/pps-startup.py', 'gpsd-pairing.py': 'scripts/gpsd-pairing.py',
     'runtime-continuity.py': 'scripts/runtime-continuity.py',
     'revalidation-controller.py': 'scripts/run-runtime-revalidation.py',
@@ -31,7 +39,7 @@ PATHS = {'pps-checker.py': 'scripts/check-pps.py', 'hardware-checker.py': 'scrip
     'revalidation-tests.py': 'tests/test_runtime_revalidation.py',
     'architecture.md': 'docs/ntp-architecture-deployment-plan-v1.0.md',
     'operations.md': 'docs/OPERATIONS.md', 'history.md': 'HISTORY.md'}
-REFERENCE = ('reference.py', 'reference.tar', 'reference-report.json', 'reference-receipt.json',
+REFERENCE = ('reference.tar', 'reference-report.json', 'reference-receipt.json',
              'reference-cleanup.json', 'receiver-runtime.json', 'known_hosts')
 EXTRA = {*REFERENCE, 'restoration.tar', 'restoration-proof.json', 'timeservice.json',
          'timeservice.service', 'fault.service', 'revalidation.tar', 'revalidation-proof.json'}
@@ -73,25 +81,8 @@ def unpack(raw):
 
 
 def restoration(files):
-    archive = unpack(files['restoration.tar'])
-    validator = frozen(archive['stage.py']); spec = json.loads(archive['spec.json'])
-    validator.validate(spec, archive)
-    proof = json.loads(files['restoration-proof.json'])
-    if set(proof) != {'acceptance', 'readbacks', 'cleanup'} or len(proof['readbacks']) != 2:
-        raise ValueError('closed restoration proof required')
-    first, second = proof['readbacks']
-    if first != second or first['spec_sha256'] != sha(archive['spec.json']):
-        raise ValueError('matching restoration readbacks required')
-    result = first['result']
-    receipt = validator.terminal(spec, sha(files['restoration.tar']), dict.fromkeys(spec['endpoints'], result))
-    if receipt != proof['acceptance'] or receipt['state'] != 'restoration_verified':
-        raise ValueError('accepted restoration continuation required')
-    if proof['cleanup'] != {'spec_sha256': sha(archive['spec.json']), 'result': {
-            'phase': 'cleaned', 'report_sha256': receipt['report_sha256'],
-            'source_preserved': True, 'evidence_preserved': True}}:
-        raise ValueError('accepted restoration closure required')
-    source = unpack(archive['source.tar'])
-    return spec, archive, result, source
+    reader = frozen(files['runtime-artifacts.py'])
+    return reader.restoration(files, frozen(files['restoration-controller.py']))
 
 
 def revalidation(files):
@@ -109,7 +100,8 @@ def revalidation(files):
             or archive['continuity.py'] != files['runtime-continuity.py']
             or archive['hardware-checker.py'] != files['hardware-checker.py']
             or archive['pps-checker.py'] != files['pps-checker.py']
-            or archive['stage.py'] != files['revalidation-controller.py']):
+            or archive['stage.py'] != files['revalidation-controller.py']
+            or any(archive[n] != files[n] for n in frozen(files['runtime-artifacts.py']).CODE_PATHS)):
         raise ValueError('accepted closed revalidation and matching continuity checker required')
     origin = unpack(archive['monitor.tar'])
     if any(files[n] != origin[n] for n in (*REFERENCE, 'restoration.tar', 'restoration-proof.json')):
@@ -165,6 +157,9 @@ def validate(spec, files):
             or recipe['timeservice']['ntpd'] != ['/usr/local/sbin/ntpd', '-n', '-m', '-c', '/etc/ntp.conf', '-u', 'ntp:ntp']
             or recipe['timeservice']['startup_gate'] != {'timeout_seconds': 30, 'matching_samples_per_source': 5, 'units': {'TOFF': 'NTP0', 'PPS': 'NTP2'}}):
         raise ValueError('closed hardware, credentials and receiver-write boundary required')
+    receiver, _ = frozen(files['runtime-artifacts.py']).receiver(files, frozen(files['reference.py']))
+    if any(spec[k] != receiver[k] for k in ('hostname', 'kernel', 'boot_id', 'endpoints', 'old_ipv4')):
+        raise ValueError('receiver/current target identity drift')
     return restored, archive, report, source
 
 

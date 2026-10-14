@@ -71,7 +71,10 @@ def validate_recipe(r):
         raise ValueError('closed bounded receiver-read-only acquisition recipe required')
 
 
-def validate(spec, files):
+def validate(spec, files, historical=False):
+    names = INPUTS
+    if historical and set(spec['members']) == INPUTS-{'gpsd-pairing.py'}:
+        names = INPUTS-{'gpsd-pairing.py'}
     old = unpack(files['runtime.tar']); runtime = json.loads(old['spec.json'])
     receipt = json.loads(files['runtime-acceptance.json']); cleanup = json.loads(files['runtime-cleanup.json'])
     state = cleanup['result']; recipe = json.loads(files['recipe.json']); validate_recipe(recipe)
@@ -94,7 +97,7 @@ def validate(spec, files):
             or spec['endpoints'] != [runtime['recipe'][k].split('/')[0] for k in ('ipv4_address','ipv6_address')]
             or spec['old_ipv4'] != runtime['old_ipv4']
             or not 0 < spec['expires_epoch']-spec['prepared_epoch'] <= 86400
-            or spec['members'] != {n: sha(files[n]) for n in INPUTS}):
+            or spec['members'] != {n: sha(files[n]) for n in names}):
         raise ValueError('accepted runtime/identity/boot/input binding required')
     validate_prior(spec, files)
     return runtime, old

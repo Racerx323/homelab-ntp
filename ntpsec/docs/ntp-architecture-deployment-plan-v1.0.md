@@ -932,9 +932,12 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    explicit versioned inputs. Each operation pins code, configuration, accepted
    baseline and target identity; evidence supplies data/provenance only. Production
    scripts must not depend on workstation evidence paths or execute code imported
-   from historical operation archives. Preserve those archives unchanged. This
-   supersedes the legacy inherited-checker approach: remove remaining executable
-   archive dependencies before sealing another activation review.
+   from historical operation archives. Preserve retained archives unchanged. Revalidation and monitor operations use
+   maintained data readers and current manifest code for every reconstructed
+   runtime dependency; the successor requires code equality with its accepted
+   prerequisite. The old cutover sealer is retired. Duplicate package copies may
+   be pruned only against a reviewed path/hash manifest with a verified retained
+   copy and recovery location; unique acceptance/recovery evidence remains.
    Validate the accepted GPIO PPS source by bound driver, device-tree mapping,
    source identity and character-device identity. Other PPS class entries are
    diagnostic inventory, not an automatic GPIO failure. Missing or duplicate
