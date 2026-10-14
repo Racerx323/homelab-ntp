@@ -24,7 +24,22 @@ def module(raw, name):
 
 def transaction_class(base, controller):
     class Transaction(base.Transaction):
+        def runtime_context(self, create=False):
+            return module(self.f['runtime-continuity.py'], 'current_runtime').context(self, create)
+
+        def hardware_gate(self, transaction):
+            host = base.load(self.root/'runtime-check'/'host-configuration-stage.py')
+            return module(self.f['runtime-continuity.py'], 'current_runtime').hardware_gate(transaction, host)
+
         def preflight(self):
+            fresh, fresh_files, fresh_report = controller.revalidation(self.f)
+            fresh_root = Path(fresh['stage']); self.h.ancestors(fresh_root)
+            for name, digest in fresh['members'].items():
+                if sha(self.h.read(fresh_root/name, limit=64*1024**2)) != digest:
+                    raise ValueError('accepted revalidation input drift')
+            if (json.loads(self.h.read(fresh_root/'report.json', limit=32*1024**2)) != fresh_report
+                    or json.loads(self.h.read(fresh_root/'cleanup.json')) != json.loads(self.f['revalidation-proof.json'])['cleanup']['result']):
+                raise ValueError('accepted revalidation report/closure drift')
             rspec, archive, report, source = controller.validate(self.s, dict(self.f,
                 **{'spec.json': encoded(self.s), 'manifest.json': b'', 'review.md': b''}))
             restored = Path(rspec['stage']); self.h.ancestors(restored)
@@ -55,7 +70,8 @@ def transaction_class(base, controller):
                 check = base.load(root/'host-configuration-stage.py').Transaction(json.loads(self.h.read(root/'spec.json')))
                 actual = check.core.i.observation()
                 expected = json.loads(validator.evidence(report, 'continuity-after.json'))
-                if actual != expected: raise ValueError('fresh restored-state continuity drift')
+                if actual != expected or sha(encoded(actual)) != fresh_report['observation_sha256']:
+                    raise ValueError('fresh restored-state continuity drift')
                 self.write('fresh-preflight.json', {'epoch': int(time.time()), 'observation': actual,
                     'restoration_sha256': self.s['restoration_sha256'], 'checks': 'passed'})
             finally:

@@ -195,8 +195,14 @@ class Transaction:
         for name,row in report['evidence'].items():
             if sha(self.h.read(root/name,limit=8388608))!=row['sha256']:raise ValueError('accepted receiver evidence drift')
 
+    def runtime_context(self,create=False):
+        return self.a.context(self.h,self.alias,self.rf,create=create)
+
+    def hardware_gate(self,transaction):
+        return transaction.hardware_gate()
+
     def preflight(self):
-        self.retained();self.a.context(self.h,self.alias,self.rf,create=True);self.a.idle();self.a.prior_guard(self.h,self.alias,self.rf)
+        self.retained();self.runtime_context(create=True);self.a.idle();self.a.prior_guard(self.h,self.alias,self.rf)
         expected=json.loads(self.f['receiver-runtime.json'])['runtime']
         before={n:self.snapshot(n) for n in DESTINATIONS}
         for name,record in expected['files'].items():
@@ -349,7 +355,7 @@ class Transaction:
             raise ValueError('SHM ownership/membership drift')
         # Reuse network and hardware checks with only the explicitly changed continuity fields replaced.
         transaction.core.continuity=lambda:None
-        transaction.network_checks();transaction.hardware_gate()
+        transaction.network_checks();self.hardware_gate(transaction)
         for name,(member,mode) in DESTINATIONS.items():
             record=self.snapshot(name)
             if not record or record['sha256']!=sha(self.f[member]) or record['mode']!=mode or record['uid'] or record['gid']:raise ValueError('installed candidate drift')
@@ -579,7 +585,7 @@ class Transaction:
             self.systemctl('daemon-reload');self.systemctl('restart','avahi-daemon.service')
             self.systemctl('enable','--now','systemd-timesyncd.service')
             clear_restored_failure(self.systemctl)
-            self.a.context(self.h,self.alias,self.rf)
+            self.runtime_context()
             if self.s['recipe'].get('diagnostic'):
                 try:
                     state['diagnostic_statistics']={};total=0

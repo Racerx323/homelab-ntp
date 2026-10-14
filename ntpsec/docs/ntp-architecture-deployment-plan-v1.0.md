@@ -897,9 +897,16 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    operator-requested recovery remain required. The independent monitor stage
    uses a 600-second installation watchdog and a fresh read-only preflight against
    the accepted restoration observation; historical execution windows stay
-   unchanged. Its start window must also fit the nested hardware acceptance's
-   24-hour freshness limit, including the watchdog reserve. A restoration receipt
-   does not renew that prerequisite. Structural handoff requires dual-stack management and workstation
+   unchanged. The legacy nested hardware acceptance retains its 24-hour limit;
+   a restoration receipt does not renew it. A successor may instead consume a
+   separately accepted, read-only hardware/runtime revalidation. That validation
+   preserves historical timestamps and requires exact accepted provenance plus
+   fresh same-boot configuration, device, account, native and network checks.
+   Bind its complete dual-stack report and closure, then reserve installation
+   time within the new observation's start window. Recovery of the already-started
+   operation rechecks those actual facts without imposing a receipt-age limit;
+   changed identity or state still holds recovery. No repeated boot changes are
+   implied. Structural handoff requires dual-stack management and workstation
    NTP responses, denied administrative queries, daemon safety and a live monitor.
    Unsynchronized responses can establish transport only. Keep cold-start service
    boot enablement and leap-fetch disabled pending their later acceptance; retain

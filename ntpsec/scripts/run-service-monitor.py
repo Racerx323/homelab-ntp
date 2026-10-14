@@ -21,17 +21,20 @@ PATHS = {
     'transport.py': 'scripts/run-foundation-preflight.py', 'client.py': 'scripts/check-time-client.py',
     'measure.py': 'scripts/measure-time-service.py', 'timeservice.py': 'scripts/timeservice.py',
     'pps-startup.py': 'scripts/pps-startup.py', 'gpsd-pairing.py': 'scripts/gpsd-pairing.py',
+    'runtime-continuity.py': 'scripts/runtime-continuity.py',
+    'revalidation-controller.py': 'scripts/run-runtime-revalidation.py',
     'ntp.conf': 'configs/j2-svntp1-ntp.conf', 'recipe.json': 'configs/service-cutover-recipe.json',
     'monitor-policy.json': 'configs/pps-monitor-policy.json', 'leap-seconds.list': 'configs/leap-seconds.list',
     'service-template': 'templates/timeservice.service', 'avahi.conf': 'templates/avahi-ntp.conf',
     'ntpleapfetch.service': 'templates/ntpleapfetch-j2.service', 'ntpleapfetch.timer': 'templates/ntpleapfetch.timer',
     'tests.py': 'tests/test_service_monitor.py', 'startup-tests.py': 'tests/test_pps_startup.py',
+    'revalidation-tests.py': 'tests/test_runtime_revalidation.py',
     'architecture.md': 'docs/ntp-architecture-deployment-plan-v1.0.md',
     'operations.md': 'docs/OPERATIONS.md', 'history.md': 'HISTORY.md'}
 REFERENCE = ('reference.py', 'reference.tar', 'reference-report.json', 'reference-receipt.json',
              'reference-cleanup.json', 'receiver-runtime.json', 'known_hosts')
 EXTRA = {*REFERENCE, 'restoration.tar', 'restoration-proof.json', 'timeservice.json',
-         'timeservice.service', 'fault.service'}
+         'timeservice.service', 'fault.service', 'revalidation.tar', 'revalidation-proof.json'}
 MODES = ('start', 'handoff', 'observe', 'readback', 'recover', 'cleanup')
 FAULT_UNIT = 'ntp-monitor-recovery.service'
 SAFETY = ('bootstrap_stopped', 'pair_running', 'same_supervisor', 'no_restarts',
@@ -91,17 +94,25 @@ def restoration(files):
     return spec, archive, result, source
 
 
-def hardware_expiry(files):
-    """Preserve the nested runtime checker's 24-hour hardware acceptance limit."""
-    receiver = unpack(files['reference.tar'])
-    runtime = unpack(receiver['runtime.tar'])
-    gate = json.loads(runtime['spec.json'])['hardware_prerequisite']
-    closure = json.loads(runtime['hardware-cleanup.json'])
-    state = closure['result']; accepted = state.get('accepted_epoch')
-    if (closure['bundle_sha256'] != gate['bundle_sha256'] or state.get('phase') != 'accepted'
-            or type(accepted) is not int or accepted <= 0):
-        raise ValueError('bound accepted hardware closure required')
-    return accepted+86400
+def revalidation(files):
+    controller = frozen(files['revalidation-controller.py']); archive = unpack(files['revalidation.tar'])
+    spec = json.loads(archive['spec.json']); controller.validate(spec, archive)
+    proof = json.loads(files['revalidation-proof.json']); first, second = proof['readbacks']
+    if (set(proof) != {'acceptance', 'readbacks', 'cleanup'} or first != second
+            or first['spec_sha256'] != sha(archive['spec.json'])):
+        raise ValueError('matching runtime revalidation readbacks required')
+    report = first['result']
+    receipt = controller.terminal(spec, sha(files['revalidation.tar']), dict.fromkeys(spec['endpoints'], report))
+    if (receipt != proof['acceptance'] or receipt['state'] != 'runtime_validated'
+            or proof['cleanup'] != {'spec_sha256': sha(archive['spec.json']), 'result': {
+                'phase': 'cleaned', 'evidence_preserved': True, 'report_sha256': receipt['report_sha256']}}
+            or archive['continuity.py'] != files['runtime-continuity.py']
+            or archive['stage.py'] != files['revalidation-controller.py']):
+        raise ValueError('accepted closed revalidation and matching continuity checker required')
+    origin = unpack(archive['monitor.tar'])
+    if any(files[n] != origin[n] for n in (*REFERENCE, 'restoration.tar', 'restoration-proof.json')):
+        raise ValueError('revalidated runtime/restoration provenance drift')
+    return spec, archive, report
 
 
 def rendered(spec, files):
@@ -124,14 +135,17 @@ def validate(spec, files):
     if set(files) != set(PATHS)|EXTRA|{'spec.json', 'manifest.json', 'review.md'}:
         raise ValueError('closed monitor bundle required')
     restored, archive, report, source = restoration(files)
-    if (spec['schema'] != 1 or spec['purpose'] != 'service-monitor'
+    fresh, _, current = revalidation(files)
+    if (spec['schema'] != 2 or spec['purpose'] != 'service-monitor'
             or not re.fullmatch(r'[a-z][a-z0-9-]{0,47}', spec['operation_id'])
             or spec['stage'] != '/var/lib/ntp-acquire-'+spec['operation_id']
             or spec['apply_unit'] != 'ntp-monitor-'+spec['operation_id']
             or spec['recovery_unit'] != spec['apply_unit']+'-watchdog'
             or any(spec[k] != restored[k] for k in ('hostname', 'boot_id', 'kernel', 'endpoints', 'old_ipv4'))
             or spec['restoration_sha256'] != sha(files['restoration.tar'])
-            or not restored['prepared_epoch'] <= spec['prepared_epoch'] < spec['expires_epoch'] <= restored['expires_epoch']
+            or any(spec[k] != fresh[k] for k in ('hostname', 'boot_id', 'kernel', 'endpoints', 'old_ipv4'))
+            or not fresh['prepared_epoch'] <= spec['prepared_epoch'] < spec['expires_epoch'] <= fresh['expires_epoch']
+            or spec['expires_epoch'] > current['epoch']+86400
             or not 0 < spec['expires_epoch']-spec['prepared_epoch'] <= 86400
             or spec['members'] != {n: sha(files[n]) for n in set(PATHS)|EXTRA}):
         raise ValueError('monitor identity/window/input binding')
@@ -172,11 +186,12 @@ def review(spec):
 Target **{spec['hostname']}**, operation `{spec['operation_id']}`.
 Start before **{end}** so the installation watchdog fits the execution window.
 
-One installation and startup after a fresh, read-only preflight verifies target,
+One installation and startup bound to a newly accepted read-only runtime
+revalidation, followed by fresh preflight that verifies target,
 boot, protected files, native binaries, packages/Python, accounts, loader cache,
 network, hardware, UART/SHM state and the retained restoration receipt/closure.
 Historical receiver and cutover artifacts remain unchanged. Their expired
-execution windows are not renewed: this independently approved operation must
+execution windows are not renewed: the separately accepted revalidation and this independently approved operation must
 revalidate their factual prerequisites before mutation. Any drift stops the stage.
 
 Root-owned 0700 staging binds all non-secret inputs. Preserve backups before
@@ -210,7 +225,9 @@ preserved; no source-stage deletion. Readback/cleanup never accept timing.
 An interrupted or uncertain start/handoff is never replayed. Inspect retained
 state; the watchdog remains responsible for an incomplete installation.
 
-Recovery stops the pair, restores files/UART and baseline clock service, verifies
+Recovery rechecks actual hardware/runtime facts after any historical receipt
+expiry, without rewriting old timestamps or relaxing identity/content checks.
+It stops the pair, restores files/UART and baseline clock service, verifies
 continuity and preserves terminal monitor records. A recovery hold requires
 review; do not rearm, replay or clean a held stage. Monitoring has no expiry
 shutdown; later readbacks/recovery address only this already-started operation.
@@ -239,14 +256,21 @@ def seal(args):
     files = {n: (ROOT/path).read_bytes() for n, path in PATHS.items()}
     files.update({n: source[n] for n in REFERENCE})
     files.update({'restoration.tar': raw, 'restoration-proof.json': encoded(proof)})
+    fresh_raw = transport.private_file(args.revalidation_dir/'runtime-revalidation.tar', 32*1024**2)
+    if sha(fresh_raw) != args.revalidation_sha256: raise ValueError('revalidation archive digest')
+    fresh_proof = {'acceptance': json.loads(transport.private_file(args.revalidation_dir/'acceptance.json')),
+        'readbacks': [json.loads(transport.private_file(args.revalidation_dir/f'readback-{args.revalidation_attempt}-{i}-result.json', 32*1024**2)) for i in (0, 1)],
+        'cleanup': json.loads(transport.private_file(args.revalidation_dir/'cleanup-0-result.json'))}
+    files.update({'revalidation.tar': fresh_raw, 'revalidation-proof.json': encoded(fresh_proof)})
+    fresh, _, current = revalidation(files)
     now = int(time.time())
     spec = {k: restored[k] for k in ('hostname', 'boot_id', 'kernel', 'endpoints', 'old_ipv4')}
-    spec.update(schema=1, purpose='service-monitor', operation_id=args.operation_id,
+    spec.update(schema=2, purpose='service-monitor', operation_id=args.operation_id,
                 stage='/var/lib/ntp-acquire-'+args.operation_id, apply_unit='ntp-monitor-'+args.operation_id,
                 recovery_unit='ntp-monitor-'+args.operation_id+'-watchdog', prepared_epoch=now,
-                expires_epoch=min(now+86400, restored['expires_epoch'], hardware_expiry(files)), restoration_sha256=sha(raw))
+                expires_epoch=min(now+86400, fresh['expires_epoch'], current['epoch']+86400), restoration_sha256=sha(raw))
     if spec['expires_epoch']-now < 3600:
-        raise ValueError('insufficient prerequisite freshness; refresh hardware acceptance before sealing')
+        raise ValueError('insufficient fresh revalidation window before sealing')
     recipe, service, fault = rendered(spec, files); spec['recipe'] = recipe
     files.update({'timeservice.json': encoded(recipe['timeservice']), 'timeservice.service': service, 'fault.service': fault})
     spec['members'] = {n: sha(v) for n, v in files.items()}
@@ -272,11 +296,11 @@ def prepare(bundle, checksum, require_current=True):
     transport = load(ROOT/'scripts/run-foundation-preflight.py')
     raw = transport.private_file(bundle, 96*1024**2)
     if sha(raw) != checksum: raise ValueError('approved monitor archive digest')
-    files = unpack(raw); spec = json.loads(files['spec.json']); validate(spec, files)
-    if require_current and any(files[n] != (ROOT/path).read_bytes() for n, path in PATHS.items()):
+    files = unpack(raw); spec = json.loads(files['spec.json']); frozen(files['controller.py']).validate(spec, files)
+    if require_current and any(files.get(n) != (ROOT/path).read_bytes() for n, path in PATHS.items()):
         raise ValueError('current monitor input drift')
-    if require_current and time.time()+600 >= hardware_expiry(files):
-        raise ValueError('hardware acceptance cannot cover installation watchdog')
+    if require_current and time.time()+600 >= spec['expires_epoch']:
+        raise ValueError('fresh prerequisite window cannot cover installation watchdog')
     if transport.private_file(bundle.parent/'known_hosts', 4096) != files['known_hosts']:
         raise ValueError('pinned host key drift')
     return spec, files
@@ -331,6 +355,8 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__); sub = parser.add_subparsers(dest='action', required=True)
     p = sub.add_parser('seal'); p.add_argument('--restoration-dir', type=Path, required=True)
     p.add_argument('--restoration-sha256', required=True); p.add_argument('--operation-id', required=True)
+    p.add_argument('--revalidation-dir', type=Path, required=True); p.add_argument('--revalidation-sha256', required=True)
+    p.add_argument('--revalidation-attempt', type=int, choices=(1, 2, 3), required=True)
     p.add_argument('--output', type=Path, required=True)
     p = sub.add_parser('execute'); p.add_argument('--bundle', type=Path, required=True)
     p.add_argument('--sha256', required=True); p.add_argument('--mode', choices=MODES, required=True)

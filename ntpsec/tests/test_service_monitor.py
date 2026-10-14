@@ -30,11 +30,12 @@ client = load('check-time-client.py')
 def fixture():
     files = {n: (ROOT/path).read_bytes() for n, path in c.PATHS.items()}
     files.update({n: ('fixture '+n).encode() for n in c.REFERENCE})
-    files.update({'restoration.tar': b'bound archive fixture', 'restoration-proof.json': b'{}'})
+    files.update({'restoration.tar': b'bound archive fixture', 'restoration-proof.json': b'{}',
+                  'revalidation.tar': b'fresh fixture', 'revalidation-proof.json': b'{}'})
     restored = {'hostname': 'fixture', 'kernel': 'fixture', 'boot_id': 'a'*32,
                 'endpoints': ['192.0.2.1', '2001:db8::1'], 'old_ipv4': '192.0.2.1',
                 'prepared_epoch': 300, 'expires_epoch': 86700}
-    spec = dict(restored, schema=1, purpose='service-monitor', operation_id='fixture',
+    spec = dict(restored, schema=2, purpose='service-monitor', operation_id='fixture',
                 stage='/var/lib/ntp-acquire-fixture', apply_unit='ntp-monitor-fixture',
                 recovery_unit='ntp-monitor-fixture-watchdog', prepared_epoch=400,
                 restoration_sha256=c.sha(files['restoration.tar']))
@@ -53,19 +54,6 @@ def bind(spec, files):
 
 
 class BindingTests(unittest.TestCase):
-    def test_nested_hardware_freshness_preserves_original_acceptance_time(self):
-        runtime = {'spec.json': c.encoded({'hardware_prerequisite': {'bundle_sha256': 'bound'}})}
-        for case in ('valid', 'wrong_bundle', 'unaccepted', 'missing_epoch'):
-            closure = {'bundle_sha256': 'bound', 'result': {'phase': 'accepted', 'accepted_epoch': 1000}}
-            if case == 'wrong_bundle': closure['bundle_sha256'] = 'other'
-            if case == 'unaccepted': closure['result']['phase'] = 'held'
-            if case == 'missing_epoch': del closure['result']['accepted_epoch']
-            runtime['hardware-cleanup.json'] = c.encoded(closure)
-            with self.subTest(case=case), patch.object(c, 'unpack', side_effect=[{'runtime.tar': b''}, runtime]):
-                if case == 'valid': self.assertEqual(c.hardware_expiry({'reference.tar': b''}), 87400)
-                else:
-                    with self.assertRaises(ValueError): c.hardware_expiry({'reference.tar': b''})
-
     def test_real_restoration_terminal_api_and_closure(self):
         # Exercise the frozen helper API rather than replacing restoration().
         helper = c.frozen((ROOT/'scripts/run-cutover-restoration.py').read_bytes())
@@ -98,7 +86,9 @@ class BindingTests(unittest.TestCase):
 
     def test_closed_profile_has_independent_watchdog_and_no_restart(self):
         spec, files, restored = fixture()
-        with patch.object(c, 'restoration', return_value=restored): c.validate(spec, files)
+        with patch.object(c, 'restoration', return_value=restored), \
+                patch.object(c, 'revalidation', return_value=(restored[0], {}, {'epoch': 400})):
+            c.validate(spec, files)
         self.assertEqual(spec['recipe']['recovery_seconds'], 600)
         self.assertNotIn('completion_seconds', spec['recipe']['timeservice']['pps_startup'])
         self.assertIn(b'OnFailure=ntp-monitor-recovery.service', files['timeservice.service'])
@@ -121,7 +111,8 @@ class BindingTests(unittest.TestCase):
             else:
                 raw = json.loads(files['timeservice.json']); raw['pps_monitor_evidence'] = '/tmp/status'
                 files['timeservice.json'] = c.encoded(raw); bind(spec, files)
-            with self.subTest(case=case), patch.object(c, 'restoration', return_value=restored), self.assertRaises(ValueError):
+            with self.subTest(case=case), patch.object(c, 'restoration', return_value=restored), \
+                    patch.object(c, 'revalidation', return_value=(restored[0], {}, {'epoch': 400})), self.assertRaises(ValueError):
                 c.validate(spec, files)
 
     def test_flat_archive_rejects_manifest_and_member_abuse(self):
@@ -144,7 +135,7 @@ class BindingTests(unittest.TestCase):
 
     def test_recovery_uses_sealed_inputs_after_repository_drift(self):
         spec, files, restored = fixture()
-        with tempfile.TemporaryDirectory() as temporary, patch.object(c, 'restoration', return_value=restored):
+        with tempfile.TemporaryDirectory() as temporary, patch.object(c, 'frozen', return_value=types.SimpleNamespace(validate=Mock())):
             root = Path(temporary); root.chmod(0o700); bundle = root/'service-monitor.tar'
             with tarfile.open(bundle, 'w') as tar:
                 for name, raw in files.items():
@@ -198,10 +189,14 @@ class HandoffTests(unittest.TestCase):
                 old = {'stage': str(root/'source')}; source = {'spec.json': c.encoded(old)}
                 report = {'phase': 'restoration_verified'}; cleanup = {'phase': 'cleaned'}
                 tx.f['restoration-proof.json'] = c.encoded({'cleanup': {'result': cleanup}})
+                tx.f['revalidation-proof.json'] = tx.f['restoration-proof.json']
+                fresh = {'stage': str(root/'fresh'), 'members': {}}
+                fresh_report = {'observation_sha256': c.sha(c.encoded({'identity': 'expected'}))}
                 data = {'report.json': c.encoded(report), 'cleanup.json': c.encoded(cleanup),
                         'state.json': b'held', 'source-state-before.json': b'held', 'spec.json': b'{}'}
                 if case == 'source': data['state.json'] = b'changed'
-                tx.h.ancestors = Mock(); tx.h.read = lambda path, **kw: data[path.name]
+                tx.h.ancestors = Mock()
+                tx.h.read = lambda path, **kw: c.encoded(fresh_report) if path.parent.name == 'fresh' and path.name == 'report.json' else data[path.name]
                 tx.run = Mock(); tx.systemctl = Mock(side_effect=['loaded' if case == 'collision' else 'not-found', ''])
                 validator = types.SimpleNamespace(source_lock=Mock(return_value=17),
                     timer_state=Mock(return_value={'timer': {'ActiveState': 'active' if case == 'timer' else 'inactive'}}),
@@ -211,6 +206,7 @@ class HandoffTests(unittest.TestCase):
                     core=types.SimpleNamespace(i=types.SimpleNamespace(observation=lambda: observed))))
                 base.load.return_value = checker
                 with patch.object(c, 'validate', return_value=(rspec, {'stage.py': b''}, report, source)), \
+                        patch.object(c, 'revalidation', return_value=(fresh, {}, fresh_report)), \
                         patch.object(stage, 'module', return_value=validator), patch.object(stage.os, 'close') as close, \
                         patch.object(FakeTransaction, 'preflight', create=True) as preflight:
                     if case == 'valid':

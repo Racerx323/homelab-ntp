@@ -569,15 +569,47 @@ recovery/cleanup without the required state and receipt. The retained hardware
 acceptance exceeded its 24-hour limit on October 14 at 11:41:04 a.m. CDT.
 This establishes a freshness blocker, not a physical hardware failure.
 
-The sealer now caps the new window at that nested hardware expiry as well as
-restoration expiry, and the launcher checks the 600-second reserve before start.
-Refresh hardware/runtime prerequisite evidence under a new scoped review before
-sealing another activation. Do not rewrite historical acceptance timestamps.
-The inherited recovery path also invokes that hardware gate. A successor must
-test restoration after prerequisite expiry and define fresh hardware validation
-for that path before claiming continuous-operation recovery coverage.
+The initial guard capped sealing at the nested expiry. Schema-2 monitor preparation
+now requires a separately accepted revalidation archive, matched readbacks and
+closure; it cannot be sealed from the historical hardware receipt alone. The
+new start window ends no later than the revalidation window or 24 hours after
+its observation, with 600 seconds reserved for installation. Do not rewrite
+historical acceptance timestamps. The original frozen checker remains unchanged.
 The old diagnostic remains unchanged and
 always restores; its expired window is not extended by this operation.
+
+#### Read-only prerequisite revalidation
+
+The [prepared revalidation review](/home/aaron/code/.local-evidence/homelab-ntp/current/runtime-revalidation-20261014-v1/review.md)
+uses `scripts/run-runtime-revalidation.py` and requires separate execution approval.
+It binds the exact failed-monitor archive/rejection/readback and the accepted
+restoration evidence. Verify the failed stage has no operation state, backups,
+monitor record or worker/timer; preserve its partial files. Hold the original
+source lock, verify immutable source/restoration members and idle recovery state,
+then recheck prerequisites using a new root-owned 0700 stage and private copies.
+
+`runtime-continuity.py` requires the historical hardware state to match its sealed
+closure exactly, plus the bound spec/receipt, current boot, boot-file hashes and
+live UART/PPS/RTC mapping/permissions. It changes no acceptance timestamp. The
+original runtime probe then checks packages, native/Python paths, accounts, loader
+cache, network and protected files through that current-hardware checker. Compare
+the fresh observer result with accepted restoration continuity and recheck source
+immutability. This validates metadata and prerequisites, not physical PPS quality
+or time service. Existing bounded network/egress probes remain included.
+
+One 180-second capture retains complete evidence or a held report. Reserve 190
+seconds before its start-window end. Up to three numbered dual-stack readbacks
+retrieve the stored report; matching complete results accept prerequisites only.
+Conditional cleanup records closure without deleting any stage or changing
+services/timers. No boot changes, daemon activation, configuration/receiver writes
+or clock adjustment are included. Preserve incomplete evidence on failure.
+
+The successor monitor uses the same sealed continuity helper in preflight,
+unchanged-state checks and post-restoration validation. Offline recovery tests
+advance past historical expiry, restore original files and still reject live
+boot-file drift. Recovery has no receipt-age shutdown; its identity/content checks
+remain mandatory. Legacy cutover paths retain their original checker. Fresh
+revalidation must execute and be accepted before a new activation can be sealed.
 
 Before mutation, freshly verify the restored baseline, native/runtime/network
 and hardware prerequisites, held source state, protected restoration members,
@@ -957,7 +989,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. V6 journal gate passed, but restoration is held on continuity drift; readback 13 matches on both endpoints. Source cleanup blocked; diagnostic inspection and closure complete. PPS deadline confirmed; historical boot/PID baseline and failed timeservice state differ. Timer was waiting at capture; later outcome unknown. Frozen-checker replay isolates failed timeservice state; guarded reset executed; restoration continuation accepted through both endpoints and closed. Old timer already absent/inactive; historical v6 held state and evidence preserved. Offline PPS replay complete: three passing updates did not fit the retained trajectory before the bootstrap deadline. Continuous PPS-first monitoring and terminal retention implemented/tested locally; start-and-monitor v1 stopped in preflight on expired nested hardware acceptance; conditional readback found no operation state; partial stage retained. Refresh prerequisite evidence before another sealed activation. Persistent warm-restart policy and timing acceptance remain pending. |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. V6 journal gate passed, but restoration is held on continuity drift; readback 13 matches on both endpoints. Source cleanup blocked; diagnostic inspection and closure complete. PPS deadline confirmed; historical boot/PID baseline and failed timeservice state differ. Timer was waiting at capture; later outcome unknown. Frozen-checker replay isolates failed timeservice state; guarded reset executed; restoration continuation accepted through both endpoints and closed. Old timer already absent/inactive; historical v6 held state and evidence preserved. Offline PPS replay complete: three passing updates did not fit the retained trajectory before the bootstrap deadline. Continuous PPS-first monitoring and terminal retention implemented/tested locally; start-and-monitor v1 stopped in preflight on expired nested hardware acceptance; conditional readback found no operation state; partial stage retained. Read-only hardware/runtime revalidation prepared for separate approval; successor recovery tested past historical expiry. Accept the new prerequisite report before sealing activation. Persistent warm-restart policy and timing acceptance remain pending. |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 
