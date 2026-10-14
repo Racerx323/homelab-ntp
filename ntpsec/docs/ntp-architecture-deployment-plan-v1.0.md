@@ -928,6 +928,11 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    changed identity or state still holds recovery. No repeated boot changes are
    implied. Structural handoff requires dual-stack management and workstation
    NTP responses, denied administrative queries, daemon safety and a live monitor.
+   A rejected structural handoff leaves the installation watchdog armed; use
+   approved readback and recovery, then require matching recovered reports before
+   cleanup. Early PPS synchronization does not override a failed hardware check.
+   Retain the exact PPS mapping failure for offline review; do not infer missing
+   hardware from an aggregate platform/class-count rejection.
    Unsynchronized responses can establish transport only. Keep cold-start service
    boot enablement and leap-fetch disabled pending their later acceptance; retain
    baseline timesyncd enablement for reboot. Service failure invokes recovery;
