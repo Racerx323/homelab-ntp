@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; runtime diagnostic v2 recovered after early gate; partial packet evidence retained; dual-stack readback and cleanup complete; runtime diagnostic v3 recovered on changed Cloudflare address; rejecting sample and journal retained; dual-stack readback and cleanup complete; runtime diagnostic v4 completed 30 samples and recovered; 57/57 NTS replies authenticated; PPS timing and capture completeness failed; terminal dual-stack readback attempt 11 and cleanup complete; retained analysis complete; larger buffer passed isolated local fixture; cold-start promotion and receipt-selected recovery implemented and tested locally; runtime diagnostic v5 recovered after its first sample rejected control-key journal messages; dual-stack readback and cleanup complete; journal classifier corrected and tested offline; diagnostic v6 executed; 30 samples retained; recovery held on continuity drift; matching readback 13 retained; restoration and source cleanup remain unaccepted; recovery inspection captured and closed; PPS qualification deadline confirmed; historical boot/PID baseline and failed timeservice state differ; recovery timer still waiting at capture; exact frozen-checker replay isolates failed timeservice state; guarded reset tested; restoration continuation accepted through both endpoints and closed; old timer already absent/inactive; original v6 held state/evidence preserved; Offline PPS replay complete; continuous PPS-first monitor and terminal retention implemented/tested locally; independent start-and-monitor stage prepared/tested offline; sealed execution approval pending; PPS qualification and service activation remain pending |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; runtime diagnostic v2 recovered after early gate; partial packet evidence retained; dual-stack readback and cleanup complete; runtime diagnostic v3 recovered on changed Cloudflare address; rejecting sample and journal retained; dual-stack readback and cleanup complete; runtime diagnostic v4 completed 30 samples and recovered; 57/57 NTS replies authenticated; PPS timing and capture completeness failed; terminal dual-stack readback attempt 11 and cleanup complete; retained analysis complete; larger buffer passed isolated local fixture; cold-start promotion and receipt-selected recovery implemented and tested locally; runtime diagnostic v5 recovered after its first sample rejected control-key journal messages; dual-stack readback and cleanup complete; journal classifier corrected and tested offline; diagnostic v6 executed; 30 samples retained; recovery held on continuity drift; matching readback 13 retained; restoration and source cleanup remain unaccepted; recovery inspection captured and closed; PPS qualification deadline confirmed; historical boot/PID baseline and failed timeservice state differ; recovery timer still waiting at capture; exact frozen-checker replay isolates failed timeservice state; guarded reset tested; restoration continuation accepted through both endpoints and closed; old timer already absent/inactive; original v6 held state/evidence preserved; Offline PPS replay complete; continuous PPS-first monitor and terminal retention implemented/tested locally; start-and-monitor v1 stopped in preflight on expired nested hardware acceptance; conditional readback found no state file; partial stage retained; prerequisite evidence refresh needed; PPS qualification and service activation remain pending |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -25,6 +25,34 @@ The current accepted source stage is
 `/home/ama/.ntp-source-build-mdns-20261012-v1`; the earlier v5 stage is preserved.
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
+
+## Start-and-monitor preflight stopped — October 14, 2026
+
+Executed the approved start once, bound to the unchanged
+[sealed review](/home/aaron/code/.local-evidence/homelab-ntp/current/service-monitor-20261014-v1/review.md).
+The target returned `accepted bound hardware/reboot gate required` during the
+nested runtime preflight. Conditional readback returned a missing operation
+`state.json`. No installation watchdog, service installation or daemon startup
+was reached. Protected staging/runtime-check copies remain; no recovery or cleanup
+was attempted without the required state and recovered receipt. Prior evidence
+is preserved. Only the first endpoint was read: the controller stops on its error.
+
+The frozen hardware checker requires acceptance within 24 hours. Retained
+acceptance was October 13 at 11:41:04 a.m. CDT; its limit ended October 14 at
+11:41:04 a.m. CDT, before this start. Preparation incorrectly capped the window
+only at restoration expiry. The stale hardware receipt is sufficient to reject
+this start; the error does not establish a physical hardware fault or exclude
+other prerequisite drift. The sealer now binds that nested expiry too, and the
+launcher checks remaining hardware freshness before a new start. Regression
+checks and replay against retained inputs verify rejection offline.
+
+Next: prepare fresh hardware/runtime prerequisite validation, without repeating
+boot changes, for separate execution approval. Then seal a new activation against
+accepted fresh evidence. Do not alter the executed bundle or historical timestamps,
+and do not replay this operation. The inherited recovery path also checks hardware
+freshness; test recovery after that expiry and define independent current-state
+validation before another continuous-operation approval. Continuous monitoring and timing acceptance
+remain pending.
 
 ## Start-and-monitor stage prepared — October 14, 2026
 

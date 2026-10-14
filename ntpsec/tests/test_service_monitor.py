@@ -53,6 +53,19 @@ def bind(spec, files):
 
 
 class BindingTests(unittest.TestCase):
+    def test_nested_hardware_freshness_preserves_original_acceptance_time(self):
+        runtime = {'spec.json': c.encoded({'hardware_prerequisite': {'bundle_sha256': 'bound'}})}
+        for case in ('valid', 'wrong_bundle', 'unaccepted', 'missing_epoch'):
+            closure = {'bundle_sha256': 'bound', 'result': {'phase': 'accepted', 'accepted_epoch': 1000}}
+            if case == 'wrong_bundle': closure['bundle_sha256'] = 'other'
+            if case == 'unaccepted': closure['result']['phase'] = 'held'
+            if case == 'missing_epoch': del closure['result']['accepted_epoch']
+            runtime['hardware-cleanup.json'] = c.encoded(closure)
+            with self.subTest(case=case), patch.object(c, 'unpack', side_effect=[{'runtime.tar': b''}, runtime]):
+                if case == 'valid': self.assertEqual(c.hardware_expiry({'reference.tar': b''}), 87400)
+                else:
+                    with self.assertRaises(ValueError): c.hardware_expiry({'reference.tar': b''})
+
     def test_real_restoration_terminal_api_and_closure(self):
         # Exercise the frozen helper API rather than replacing restoration().
         helper = c.frozen((ROOT/'scripts/run-cutover-restoration.py').read_bytes())

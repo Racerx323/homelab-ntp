@@ -897,7 +897,9 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    operator-requested recovery remain required. The independent monitor stage
    uses a 600-second installation watchdog and a fresh read-only preflight against
    the accepted restoration observation; historical execution windows stay
-   unchanged. Structural handoff requires dual-stack management and workstation
+   unchanged. Its start window must also fit the nested hardware acceptance's
+   24-hour freshness limit, including the watchdog reserve. A restoration receipt
+   does not renew that prerequisite. Structural handoff requires dual-stack management and workstation
    NTP responses, denied administrative queries, daemon safety and a live monitor.
    Unsynchronized responses can establish transport only. Keep cold-start service
    boot enablement and leap-fetch disabled pending their later acceptance; retain

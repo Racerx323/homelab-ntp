@@ -91,6 +91,19 @@ def restoration(files):
     return spec, archive, result, source
 
 
+def hardware_expiry(files):
+    """Preserve the nested runtime checker's 24-hour hardware acceptance limit."""
+    receiver = unpack(files['reference.tar'])
+    runtime = unpack(receiver['runtime.tar'])
+    gate = json.loads(runtime['spec.json'])['hardware_prerequisite']
+    closure = json.loads(runtime['hardware-cleanup.json'])
+    state = closure['result']; accepted = state.get('accepted_epoch')
+    if (closure['bundle_sha256'] != gate['bundle_sha256'] or state.get('phase') != 'accepted'
+            or type(accepted) is not int or accepted <= 0):
+        raise ValueError('bound accepted hardware closure required')
+    return accepted+86400
+
+
 def rendered(spec, files):
     recipe = json.loads(files['recipe.json'])
     recipe['recovery_seconds'] = 600
@@ -231,7 +244,9 @@ def seal(args):
     spec.update(schema=1, purpose='service-monitor', operation_id=args.operation_id,
                 stage='/var/lib/ntp-acquire-'+args.operation_id, apply_unit='ntp-monitor-'+args.operation_id,
                 recovery_unit='ntp-monitor-'+args.operation_id+'-watchdog', prepared_epoch=now,
-                expires_epoch=min(now+86400, restored['expires_epoch']), restoration_sha256=sha(raw))
+                expires_epoch=min(now+86400, restored['expires_epoch'], hardware_expiry(files)), restoration_sha256=sha(raw))
+    if spec['expires_epoch']-now < 3600:
+        raise ValueError('insufficient prerequisite freshness; refresh hardware acceptance before sealing')
     recipe, service, fault = rendered(spec, files); spec['recipe'] = recipe
     files.update({'timeservice.json': encoded(recipe['timeservice']), 'timeservice.service': service, 'fault.service': fault})
     spec['members'] = {n: sha(v) for n, v in files.items()}
@@ -260,6 +275,8 @@ def prepare(bundle, checksum, require_current=True):
     files = unpack(raw); spec = json.loads(files['spec.json']); validate(spec, files)
     if require_current and any(files[n] != (ROOT/path).read_bytes() for n, path in PATHS.items()):
         raise ValueError('current monitor input drift')
+    if require_current and time.time()+600 >= hardware_expiry(files):
+        raise ValueError('hardware acceptance cannot cover installation watchdog')
     if transport.private_file(bundle.parent/'known_hosts', 4096) != files['known_hosts']:
         raise ValueError('pinned host key drift')
     return spec, files
