@@ -503,6 +503,32 @@ compatibility, not upstream NTS authentication, PPS discipline or target
 acceptance. Offline tests cover timing transitions, stale samples, provenance,
 deadlines, uncertain/partial promotion and cleanup. The v5 trial below recovered on its first journal-health check; promotion was not reached.
 
+### Retained PPS policy review and proposed next candidate
+
+The [offline replay](/home/aaron/code/.local-evidence/homelab-ntp/current/pps-policy-review-20261014-v1/review.md)
+matches the frozen helper against all 30 retained supervisor snapshots. Stored
+qualification began at 836.743 seconds; only two peer-statistics updates met
+the quality limits before shutdown, at a 64-second cadence. The final retained
+supervisor snapshot records one qualifying update. A later statistics row is
+not a complete acceptance sample. The 900-second bootstrap bound prevented
+three qualifying updates on the observed trajectory; longer observation has
+not been demonstrated to pass.
+
+The next proposed offline implementation is a 1080-second bootstrap ceiling,
+with unchanged early gate, settling minimum, quality thresholds and three
+fresh updates. The checked-in policy remains 900 seconds. Before sealing a
+candidate, test the apply/helper clock difference and reserve time within the
+1500-second outer limit for 60-second NTS setup, at least 192 seconds for three
+fresh PPS updates at the observed cadence, sampling and command overhead.
+Reject promotion if that remaining budget is insufficient. Keep the
+1620-second packet capture and independent 1800-second recovery bounds.
+Preserve bounded supervisor progress and terminal rejection evidence before
+child cleanup without blocking recovery or retaining control credentials.
+
+Consume the accepted restoration continuation receipt and matching readbacks
+and closure when preparing a successor; preserve the held v6 history and
+source evidence. Any new trial needs a new sealed review and execution approval.
+
 ### Local packet-buffer qualification
 
 The collector candidate requests 2 MiB and records libpcap version, actual
@@ -840,7 +866,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. V6 journal gate passed, but restoration is held on continuity drift; readback 13 matches on both endpoints. Source cleanup blocked; diagnostic inspection and closure complete. PPS deadline confirmed; historical boot/PID baseline and failed timeservice state differ. Timer was waiting at capture; later outcome unknown. Frozen-checker replay isolates failed timeservice state; guarded reset executed; restoration continuation accepted through both endpoints and closed. Old timer already absent/inactive; historical v6 held state and evidence preserved. Review PPS qualification offline and bind successor preparation to the continuation receipt. Persistent warm-restart policy and service cutover remain pending. |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. V6 journal gate passed, but restoration is held on continuity drift; readback 13 matches on both endpoints. Source cleanup blocked; diagnostic inspection and closure complete. PPS deadline confirmed; historical boot/PID baseline and failed timeservice state differ. Timer was waiting at capture; later outcome unknown. Frozen-checker replay isolates failed timeservice state; guarded reset executed; restoration continuation accepted through both endpoints and closed. Old timer already absent/inactive; historical v6 held state and evidence preserved. Offline PPS replay complete: three passing updates did not fit the retained trajectory before the bootstrap deadline. Next implement/test the bounded candidate and terminal diagnostic retention; bind successor preparation to the continuation receipt. Persistent warm-restart policy and service cutover remain pending. |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

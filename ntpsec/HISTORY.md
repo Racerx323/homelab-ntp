@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; runtime diagnostic v2 recovered after early gate; partial packet evidence retained; dual-stack readback and cleanup complete; runtime diagnostic v3 recovered on changed Cloudflare address; rejecting sample and journal retained; dual-stack readback and cleanup complete; runtime diagnostic v4 completed 30 samples and recovered; 57/57 NTS replies authenticated; PPS timing and capture completeness failed; terminal dual-stack readback attempt 11 and cleanup complete; retained analysis complete; larger buffer passed isolated local fixture; cold-start promotion and receipt-selected recovery implemented and tested locally; runtime diagnostic v5 recovered after its first sample rejected control-key journal messages; dual-stack readback and cleanup complete; journal classifier corrected and tested offline; diagnostic v6 executed; 30 samples retained; recovery held on continuity drift; matching readback 13 retained; restoration and source cleanup remain unaccepted; recovery inspection captured and closed; PPS qualification deadline confirmed; historical boot/PID baseline and failed timeservice state differ; recovery timer still waiting at capture; exact frozen-checker replay isolates failed timeservice state; guarded reset tested; restoration continuation accepted through both endpoints and closed; old timer already absent/inactive; original v6 held state/evidence preserved; PPS qualification and service activation remain pending |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; runtime diagnostic v2 recovered after early gate; partial packet evidence retained; dual-stack readback and cleanup complete; runtime diagnostic v3 recovered on changed Cloudflare address; rejecting sample and journal retained; dual-stack readback and cleanup complete; runtime diagnostic v4 completed 30 samples and recovered; 57/57 NTS replies authenticated; PPS timing and capture completeness failed; terminal dual-stack readback attempt 11 and cleanup complete; retained analysis complete; larger buffer passed isolated local fixture; cold-start promotion and receipt-selected recovery implemented and tested locally; runtime diagnostic v5 recovered after its first sample rejected control-key journal messages; dual-stack readback and cleanup complete; journal classifier corrected and tested offline; diagnostic v6 executed; 30 samples retained; recovery held on continuity drift; matching readback 13 retained; restoration and source cleanup remain unaccepted; recovery inspection captured and closed; PPS qualification deadline confirmed; historical boot/PID baseline and failed timeservice state differ; recovery timer still waiting at capture; exact frozen-checker replay isolates failed timeservice state; guarded reset tested; restoration continuation accepted through both endpoints and closed; old timer already absent/inactive; original v6 held state/evidence preserved; Offline PPS replay complete; bounded bootstrap candidate and terminal diagnostic retention await implementation/testing; PPS qualification and service activation remain pending |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -25,6 +25,35 @@ The current accepted source stage is
 `/home/ama/.ntp-source-build-mdns-20261012-v1`; the earlier v5 stage is preserved.
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
+
+## Retained PPS policy review — October 14, 2026
+
+Completed the approved offline review in the private
+[analysis record](/home/aaron/code/.local-evidence/homelab-ntp/current/pps-policy-review-20261014-v1/review.md).
+The executed startup helper matches current source. Frozen-machine replay of
+30 retained supervisor snapshots agrees with stored qualification counts,
+update tuples and phases. Both terminal readback results match; six statistic
+payloads passed hash checks, representing three duplicate current/dated pairs.
+
+PPS selection passed the early gate; frequency initialization completed around
+321 seconds. The first qualifying update was recorded at 836.743 seconds.
+Peer statistics show 64-second updates and only two quality-passing updates
+before shutdown. The last supervisor snapshot retains one qualifying update;
+the later peer-statistics row lacks the full supervisor acceptance tuple.
+Three passing updates could not fit this observed trajectory before the
+900-second deadline. No promotion occurred. Sparse replay does not reconstruct
+unretained supervisor ticks or prove future convergence.
+
+Recommend testing a 1080-second bootstrap ceiling while preserving quality
+limits, three fresh updates and the early gate. Implementation must prove the
+remaining outer observation budget covers promotion, NTS setup and fresh PPS
+updates, and retain bounded terminal supervisor diagnostics. No executable
+policy changed, new trial was sealed or target contacted.
+
+Next: implement/test that bounded candidate and diagnostic retention offline,
+binding successor preparation to the accepted restoration receipt/readbacks
+and closure. New live execution remains separately approved; persistent
+warm-restart policy, timing acceptance and source-stage cleanup remain pending.
 
 ## Restoration continuation accepted — October 14, 2026
 

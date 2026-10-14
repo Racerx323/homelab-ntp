@@ -883,6 +883,14 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    evidence. Its independent window authorizes restoration checks only, not a new
    installation or trial. A hold preserves any timer stop/reset; do not rearm or
    replay automatically. Accept restoration before revising PPS qualification.
+   Evaluate bootstrap timing against distinct refclock updates, not repeated
+   supervisor queries. Any proposed deadline change must preserve the early
+   functionality gate and quality criteria, and budget postpromotion setup,
+   fresh updates and sampling overhead against the earlier outer observation
+   clock and independent recovery deadline. Retain bounded supervisor progress
+   and terminal rejection evidence without obstructing recovery. See OPERATIONS
+   for the offline candidate and HISTORY for retained-sample findings; neither
+   analysis nor a proposed deadline establishes convergence or timing acceptance.
    When restoration is accepted by a separate continuation, successor preparation
    must bind its acceptance receipt and matching dual-stack readback/closure.
    Preserve the original held operation as history; do not rewrite it as recovered
