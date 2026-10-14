@@ -26,6 +26,20 @@ The current accepted source stage is
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
 
+## Fresh runtime revalidation v4 accepted — October 14, 2026
+
+Executed the approved read-only revalidation v4 using maintained repository
+checkers and monitor-v3 recovery records. Hardware, runtime, restoration,
+continuity, idle workers and preserved-source checks passed. The retained report
+matched through both pinned IPv4/IPv6 endpoints; diagnostic closure completed.
+This accepts prerequisites only; time-service acceptance remains false. No
+service activation, package installation, boot change or reboot occurred.
+
+Next: seal the PPS-first start-and-monitor activation/recovery review against
+this receipt for separate execution approval. Preserve the accepted capture,
+matching readbacks and closure. Implement the first-install path after j2-svntp1
+production acceptance and before rebuilding J1-svntp.
+
 ## Standalone artifact migration and retention completion — October 14, 2026
 
 Completed the approved retention sequence: 8,439 duplicate files removed;

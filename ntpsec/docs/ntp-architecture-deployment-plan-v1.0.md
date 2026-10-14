@@ -942,6 +942,9 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    the offline workflow from a clean checkout with an explicit verified asset
    cache. Such tests do not replace target observations or establish first-install
    support where a controller requires continuation receipts.
+   Implement and test first-install entry paths after j2-svntp1 production
+   acceptance and before rebuilding J1-svntp; those paths must not require a
+   fabricated failed operation to obtain continuation receipts.
    Duplicate package copies may be pruned only against a reviewed path/hash manifest with a verified retained
    copy and recovery location; unique acceptance/recovery evidence remains.
    Validate the accepted GPIO PPS source by bound driver, device-tree mapping,

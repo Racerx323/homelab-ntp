@@ -689,8 +689,11 @@ The superseded `run-service-cutover.py seal` entry point rejects new trials.
 Historical bundles retain their original execution behavior and evidence; this
 migration does not retroactively validate them. New preparation rejects changed
 repository code, including the transitive runtime helpers.
-Next: prepare a fresh revalidation review using these maintained sources, then
-obtain separate execution approval. No prior approval transfers to changed code.
+Read-only revalidation v4 was accepted on October 14 through matching IPv4/IPv6
+readbacks using maintained sources; diagnostic closure completed. Hardware,
+runtime, restoration, continuity and idle-worker checks passed. Next: prepare
+the PPS-first activation/recovery review against that accepted receipt and obtain
+separate execution approval. No prior approval transfers to changed code.
 
 ### Evidence retention and package pruning
 
