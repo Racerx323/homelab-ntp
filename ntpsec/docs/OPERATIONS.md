@@ -701,6 +701,21 @@ acknowledgments, actual association creation and the immediate membership check
 offline before another sealed operation. No prior approval transfers to changed
 code; sustained timing and production acceptance remain pending.
 
+Offline promotion analysis identifies a privilege mismatch: NMEA is omitted at
+startup, then its root-owned 0600 SHM segment is attached after ntpd drops to the
+dedicated account. An isolated network-free permission test reproduces denial.
+Pinned NTPsec can acknowledge parser success while dropping a refclock whose
+attachment fails; command acknowledgment alone is insufficient. The original
+target SHM error has not been retrieved, so distinguish this diagnosis from a
+captured target errno. Longer settling does not resolve the permission barrier.
+
+The proposed correction is exact, reversible group access to the accepted NMEA
+segment, with unchanged root ownership, validated ntp group and mode 0660. It
+requires implementation/tests for metadata identity, authorized continuity,
+rollback and diagnostic retention before a new sealed execution review. It is
+not implemented or authorized for target execution. A duplicate refclock command
+does not provide a verified way to clear a preloaded noselect association.
+
 ### Evidence retention and package pruning
 
 Retain unique observations, receipts, manifests, approvals, recovery records and

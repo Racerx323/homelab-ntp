@@ -26,6 +26,28 @@ The current accepted source stage is
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
 
+## Offline NMEA promotion diagnosis — October 14, 2026
+
+Pinned NTPsec source and retained monitor-v4 metadata identify a permission
+mismatch: bootstrap omits NMEA, then promotion tries to attach its root-owned
+0600 SHM segment after ntpd has dropped to the dedicated account. A network-free
+container reproduction confirmed late attachment is denied, while a preopened
+mapping remains usable. A narrowly group-accessible 0660 segment also passed
+the isolated permission test.
+
+NTPsec's configuration acknowledgment reports parser success; failed refclock
+startup can remove the association without changing that response. Retained
+state-machine replay also confirms that waiting longer does not fix an absent
+association. Existing promotion fixtures mocked the successful association
+list and did not exercise this privilege transition.
+
+This is a source/metadata-supported diagnosis, not a captured target SHM error:
+the original target journal errno remains unobserved. No target contact or
+production-code change occurred. Proposed next work: implement/test narrowly
+scoped NMEA SHM group access, exact metadata continuity and rollback, plus retained
+promotion replies/refclock diagnostics, before sealing another live review.
+The target remains at monitor-v4's verified recovered baseline.
+
 ## Monitor v4 promotion fault and verified recovery — October 14, 2026
 
 Executed the approved PPS-first monitor v4. Preflight, early functionality,
