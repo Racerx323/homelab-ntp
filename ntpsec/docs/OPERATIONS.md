@@ -443,6 +443,63 @@ information; it cannot by itself locate packet loss or prove UDP reachability.
 After accepting the retained evidence, define any remaining active packet/counter
 capture separately. Do not label missing historical data a successful check.
 
+### Bounded NTS/PPS runtime diagnostic
+
+The [sealed runtime review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-runtime-20261013-v1/review.md)
+is prepared offline and awaits separate execution approval. Use the existing
+`run-service-cutover.py seal --diagnostic` path with the accepted receiver,
+network and recovered-cutover directories plus `--retained-dir` and its exact
+`--retained-sha256`. The checked-in `runtime-diagnostic-recipe.json` and current
+input hashes define the scope; do not reuse a historical executable bundle.
+
+This profile temporarily installs the same candidate file set and starts the
+same selectable NMEA, preferred SHM2 PPS and three NTS associations. The rendered
+supervisor unit uses `Restart=no`. It always restores files, service state and
+UART settings; `accept` and manual `probe` modes are rejected. It never enables
+the service or leap timer, and performs no workstation or firewall probes.
+Clock corrections made during the trial cannot be undone by file recovery.
+
+Before activation, verify libpcap availability and a ready non-promiscuous eth0
+observer. The retained package list includes libpcap; no package install is in
+scope. Kernel filtering restricts collection to UDP 123 and the three retained
+upstream IPs. Save only selected NTP/IP/UDP headers, not payload or NTS cookies.
+Cap collection at 512 packets/1020 seconds, backed by a 1040-second service limit;
+unsupported or incomplete headers, capacity exhaustion and reported drops mark
+packet evidence incomplete. An unexpected DNS-selected address ends the trial
+rather than expanding the approved capture scope. The observation point cannot
+by itself locate a network drop or prove remote receipt/authentication.
+
+The existing short matched GPSD/SHM gate and early localhost NTP response remain
+mandatory, now with complete NTS/system counters. Only then launch autonomous
+sampling: at least 30 seconds between samples, at most 30 samples and 900 seconds
+after apply. Record NTS send/good/bad counters, packet-processing counters,
+per-peer sent/received/reach/flash/srcadr/dstadr/refid, frequency, offset/jitter,
+addresses/routes and journal health. Counter resets, observer loss, changed
+upstream scope or daemon/journal safety failures recover immediately. Retain
+ordinary NTS reach and timing failures as diagnostic observations.
+
+Timing success counts only after a 600-second minimum settling window, with the
+unchanged 5 ms offset/1 ms jitter and authenticated/reachable NTS gates. Three
+consecutive passing samples may finish early; otherwise stop at the bound.
+This window is not proof of convergence or permission to relax acceptance.
+The observation worker has a 1200-second limit, a 240-second stop/recovery
+allowance and an unconditional recovery ExecStopPost; the independent 1800-second timer remains armed. Every outcome
+restores the baseline, including successful collection. Recovery preserves
+statistics and packet evidence; evidence gaps do not become successful checks.
+Terminal readback also includes before/after addresses/routes and one bounded
+boot/monotonic-filtered service/worker journal (under 2000 records and 2 MiB).
+Missing or truncated evidence holds diagnostic acceptance without preventing
+restoration; preserve the original failure when evidence retrieval also fails.
+
+Use one `execute --mode start`; do not replay it after uncertainty. Conditional
+numbered readbacks retrieve all samples and terminal packet/statistics evidence.
+If needed use the one explicit recovery, then require matching dual-stack
+recovered receipts before cleanup. A complete diagnostic receipt also needs
+bounded completed observation, no diagnostic error, complete packet evidence
+and retained statistics. It always records time-service acceptance as false.
+Cleanup retains original and diagnostic stages and verifies transient units
+have stopped. No automatic recovery is promised across reboot.
+
 `run-nts-transport-inspection.py` seals the checked-in recipe, helpers, tests,
 governing documents and the network owner's `UNIFI_ACCESS.md`, bound to the
 original recovered cutover specification and live-revalidated boot/state. The
@@ -554,7 +611,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed but first probe rejected NTS response diagnostics logged at error priority; recovered through both endpoints and cleaned; v3 journal gate passed; five probes still failed NTS packet reach and PPS offset/jitter; dual-stack recovery and cleanup complete; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; active NTS packet/counter and bounded settling diagnostics remain pending |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed but first probe rejected NTS response diagnostics logged at error priority; recovered through both endpoints and cleaned; v3 journal gate passed; five probes still failed NTS packet reach and PPS offset/jitter; dual-stack recovery and cleanup complete; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; bounded NTS packet/counter and startup-settling diagnostic prepared offline; execution pending |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

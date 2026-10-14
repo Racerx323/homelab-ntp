@@ -113,6 +113,10 @@ class Transaction:
         fcntl.flock(fd,fcntl.LOCK_EX);return os.fdopen(fd,'rb')
 
     def run(self,argv,timeout=15):
+        deadline=getattr(self,'command_deadline',None)
+        if deadline is not None:
+            timeout=min(timeout,deadline-time.monotonic())
+            if timeout<=0:raise ValueError('diagnostic observation deadline')
         p=subprocess.run(argv,env=ENV,capture_output=True,timeout=timeout,check=False)
         if len(p.stdout)>2*1024**2 or len(p.stderr)>65536:raise ValueError('command output bound')
         record=encoded({'argv':argv,'status':p.returncode,'stdout':p.stdout.decode(errors='replace'),
@@ -182,6 +186,33 @@ class Transaction:
                                 'serial':self.a.serial_identity()})
         self.write('state.json',{'phase':'staged','probe_count':0,'stable':0,'created_directories':[],
                                 'installed':[],'deadline':time.monotonic()+self.s['recipe']['recovery_seconds']})
+        if self.s['recipe'].get('diagnostic'):
+            load(self.root/'runtime-diagnostic.py').library()
+            state=self.state();state['network_before']=self.network_observation()
+            self.write('state.json',state)
+
+    def network_observation(self):
+        return {name:json.loads(self.run(argv,timeout=5)) for name,argv in (
+            ('addresses',['ip','-json','address','show','dev','eth0']),
+            ('routes4',['ip','-json','-4','route','show','table','main']),
+            ('routes6',['ip','-json','-6','route','show','table','main']))}
+
+    def start_packet_capture(self):
+        unit=self.s['apply_unit']+'-packets'
+        self.run(['/usr/bin/systemd-run','--quiet','--unit='+unit,
+                  '--property=WorkingDirectory='+str(self.root),'--property=RuntimeMaxSec=1040',
+                  '--property=TimeoutStopSec=10','--property=LimitFSIZE=1048576','--property=UMask=0077',
+                  '/usr/bin/python3','-I','-B',str(self.root/'runtime-diagnostic.py'),'capture'])
+        deadline=time.monotonic()+5
+        while time.monotonic()<deadline:
+            path=self.root/'packet-ready.json'
+            if path.exists():
+                ready=json.loads(self.h.read(path))
+                pid=int(self.systemctl('show',unit+'.service','--property=MainPID','--value'))
+                if ready.get('ready') is True and ready.get('pid')==pid and pid>0:return
+                raise ValueError('packet observer identity mismatch')
+            time.sleep(.1)
+        raise ValueError('packet observer not ready before activation')
 
     def arm(self):
         self.run(['/usr/bin/systemd-run','--quiet','--unit='+self.s['recovery_unit'],
@@ -206,6 +237,7 @@ class Transaction:
                     self.replace(name,self.f[member],mode)
                 self.run(['/usr/bin/systemd-analyze','verify','/etc/systemd/system/timeservice.service','/etc/systemd/system/ntpleapfetch.service','/etc/systemd/system/ntpleapfetch.timer'])
                 self.systemctl('daemon-reload');self.systemctl('restart','avahi-daemon.service')
+                if self.s['recipe'].get('diagnostic'):self.start_packet_capture()
                 self.systemctl('stop','systemd-timesyncd.service')
                 self.systemctl('start','timeservice.service')
                 deadline=time.monotonic()+55
@@ -217,10 +249,21 @@ class Transaction:
                         if gate['supervisor_pid']==pid:
                             if gate['state']!='passed':raise ValueError('early GPSD/PPS functionality failed')
                             time.sleep(2)
-                            early=json.loads(self.run(['/usr/bin/python3','-I','-B',str(self.root/'measure.py')],timeout=20))
+                            argv=['/usr/bin/python3','-I','-B',str(self.root/'measure.py')]
+                            if self.s['recipe'].get('diagnostic'):argv.append('--diagnostic')
+                            early=json.loads(self.run(argv,timeout=20))
                             if 'leap' not in early['system']:raise ValueError('early ntpd control response missing')
                             state.update(phase='observing',gate=gate,supervisor_pid=pid,early_ntpd=early)
-                            self.write('state.json',state);return state
+                            if self.s['recipe'].get('diagnostic'):
+                                state['diagnostic_samples']=[]
+                            self.write('state.json',state)
+                            if self.s['recipe'].get('diagnostic'):
+                                self.run(['/usr/bin/systemd-run','--quiet','--unit='+self.s['apply_unit']+'-diagnostic',
+                                          '--property=WorkingDirectory='+str(self.root),'--property=RuntimeMaxSec=1200',
+                                          '--property=TimeoutStopSec=240','--property=UMask=0077','--property=KillMode=control-group',
+                                          '--property=ExecStopPost=/usr/bin/python3 -I -B '+str(self.root/'stage.py')+' worker recover',
+                                          '/usr/bin/python3','-I','-B',str(self.root/'stage.py'),'worker','diagnose'])
+                            return state
                     time.sleep(.25)
                 raise ValueError('early functionality unavailable')
             except BaseException as error:
@@ -280,7 +323,9 @@ class Transaction:
             if not stat.S_ISDIR(info.st_mode) or (info.st_uid,info.st_gid,stat.S_IMODE(info.st_mode))!=(uid,gid,mode):raise ValueError('runtime directory drift')
 
     def measure(self):
-        raw=self.run(['/usr/bin/python3','-I','-B',str(self.root/'measure.py')],timeout=20)
+        argv=['/usr/bin/python3','-I','-B',str(self.root/'measure.py')]
+        if self.s['recipe'].get('diagnostic'):argv.append('--diagnostic')
+        raw=self.run(argv,timeout=20)
         value=json.loads(raw);recipe=self.s['recipe']
         checks=measurement_checks(value,recipe)
         checks['bootstrap_stopped']=self.systemctl('show','systemd-timesyncd.service','--property=ActiveState','--value').strip()=='inactive'
@@ -307,9 +352,51 @@ class Transaction:
         checks['journal_health']=journal['healthy']
         return {'checks':checks,'measurement':value,'journal':journal}
 
+    def diagnostic_sample(self):
+        with self.lock():
+            state=self.state();recipe=self.s['recipe']['diagnostic']
+            if state['phase']!='observing':return False
+            elapsed=time.monotonic()-state['apply_monotonic']
+            if elapsed>=recipe['observation_seconds'] or len(state['diagnostic_samples'])>=recipe['maximum_samples']:return False
+            self.command_deadline=state['apply_monotonic']+recipe['observation_seconds']
+            value=self.measure();measurement=value['measurement']
+            upstreams=[p['variables'] for p in measurement['peers'] if p['variables'].get('srchost') in self.s['recipe']['nts_servers']]
+            if any(p.get('srcadr') not in recipe['upstream_addresses'] for p in upstreams):
+                raise ValueError('upstream address outside sealed packet scope')
+            counters=measurement['counters'];previous=state['diagnostic_samples'][-1]['result']['measurement']['counters'] if state['diagnostic_samples'] else state['early_ntpd']['counters']
+            if any(counters[k]<v for k,v in previous.items()):raise ValueError('diagnostic counters reset')
+            capture_active=self.systemctl('is-active',self.s['apply_unit']+'-packets.service').strip()=='active'
+            safety=('bootstrap_stopped','pair_running','same_supervisor','no_restarts','no_overrides','credentials','journal_health')
+            healthy=capture_active and all(value['checks'][k] for k in safety)
+            settled=elapsed>=recipe['settling_seconds']
+            state['stable']=state['stable']+1 if settled and all(value['checks'].values()) else 0
+            sample={'elapsed_seconds':elapsed,'settling_window_elapsed':settled,'result':value,
+                    'counter_delta':{k:counters[k]-v for k,v in previous.items()},'network':self.network_observation()}
+            state['diagnostic_samples'].append(sample)
+            state.update(last_measurement=value,probe_count=len(state['diagnostic_samples']))
+            self.write('state.json',state)
+            if not healthy:raise ValueError('runtime diagnostic safety/observer gate failed')
+            return state['stable']<self.s['recipe']['stable_probes']
+
+    def diagnose(self):
+        if not self.s['recipe'].get('diagnostic'):raise ValueError('diagnostic profile required')
+        try:
+            while self.diagnostic_sample():
+                remaining=self.state()['apply_monotonic']+self.s['recipe']['diagnostic']['observation_seconds']-time.monotonic()
+                time.sleep(max(0,min(self.s['recipe']['diagnostic']['interval_seconds'],remaining)))
+            with self.lock():
+                state=self.state()
+                if state['phase']=='observing':
+                    state['observation_completed']=True;self.write('state.json',state)
+        except BaseException as error:
+            with self.lock():
+                state=self.state();state['diagnostic_error']=str(error)[:500];self.write('state.json',state)
+        finally:self.recover()
+        return self.state()
 
 
     def probe(self):
+        if self.s['recipe'].get('diagnostic'):raise ValueError('diagnostic observations are autonomous and bounded')
         with self.lock():
             state=self.state()
             if state['phase'] not in ('observing','ready'):return state
@@ -324,6 +411,7 @@ class Transaction:
             self.write('state.json',state);return state
 
     def accept(self,proofs):
+        if self.s['recipe'].get('diagnostic'):raise ValueError('diagnostic-only profile always recovers; no service acceptance')
         with self.lock():
             state=self.state()
             if state['phase']!='ready' or state['deadline']-time.monotonic()<self.s['recipe']['acceptance_reserve_seconds']:
@@ -348,6 +436,7 @@ class Transaction:
             self.cancel_timer();return state
 
     def recover(self,locked=False):
+        self.command_deadline=None  # Evidence deadlines must never prevent restoration.
         if not locked:
             with self.lock():return self.recover(locked=True)
         state=self.state()
@@ -355,6 +444,15 @@ class Transaction:
         try:
             for unit in ('ntpleapfetch.timer','ntpleapfetch.service','timeservice.service'):
                 if self.systemctl('show',unit,'--property=LoadState','--value').strip()!='not-found':self.systemctl('stop',unit)
+            if self.s['recipe'].get('diagnostic'):
+                unit=self.s['apply_unit']+'-packets.service'
+                if self.systemctl('show',unit,'--property=LoadState','--value').strip()!='not-found':self.systemctl('stop',unit)
+                packet_file=self.root/'packet-report.json'
+                try:
+                    state['packet_observation']=json.loads(self.h.read(packet_file,limit=512*1024)) if packet_file.exists() else {'phase':'missing','complete':False}
+                except (OSError,ValueError) as error:
+                    state['packet_observation']={'phase':'held','complete':False,'error':str(error)[:300]}
+                self.write('state.json',state)
             for unit in ('ntpleapfetch.timer','timeservice.service'):
                 if self.systemctl('show',unit,'--property=LoadState','--value').strip()!='not-found':self.systemctl('disable',unit)
             self.a.idle();before=json.loads(self.h.read(self.root/'before.json'))
@@ -393,6 +491,26 @@ class Transaction:
             self.systemctl('daemon-reload');self.systemctl('restart','avahi-daemon.service')
             self.systemctl('enable','--now','systemd-timesyncd.service')
             self.a.context(self.h,self.alias,self.rf)
+            if self.s['recipe'].get('diagnostic'):
+                try:
+                    state['diagnostic_statistics']={};total=0
+                    for path in sorted(saved.iterdir()):
+                        raw=self.h.read(path,limit=2*1024**2);total+=len(raw)
+                        if total>2*1024**2:raise ValueError('diagnostic statistics bound')
+                        state['diagnostic_statistics'][path.name]={'sha256':sha(raw),'base64':base64.b64encode(raw).decode()}
+                    state['network_after']=self.network_observation()
+                    raw=self.run(['/usr/bin/journalctl','--quiet','--no-pager','--output=json','--lines=2000',
+                        '--boot='+self.s['boot_id'].replace('-',''),'--unit=timeservice.service','--unit=avahi-daemon.service',
+                        '--unit='+self.s['apply_unit']+'-diagnostic.service','--unit='+self.s['apply_unit']+'-packets.service'],timeout=10)
+                    rows=[json.loads(line) for line in raw.splitlines()]
+                    if len(rows)>=2000 or any(row['_BOOT_ID']!=self.s['boot_id'].replace('-','') for row in rows):
+                        raise ValueError('bounded complete diagnostic journal required')
+                    selected=[row for row in rows if int(row['__MONOTONIC_TIMESTAMP'])/1_000_000>=state['apply_monotonic']]
+                    if not selected:raise ValueError('operation journal missing')
+                    state['diagnostic_journal']={'complete':True,'records':selected}
+                except (ValueError,KeyError,OSError,subprocess.SubprocessError) as error:
+                    state['diagnostic_evidence_error']='post-recovery evidence: '+str(error)[:300]
+                    state.setdefault('diagnostic_error',state['diagnostic_evidence_error'])
             state.update(phase='recovered',recovered_epoch=int(time.time()));self.write('state.json',state)
             self.cancel_timer();return state
         except BaseException as error:
@@ -426,6 +544,7 @@ def entry(spec,files,mode,proofs=None):
         while tx.state()['phase'] in ('staged','applying') and time.monotonic()<deadline:time.sleep(.5)
         return tx.state()
     if mode=='apply':return tx.apply()
+    if mode=='diagnose':return tx.diagnose()
     if mode=='probe':return tx.probe()
     if mode=='accept':return tx.accept(proofs)
     if mode=='recover':return tx.recover()
@@ -436,7 +555,9 @@ def entry(spec,files,mode,proofs=None):
         state=tx.state()
         if state['phase'] not in ('accepted','recovered'):raise ValueError('terminal acceptance/recovery required')
         tx.cancel_timer()
-        for unit in (spec['apply_unit']+'.service',spec['recovery_unit']+'.service'):
+        units=[spec['apply_unit']+'.service',spec['recovery_unit']+'.service']
+        if spec['recipe'].get('diagnostic'):units.extend([spec['apply_unit']+'-diagnostic.service',spec['apply_unit']+'-packets.service'])
+        for unit in units:
             if tx.systemctl('show',unit,'--property=ActiveState','--value').strip() in ('active','activating','deactivating'):raise ValueError('transient unit still running')
             if tx.systemctl('show',unit,'--property=LoadState','--value').strip()!='not-found':tx.systemctl('reset-failed',unit)
         state['transient_cleanup']=True;tx.write('state.json',state);return state

@@ -83,6 +83,7 @@ def fixture():
                 apply_unit='ntp-cutover-cutover-fixture',recovery_unit='ntp-cutover-cutover-fixture-recovery',recipe=recipe)
     files['network-evidence.json']=network_fixture(spec)
     files['recovery-evidence.json']=recovery_fixture(spec)
+    files['diagnostic-evidence.json']=c.encoded(None)
     bind(spec,files);return spec,files
 
 

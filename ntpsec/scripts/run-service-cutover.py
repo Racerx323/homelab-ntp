@@ -5,6 +5,7 @@ import base64
 import hashlib
 import importlib.util
 import io
+import ipaddress
 import json
 import os
 from pathlib import Path
@@ -26,14 +27,25 @@ INPUT_PATHS={
  'timeservice.service':'templates/timeservice.service','avahi.conf':'templates/avahi-ntp.conf',
  'ntpleapfetch.service':'templates/ntpleapfetch-j2.service','ntpleapfetch.timer':'templates/ntpleapfetch.timer',
  'tests.py':'tests/test_service_cutover.py','supervisor-tests.py':'tests/test_clockmaker.py',
+ 'runtime-diagnostic.py':'scripts/runtime-diagnostic.py','diagnostic-tests.py':'tests/test_runtime_diagnostic.py',
+ 'diagnostic-recipe.json':'configs/runtime-diagnostic-recipe.json',
  'architecture.md':'docs/ntp-architecture-deployment-plan-v1.0.md','operations.md':'docs/OPERATIONS.md','history.md':'HISTORY.md'}
 EXTRA={'reference.py','reference.tar','reference-report.json','reference-receipt.json','reference-cleanup.json',
-       'receiver-runtime.json','known_hosts','timeservice.json','network-evidence.json','recovery-evidence.json'}
+       'receiver-runtime.json','known_hosts','timeservice.json','network-evidence.json','recovery-evidence.json','diagnostic-evidence.json'}
 MODES=('start','probe','readback','accept','recover','cleanup')
 
 
 def encoded(value):return (json.dumps(value,sort_keys=True)+'\n').encode()
 def sha(raw):return hashlib.sha256(raw).hexdigest()
+
+
+def current_inputs(diagnostic=False):
+    files={n:(ROOT/p).read_bytes() for n,p in INPUT_PATHS.items()}
+    if diagnostic:
+        service=files['timeservice.service']
+        if service.count(b'\nRestart=on-failure\n')!=1:raise ValueError('known supervisor restart policy required')
+        files['timeservice.service']=service.replace(b'\nRestart=on-failure\n',b'\nRestart=no\n')
+    return files
 
 
 def load(path):
@@ -115,6 +127,31 @@ def recovery_evidence(raw,spec):
         raise ValueError('recovered terminal cleanup required')
 
 
+def diagnostic_evidence(raw,spec,recovery):
+    proof=json.loads(raw)
+    archive=base64.b64decode(proof['archive'],validate=True);files=unpack(archive)
+    old=json.loads(files['spec.json']);first=proof['readback-1-0-result.json'];report=first['result']
+    digest=sha(encoded(report));receipt=proof['acceptance.json']
+    if (first!=proof['readback-1-1-result.json'] or first['spec_sha256']!=sha(files['spec.json'])
+            or receipt!={'bundle_sha256':sha(archive),'report_sha256':digest,
+                         'spec_sha256':sha(files['spec.json']),'state':'diagnostics_captured','time_service_accepted':False}
+            or report.get('phase')!='captured' or report.get('source_preserved') is not True
+            or old['source_bundle_sha256']!=recovery['terminal-receipt.json']['bundle_sha256']
+            or files['source-spec.json']!=encoded(recovery['spec.json'])
+            or any(old[k]!=spec[k] for k in ('hostname','boot_id','kernel','endpoints'))):
+        raise ValueError('accepted retained diagnostic binding required')
+    for row in report['evidence'].values():
+        if sha(base64.b64decode(row['base64'],validate=True))!=row['sha256']:raise ValueError('retained diagnostic bytes')
+    state=json.loads(base64.b64decode(report['evidence']['source-state.json']['base64']))
+    upstreams={p['variables']['srcadr'] for p in state['last_measurement']['measurement']['peers']
+               if p['variables'].get('srchost') in spec['recipe']['nts_servers']}
+    if upstreams!=set(spec['recipe']['diagnostic']['upstream_addresses']):
+        raise ValueError('packet scope must match retained upstream addresses')
+    if proof['cleanup-0-result.json']!={'spec_sha256':sha(files['spec.json']),'result':{
+            'phase':'cleaned','report_sha256':digest,'evidence_preserved':True,'source_unchanged':True}}:
+        raise ValueError('retained diagnostic closure required')
+
+
 def validate(spec,files):
     if set(files)!=set(INPUT_PATHS)|EXTRA|{'spec.json','manifest.json','review.md'}:raise ValueError('closed cutover archive required')
     if not re.fullmatch('[a-z][a-z0-9-]{0,47}',spec['operation_id']):raise ValueError('operation ID')
@@ -141,6 +178,20 @@ def validate(spec,files):
     network_evidence(files['network-evidence.json'],spec)
     recovery_evidence(files['recovery-evidence.json'],spec)
     recipe=json.loads(files['recipe.json'])
+    if spec.get('purpose')=='runtime-diagnostic':
+        diagnostic=json.loads(files['diagnostic-recipe.json']);recipe['diagnostic']=diagnostic
+        if (set(diagnostic)!={'observation_seconds','settling_seconds','interval_seconds','maximum_samples',
+                              'capture_seconds','maximum_packets','interface','upstream_addresses'}
+                or [diagnostic[k] for k in ('observation_seconds','settling_seconds','interval_seconds','maximum_samples','capture_seconds','maximum_packets')]!=[900,600,30,30,1020,512]
+                or diagnostic['interface']!='eth0' or len(set(diagnostic['upstream_addresses']))!=3):
+            raise ValueError('closed diagnostic bounds')
+        for address in diagnostic['upstream_addresses']:
+            if not ipaddress.ip_address(address).is_global:raise ValueError('public diagnostic upstream required')
+        diagnostic_evidence(files['diagnostic-evidence.json'],spec,json.loads(files['recovery-evidence.json']))
+        if re.findall(rb'^Restart=.*$',files['timeservice.service'],re.M)!=[b'Restart=no']:
+            raise ValueError('no automatic diagnostic daemon restart')
+    elif spec.get('purpose','service-cutover')!='service-cutover' or json.loads(files['diagnostic-evidence.json']) is not None:
+        raise ValueError('closed operation purpose')
     if spec['recipe']!=recipe or recipe['hostname']!=spec['hostname'] or json.loads(files['timeservice.json'])!=recipe['timeservice']:
         raise ValueError('rendered recipe binding')
     if (recipe['recovery_seconds']!=1800 or recipe['apply_max_seconds']!=120 or recipe['max_probes']!=40
@@ -152,7 +203,7 @@ def validate(spec,files):
             or re.findall(rb'^tos[^#\n]*',files['ntp.conf'],re.M)!=[b'tos minsane 1']):
         raise ValueError('explicit local-reference minsane and journal policy required')
     if sha(files['leap-seconds.list'])!=recipe['leapfile']['sha256']:raise ValueError('pinned leap input')
-    for name in ('stage.py','client.py','measure.py','timeservice.py','gpsd-pairing.py'):
+    for name in ('stage.py','client.py','measure.py','timeservice.py','gpsd-pairing.py','runtime-diagnostic.py'):
         compile(files[name],name,'exec')
 
 
@@ -160,7 +211,7 @@ def prepare(bundle,checksum):
     c=load(ROOT/'scripts/run-foundation-preflight.py');raw=c.private_file(bundle,64*1024**2)
     if sha(raw)!=checksum:raise ValueError('exact approved bundle SHA-256 required')
     files=unpack(raw);spec=json.loads(files['spec.json']);validate(spec,files)
-    if any(files[n]!=(ROOT/p).read_bytes() for n,p in INPUT_PATHS.items()) or c.private_file(bundle.parent/'known_hosts',4096)!=files['known_hosts']:
+    if any(files[n]!=raw for n,raw in current_inputs(spec.get('purpose')=='runtime-diagnostic').items()) or c.private_file(bundle.parent/'known_hosts',4096)!=files['known_hosts']:
         raise ValueError('current reviewed inputs changed; reseal and obtain new approval')
     for mode in MODES:compile(payload(spec,files,mode),'sealed-payload','exec')
     return spec,files
@@ -181,6 +232,7 @@ def payload(spec,files,mode,proofs=None):
 
 def review(spec):
     expiry=datetime.fromtimestamp(spec['expires_epoch'],timezone.utc).isoformat()
+    if spec.get('purpose')=='runtime-diagnostic':return diagnostic_review(spec,expiry)
     return f'''# GPSD/NTPsec service cutover: {spec['operation_id']}
 
 Target **{spec['hostname']}**, boot `{spec['boot_id']}`; expires **{expiry}**.
@@ -252,6 +304,80 @@ never replay start. Use `recover` if needed, then dual-stack readback and `clean
 '''
 
 
+def diagnostic_review(spec,expiry):
+    diagnostic=spec['recipe']['diagnostic']
+    latest=datetime.fromtimestamp(spec['expires_epoch']-1800,timezone.utc).isoformat()
+    return f'''# Bounded NTS/PPS runtime diagnostic: {spec['operation_id']}
+
+Target **{spec['hostname']}**, boot `{spec['boot_id']}`; management endpoints
+{', '.join(spec['endpoints'])}. Start before **{latest}**; inputs expire **{expiry}**.
+One diagnostic activation; mandatory recovery even when timing checks pass.
+No service acceptance, persistent enablement, workstation probes, controller
+access, firewall changes, package installation, receiver writes or reboot.
+
+This archive binds current scripts/tests/recipes/documents, accepted receiver
+and network inputs, recovered cutover v3 and accepted retained diagnostics.
+Preflight checks identity, retained inputs and unchanged baseline before mutation.
+Root-owned 0700 stage `{spec['stage']}`, 0600 evidence, exact file/metadata
+backups and an independently armed 1800-second recovery timer precede mutation.
+Use the reviewed cutover file set (supervisor/helpers, ntp.conf, service/Avahi
+configuration, pinned leap list, dormant maintenance unit/timer and runtime
+directories); no upstream profile, calibration or acceptance threshold changes.
+Stop bootstrap timesyncd; temporarily start supervised GPSD/NTPsec. This changes
+the system clock. Recovery restores files/services/UART, not elapsed time or
+clock corrections. Restore Avahi and bootstrap timesyncd after every outcome.
+
+Before daemon activation, require libpcap availability and a ready, non-promiscuous
+observer on eth0. Use a kernel BPF filter for UDP port 123 and only these retained
+upstream addresses: {', '.join(diagnostic['upstream_addresses'])}.
+Observe up to 512 packets for at most 1020 seconds (independent unit limit 1040s).
+Persist only IP/port/direction, length, NTP header mode/leap/stratum and three
+timestamps, plus local monotonic observation time and drop counters. No packet
+payload, NTS cookie, TLS traffic or LAN-client traffic is saved. Plain Ethernet
+IPv4/IPv6 UDP only; unsupported/truncated NTP headers, capacity exhaustion or reported
+drops mark packet evidence incomplete. Absence at this capture point does not
+locate a network drop or prove remote receipt. Authentication comes from ntpd's
+counters, not packet appearance. No additional packets are generated by capture.
+
+Retain the 30-second matched serial/PPS gate (five samples of each, up to 15s
+socket readiness), then require localhost ntpd response and complete NTS/system
+counters. Failure recovers immediately; no long observation without this gate.
+An autonomous worker samples at intervals of at least 30 seconds, at most 30
+samples and no later than 900 seconds after apply begins. Independent worker
+limit 1200s with 240s stop/recovery allowance; ExecStopPost recovery plus the 1800s timer cover interruption.
+Record NTS sends/good/bad receives, packet-processing counters, per-peer
+sent/received/reach/flash/srcadr/dstadr/refid, frequency and offset/jitter,
+addresses/routes and current journal health. An upstream address outside the
+sealed list, counter reset, observer loss or daemon/journal safety failure ends
+the observation and recovers. NTS reach or PPS accuracy failures are retained
+as diagnostic findings, not reasons to mislabel startup as settled.
+
+Before 600 seconds, timing checks are observations only. After that minimum
+settling window, record the unchanged 5ms PPS offset, 1ms jitter and all-three
+NTS authentication/reach gates; three consecutive passing samples may end early.
+The window is an observation policy, not proof of convergence. No gate relaxation,
+serial calibration, daemon restart or automatic retrial. Stop by the deadline and
+recover regardless. Preserve runtime statistics, all samples and packet report.
+Retrieve one bounded terminal journal for this boot/operation's services and
+workers (under 2000 records, 2 MiB, filtered by monotonic apply time); truncation
+or missing journal/statistics holds diagnostic acceptance without preventing
+baseline restoration. Include before/after addresses and routes in readback.
+
+Conditional readback (up to 60 numbered attempts, at least 30s apart), one explicit
+recovery and cleanup are in scope. Matching dual-stack recovered receipts are
+required before cleanup. Diagnostic retrieval acceptance also requires complete
+bounded samples/packet report, no diagnostic error, and preserved statistics;
+missing/partial data remains evidence, not success. Time service is never accepted.
+Cleanup records closure and retains all source/diagnostic artifacts and backups.
+If recovery detects drift, hold for inspection rather than overwrite it.
+
+Execute only after separate approval of this archive's SHA-256:
+`python3 -I -B ntpsec/scripts/run-service-cutover.py execute --bundle <archive> --sha256 <approved-hash> --mode start`
+Then conditional `--mode readback --attempt N`, if needed `--mode recover`,
+and `--mode cleanup` using the same archive/hash. Never replay start.
+'''
+
+
 def seal(args):
     c=load(ROOT/'scripts/run-foundation-preflight.py')
     raw=c.private_file(args.receiver_dir/'gpsd-acquisition.tar',32*1024**2)
@@ -266,7 +392,7 @@ def seal(args):
         if response['spec_sha256']==sha(reference['spec.json']) and endpoint in old['endpoints']:reports[endpoint]=report
     if set(reports)!=set(old['endpoints']):raise ValueError('both accepted endpoint reports required')
     report=next(iter(reports.values()))
-    files={n:(ROOT/p).read_bytes() for n,p in INPUT_PATHS.items()};recipe=json.loads(files['recipe.json'])
+    files=current_inputs(getattr(args,'diagnostic',False));recipe=json.loads(files['recipe.json'])
     files.update({'reference.tar':raw,'reference.py':reference['worker.py'],'reference-report.json':encoded(report),
                   'reference-receipt.json':receipt,'reference-cleanup.json':c.private_file(args.receiver_dir/'cleanup-0-result.json'),
                   'receiver-runtime.json':base64.b64decode(report['evidence']['receiver-runtime.json']['base64']),
@@ -280,11 +406,22 @@ def seal(args):
     if (recovery['terminal-receipt.json']['bundle_sha256']!=sha(recovered_raw)
             or encoded(recovery['spec.json'])!=recovered['spec.json']):raise ValueError('recovered archive binding')
     files['recovery-evidence.json']=encoded(recovery)
+    files['diagnostic-evidence.json']=encoded(None)
+    diagnostic=getattr(args,'diagnostic',False)
+    if diagnostic:
+        if not args.retained_dir or not args.retained_sha256:raise ValueError('accepted retained diagnostics required')
+        retained=c.private_file(args.retained_dir/'cutover-inspection.tar',64*1024**2)
+        if sha(retained)!=args.retained_sha256:raise ValueError('retained archive digest')
+        proof={n:json.loads(c.private_file(args.retained_dir/n,16*1024**2)) for n in
+               ('acceptance.json','readback-1-0-result.json','readback-1-1-result.json','cleanup-0-result.json')}
+        proof['archive']=base64.b64encode(retained).decode();files['diagnostic-evidence.json']=encoded(proof)
+        recipe['diagnostic']=json.loads(files['diagnostic-recipe.json'])
     epoch=int(time.time());spec={k:old[k] for k in ('hostname','kernel','boot_id','endpoints','old_ipv4')}
     spec.update(schema=1,operation_id=args.operation_id,stage='/var/lib/ntp-acquire-'+args.operation_id,
                 apply_unit='ntp-cutover-'+args.operation_id,recovery_unit='ntp-cutover-'+args.operation_id+'-recovery',
                 prepared_epoch=epoch,expires_epoch=min(epoch+86400,old['expires_epoch']),recipe=recipe,
                 members={n:sha(v) for n,v in files.items()})
+    spec['purpose']='runtime-diagnostic' if diagnostic else 'service-cutover'
     files['spec.json']=encoded(spec);files['review.md']=review(spec).encode();files['manifest.json']=encoded({n:sha(v) for n,v in files.items()})
     validate(spec,files)
     if spec['expires_epoch']-epoch<3600:raise ValueError('insufficient accepted input freshness for cutover')
@@ -319,12 +456,22 @@ def terminal_receipt(spec,checksum,results):
     if set(results)!=set(spec['endpoints']) or len({sha(encoded(v)) for v in results.values()})!=1:raise ValueError('matching dual-endpoint state required')
     state=next(iter(results.values()))
     if state['phase'] not in ('accepted','recovered'):return None
-    return {'state':state['phase'],'bundle_sha256':checksum,'spec_sha256':sha(encoded(spec)),'state_sha256':sha(encoded(state))}
+    receipt={'state':state['phase'],'bundle_sha256':checksum,'spec_sha256':sha(encoded(spec)),'state_sha256':sha(encoded(state))}
+    if spec.get('purpose')=='runtime-diagnostic':
+        if state['phase']!='recovered':raise ValueError('diagnostic must recover')
+        receipt['time_service_accepted']=False
+        receipt['diagnostic_accepted']=bool(state.get('observation_completed') and state.get('diagnostic_samples')
+            and state.get('packet_observation',{}).get('complete') is True
+            and state.get('diagnostic_journal',{}).get('complete') is True
+            and state.get('diagnostic_statistics') and not state.get('diagnostic_error'))
+    return receipt
 
 
 def execute(args):
     os.umask(0o077);c=load(ROOT/'scripts/run-foundation-preflight.py');bundle=args.bundle.absolute()
     spec,files=prepare(bundle,args.sha256);directory=bundle.parent
+    if spec.get('purpose')=='runtime-diagnostic' and args.mode in ('accept','probe'):
+        raise ValueError('diagnostic has autonomous sampling and no service acceptance')
     if args.mode=='start':
         if not spec['prepared_epoch']-300<=time.time()<spec['expires_epoch']-spec['recipe']['recovery_seconds']:raise ValueError('full trial must fit accepted execution window')
     elif json.loads(c.private_file(directory/'start-execution.json'))['bundle_sha256']!=args.sha256:raise ValueError('registered start required')
@@ -361,6 +508,7 @@ def main():
     p=sub.add_parser('seal');p.add_argument('--receiver-dir',type=Path,required=True);p.add_argument('--receiver-sha256',required=True)
     p.add_argument('--network-dir',type=Path,required=True)
     p.add_argument('--recovered-dir',type=Path,required=True)
+    p.add_argument('--diagnostic',action='store_true');p.add_argument('--retained-dir',type=Path);p.add_argument('--retained-sha256')
     p.add_argument('--operation-id',required=True);p.add_argument('--output',type=Path,required=True)
     p=sub.add_parser('execute');p.add_argument('--bundle',type=Path,required=True);p.add_argument('--sha256',required=True)
     p.add_argument('--mode',choices=MODES,required=True);p.add_argument('--attempt',type=int,choices=range(1,61),default=1)

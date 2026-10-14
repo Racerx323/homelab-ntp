@@ -820,6 +820,14 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    NTS packet counters and request/response observation, and recovery before
    activation. Separate startup settling from final offset/jitter acceptance;
    a short recovered trial alone does not justify calibration or relaxed limits.
+   Diagnostic activation always restores the baseline; disable automatic daemon
+   restarts and prohibit service acceptance for that profile. Require the early
+   receiver/control/counter gate before bounded observation. Limit packet capture
+   to the reviewed interface and observed upstream addresses; preserve selected
+   headers and drop counters, not payloads or cookies. Correlate interface bindings
+   and route/address observations with NTS counters before attributing `.XFAC.`
+   or zero reach to boot ordering or a firewall. Missing/partial diagnostic data
+   remains a gap even when recovery and dual-stack readback succeed.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.
