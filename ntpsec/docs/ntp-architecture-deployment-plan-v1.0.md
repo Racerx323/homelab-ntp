@@ -909,7 +909,8 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    Bind its complete dual-stack report and closure, then reserve installation
    time within the new observation's start window. Seal a new operation identity
    against the accepted prerequisite archive, matching endpoint readbacks and
-   diagnostic closure. Handoff continuity must use that accepted current-boot
+   diagnostic closure. Bind the fault-recovery unit and durable monitor evidence
+   path to that same operation identity. Handoff continuity must use that accepted current-boot
    observation; inherited checks must not require the pre-reboot baseline's boot
    ID. Exercise the full handoff path against retained historical and current
    identities before sealing. After a recovered activation, bind its terminal
