@@ -900,6 +900,8 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    unchanged. The legacy nested hardware acceptance retains its 24-hour limit;
    a restoration receipt does not renew it. A successor may instead consume a
    separately accepted, read-only hardware/runtime revalidation. That validation
+   must pass reused runtime input and stage-identity checks before accepting a
+   fresh observation. A closed held capture does not renew prerequisites. It
    preserves historical timestamps and requires exact accepted provenance plus
    fresh same-boot configuration, device, account, native and network checks.
    Bind its complete dual-stack report and closure, then reserve installation
