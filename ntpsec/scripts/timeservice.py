@@ -63,6 +63,7 @@ def supervise(config):
 
     previous = {sig: signal.signal(sig, requested_stop) for sig in (signal.SIGTERM, signal.SIGINT)}
     children = []
+    startup = None
     try:
         subprocess.run(['/usr/bin/stty', '-F', config['uart_device'], 'raw',
                         '115200', 'cs8', '-parenb', 'clocal', '-cstopb', '-crtscts'],
@@ -73,19 +74,33 @@ def supervise(config):
             if name=='ntpd':
                 check_startup(children[0],lambda:stopping,gate)
                 if stopping:return 0
-            children.append(subprocess.Popen(config[name], env={
+                if 'pps_startup' in config:
+                    path = Path(__file__).resolve().parent/'pps-startup.py'
+                    spec = importlib.util.spec_from_file_location('pps_startup', path)
+                    helper = importlib.util.module_from_spec(spec); spec.loader.exec_module(helper)
+                    startup = helper.Startup(config)
+            argv = startup.argv if name == 'ntpd' and startup else config[name]
+            children.append(subprocess.Popen(argv, env={
                 'PATH': '/usr/local/bin:/usr/local/sbin:/usr/bin:/bin', 'LC_ALL': 'C'}))
             if stopping or children[-1].poll() is not None:
                 return 0 if stopping else 1
         while not stopping:
             if any(process.poll() is not None for process in children):
                 return 1
+            if startup:
+                startup.tick(children[1])
             time.sleep(0.1)
         return 0
     finally:
-        stop(children)
-        for sig, handler in previous.items():
-            signal.signal(sig, handler)
+        try:
+            stop(children)
+        finally:
+            try:
+                if startup:
+                    startup.close()
+            finally:
+                for sig, handler in previous.items():
+                    signal.signal(sig, handler)
 
 
 def check_startup(gpsd, stopping, gate):

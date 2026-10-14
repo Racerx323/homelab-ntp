@@ -851,10 +851,14 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    separately review the user-selected final selectable-NMEA behavior. Real local
    capture tests must precede claims that an observer buffering change fixes loss.
    The 2 MiB observer candidate passed isolated x86-64 Linux/libpcap tests; target
-   qualification remains separate. The prepared PPS-led policy defers NMEA/NTS
+   qualification remains separate. The implemented cold-start diagnostic defers NMEA/NTS
    associations, qualifies PPS on distinct updates, then adds the final sources
-   without a daemon restart. Authenticated promotion and failure recovery must be
-   implemented/tested before sealing a live stage; see OPERATIONS for the policy.
+   without a daemon restart. Authenticated promotion passed an isolated pinned-1.2.5 daemon fixture;
+   timing and failure/recovery paths have offline tests. Observation ends by
+   1500 seconds with an independent 1800-second recovery timer. This diagnostic
+   refuses an existing drift file; persistent warm-restart policy remains a
+   prerequisite for service cutover. See OPERATIONS for scope and bounds. A new
+   hash-bound review and separate approval are required for target execution.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.

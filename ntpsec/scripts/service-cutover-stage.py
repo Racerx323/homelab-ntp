@@ -18,6 +18,7 @@ ENV={'PATH':'/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin','LC_A
 DESTINATIONS={
  '/usr/local/libexec/timeservice.py':('timeservice.py',0o755),
  '/usr/local/libexec/gpsd-pairing.py':('gpsd-pairing.py',0o644),
+ '/usr/local/libexec/pps-startup.py':('pps-startup.py',0o644),
  '/etc/ntp.conf':('ntp.conf',0o644),
  '/etc/ntpsec-timeservice.json':('timeservice.json',0o640),
  '/etc/systemd/system/timeservice.service':('timeservice.service',0o644),
@@ -58,7 +59,7 @@ def measurement_checks(value,recipe):
 MINSANE_MESSAGE='SYNC: Found 5 servers, suggest minsane at least 3'
 
 
-def journal_health(raw,boot_id,apply_monotonic,ntpd_pid):
+def journal_health(raw,boot_id,apply_monotonic,ntpd_pid,promoted_monotonic=None):
     """Classify bounded startup telemetry, without accepting NTS packet service."""
     allowed=[];unexpected=[];seen=set();counts={'minsane':0,'read':0,'cookies':0}
     for line in raw.splitlines():
@@ -79,8 +80,9 @@ def journal_health(raw,boot_id,apply_monotonic,ntpd_pid):
             if read and int(read[1])<=2048:kind='read'
             if cookies and int(cookies[2])<=192:kind='cookies'
         digest=sha(encoded(row))
+        origin=promoted_monotonic if promoted_monotonic is not None else apply_monotonic
         if (kind and all(row.get(k)==v for k,v in expected.items())
-                and stamp<=apply_monotonic+120 and digest not in seen
+                and origin<=stamp<=origin+120 and digest not in seen
                 and counts[kind]<(1 if kind=='minsane' else 3)):
             counts[kind]+=1;allowed.append(row)
         else:unexpected.append(row)
@@ -201,7 +203,7 @@ class Transaction:
     def start_packet_capture(self):
         unit=self.s['apply_unit']+'-packets'
         self.run(['/usr/bin/systemd-run','--quiet','--unit='+unit,
-                  '--property=WorkingDirectory='+str(self.root),'--property=RuntimeMaxSec=1040',
+                  '--property=WorkingDirectory='+str(self.root),'--property=RuntimeMaxSec=1640',
                   '--property=TimeoutStopSec=10','--property=LimitFSIZE=1048576','--property=UMask=0077',
                   '/usr/bin/python3','-I','-B',str(self.root/'runtime-diagnostic.py'),'capture'])
         deadline=time.monotonic()+5
@@ -262,7 +264,7 @@ class Transaction:
                             self.write('state.json',state)
                             if self.s['recipe'].get('diagnostic'):
                                 self.run(['/usr/bin/systemd-run','--quiet','--unit='+self.s['apply_unit']+'-diagnostic',
-                                          '--property=WorkingDirectory='+str(self.root),'--property=RuntimeMaxSec=1200',
+                                          '--property=WorkingDirectory='+str(self.root),'--property=RuntimeMaxSec=1620',
                                           '--property=TimeoutStopSec=240','--property=UMask=0077','--property=KillMode=control-group',
                                           '--property=ExecStopPost=/usr/bin/python3 -I -B '+str(self.root/'stage.py')+' worker recover',
                                           '/usr/bin/python3','-I','-B',str(self.root/'stage.py'),'worker','diagnose'])
@@ -341,6 +343,8 @@ class Transaction:
         identities={};ntpd_pid=None
         for child in children:
             executable=os.readlink('/proc/'+child+'/exe')
+            if executable=='/usr/bin/journalctl' and self.s['recipe']['timeservice'].get('pps_startup'):
+                continue
             status=Path('/proc/'+child+'/status').read_text().splitlines()
             ids={line.split(':',1)[0]:[int(v) for v in line.split(':',1)[1].split()] for line in status if line.startswith(('Uid:','Gid:'))}
             if executable in identities:raise ValueError('duplicate daemon child')
@@ -352,9 +356,16 @@ class Transaction:
                          '--boot='+self.s['boot_id'].replace('-',''),
                          '--unit=timeservice.service','--unit=avahi-daemon.service','--priority=0..3']
                          +(self.journal_scope() if self.s['recipe'].get('diagnostic') else []),timeout=10)
-        journal=journal_health(errors,self.s['boot_id'],self.state()['apply_monotonic'],ntpd_pid)
+        promotion=None
+        if self.s['recipe']['timeservice'].get('pps_startup'):
+            promotion=json.loads(self.h.read(Path('/run/ntpsec-startup/promotion.json')))
+            if promotion.get('supervisor_pid')!=pid or promotion.get('ntpd_pid')!=ntpd_pid:
+                raise ValueError('startup promotion process identity')
+            checks['startup_ready']=promotion.get('phase')=='ready'
+        journal=journal_health(errors,self.s['boot_id'],self.state()['apply_monotonic'],ntpd_pid,
+                               promotion.get('promoted_monotonic') if promotion else None)
         checks['journal_health']=journal['healthy']
-        return {'checks':checks,'measurement':value,'journal':journal}
+        return {'checks':checks,'measurement':value,'journal':journal,'promotion':promotion}
 
     def journal_cursor(self):
         raw=self.run(['/usr/bin/journalctl','--quiet','--no-pager','--output=json','--lines=1',
@@ -390,7 +401,10 @@ class Transaction:
             counters=measurement['counters'];previous=state['diagnostic_samples'][-1]['result']['measurement']['counters'] if state['diagnostic_samples'] else state['early_ntpd']['counters']
             error=None
             if outside:error='upstream address outside sealed packet scope'
-            elif pending and elapsed>=recipe['nts_setup_seconds']:error='NTS association setup deadline elapsed'
+            promotion=value.get('promotion')
+            nts_elapsed=time.monotonic()-promotion['promoted_monotonic'] if promotion and promotion.get('promoted_monotonic') else elapsed
+            if promotion and promotion.get('phase')=='failed':error='PPS startup promotion failed'
+            elif pending and nts_elapsed>=recipe['nts_setup_seconds']:error='NTS association setup deadline elapsed'
             elif any(counters[k]<v for k,v in previous.items()):error='diagnostic counters reset'
             settled=elapsed>=recipe['settling_seconds']
             sample={'elapsed_seconds':elapsed,'settling_window_elapsed':settled,'result':value,
@@ -479,6 +493,12 @@ class Transaction:
         state=self.state()
         if state['phase'] in ('accepted','recovered'):return state
         try:
+            if self.s['recipe']['timeservice'].get('pps_startup'):
+                try:
+                    state['startup_promotion']=json.loads(self.h.read(Path('/run/ntpsec-startup/promotion.json')))
+                except (OSError,ValueError) as error:
+                    state['startup_promotion']={'phase':'unavailable','error':str(error)[:300]}
+                self.write('state.json',state)
             for unit in ('ntpleapfetch.timer','ntpleapfetch.service','timeservice.service'):
                 if self.systemctl('show',unit,'--property=LoadState','--value').strip()!='not-found':self.systemctl('stop',unit)
             if self.s['recipe'].get('diagnostic'):

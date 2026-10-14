@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; runtime diagnostic v2 recovered after early gate; partial packet evidence retained; dual-stack readback and cleanup complete; runtime diagnostic v3 recovered on changed Cloudflare address; rejecting sample and journal retained; dual-stack readback and cleanup complete; runtime diagnostic v4 completed 30 samples and recovered; 57/57 NTS replies authenticated; PPS timing and capture completeness failed; terminal dual-stack readback attempt 11 and cleanup complete; retained analysis complete; larger buffer passed isolated local fixture; PPS-led startup policy prepared, promotion integration pending |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; runtime diagnostic v2 recovered after early gate; partial packet evidence retained; dual-stack readback and cleanup complete; runtime diagnostic v3 recovered on changed Cloudflare address; rejecting sample and journal retained; dual-stack readback and cleanup complete; runtime diagnostic v4 completed 30 samples and recovered; 57/57 NTS replies authenticated; PPS timing and capture completeness failed; terminal dual-stack readback attempt 11 and cleanup complete; retained analysis complete; larger buffer passed isolated local fixture; cold-start promotion and receipt-selected recovery implemented and tested locally; target trial and persistent restart policy pending |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -25,6 +25,39 @@ The current accepted source stage is
 `/home/ama/.ntp-source-build-mdns-20261012-v1`; the earlier v5 stage is preserved.
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
+
+## PPS-led cold-start promotion implemented — October 13, 2026
+
+Implemented the approved cold-start policy in the supervisor and diagnostic
+recipe. Startup defers NMEA/NTS, requires PPS initialization and distinct fresh
+updates, then adds the final selectable sources through authenticated localhost
+Mode 6 without restarting ntpd. Commands are submitted once; uncertain or partial
+promotion stops both daemons and proceeds through diagnostic recovery. Per-start
+keys/configuration are protected and removed after the children stop. The final
+selectable-NMEA `ntp.conf` remains unchanged.
+
+A private local build of pinned NTPsec 1.2.5 exposed asymmetric Mode 6 alignment:
+4-byte requests, 8-byte authenticated replies. The helper now handles that
+asymmetry and rejects invalid MACs without the client's automatic retry. The
+isolated rootless network/IPC fixture passed authenticated addition of SHM0 and
+three NTS associations, unchanged PPS association/PID, wrong-key and corrupted
+response-MAC rejection, and cleanup. No external network or host clock adjustment was available to the
+fixture. It does not establish NTS handshakes or timing acceptance on the target.
+
+Recovery preparation now selects the unique receipt-bound terminal readback pair.
+The retained v4 evidence passed selection of attempt 11; all previous evidence
+remains unchanged. Diagnostic observation is bounded at 1500 seconds/50 samples,
+with a 1620-second packet window and the existing independent 1800-second recovery
+timer. Timing thresholds remain unchanged. Offline tests cover repeated/stale
+samples, initialization sequence, identity, deadlines, partial promotion and
+recovery provenance. Private build/test records are under local PPS-startup
+qualification storage, outside Git.
+
+The enabled profile is a cold-start diagnostic and rejects an existing drift
+file. Persistent warm-restart policy remains a service-cutover prerequisite.
+No target/controller contact occurred and no new live review was sealed.
+Next: prepare a fresh diagnostic review with current inputs, retained receipt
+bindings and the tested startup path for separate execution approval.
 
 ## Local buffer qualification and PPS-led policy — October 13, 2026
 

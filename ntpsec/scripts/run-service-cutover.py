@@ -30,6 +30,8 @@ INPUT_PATHS={
  'runtime-diagnostic.py':'scripts/runtime-diagnostic.py','diagnostic-tests.py':'tests/test_runtime_diagnostic.py',
  'diagnostic-recipe.json':'configs/runtime-diagnostic-recipe.json',
  'capture-linux-tests.py':'tests/test_runtime_capture_linux.py',
+ 'pps-startup.py':'scripts/pps-startup.py','pps-startup-tests.py':'tests/test_pps_startup.py',
+ 'promotion-linux-tests.py':'tests/test_pps_promotion_linux.py',
  'architecture.md':'docs/ntp-architecture-deployment-plan-v1.0.md','operations.md':'docs/OPERATIONS.md','history.md':'HISTORY.md'}
 EXTRA={'reference.py','reference.tar','reference-report.json','reference-receipt.json','reference-cleanup.json',
        'receiver-runtime.json','known_hosts','timeservice.json','network-evidence.json','recovery-evidence.json','diagnostic-evidence.json'}
@@ -107,18 +109,39 @@ def network_evidence(raw,spec):
     return outcome
 
 
-RECOVERY_RECORDS=('spec.json','terminal-receipt.json','readback-1-0-result.json',
-                  'readback-1-1-result.json','cleanup-0-result.json')
+def recovery_response(proof):
+    names=sorted(n for n in proof if re.fullmatch(r'readback-[1-9][0-9]*-[01]-result\.json',n))
+    if (len(names)!=2 or names[0].replace('-0-result.json','-1-result.json')!=names[1]
+            or set(proof)!={'spec.json','terminal-receipt.json','cleanup-0-result.json',*names}
+            or proof[names[0]]!=proof[names[1]]):
+        raise ValueError('one matching terminal dual-stack readback pair required')
+    return proof[names[0]]
+
+
+def select_recovery(c,directory):
+    proof={n:json.loads(c.private_file(directory/n,16*1024**2))
+           for n in ('spec.json','terminal-receipt.json','cleanup-0-result.json')}
+    receipt=proof['terminal-receipt.json'];matches=[]
+    for path in sorted(directory.glob('readback-*-0-result.json')):
+        if not re.fullmatch(r'readback-[1-9][0-9]*-0-result\.json',path.name):continue
+        first=json.loads(c.private_file(path,16*1024**2))
+        if (first.get('spec_sha256')!=receipt['spec_sha256']
+                or sha(encoded(first.get('result')))!=receipt['state_sha256']):continue
+        second=path.with_name(path.name.replace('-0-result.json','-1-result.json'))
+        if not second.exists():continue
+        other=json.loads(c.private_file(second,16*1024**2))
+        if first==other:matches.append({path.name:first,second.name:other})
+    if len(matches)!=1:raise ValueError('one receipt-bound terminal readback attempt required')
+    return dict(proof,**matches[0])
 
 
 def recovery_evidence(raw,spec):
     proof=json.loads(raw)
-    if set(proof)!=set(RECOVERY_RECORDS):raise ValueError('closed recovered cutover evidence')
     old=proof['spec.json'];receipt=proof['terminal-receipt.json']
-    first=proof['readback-1-0-result.json'];state=first['result'];digest=sha(encoded(old))
+    first=recovery_response(proof);state=first['result'];digest=sha(encoded(old))
     if (old['operation_id']==spec['operation_id']
             or any(old[k]!=spec[k] for k in ('hostname','kernel','boot_id','old_ipv4','endpoints'))
-            or first!=proof['readback-1-1-result.json'] or first['spec_sha256']!=digest
+            or first['spec_sha256']!=digest
             or receipt['spec_sha256']!=digest or receipt['state']!='recovered'
             or receipt['state_sha256']!=sha(encoded(state)) or state['phase']!='recovered'
             or not old['prepared_epoch']<=state['recovered_epoch']<=spec['prepared_epoch']):
@@ -151,7 +174,7 @@ def diagnostic_evidence(raw,spec,recovery):
     upstreams={p['variables']['srcadr'] for p in state['last_measurement']['measurement']['peers']
                if p['variables'].get('srchost') in spec['recipe']['nts_servers']}
     if chained:
-        recent=recovery['readback-1-0-result.json']['result'].get('last_measurement',{}).get('measurement',{})
+        recent=recovery_response(recovery)['result'].get('last_measurement',{}).get('measurement',{})
         upstreams.update(p['variables']['srcadr'] for p in recent.get('peers',[])
                          if p['variables'].get('srchost') in spec['recipe']['nts_servers']
                          and p['variables'].get('srcadr') is not None)
@@ -190,11 +213,14 @@ def validate(spec,files):
     recipe=json.loads(files['recipe.json'])
     if spec.get('purpose')=='runtime-diagnostic':
         diagnostic=json.loads(files['diagnostic-recipe.json']);recipe['diagnostic']=diagnostic
+        recipe['timeservice']['pps_startup']=diagnostic['pps_startup']
         if (set(diagnostic)!={'observation_seconds','settling_seconds','interval_seconds','maximum_samples',
-                              'capture_seconds','maximum_packets','interface','upstream_addresses','nts_setup_seconds','buffer_bytes'}
-                or [diagnostic[k] for k in ('observation_seconds','settling_seconds','interval_seconds','maximum_samples','capture_seconds','maximum_packets')]!=[900,600,30,30,1020,512]
+                              'capture_seconds','maximum_packets','interface','upstream_addresses','nts_setup_seconds','buffer_bytes','pps_startup'}
+                or [diagnostic[k] for k in ('observation_seconds','settling_seconds','interval_seconds','maximum_samples','capture_seconds','maximum_packets')]!=[1500,600,30,50,1620,512]
                 or diagnostic['buffer_bytes']!=2097152 or diagnostic['nts_setup_seconds']!=60 or diagnostic['interface']!='eth0' or not 3<=len(diagnostic['upstream_addresses'])==len(set(diagnostic['upstream_addresses']))<=4):
             raise ValueError('closed diagnostic bounds')
+        if diagnostic['pps_startup']!=frozen(files['pps-startup.py']).POLICY:
+            raise ValueError('closed PPS promotion policy required')
         for address in diagnostic['upstream_addresses']:
             if not ipaddress.ip_address(address).is_global:raise ValueError('public diagnostic upstream required')
         diagnostic_evidence(files['diagnostic-evidence.json'],spec,json.loads(files['recovery-evidence.json']))
@@ -213,7 +239,7 @@ def validate(spec,files):
             or re.findall(rb'^tos[^#\n]*',files['ntp.conf'],re.M)!=[b'tos minsane 1']):
         raise ValueError('explicit local-reference minsane and journal policy required')
     if sha(files['leap-seconds.list'])!=recipe['leapfile']['sha256']:raise ValueError('pinned leap input')
-    for name in ('stage.py','client.py','measure.py','timeservice.py','gpsd-pairing.py','runtime-diagnostic.py'):
+    for name in ('stage.py','client.py','measure.py','timeservice.py','gpsd-pairing.py','runtime-diagnostic.py','pps-startup.py'):
         compile(files[name],name,'exec')
 
 
@@ -346,8 +372,8 @@ Before daemon activation, require libpcap availability and a ready, non-promiscu
 observer on eth0. Use a kernel BPF filter for UDP port 123 and only these retained
 upstream addresses from the original retained proof and latest recovered measurement: {', '.join(diagnostic['upstream_addresses'])}.
 Request a 2 MiB capture buffer and record libpcap version, actual packet-socket
-backend and libpcap timestamps. Observe up to 512 packets for at most 1020 seconds
-(independent unit limit 1040s).
+backend and libpcap timestamps. Observe up to 512 packets for at most 1620 seconds
+(independent unit limit 1640s).
 Persist only IP/port/direction, length, NTP header mode/leap/stratum and three
 timestamps, plus local monotonic observation time and drop counters. No packet
 payload, NTS cookie, TLS traffic or LAN-client traffic is saved. Plain Ethernet
@@ -359,9 +385,9 @@ counters, not packet appearance. No additional packets are generated by capture.
 Retain the 30-second matched serial/PPS gate (five samples of each, up to 15s
 socket readiness), then require localhost ntpd response and complete NTS/system
 counters. Failure recovers immediately; no long observation without this gate.
-An autonomous worker samples at intervals of at least 30 seconds, at most 30
-samples and no later than 900 seconds after apply begins. Independent worker
-limit 1200s with 240s stop/recovery allowance; ExecStopPost recovery plus the 1800s timer cover interruption.
+An autonomous worker samples at intervals of at least 30 seconds, at most 50
+samples and no later than 1500 seconds after apply begins. Independent worker
+limit 1620s with 240s stop/recovery allowance; ExecStopPost recovery plus the 1800s timer cover interruption.
 Record NTS sends/good/bad receives, packet-processing counters, per-peer
 sent/received/reach/flash/srcadr/dstadr/refid, frequency and offset/jitter,
 addresses/routes and current journal health. An upstream address outside the
@@ -369,12 +395,24 @@ sealed list, counter reset, observer loss or daemon/journal safety failure ends
 the observation and recovers. NTS reach or PPS accuracy failures are retained
 as diagnostic findings, not reasons to mislabel startup as settled.
 
-Before 600 seconds, timing checks are observations only. After that minimum
-settling window, record the unchanged 5ms PPS offset, 1ms jitter and all-three
-NTS authentication/reach gates; three consecutive passing samples may end early.
-The window is an observation policy, not proof of convergence. No gate relaxation,
-serial calibration, daemon restart or automatic retrial. Stop by the deadline and
-recover regardless. Preserve runtime statistics, all samples and packet report.
+The supervisor boots from a protected PPS-only configuration. It requires PPS
+selection within 120 seconds and the pinned cold-start freq_mode/freq_set/clock_sync
+sequence. After at least 600 seconds, three distinct PPS poll/receive updates must
+meet unchanged 5ms offset/1ms jitter and leap/stratum limits, by 900 seconds.
+Then add selectable NMEA and the three NTS associations once, using authenticated
+localhost Mode 6 without restarting either daemon. A protected per-start key is
+generated locally and deleted after the daemons stop; no secret is included in
+this archive or readback. Requests are not replayed after timeout; every response
+MAC and the resulting association membership are checked. Partial promotion,
+process/association replacement or a post-qualification clock step recovers.
+Require three fresh passing PPS updates with all final sources authenticated and
+reachable before startup can be ready. NTS setup grace starts at promotion.
+This candidate is cold-start only and refuses an existing drift file; it is not
+a persistent-service restart policy. No live cutover acceptance follows from it.
+Finish within 1500 seconds after apply, preserving the independent 1800-second
+recovery deadline. Always restore the baseline; preserve promotion status,
+runtime statistics, all samples and packet report. The retained terminal
+readback attempt is selected by its receipt, without renaming earlier evidence.
 Retrieve one bounded terminal journal for this boot/operation's services and
 workers (under 2000 records, 2 MiB, filtered by monotonic apply time); truncation
 or missing journal/statistics holds diagnostic acceptance without preventing
@@ -421,7 +459,7 @@ def seal(args):
     files['network-evidence.json']=encoded(network)
     recovered_raw=c.private_file(args.recovered_dir/'service-cutover.tar',64*1024**2)
     recovered=unpack(recovered_raw)
-    recovery={n:json.loads(c.private_file(args.recovered_dir/n,16*1024**2)) for n in RECOVERY_RECORDS}
+    recovery=select_recovery(c,args.recovered_dir)
     if (recovery['terminal-receipt.json']['bundle_sha256']!=sha(recovered_raw)
             or encoded(recovery['spec.json'])!=recovered['spec.json']):raise ValueError('recovered archive binding')
     files['recovery-evidence.json']=encoded(recovery)
@@ -435,6 +473,8 @@ def seal(args):
                ('acceptance.json','readback-1-0-result.json','readback-1-1-result.json','cleanup-0-result.json')}
         proof['archive']=base64.b64encode(retained).decode();files['diagnostic-evidence.json']=encoded(proof)
         recipe['diagnostic']=json.loads(files['diagnostic-recipe.json'])
+        recipe['timeservice']['pps_startup']=recipe['diagnostic']['pps_startup']
+        files['timeservice.json']=encoded(recipe['timeservice'])
     epoch=int(time.time());spec={k:old[k] for k in ('hostname','kernel','boot_id','endpoints','old_ipv4')}
     spec.update(schema=1,operation_id=args.operation_id,stage='/var/lib/ntp-acquire-'+args.operation_id,
                 apply_unit='ntp-cutover-'+args.operation_id,recovery_unit='ntp-cutover-'+args.operation_id+'-recovery',

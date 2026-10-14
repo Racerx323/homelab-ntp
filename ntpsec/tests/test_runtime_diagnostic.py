@@ -34,6 +34,8 @@ def fixture():
     diagnostic['upstream_addresses']=diagnostic['upstream_addresses'][:3]
     files['diagnostic-recipe.json']=c.encoded(diagnostic)
     spec['recipe']['diagnostic']=diagnostic
+    spec['recipe']['timeservice']['pps_startup']=diagnostic['pps_startup']
+    files['timeservice.json']=c.encoded(spec['recipe']['timeservice'])
     recovery=json.loads(files['recovery-evidence.json'])
     old={k:spec[k] for k in ('hostname','boot_id','kernel','endpoints')}
     old['source_bundle_sha256']=recovery['terminal-receipt.json']['bundle_sha256']
@@ -94,6 +96,7 @@ class BindingTests(unittest.TestCase):
         extra='2606:4700:f1::123'
         peer={'variables':{'srchost':spec['recipe']['nts_servers'][0],'srcadr':extra}}
         recovery['readback-1-0-result.json']['result']['last_measurement']={'measurement':{'peers':[peer]}}
+        recovery['readback-1-1-result.json']=copy.deepcopy(recovery['readback-1-0-result.json'])
         spec['recipe']['diagnostic']['upstream_addresses'].append(extra)
         c.diagnostic_evidence(raw,spec,recovery)
         for case in ('unobserved','wrong-host','missing-address','missing-proof'):
@@ -293,8 +296,8 @@ class LifecycleTests(unittest.TestCase):
         with self.assertRaises(ValueError):tx.journal_scope()
 
     def test_lifetime_and_sample_bounds(self):
-        tx=self.transaction(901);self.assertFalse(tx.diagnostic_sample());tx.measure.assert_not_called()
-        tx=self.transaction();tx.current['diagnostic_samples']=[{}]*30
+        tx=self.transaction(1501);self.assertFalse(tx.diagnostic_sample());tx.measure.assert_not_called()
+        tx=self.transaction();tx.current['diagnostic_samples']=[{}]*50
         self.assertFalse(tx.diagnostic_sample());tx.measure.assert_not_called()
 
     def test_expired_command_budget_cannot_launch_another_query(self):
@@ -353,7 +356,7 @@ class LifecycleTests(unittest.TestCase):
                     self.assertLess(events.index(('cursor',)),events.index(('observer',)))
                     self.assertLess(events.index(('observer',)),events.index(('start','timeservice.service')))
                     worker=tx.run.call_args.args[0]
-                    self.assertIn('--property=RuntimeMaxSec=1200',worker)
+                    self.assertIn('--property=RuntimeMaxSec=1620',worker)
                     self.assertTrue(any('ExecStopPost=' in a and a.endswith('worker recover') for a in worker))
                     self.assertEqual(worker[-1],'diagnose');tx.recover.assert_not_called()
 
