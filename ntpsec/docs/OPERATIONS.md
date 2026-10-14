@@ -501,8 +501,7 @@ response MAC was also rejected. There was no outside
 network, and the daemon could not adjust the host clock. This proves local Mode 6
 compatibility, not upstream NTS authentication, PPS discipline or target
 acceptance. Offline tests cover timing transitions, stale samples, provenance,
-deadlines, uncertain/partial promotion and cleanup. No live review has been sealed
-for this implementation.
+deadlines, uncertain/partial promotion and cleanup. The v5 review below is sealed offline; target execution remains unapproved.
 
 ### Local packet-buffer qualification
 
@@ -524,6 +523,29 @@ RTT across clock adjustments. Mocked unit tests remain separate from this real
 socket/kernel fixture, which is not run by ordinary unprivileged CI.
 
 ### Bounded NTS/PPS runtime diagnostic
+
+The fresh [v5 diagnostic review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-runtime-20261013-v5/review.md)
+is prepared offline; its adjacent `sealing.json` identifies the exact bundle
+SHA-256. It binds the current recipes/helpers/tests and governing documents, the
+accepted receiver and network evidence, original retained diagnostics, and v4's
+receipt-matching terminal readback attempt 11 with cleanup. Prior executed
+artifacts remain unchanged. Target preflight must recheck identity and baseline.
+
+Scope is one cold-start PPS-led activation, then authenticated promotion of
+selectable NMEA and all three NTS upstreams, with the 2 MiB packet observer.
+The packet scope is the three addresses present in both the original retained
+sample and v4 terminal measurement; the previous extra Cloudflare address is
+excluded. An unexpected resolved address still ends the trial.
+Early functionality and distinct-update gates precede timing acceptance.
+Observation ends by 1500 seconds; the independent 1800-second recovery timer
+remains armed. Every outcome restores the baseline. Conditional dual-stack
+readback, recovery and cleanup are included; time service is never accepted.
+No target/controller contact or live change occurred during preparation.
+
+Start before **October 14, 2026, at 11:11:04 a.m. CDT**; the inherited input window
+expires at **11:41:04 a.m. CDT** that day. This review does not extend that window.
+Separate approval of the sealed hash is required for execution. Warm-restart
+policy and persistent service cutover remain outside this diagnostic.
 
 The [sealed runtime review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-runtime-20261013-v3/review.md)
 was executed once and recovered, with matching dual-stack readback and cleanup.
@@ -737,7 +759,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Cutover v1 recovered; journal trigger identified as minsane recommendation; diagnostic v2 accepted and cleaned; IPv6 NTS-KE connection refusals observed for all three upstreams; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed but first probe rejected NTS response diagnostics logged at error priority; recovered through both endpoints and cleaned; v3 journal gate passed; five probes still failed NTS packet reach and PPS offset/jitter; dual-stack recovery and cleanup complete; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; bounded NTS packet/counter and startup-settling diagnostic prepared offline; execution pending |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. Fresh v5 diagnostic review sealed offline; separate hash-bound execution approval pending. Persistent warm-restart policy and service cutover remain pending. |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 
