@@ -833,10 +833,14 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    Bind journal retrieval to a pre-activation cursor and the current boot, with
    bounded output; evidence collection failure must not obstruct restoration.
    Verify source-restriction semantics against the pinned NTPsec implementation:
-   legacy MAC requirements must not preempt NTS response validation. Preserve
+   legacy MAC requirements must not preempt NTS response validation. The candidate
+   source restriction omits `notrust` while every upstream retains `nts`. Preserve
    explicit NTS upstream authentication and the governed serving/admin limits.
    Address-scope changes and packet-capture loss require reviewed diagnostic
    changes; neither authorizes automatic capture expansion or another trial.
+   For the revised diagnostic, bind at most four unique public capture addresses
+   to the original retained proof plus latest recovered upstream measurements.
+   Capture loss remains an evidence-completeness failure.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.

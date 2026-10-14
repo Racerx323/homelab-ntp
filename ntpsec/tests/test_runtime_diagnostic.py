@@ -30,7 +30,10 @@ d=load(ROOT/'scripts/runtime-diagnostic.py')
 def fixture():
     spec,files=base.fixture();spec['purpose']='runtime-diagnostic'
     files['timeservice.service']=c.current_inputs(True)['timeservice.service']
-    spec['recipe']['diagnostic']=json.loads(files['diagnostic-recipe.json'])
+    diagnostic=json.loads(files['diagnostic-recipe.json'])
+    diagnostic['upstream_addresses']=diagnostic['upstream_addresses'][:3]
+    files['diagnostic-recipe.json']=c.encoded(diagnostic)
+    spec['recipe']['diagnostic']=diagnostic
     recovery=json.loads(files['recovery-evidence.json'])
     old={k:spec[k] for k in ('hostname','boot_id','kernel','endpoints')}
     old['source_bundle_sha256']=recovery['terminal-receipt.json']['bundle_sha256']
@@ -84,6 +87,24 @@ class BindingTests(unittest.TestCase):
         bad=copy.deepcopy(spec);bad['boot_id']='0'*36
         with self.assertRaises(ValueError):c.diagnostic_evidence(raw,bad,recovery)
 
+    def test_scope_union_requires_latest_recovered_measurement(self):
+        spec,files=fixture();raw=files['diagnostic-evidence.json']
+        recovery=json.loads(files['recovery-evidence.json'])
+        recovery['spec.json'].update(purpose='runtime-diagnostic',members={'diagnostic-evidence.json':c.sha(raw)})
+        extra='2606:4700:f1::123'
+        peer={'variables':{'srchost':spec['recipe']['nts_servers'][0],'srcadr':extra}}
+        recovery['readback-1-0-result.json']['result']['last_measurement']={'measurement':{'peers':[peer]}}
+        spec['recipe']['diagnostic']['upstream_addresses'].append(extra)
+        c.diagnostic_evidence(raw,spec,recovery)
+        for case in ('unobserved','wrong-host','missing-address','missing-proof'):
+            bad=copy.deepcopy(recovery)
+            recent=bad['readback-1-0-result.json']['result']['last_measurement']['measurement']['peers'][0]['variables']
+            if case=='unobserved':recent['srcadr']='2606:4700:f1::2'
+            elif case=='wrong-host':recent['srchost']='unreviewed.example'
+            elif case=='missing-address':recent['srcadr']=None
+            else:bad['spec.json']['members']['diagnostic-evidence.json']='0'*64
+            with self.subTest(case=case),self.assertRaises(ValueError):c.diagnostic_evidence(raw,spec,bad)
+
     def test_receipt_requires_recovery_and_marks_partial_diagnostics(self):
         spec,_=fixture();state={'phase':'recovered','observation_completed':True,
             'diagnostic_samples':[{}],'packet_observation':{'complete':True},'diagnostic_statistics':{'loopstats':{}},
@@ -130,11 +151,16 @@ class PacketTests(unittest.TestCase):
         frame,remote=self.frame(4);changed=bytearray(frame);changed[20:22]=struct.pack('!H',0x2000)
         self.assertIsNone(d.packet(changed,len(frame),[remote]))
 
-    def capture(self,root,limit=1,status=1):
+    def capture(self,root,limit=1,status=1,drops=(0,0)):
         lib=Mock();lib.pcap_create.return_value=1
         for name in ('pcap_set_snaplen','pcap_set_promisc','pcap_set_timeout','pcap_set_buffer_size',
                      'pcap_activate','pcap_setnonblock','pcap_compile','pcap_setfilter','pcap_stats'):
             getattr(lib,name).return_value=0
+        def stats(handle,pointer):
+            value=ctypes.cast(pointer,ctypes.POINTER(d.Stats)).contents
+            value.dropped,value.interface_dropped=drops
+            return 0
+        lib.pcap_stats.side_effect=stats
         lib.pcap_datalink.return_value=1
         frame,remote=self.frame();header=d.Header(0,0,len(frame),len(frame));data=(ctypes.c_ubyte*len(frame)).from_buffer_copy(frame)
         def next_packet(handle,h,p):
@@ -156,6 +182,14 @@ class PacketTests(unittest.TestCase):
             self.assertTrue(report['capacity_reached']);self.assertFalse(report['complete'])
             lib.pcap_set_promisc.assert_called_once_with(1,0);lib.pcap_setfilter.assert_called_once();lib.pcap_close.assert_called_once()
             self.assertEqual(len(report['packets']),1);self.assertEqual((root/'packet-report.json').stat().st_mode&0o777,0o600)
+
+    def test_capture_drops_prevent_completion(self):
+        for drops in ((0,0),(1,0),(0,1)):
+            with tempfile.TemporaryDirectory() as name:
+                _,report=self.capture(Path(name),status=0,drops=drops)
+                self.assertEqual(report['complete'],drops==(0,0))
+                self.assertEqual(report['stats']['dropped'],drops[0])
+                self.assertEqual(report['stats']['interface_dropped'],drops[1])
 
     def test_capture_failure_retained_and_handle_closed(self):
         with tempfile.TemporaryDirectory() as name:

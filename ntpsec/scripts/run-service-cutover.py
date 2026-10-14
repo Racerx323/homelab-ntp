@@ -149,6 +149,11 @@ def diagnostic_evidence(raw,spec,recovery):
     state=json.loads(base64.b64decode(report['evidence']['source-state.json']['base64']))
     upstreams={p['variables']['srcadr'] for p in state['last_measurement']['measurement']['peers']
                if p['variables'].get('srchost') in spec['recipe']['nts_servers']}
+    if chained:
+        recent=recovery['readback-1-0-result.json']['result'].get('last_measurement',{}).get('measurement',{})
+        upstreams.update(p['variables']['srcadr'] for p in recent.get('peers',[])
+                         if p['variables'].get('srchost') in spec['recipe']['nts_servers']
+                         and p['variables'].get('srcadr') is not None)
     if upstreams!=set(spec['recipe']['diagnostic']['upstream_addresses']):
         raise ValueError('packet scope must match retained upstream addresses')
     if proof['cleanup-0-result.json']!={'spec_sha256':sha(files['spec.json']),'result':{
@@ -187,7 +192,7 @@ def validate(spec,files):
         if (set(diagnostic)!={'observation_seconds','settling_seconds','interval_seconds','maximum_samples',
                               'capture_seconds','maximum_packets','interface','upstream_addresses','nts_setup_seconds'}
                 or [diagnostic[k] for k in ('observation_seconds','settling_seconds','interval_seconds','maximum_samples','capture_seconds','maximum_packets')]!=[900,600,30,30,1020,512]
-                or diagnostic['nts_setup_seconds']!=60 or diagnostic['interface']!='eth0' or len(set(diagnostic['upstream_addresses']))!=3):
+                or diagnostic['nts_setup_seconds']!=60 or diagnostic['interface']!='eth0' or not 3<=len(diagnostic['upstream_addresses'])==len(set(diagnostic['upstream_addresses']))<=4):
             raise ValueError('closed diagnostic bounds')
         for address in diagnostic['upstream_addresses']:
             if not ipaddress.ip_address(address).is_global:raise ValueError('public diagnostic upstream required')
@@ -329,14 +334,16 @@ Root-owned 0700 stage `{spec['stage']}`, 0600 evidence, exact file/metadata
 backups and an independently armed 1800-second recovery timer precede mutation.
 Use the reviewed cutover file set (supervisor/helpers, ntp.conf, service/Avahi
 configuration, pinned leap list, dormant maintenance unit/timer and runtime
-directories); no upstream profile, calibration or acceptance threshold changes.
+directories). Upstream source restrictions use `nomodify noquery` without the
+legacy-MAC `notrust` requirement. Every upstream retains `nts iburst`; Default
+LAN serving, localhost administration, calibration and timing thresholds are unchanged.
 Stop bootstrap timesyncd; temporarily start supervised GPSD/NTPsec. This changes
 the system clock. Recovery restores files/services/UART, not elapsed time or
 clock corrections. Restore Avahi and bootstrap timesyncd after every outcome.
 
 Before daemon activation, require libpcap availability and a ready, non-promiscuous
 observer on eth0. Use a kernel BPF filter for UDP port 123 and only these retained
-upstream addresses: {', '.join(diagnostic['upstream_addresses'])}.
+upstream addresses from the original retained proof and latest recovered measurement: {', '.join(diagnostic['upstream_addresses'])}.
 Observe up to 512 packets for at most 1020 seconds (independent unit limit 1040s).
 Persist only IP/port/direction, length, NTP header mode/leap/stratum and three
 timestamps, plus local monotonic observation time and drop counters. No packet

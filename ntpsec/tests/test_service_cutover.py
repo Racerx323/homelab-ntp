@@ -137,7 +137,11 @@ class BindingTests(unittest.TestCase):
         self.assertIn('refclock shm unit 2 prefer refid PPS',config)
         recipe=json.loads((ROOT/'configs/service-cutover-recipe.json').read_text())
         self.assertEqual([l for l in config.splitlines() if l.startswith('server ')],['server '+n+' nts iburst' for n in recipe['nts_servers']])
-        self.assertIn('restrict -6 default ignore',config);self.assertIn('restrict source notrust nomodify noquery',config)
+        self.assertIn('restrict -6 default ignore',config)
+        self.assertEqual([l for l in config.splitlines() if l.startswith('restrict ')],[
+            'restrict -4 default ignore','restrict -6 default ignore','restrict source nomodify noquery',
+            'restrict 127.0.0.1','restrict ::1','restrict 10.1.0.0/22 nomodify noquery limited kod',
+            'restrict fd36:5aa8:6971:1::/64 nomodify noquery limited kod'])
         maintenance=(ROOT/'templates/ntpleapfetch-j2.service').read_text();self.assertNotIn(' -c ',maintenance)
         self.assertIn('-t /var/lib/ntpsec/leap-seconds.tmp',maintenance)
 

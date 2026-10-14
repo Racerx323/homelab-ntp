@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; runtime diagnostic v2 recovered after early gate; partial packet evidence retained; dual-stack readback and cleanup complete; runtime diagnostic v3 recovered on changed Cloudflare address; rejecting sample and journal retained; dual-stack readback and cleanup complete; source-authentication policy correction pending |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; runtime diagnostic v2 recovered after early gate; partial packet evidence retained; dual-stack readback and cleanup complete; runtime diagnostic v3 recovered on changed Cloudflare address; rejecting sample and journal retained; dual-stack readback and cleanup complete; source-authentication candidate corrected/tested offline; four-address runtime diagnostic v4 awaits separate execution approval |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -25,6 +25,32 @@ The current accepted source stage is
 `/home/ama/.ntp-source-build-mdns-20261012-v1`; the earlier v5 stage is preserved.
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
+
+## Corrected source policy and diagnostic v4 prepared — October 13, 2026
+
+Prepared the [v4 runtime review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-runtime-20261013-v4/review.md)
+offline against v3's matching recovered receipts and completed cleanup. Its
+adjacent sealing receipt binds current inputs and the unchanged execution window.
+No target or controller contact occurred during preparation.
+
+The candidate removes only `notrust` from `restrict source`; each of the three
+upstreams retains `nts iburst`. Default-deny IPv4/IPv6, Default LAN serving and
+localhost administration remain unchanged. Pinned source inspection showed the
+legacy MAC gate precedes NTS response processing. Configuration regressions check
+the full restriction set and mandatory NTS association options. This correction
+is a candidate, not proof that authenticated packets will now be accepted.
+
+The reviewed packet scope contains four addresses: both Cloudflare IPv6 addresses
+observed across the original retained evidence and v3, plus the two System76
+addresses. Sealing requires that exact evidence-derived union, with at most four
+unique public addresses. No runtime DNS lookup broadens capture; a new address
+still triggers recovery. Packet limits and all timing/authentication gates are
+unchanged. V3's one capture drop remains unexplained; collector behavior is
+unchanged and regression tests require either capture-drop counter to prevent
+complete evidence. No loss is discarded or reclassified as success.
+
+Next: separately approve v4's one bounded diagnostic activation, mandatory
+recovery, conditional dual-stack readback and cleanup. No service acceptance.
 
 ## Runtime diagnostic v3 recovered — October 13, 2026
 

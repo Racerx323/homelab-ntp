@@ -458,14 +458,21 @@ V3 completed recovery, dual-stack readback and cleanup with partial diagnostic
 evidence; see HISTORY. A successor binds that recovery and the original accepted
 retained proof by its immutable member hash.
 
-Before preparing a successor, review the pinned implementation's source
-restriction semantics. V3's system bad-auth events preceded any NTS receive
-counter increment; `notrust` enters the legacy MAC check before the NTS response
-handler in the retained 1.2.5 source. Correct/test that candidate policy while
-preserving explicit `nts` associations and existing serving/admin restrictions.
-Also review the observed changed Cloudflare address and packet-capture drop;
-do not silently broaden capture scope or claim missing responses from a partial
-capture. Preparation does not authorize another activation.
+The [v4 review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-runtime-20261013-v4/review.md)
+is prepared offline for separate execution approval. Its candidate source
+restriction is `nomodify noquery`, without `notrust`: pinned 1.2.5 processes the
+legacy MAC requirement before NTS response validation. Every upstream still
+requires `nts`; Default LAN serving and localhost administration are unchanged.
+Test the full restriction set and upstream options before sealing. Packet
+authentication and settled timing remain live acceptance requirements.
+
+The four-address capture scope is exactly the union of upstream addresses in the
+original accepted retained proof and the latest recovered measurement. Bind both
+to the target and immutable receipts; reject unobserved additions, duplicates,
+non-public addresses or more than four entries. Both observed Cloudflare
+addresses are included. Do not dynamically expand capture. V3's reported loss
+remains unexplained; either drop counter still prevents complete evidence.
+Preparation does not authorize another activation.
 
 This profile temporarily installs the same candidate file set and starts the
 same selectable NMEA, preferred SHM2 PPS and three NTS associations. The rendered
@@ -476,7 +483,7 @@ Clock corrections made during the trial cannot be undone by file recovery.
 
 Before activation, verify libpcap availability and a ready non-promiscuous eth0
 observer. The retained package list includes libpcap; no package install is in
-scope. Kernel filtering restricts collection to UDP 123 and the three retained
+scope. Kernel filtering restricts collection to UDP 123 and the four evidence-bound
 upstream IPs. Save only selected NTP/IP/UDP headers, not payload or NTS cookies.
 Cap collection at 512 packets/1020 seconds, backed by a 1040-second service limit;
 unsupported or incomplete headers, capacity exhaustion and reported drops mark
