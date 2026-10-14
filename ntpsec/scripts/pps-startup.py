@@ -1,5 +1,5 @@
 #!/usr/bin/python3
-"""PPS-first cold-start qualification and one-shot authenticated promotion."""
+"""PPS-first cold-start qualification, one-shot promotion and optional monitoring."""
 import hashlib
 import json
 import math
@@ -18,6 +18,9 @@ COMMANDS = (NMEA,) + tuple('server '+host+' nts iburst' for host in SERVERS)
 POLICY = {'version': 1, 'first_pps_seconds': 120, 'settling_seconds': 600,
           'bootstrap_seconds': 900, 'completion_seconds': 1500,
           'fresh_updates': 3, 'interval_seconds': 10}
+MONITOR_POLICY = {'version': 2, 'settling_seconds': 600, 'fresh_updates': 3,
+                  'interval_seconds': 30, 'stable_interval_seconds': 300,
+                  'retained_samples': 120}
 KEYID = 42
 ENV = {'PATH': '/usr/local/bin:/usr/local/sbin:/usr/bin:/bin', 'LC_ALL': 'C'}
 
@@ -127,7 +130,10 @@ def events(raw, boot, pid, started):
 
 class Machine:
     """Pure bounded state transitions; caller persists before each mutation."""
-    def __init__(self):
+    def __init__(self, policy=POLICY):
+        if policy not in (POLICY, MONITOR_POLICY):
+            raise ValueError('closed PPS policy required')
+        self.monitoring = policy == MONITOR_POLICY
         self.phase = 'bootstrap'
         self.pps_id = None
         self.last_update = None
@@ -136,9 +142,11 @@ class Machine:
         self.promoted_at = None
         self.qualified_at = None
         self.final_ids = None
+        self.initialized = False
+        self.init_stage = 0
 
     def observe(self, elapsed, value, journal):
-        if elapsed >= POLICY['completion_seconds']:
+        if not self.monitoring and elapsed >= POLICY['completion_seconds']:
             raise ValueError('startup completion deadline')
         peers = value['peers']
         pps = [p for p in peers if p['variables'].get('srcadr') in ('SHM(2)', '127.127.28.2')]
@@ -149,30 +157,41 @@ class Machine:
             self.pps_id = pps['associd']
         if pps['associd'] != self.pps_id:
             raise ValueError('PPS association replaced')
-        if any(p['associd'] != self.pps_id and ((p['status'] >> 8) & 7) in (6, 7) for p in peers):
+        if (not self.monitoring or self.phase == 'bootstrap') and any(p['associd'] != self.pps_id and ((p['status'] >> 8) & 7) in (6, 7) for p in peers):
             raise ValueError('unexpected disciplined source during PPS startup')
         selected = ((pps['status'] >> 8) & 7) in (6, 7)
         if self.first_pps is None:
-            if selected and elapsed < POLICY['first_pps_seconds']:
+            if selected and (self.monitoring or elapsed < POLICY['first_pps_seconds']):
                 self.first_pps = elapsed
-            elif elapsed >= POLICY['first_pps_seconds']:
+            elif not self.monitoring and elapsed >= POLICY['first_pps_seconds']:
                 raise ValueError('first PPS selection deadline')
         if self.phase == 'bootstrap' and len(peers) != 1:
             raise ValueError('association before promotion')
-        if self.phase == 'bootstrap' and elapsed >= POLICY['bootstrap_seconds']:
+        if not self.monitoring and self.phase == 'bootstrap' and elapsed >= POLICY['bootstrap_seconds']:
             raise ValueError('PPS qualification deadline')
-        if self.qualified_at is not None and any(t >= self.qualified_at and e == 'clock_step' for t, e in journal):
-            raise ValueError('clock step after qualification began')
+        stepped = any(e == 'clock_step' and (self.monitoring or
+                      self.qualified_at is not None and t >= self.qualified_at) for t, e in journal)
+        if stepped:
+            if not self.monitoring:
+                raise ValueError('clock step after qualification began')
+            self.stable = 0; self.qualified_at = None
         sequence = [e for _, e in journal]
         initialized = False
         if 'freq_mode' in sequence:
             after = sequence[sequence.index('freq_mode') + 1:]
             if 'freq_set' in after:
                 initialized = 'clock_sync' in after[after.index('freq_set') + 1:]
+        if self.monitoring:
+            # Monitor journal reads are incremental; retain ordered initialization.
+            for event in sequence:
+                if self.init_stage < 3 and event == ('freq_mode', 'freq_set', 'clock_sync')[self.init_stage]:
+                    self.init_stage += 1
+            self.initialized = self.initialized or self.init_stage == 3
+            initialized = self.initialized
         offset, jitter = float(v['offset']), float(v['jitter'])
         good = (selected and int(v['reach']) > 0 and int(value['system']['leap']) == 0
                 and int(value['system']['stratum']) == 1 and math.isfinite(offset) and abs(offset) <= 5
-                and math.isfinite(jitter) and 0 <= jitter <= 1)
+                and math.isfinite(jitter) and 0 <= jitter <= 1 and not stepped)
         update = (int(v['received']), int(pps['clock']['poll']), v['rec'])
         if self.last_update and (update[0] < self.last_update[0] or update[1] < self.last_update[1]):
             raise ValueError('PPS counters reset')
@@ -200,8 +219,8 @@ class Machine:
         if not good:
             self.stable = 0
         elif fresh:
-            self.stable += 1
-        if self.stable >= POLICY['fresh_updates']:
+            self.stable = min(self.stable + 1, POLICY['fresh_updates'])
+        if self.stable >= POLICY['fresh_updates'] and (not self.monitoring or fresh):
             return 'promote' if self.phase == 'bootstrap' else 'ready'
         return 'wait'
 
@@ -213,8 +232,25 @@ class Machine:
 
 class Startup:
     def __init__(self, config, root=Path('/run/ntpsec-startup')):
-        if config.get('pps_startup') != POLICY:
+        if config.get('pps_startup') not in (POLICY, MONITOR_POLICY):
             raise ValueError('closed PPS startup policy required')
+        self.policy = config['pps_startup']
+        self.evidence = None
+        self.cursor = None
+        if self.policy == MONITOR_POLICY:
+            # Each operation owns a distinct protected destination; never reuse it.
+            self.evidence = Path(config.get('pps_monitor_evidence', ''))
+            if not re.fullmatch(r'/var/lib/ntp-acquire-[a-z0-9][a-z0-9-]*/startup-monitor\.json', str(self.evidence)):
+                raise ValueError('operation-bound monitor evidence path required')
+            parent = self.evidence.parent.lstat()
+            if not stat.S_ISDIR(parent.st_mode) or parent.st_uid or stat.S_IMODE(parent.st_mode) != 0o700:
+                raise ValueError('protected monitor evidence directory required')
+            for path in self.evidence.parents:
+                info = path.lstat()
+                if not stat.S_ISDIR(info.st_mode) or info.st_uid or info.st_mode & 0o022:
+                    raise ValueError('protected monitor evidence ancestors required')
+            if os.path.lexists(self.evidence):
+                raise ValueError('prior monitor evidence must be preserved')
         self.root = root
         info = root.lstat()
         if not stat.S_ISDIR(info.st_mode) or info.st_uid or stat.S_IMODE(info.st_mode) != 0o700:
@@ -234,27 +270,47 @@ class Startup:
         except BaseException:
             self.keyfile.unlink(); raise
         argv[argv.index('-c') + 1] = str(root/'bootstrap.conf')
-        self.argv = argv; self.session = None; self.machine = Machine()
+        self.argv = argv; self.session = None; self.machine = Machine(self.policy)
         self.started = time.monotonic(); self.next_poll = self.started + 1
         self.pid = None; self.boot = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
         self.status = {'phase': 'bootstrap', 'supervisor_pid': os.getpid(),
-                       'final_sha256': hashlib.sha256(raw).hexdigest(), 'commands': []}
+                       'final_sha256': hashlib.sha256(raw).hexdigest(), 'commands': [],
+                       'boot_id': self.boot, 'started_monotonic': self.started, 'running': True}
+        if self.evidence:
+            self.status.update(samples=[], sample_count=0)
         try:
             self.save()
         except BaseException:
             self.close(); raise
 
     def save(self):
-        path = self.root/'promotion.json.new'
-        create(path, (json.dumps(self.status, sort_keys=True)+'\n').encode())
-        os.replace(path, self.root/'promotion.json')
+        raw = (json.dumps(self.status, sort_keys=True)+'\n').encode()
+        if len(raw) > 512*1024:
+            raise ValueError('startup status size bound')
+        targets = [self.root/'promotion.json']
+        if getattr(self, 'evidence', None):
+            targets.insert(0, self.evidence)
+        for target in targets:
+            path = target.with_name(target.name+'.new')
+            create(path, raw)
+            os.replace(path, target)
+
+    def remember(self):
+        if getattr(self, 'policy', POLICY) == MONITOR_POLICY:
+            self.status['sample_count'] += 1
+            self.status['samples'].append({key: self.status.get(key) for key in
+                ('elapsed_seconds', 'machine', 'measurement', 'events', 'phase', 'error')})
+            self.status['samples'] = self.status['samples'][-MONITOR_POLICY['retained_samples']:]
 
     def tick(self, process):
         if self.status['phase'] == 'failed':
             raise ValueError('failed promotion is terminal; recovery required')
-        if time.monotonic() < self.next_poll or self.status['phase'] == 'ready':
+        monitoring = getattr(self, 'policy', POLICY) == MONITOR_POLICY
+        if time.monotonic() < self.next_poll or self.status['phase'] == 'ready' and not monitoring:
             return
-        now = time.monotonic(); self.next_poll = now + POLICY['interval_seconds']
+        now = time.monotonic()
+        self.next_poll = now + (MONITOR_POLICY['interval_seconds'] if monitoring else POLICY['interval_seconds'])
+        self.status.update(elapsed_seconds=now-self.started, measurement=None, events=[])
         try:
             if process.poll() is not None or self.pid is not None and self.pid != process.pid:
                 raise ValueError('ntpd process continuity failed')
@@ -262,12 +318,22 @@ class Startup:
             if self.session is None:
                 self.session = authenticated_session(self.keyfile)
             value = measure(self.session)
-            result = subprocess.run(['/usr/bin/journalctl', '--quiet', '--no-pager', '--output=json',
+            self.status['measurement'] = value
+            argv = ['/usr/bin/journalctl', '--quiet', '--no-pager', '--output=json',
                 '--boot='+self.boot.replace('-', ''), '_PID='+str(self.pid), '_EXE=/usr/local/sbin/ntpd',
-                '--lines=1000'], capture_output=True, timeout=5, check=True, env=ENV)
+                '--lines=1000']
+            if monitoring and self.cursor:
+                argv.append('--after-cursor='+self.cursor)
+            result = subprocess.run(argv, capture_output=True, timeout=5, check=True, env=ENV)
             if len(result.stdout) > 1024*1024 or len(result.stdout.splitlines()) >= 1000:
                 raise ValueError('startup journal bound')
             journal = [(stamp-self.started, name) for stamp, name in events(result.stdout, self.boot, self.pid, self.started)]
+            if monitoring and result.stdout.strip():
+                cursor = json.loads(result.stdout.splitlines()[-1]).get('__CURSOR')
+                if not isinstance(cursor, str) or not re.fullmatch(r'[A-Za-z0-9;=:_-]{1,1024}', cursor):
+                    raise ValueError('startup journal cursor required')
+                self.cursor = cursor
+            self.status['events'] = journal
             action = self.machine.observe(now-self.started, value, journal)
             self.status.update(elapsed_seconds=now-self.started, machine=vars(self.machine).copy(), measurement=value, events=journal)
             self.save()
@@ -283,17 +349,43 @@ class Startup:
                     self.save()
                 self.machine.promoted(time.monotonic()-self.started)
                 self.status.update(phase='promoted')
-                self.machine.observe(time.monotonic()-self.started, measure(self.session), journal)
+                followup = measure(self.session)
+                self.status.update(measurement=followup, elapsed_seconds=time.monotonic()-self.started)
+                self.machine.observe(self.status['elapsed_seconds'], followup, journal)
             elif action == 'ready':
                 self.status['phase'] = 'ready'
-            self.status['machine'] = vars(self.machine).copy(); self.save()
+            elif monitoring and self.machine.phase == 'promoted':
+                self.status['phase'] = 'settling'
+            self.status['machine'] = vars(self.machine).copy()
+            if monitoring and self.status['phase'] == 'ready':
+                self.next_poll = time.monotonic() + MONITOR_POLICY['stable_interval_seconds']
+            self.remember(); self.save()
         except BaseException as error:
-            self.status.update(phase='failed', error=str(error)[:400]); self.save(); raise
+            self.status.update(phase='failed', error=str(error)[:400], machine=vars(self.machine).copy())
+            self.remember()
+            try:
+                self.save()
+            except BaseException:
+                pass  # Preserve the original failure; supervisor cleanup must still run.
+            raise
+
+    def finish(self, reason):
+        self.status.update(stopped_monotonic=time.monotonic(), stop_reason=reason, running=False)
+        self.save()
 
     def close(self):
-        if self.session is not None:
-            self.session.sock.close()
+        error = None
+        try:
+            if self.session is not None:
+                self.session.sock.close()
+        except BaseException as failure:
+            error = failure
         for name in ('control.key', 'bootstrap.conf'):
-            path = self.root/name
-            if path.exists():
-                protected_read(path); path.unlink()
+            try:
+                path = self.root/name
+                if path.exists():
+                    protected_read(path); path.unlink()
+            except BaseException as failure:
+                error = error or failure
+        if error:
+            raise error

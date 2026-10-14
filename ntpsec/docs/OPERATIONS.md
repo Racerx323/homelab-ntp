@@ -443,7 +443,7 @@ information; it cannot by itself locate packet loss or prove UDP reachability.
 After accepting the retained evidence, define any remaining active packet/counter
 capture separately. Do not label missing historical data a successful check.
 
-### Implemented PPS-led cold-start diagnostic (not executed on target)
+### PPS-led cold-start diagnostic (legacy bounded profile)
 
 The diagnostic recipe enables `pps-startup.py` through `timeservice.py`. It
 renders a private PPS-only bootstrap from the unchanged final profile and
@@ -503,7 +503,7 @@ compatibility, not upstream NTS authentication, PPS discipline or target
 acceptance. Offline tests cover timing transitions, stale samples, provenance,
 deadlines, uncertain/partial promotion and cleanup. The v5 trial below recovered on its first journal-health check; promotion was not reached.
 
-### Retained PPS policy review and proposed next candidate
+### Retained PPS policy review
 
 The [offline replay](/home/aaron/code/.local-evidence/homelab-ntp/current/pps-policy-review-20261014-v1/review.md)
 matches the frozen helper against all 30 retained supervisor snapshots. Stored
@@ -514,16 +514,58 @@ not a complete acceptance sample. The 900-second bootstrap bound prevented
 three qualifying updates on the observed trajectory; longer observation has
 not been demonstrated to pass.
 
-The next proposed offline implementation is a 1080-second bootstrap ceiling,
-with unchanged early gate, settling minimum, quality thresholds and three
-fresh updates. The checked-in policy remains 900 seconds. Before sealing a
-candidate, test the apply/helper clock difference and reserve time within the
-1500-second outer limit for 60-second NTS setup, at least 192 seconds for three
-fresh PPS updates at the observed cadence, sampling and command overhead.
-Reject promotion if that remaining budget is insufficient. Keep the
-1620-second packet capture and independent 1800-second recovery bounds.
-Preserve bounded supervisor progress and terminal rejection evidence before
-child cleanup without blocking recovery or retaining control credentials.
+The earlier 1080-second proposal is superseded by the operator's decision to
+keep PPS-first isolation and monitor convergence without a timing-quality
+shutdown deadline. No duration guarantees convergence. The version-1 diagnostic
+remains a bounded, mandatory-recovery operation; it cannot implement this decision.
+
+### Continuous PPS-first monitor candidate
+
+`configs/pps-monitor-policy.json` supplies the exact version-2 `pps_startup`
+object for a future rendered timeservice configuration. `pps-startup.py`
+implements it without a first-selection, qualification or completion deadline.
+The existing serial/PPS pairing gate still requires five matched samples per
+source within its bounded startup window. A cold receiver that cannot satisfy
+that gate needs acquisition first; this candidate does not wait indefinitely
+for missing receiver functionality. Existing drift files remain rejected until
+a separate warm-restart policy is implemented.
+
+The helper observes every 30 seconds while qualifying. After at least 600
+seconds and ordered frequency initialization, require three distinct fresh PPS
+updates within the unchanged offset/jitter, selection, leap and stratum limits.
+Promote selectable NMEA and all three NTS sources once through authenticated
+localhost control, without restarting ntpd. Continue 30-second observations
+until three fresh PPS updates also have reachable NMEA and authenticated,
+reachable NTS sources. Then observe every 300 seconds. Degraded timing,
+unreachable sources or a clock step reset qualification and resume the faster
+cadence; they do not stop the pair or repeat promotion. Alternative selected
+sources after promotion are recorded rather than treated as process faults.
+Process/association discontinuity, counter regression, unexpected membership,
+authentication failure and uncertain mutation remain failures that stop the pair.
+
+The rendered configuration must bind `pps_monitor_evidence` to
+`/var/lib/ntp-acquire-<operation-id>/startup-monitor.json` in its root-owned
+0700 operation directory. Reject an existing record and unsafe ancestry. Write
+owner-private bounded status there before updating `/run/ntpsec-startup`.
+Retain the latest 120 observations, total sample count, latest measurement,
+machine state, command acknowledgements and terminal reason, with a 512 KiB
+record bound. Raw keys, control authentication payloads and packet captures
+are not recorded. Incremental, boot/PID-bound journal reads retain initialization
+progress without repeatedly scanning the complete lifetime journal. A failed
+evidence write must not block daemon or credential cleanup. Last observed ready
+state plus a terminal `running=false` record is not a running-service claim.
+An uncatchable kill or power loss leaves only the last persisted observation;
+missing terminal metadata must not be inferred as a clean stop.
+
+This helper is implemented and tested offline, not activated. The existing
+`run-service-cutover.py --diagnostic` path still restores on its timer; do not
+use it as the new start-and-monitor operation. Before sealing, implement and
+test the distinct activation/recovery contract: retain an installation watchdog
+until structural startup and dual-stack access are proven, then explicitly
+hand off to continuous monitoring without a quality-expiry rollback. Define
+fault-triggered and operator-requested restoration, durable evidence readback,
+storage limits and source-stage retention. Startup handoff must not claim
+timing acceptance or bypass later workstation/client and mDNS acceptance.
 
 Consume the accepted restoration continuation receipt and matching readbacks
 and closure when preparing a successor; preserve the held v6 history and
@@ -866,7 +908,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. V6 journal gate passed, but restoration is held on continuity drift; readback 13 matches on both endpoints. Source cleanup blocked; diagnostic inspection and closure complete. PPS deadline confirmed; historical boot/PID baseline and failed timeservice state differ. Timer was waiting at capture; later outcome unknown. Frozen-checker replay isolates failed timeservice state; guarded reset executed; restoration continuation accepted through both endpoints and closed. Old timer already absent/inactive; historical v6 held state and evidence preserved. Offline PPS replay complete: three passing updates did not fit the retained trajectory before the bootstrap deadline. Next implement/test the bounded candidate and terminal diagnostic retention; bind successor preparation to the continuation receipt. Persistent warm-restart policy and service cutover remain pending. |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. V6 journal gate passed, but restoration is held on continuity drift; readback 13 matches on both endpoints. Source cleanup blocked; diagnostic inspection and closure complete. PPS deadline confirmed; historical boot/PID baseline and failed timeservice state differ. Timer was waiting at capture; later outcome unknown. Frozen-checker replay isolates failed timeservice state; guarded reset executed; restoration continuation accepted through both endpoints and closed. Old timer already absent/inactive; historical v6 held state and evidence preserved. Offline PPS replay complete: three passing updates did not fit the retained trajectory before the bootstrap deadline. Continuous PPS-first monitoring and terminal retention implemented/tested locally; prepare a separate start-and-monitor activation/recovery stage bound to the continuation receipt. Persistent warm-restart policy and service cutover remain pending. |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

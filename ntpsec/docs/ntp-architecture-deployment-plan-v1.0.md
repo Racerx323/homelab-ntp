@@ -884,13 +884,20 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    installation or trial. A hold preserves any timer stop/reset; do not rearm or
    replay automatically. Accept restoration before revising PPS qualification.
    Evaluate bootstrap timing against distinct refclock updates, not repeated
-   supervisor queries. Any proposed deadline change must preserve the early
-   functionality gate and quality criteria, and budget postpromotion setup,
-   fresh updates and sampling overhead against the earlier outer observation
-   clock and independent recovery deadline. Retain bounded supervisor progress
-   and terminal rejection evidence without obstructing recovery. See OPERATIONS
-   for the offline candidate and HISTORY for retained-sample findings; neither
-   analysis nor a proposed deadline establishes convergence or timing acceptance.
+   supervisor queries. The operator selected PPS-first isolation with continuous
+   monitoring, superseding the proposed qualification deadline extension.
+   Preserve the early receiver functionality gate and quality criteria. Observe
+   every 30 seconds until qualified and every 300 seconds after readiness;
+   degraded timing resumes the faster cadence without a quality-expiry shutdown.
+   Add selectable NMEA and the three NTS sources only once after PPS qualification.
+   Preserve bounded supervisor progress and terminal rejection evidence outside
+   the temporary runtime directory without obstructing recovery. A new activation
+   stage must separately prove installation/access safety before handing off
+   from its installation watchdog to continuous monitoring. Fault-triggered and
+   operator-requested recovery remain required. Running while unqualified is not
+   timing acceptance. The old bounded diagnostic retains mandatory recovery and
+   must not be used for this operation. See OPERATIONS for implementation and
+   remaining activation requirements, and HISTORY for evidence and outcomes.
    When restoration is accepted by a separate continuation, successor preparation
    must bind its acceptance receipt and matching dual-stack readback/closure.
    Preserve the original held operation as history; do not rewrite it as recovered

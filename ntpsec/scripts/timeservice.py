@@ -9,6 +9,7 @@ from pathlib import Path
 import signal
 import stat
 import subprocess
+import sys
 import time
 
 
@@ -64,6 +65,7 @@ def supervise(config):
     previous = {sig: signal.signal(sig, requested_stop) for sig in (signal.SIGTERM, signal.SIGINT)}
     children = []
     startup = None
+    stop_reason = 'startup interrupted'
     try:
         subprocess.run(['/usr/bin/stty', '-F', config['uart_device'], 'raw',
                         '115200', 'cs8', '-parenb', 'clocal', '-cstopb', '-crtscts'],
@@ -83,21 +85,32 @@ def supervise(config):
             children.append(subprocess.Popen(argv, env={
                 'PATH': '/usr/local/bin:/usr/local/sbin:/usr/bin:/bin', 'LC_ALL': 'C'}))
             if stopping or children[-1].poll() is not None:
+                stop_reason = 'requested stop' if stopping else 'daemon exited during startup'
                 return 0 if stopping else 1
         while not stopping:
             if any(process.poll() is not None for process in children):
+                stop_reason = 'daemon exited'
                 return 1
             if startup:
                 startup.tick(children[1])
             time.sleep(0.1)
+        stop_reason = 'requested stop'
         return 0
+    except BaseException:
+        stop_reason = 'supervisor failure'
+        raise
     finally:
         try:
             stop(children)
         finally:
             try:
                 if startup:
-                    startup.close()
+                    try:
+                        startup.finish(stop_reason)
+                    except BaseException:
+                        print('terminal startup evidence write failed', file=sys.stderr)
+                    finally:
+                        startup.close()
             finally:
                 for sig, handler in previous.items():
                     signal.signal(sig, handler)

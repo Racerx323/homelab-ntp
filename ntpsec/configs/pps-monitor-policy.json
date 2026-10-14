@@ -1,0 +1,8 @@
+{
+  "version": 2,
+  "settling_seconds": 600,
+  "fresh_updates": 3,
+  "interval_seconds": 30,
+  "stable_interval_seconds": 300,
+  "retained_samples": 120
+}

@@ -159,6 +159,7 @@ class MutationTests(unittest.TestCase):
         config = json.loads((ROOT/'configs/service-cutover-recipe.json').read_text())['timeservice']
         config['pps_startup'] = s.POLICY
         startup = Mock(argv=config['ntpd']); startup.tick.side_effect = ValueError('promotion failed')
+        startup.finish.side_effect = OSError('retention failed')
         helper = types.SimpleNamespace(Startup=Mock(return_value=startup))
         gpsd, ntpd = Mock(), Mock()
         gpsd.poll.return_value = ntpd.poll.return_value = None
@@ -168,6 +169,7 @@ class MutationTests(unittest.TestCase):
                 patch.object(service.importlib.util, 'module_from_spec', return_value=helper):
             with self.assertRaisesRegex(ValueError, 'promotion failed'): service.supervise(config)
         gpsd.terminate.assert_called_once(); ntpd.terminate.assert_called_once()
+        startup.finish.assert_called_once_with('supervisor failure')
         startup.close.assert_called_once()
 
     def test_close_removes_only_private_credentials_and_keeps_status(self):
@@ -214,6 +216,172 @@ class MutationTests(unittest.TestCase):
             self.assertEqual(runner.session.config.call_count, 2)
             with self.assertRaisesRegex(ValueError, 'terminal'): runner.tick(process)
             self.assertEqual(runner.session.config.call_count, 2)
+
+
+class MonitorTests(unittest.TestCase):
+    def runner(self, root):
+        runner = object.__new__(s.Startup)
+        runner.root = root/'runtime'; runner.root.mkdir()
+        runner.evidence = root/'startup-monitor.json'
+        runner.policy = s.MONITOR_POLICY; runner.cursor = None
+        runner.session = Mock(); runner.session.config.return_value = True
+        runner.machine = s.Machine(s.MONITOR_POLICY)
+        runner.started = 0; runner.next_poll = 0; runner.pid = None; runner.boot = 'a'*32
+        runner.status = {'phase': 'bootstrap', 'commands': [], 'samples': [], 'sample_count': 0}
+        return runner
+
+    def tick(self, runner, elapsed, value, journal=JOURNAL):
+        process = Mock(pid=45); process.poll.return_value = None
+        with patch.object(s.time, 'monotonic', return_value=elapsed), \
+                patch.object(s, 'measure', return_value=value), \
+                patch.object(s, 'events', return_value=journal), \
+                patch.object(s.subprocess, 'run', return_value=types.SimpleNamespace(stdout=b'')):
+            runner.tick(process)
+
+    def test_monitor_policy_matches_reproducible_candidate(self):
+        self.assertEqual(json.loads((ROOT/'configs/pps-monitor-policy.json').read_text()), s.MONITOR_POLICY)
+        self.assertNotIn('bootstrap_seconds', s.MONITOR_POLICY)
+        self.assertNotIn('completion_seconds', s.MONITOR_POLICY)
+
+    def test_slow_start_has_no_selection_or_quality_deadline(self):
+        m = s.Machine(s.MONITOR_POLICY)
+        row = observation(); row['peers'][0]['status'] = 0x9400
+        self.assertEqual(m.observe(3600, row, JOURNAL), 'wait')
+        for n, elapsed in enumerate((3664, 3728, 3792), 2):
+            action = m.observe(elapsed, observation(n), [])
+        self.assertEqual(action, 'promote')
+        m.promoted(3792)
+        for n in range(5, 8):
+            action = m.observe(4000+n*64, observation(n, True), [])
+        self.assertEqual(action, 'ready')
+
+    def test_initialization_survives_incremental_journal_batches(self):
+        m = s.Machine(s.MONITOR_POLICY)
+        m.observe(10, observation(), [(0, 'freq_set'), (1, 'freq_mode')])
+        m.observe(300, observation(2), [(300, 'freq_set')])
+        self.assertFalse(m.initialized)
+        m.observe(600, observation(3), [(301, 'clock_sync')])
+        self.assertTrue(m.initialized)
+        self.assertEqual(m.stable, 1)
+
+    def test_monitor_reads_journal_incrementally_with_process_provenance(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            runner = self.runner(Path(temporary))
+            row = {'_BOOT_ID': 'a'*32, '_PID': '45', '_EXE': '/usr/local/sbin/ntpd',
+                   '__MONOTONIC_TIMESTAMP': '1000000', '__CURSOR': 's=test;i=1',
+                   'MESSAGE': 'PROTO: 0.0.0.0 c014 04 freq_mode'}
+            process = Mock(pid=45); process.poll.return_value = None
+            with patch.object(s.time, 'monotonic', return_value=30), \
+                    patch.object(s, 'measure', return_value=observation()), \
+                    patch.object(s.subprocess, 'run', return_value=types.SimpleNamespace(stdout=json.dumps(row).encode())) as run:
+                runner.tick(process)
+                self.assertNotIn('--after-cursor=s=test;i=1', run.call_args.args[0])
+            with patch.object(s.time, 'monotonic', return_value=60), \
+                    patch.object(s, 'measure', return_value=observation(2)), \
+                    patch.object(s.subprocess, 'run', return_value=types.SimpleNamespace(stdout=b'')) as run:
+                runner.tick(process)
+                self.assertIn('--after-cursor=s=test;i=1', run.call_args.args[0])
+                self.assertIn('_PID=45', run.call_args.args[0])
+                self.assertIn('--boot='+'a'*32, run.call_args.args[0])
+            self.assertEqual(runner.machine.init_stage, 1)
+
+    def test_quality_degradation_and_clock_step_do_not_stop_or_repromote(self):
+        m = s.Machine(s.MONITOR_POLICY)
+        m.observe(10, observation(), [])
+        for n in range(2, 5): m.observe(600+n*64, observation(n), JOURNAL)
+        m.promoted(900)
+        for n in range(5, 8): m.observe(900+n*64, observation(n, True), [])
+        self.assertEqual(m.observe(1450, observation(7, True), []), 'wait')
+        row = observation(8, True); row['peers'][0]['variables']['jitter'] = 2
+        self.assertEqual(m.observe(1500, row, [(1499, 'clock_step')]), 'wait')
+        self.assertEqual(m.stable, 0)
+        row['peers'][0]['status'] = 0x9400; row['peers'][2]['status'] = 0xe600
+        row['system']['stratum'] = 2
+        self.assertEqual(m.observe(1800, row, []), 'wait')
+        self.assertEqual(m.phase, 'promoted')
+
+    def test_stable_monitor_continues_then_resumes_fast_cadence_on_degradation(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            runner = self.runner(Path(temporary))
+            self.tick(runner, 10, observation())
+            for n in range(2, 5):
+                # The promotion tick performs a second membership read.
+                if n == 4:
+                    with patch.object(s, 'measure', side_effect=[observation(n), observation(n, True)]), \
+                            patch.object(s.time, 'monotonic', return_value=856), \
+                            patch.object(s, 'events', return_value=JOURNAL), \
+                            patch.object(s.subprocess, 'run', return_value=types.SimpleNamespace(stdout=b'')):
+                        process = Mock(pid=45); process.poll.return_value = None
+                        runner.tick(process)
+                else: self.tick(runner, 600+n*64, observation(n))
+            for n in range(5, 8): self.tick(runner, 900+(n-5)*64, observation(n, True), [])
+            self.assertEqual(runner.status['phase'], 'ready')
+            self.assertEqual(runner.next_poll, 1328)
+            self.tick(runner, 1328, observation(8, True), [])
+            self.assertEqual(runner.status['sample_count'], 8)
+            row = observation(9, True); row['peers'][0]['variables']['jitter'] = 2
+            self.tick(runner, 1628, row, [])
+            self.assertEqual(runner.status['phase'], 'settling')
+            self.assertEqual(runner.next_poll, 1658)
+            self.assertEqual(runner.session.config.call_count, 4)
+
+    def test_terminal_rejecting_sample_survives_runtime_directory_removal(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); runner = self.runner(root)
+            self.tick(runner, 10, observation())
+            row = observation(2); row['peers'][0]['associd'] = 99
+            with self.assertRaisesRegex(ValueError, 'association replaced'):
+                self.tick(runner, 40, row)
+            runner.finish('supervisor failure'); runner.close()
+            (runner.root/'promotion.json').unlink(); runner.root.rmdir()
+            saved = json.loads(runner.evidence.read_text())
+            self.assertEqual(saved['phase'], 'failed')
+            self.assertEqual(saved['measurement']['peers'][0]['associd'], 99)
+            self.assertEqual(saved['elapsed_seconds'], 40)
+            self.assertEqual(saved['stop_reason'], 'supervisor failure')
+            self.assertFalse(saved['running'])
+            self.assertEqual(saved['sample_count'], 2)
+            self.assertEqual(runner.evidence.stat().st_mode & 0o777, 0o600)
+
+    def test_retention_is_bounded_and_does_not_capture_credentials(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            runner = self.runner(Path(temporary))
+            for n in range(1, 130):
+                row = observation(n); row['peers'][0]['variables']['jitter'] = 2
+                self.tick(runner, n*30, row)
+            raw = runner.evidence.read_text(); saved = json.loads(raw)
+            self.assertEqual(saved['sample_count'], 129)
+            self.assertEqual(len(saved['samples']), 120)
+            self.assertEqual(saved['samples'][0]['elapsed_seconds'], 300)
+            self.assertLess(len(raw), 512*1024)
+            self.assertNotIn('AES', raw)
+            self.assertNotIn('control.key', raw)
+
+    def test_failed_evidence_write_preserves_failure_and_credential_cleanup(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            runner = self.runner(Path(temporary)); runner.session.sock.close.side_effect = OSError('socket close')
+            for name in ('control.key', 'bootstrap.conf'): (runner.root/name).write_text('secret')
+            with patch.object(runner, 'save', side_effect=OSError('disk full')), \
+                    patch.object(s, 'protected_read', side_effect=lambda p: p.read_bytes()):
+                row = observation(); row['peers'] = []
+                with self.assertRaisesRegex(ValueError, 'one PPS association'):
+                    self.tick(runner, 10, row)
+                with self.assertRaisesRegex(OSError, 'socket close'): runner.close()
+            self.assertFalse((runner.root/'control.key').exists())
+            self.assertFalse((runner.root/'bootstrap.conf').exists())
+
+    def test_operation_evidence_path_and_ownership_are_required(self):
+        config = json.loads((ROOT/'configs/service-cutover-recipe.json').read_text())['timeservice']
+        config['pps_startup'] = s.MONITOR_POLICY
+        for path in ('', '/tmp/status.json', '/var/lib/ntp-acquire-x/../startup-monitor.json'):
+            config['pps_monitor_evidence'] = path
+            with self.assertRaisesRegex(ValueError, 'operation-bound'): s.Startup(config)
+        config['pps_monitor_evidence'] = '/var/lib/ntp-acquire-test/startup-monitor.json'
+        with patch.object(s.Path, 'lstat', return_value=types.SimpleNamespace(st_mode=0o40700, st_uid=1000)):
+            with self.assertRaisesRegex(ValueError, 'protected monitor'): s.Startup(config)
+        with patch.object(s.Path, 'lstat', return_value=types.SimpleNamespace(st_mode=0o40700, st_uid=0)), \
+                patch.object(s.os.path, 'lexists', return_value=True):
+            with self.assertRaisesRegex(ValueError, 'prior monitor evidence'): s.Startup(config)
 
 
 class RecoveryTests(unittest.TestCase):
