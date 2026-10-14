@@ -883,6 +883,10 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    evidence. Its independent window authorizes restoration checks only, not a new
    installation or trial. A hold preserves any timer stop/reset; do not rearm or
    replay automatically. Accept restoration before revising PPS qualification.
+   When restoration is accepted by a separate continuation, successor preparation
+   must bind its acceptance receipt and matching dual-stack readback/closure.
+   Preserve the original held operation as history; do not rewrite it as recovered
+   or treat continuation closure as permission to delete its source stage.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.

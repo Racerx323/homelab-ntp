@@ -554,11 +554,13 @@ commands were submitted. A subsequent measurement failed. Automatic restoration
 reached `recovery_held` on `package/service/Python/process drift`.
 
 Readback attempt 13 returned matching held state over IPv4 and IPv6, following a
-sample-update mismatch in attempt 12. There is no recovered terminal receipt and
-cleanup is blocked. Preserve the stage, backups and all local/target evidence.
+sample-update mismatch in attempt 12. The original v6 has no recovered terminal
+receipt; its held state and source stage remain preserved. Restoration was later
+accepted under the separate continuation below. Source cleanup remains unapproved.
 Do not repeat start or force recovery through an unidentified continuity mismatch.
 At the subsequent inspection, the independent timer was active/waiting with no
-recorded trigger and its recovery service inactive. Its later result remains unknown.
+recorded trigger and its recovery service inactive. At the later restoration
+continuation, the timer was absent/inactive and its recovery service failed.
 
 The [sealed recovery inspection](/home/aaron/code/.local-evidence/homelab-ntp/current/cutover-recovery-inspection-20261013-v1/review.md)
 completed one capture against v6's exact archive and matching held readback attempt
@@ -575,10 +577,17 @@ boot/PID differences. Only timeservice's failed state prevents the comparison fr
 passing. Keep that checker and all historical baselines unchanged.
 
 The [restoration continuation](/home/aaron/code/.local-evidence/homelab-ntp/current/cutover-restoration-20261014-v1/review.md)
-is prepared offline for separate approval. `run-cutover-restoration.py seal` binds
-the executed source archive, accepted inspection archive, both submitted readbacks
-and diagnostic closure. Its adjacent sealing receipt defines the new digest/window;
-it does not renew the failed trial or accept a new installation.
+was executed once and accepted: all ten restoration checks passed, readback attempt
+1 matched over IPv4 and IPv6, and conditional closure completed. The only mutation
+was the guarded timeservice failure reset. The retry timer was already absent and
+inactive, so no stop was issued; its failed recovery service record was retained.
+The original v6 held state and all evidence remain untouched. Use the continuation's
+separate acceptance receipt and matching readback/closure as restoration evidence;
+this does not accept timing, activate service or authorize source cleanup.
+
+`run-cutover-restoration.py seal` binds the executed source archive, accepted
+inspection archive, both submitted readbacks and diagnostic closure. Its independent
+restoration window does not renew a failed trial or accept a new installation.
 
 One protected continuation verifies source identity/members and already-restored
 files, directories and UART settings under the original exclusive nonblocking lock.
@@ -831,7 +840,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. V6 journal gate passed, but restoration is held on continuity drift; readback 13 matches on both endpoints. Source cleanup blocked; diagnostic inspection and closure complete. PPS deadline confirmed; historical boot/PID baseline and failed timeservice state differ. Timer was waiting at capture; later outcome unknown. Frozen-checker replay isolates failed timeservice state; guarded reset tested; restoration continuation prepared offline for separate execution approval. Persistent warm-restart policy and service cutover remain pending. |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. V6 journal gate passed, but restoration is held on continuity drift; readback 13 matches on both endpoints. Source cleanup blocked; diagnostic inspection and closure complete. PPS deadline confirmed; historical boot/PID baseline and failed timeservice state differ. Timer was waiting at capture; later outcome unknown. Frozen-checker replay isolates failed timeservice state; guarded reset executed; restoration continuation accepted through both endpoints and closed. Old timer already absent/inactive; historical v6 held state and evidence preserved. Review PPS qualification offline and bind successor preparation to the continuation receipt. Persistent warm-restart policy and service cutover remain pending. |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 
