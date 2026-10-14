@@ -928,6 +928,19 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    changed identity or state still holds recovery. No repeated boot changes are
    implied. Structural handoff requires dual-stack management and workstation
    NTP responses, denied administrative queries, daemon safety and a live monitor.
+   All deployment artifacts use durable repository-owned implementations and
+   explicit versioned inputs. Each operation pins code, configuration, accepted
+   baseline and target identity; evidence supplies data/provenance only. Production
+   scripts must not depend on workstation evidence paths or execute code imported
+   from historical operation archives. Preserve those archives unchanged. This
+   supersedes the legacy inherited-checker approach: remove remaining executable
+   archive dependencies before sealing another activation review.
+   Validate the accepted GPIO PPS source by bound driver, device-tree mapping,
+   source identity and character-device identity. Other PPS class entries are
+   diagnostic inventory, not an automatic GPIO failure. Missing or duplicate
+   matching sources and changed accepted mappings still fail. Retain bounded
+   identities and rejection reasons before recovery. Exercise the real checker
+   through stopped, running, handoff and restored fixtures.
    A rejected structural handoff leaves the installation watchdog armed; use
    approved readback and recovery, then require matching recovered reports before
    cleanup. Early PPS synchronization does not override a failed hardware check.

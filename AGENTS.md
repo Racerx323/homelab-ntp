@@ -58,6 +58,14 @@
 
 ## Configuration artifacts
 
+- All deployment artifacts must have a durable repository source or an explicit,
+  versioned input. Pin executable bytes, configuration, baseline data and target
+  identity in each operation manifest; never resolve a floating baseline at run time.
+- Production scripts must not depend on private local evidence directories or
+  import executable implementations from prior operation archives. Evidence is
+  data/provenance, not a source of runtime code. Keep historical executed bundles
+  immutable; migrate successor implementations to repository-owned scripts.
+
 - Mirror each accepted live `/etc/ntp.conf` under a host-specific
   `ntpsec/configs/` path. Keep the accepted mirror byte-for-byte exact.
 - Keep source templates separate from rendered files. Put server scripts under

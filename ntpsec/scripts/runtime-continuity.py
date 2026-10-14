@@ -4,6 +4,17 @@ import json
 import os
 from pathlib import Path
 import time
+import types
+
+
+def checker(host_raw, pps_raw):
+    """Load the two explicitly sealed current checkers, never a historical copy."""
+    host = types.ModuleType('current_hardware'); pps = types.ModuleType('current_pps')
+    for target, raw in ((host, host_raw), (pps, pps_raw)):
+        target.__file__ = '/sealed/'+target.__name__+'.py'
+        exec(compile(raw, target.__file__, 'exec'), target.__dict__)
+    host.gpio_pps_metadata = pps.gpio_pps_metadata
+    return host
 
 
 def hardware_gate(tx, host):
@@ -27,7 +38,7 @@ def hardware_gate(tx, host):
         if tx.h.sha(tx.h.read(Path(name))) != digest:
             raise ValueError('current hardware boot-file drift')
     previous = tx.recipe; tx.recipe = json.loads(raw)['host_recipe']
-    try: actual = tx.hardware_metadata()
+    try: actual = host.Transaction.hardware_metadata(tx, state['hardware']['pps'])
     finally: tx.recipe = previous
     if actual != state['hardware']:
         raise ValueError('current hardware mapping/permission drift')
@@ -35,13 +46,13 @@ def hardware_gate(tx, host):
     return state
 
 
-def transaction(host, spec):
+def transaction(host, spec, checker):
     class CurrentRuntime(host.Transaction):
-        def hardware_gate(self): return hardware_gate(self, host)
+        def hardware_gate(self): return hardware_gate(self, checker)
     return CurrentRuntime(spec)
 
 
-def context(tx, create=False):
+def context(tx, checker, create=False):
     """Check private runtime copies; preserve every original accepted source byte."""
     a, h, files, alias = tx.a, tx.h, tx.rf, tx.alias
     runtime, old = a.validate(alias, files)
@@ -59,7 +70,7 @@ def context(tx, create=False):
             for name, digest in runtime['members'].items():
                 if a.sha(h.read(sub/name)) != digest: raise ValueError('runtime helper input drift')
             if json.loads(h.read(sub/'spec.json')) != runtime: raise ValueError('runtime copy spec drift')
-        check = transaction(a.load(sub/'host-configuration-stage.py'), runtime)
+        check = transaction(a.load(sub/'host-configuration-stage.py'), runtime, checker)
         check.run = tx.run; check.core.run = tx.run
         # Keep the frozen observer's own timeout/output/stderr rejection contract.
         result = check.probe()

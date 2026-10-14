@@ -25,11 +25,21 @@ def module(raw, name):
 def transaction_class(base, controller):
     class Transaction(base.Transaction):
         def runtime_context(self, create=False):
-            return module(self.f['runtime-continuity.py'], 'current_runtime').context(self, create)
+            helper = module(self.f['runtime-continuity.py'], 'current_runtime')
+            checker = helper.checker(self.f['hardware-checker.py'], self.f['pps-checker.py'])
+            return helper.context(self, checker, create)
 
         def hardware_gate(self, transaction):
-            host = base.load(self.root/'runtime-check'/'host-configuration-stage.py')
-            return module(self.f['runtime-continuity.py'], 'current_runtime').hardware_gate(transaction, host)
+            helper = module(self.f['runtime-continuity.py'], 'current_runtime')
+            host = helper.checker(self.f['hardware-checker.py'], self.f['pps-checker.py'])
+            try:
+                return helper.hardware_gate(transaction, host)
+            finally:
+                # Keep the observation in the operation readback before recovery.
+                observed = transaction.state().get('pps_observation')
+                if observed is not None:
+                    state = self.state(); state['pps_handoff_observation'] = observed
+                    self.write('state.json', state)
 
         def continuity_observation(self, transaction):
             _, _, report = controller.revalidation(self.f)
@@ -128,6 +138,7 @@ def transaction_class(base, controller):
                         or not 0 <= time.time()-client.get('epoch', 0) < 120):
                     raise ValueError('fresh structural-only client proof required')
                 self.unchanged()
+                state = self.state()
                 value = self.measure()
                 if not all(value['checks'].get(k) is True for k in controller.SAFETY):
                     raise ValueError('structural service safety failed')

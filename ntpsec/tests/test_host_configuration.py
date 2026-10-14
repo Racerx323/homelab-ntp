@@ -9,6 +9,8 @@ import importlib.util
 import json
 import os
 import stat
+import subprocess
+import sys
 from pathlib import Path
 import struct
 import tempfile
@@ -155,6 +157,51 @@ class GpioPpsMetadata(unittest.TestCase):
         (self.sys/'class/pps/pps0').symlink_to(self.pps)
         (self.driver/'duplicate').symlink_to(self.platform)
         with self.assertRaisesRegex(ValueError,'one GPIO'):s.gpio_pps_metadata(self.sys,self.dev)
+
+    def test_extra_unrelated_class_preserves_selected_mapping_and_reports_inventory(self):
+        baseline=s.gpio_pps_metadata(self.sys,self.dev)
+        extra=self.sys/'devices/virtual/pps/pps1';extra.mkdir()
+        (extra/'name').write_text('serial PPS');(extra/'dev').write_text('249:1')
+        (self.sys/'class/pps/pps1').symlink_to(extra)
+        observation={}
+        self.assertEqual(s.gpio_pps_metadata(self.sys,self.dev,observation),baseline)
+        self.assertEqual(len(observation['classes']),2)
+        self.assertEqual(observation['selected']['name'],'pps@12.-1')
+        (extra/'dev').write_text('249:0')
+        with self.assertRaisesRegex(ValueError,'duplicate GPIO PPS character-device'):
+            s.gpio_pps_metadata(self.sys,self.dev,observation)
+        (extra/'dev').write_text('249:1')
+        (extra/'name').write_text('pps@12.-1')
+        with self.assertRaisesRegex(ValueError,'matched 2 of 2'):
+            s.gpio_pps_metadata(self.sys,self.dev,observation)
+
+    def test_standalone_baseline_check_and_rejections(self):
+        checker=module('check-pps.py');expected=checker.gpio_pps_metadata(self.sys,self.dev)
+        self.assertTrue(checker.check(expected,self.sys,self.dev)['accepted'])
+        wrong=dict(expected,device='/dev/pps9')
+        result=checker.check(wrong,self.sys,self.dev)
+        self.assertFalse(result['accepted']);self.assertIn('mapping drift',result['error'])
+        (self.sys/'class/pps/pps0').unlink()
+        result=checker.check(expected,self.sys,self.dev)
+        self.assertFalse(result['accepted']);self.assertEqual(result['classes'],[])
+        self.assertIn('matched 0',result['error'])
+
+    def test_standalone_requires_baseline_hash_before_host_io(self):
+        baseline=self.root/'baseline.json';baseline.write_text('{}')
+        result=subprocess.run([sys.executable,'-I','-B',str(ROOT/'scripts/check-pps.py'),
+            '--baseline',str(baseline),'--baseline-sha256','0'*64],cwd=self.root,
+            capture_output=True,text=True,check=False)
+        self.assertEqual(result.returncode,1)
+        self.assertIn('matching SHA-256',json.loads(result.stdout)['error'])
+        self.assertNotIn('classes',json.loads(result.stdout))
+
+    def test_bounded_metadata_and_no_symlink_properties(self):
+        name=self.pps/'name';name.write_bytes(b'x'*257)
+        with self.assertRaisesRegex(ValueError,'bounded PPS class property'):
+            s.gpio_pps_metadata(self.sys,self.dev)
+        name.unlink();name.symlink_to(self.root/'outside')
+        with self.assertRaisesRegex(ValueError,'regular PPS class property'):
+            s.gpio_pps_metadata(self.sys,self.dev)
 
     def test_wrong_driver_and_escaped_tree_hold(self):
         (self.platform/'driver').unlink();(self.platform/'driver').symlink_to(self.sys/'bus/platform')

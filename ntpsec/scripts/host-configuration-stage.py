@@ -11,7 +11,6 @@ from pathlib import Path
 import re
 import socket
 import stat
-import struct
 import sys
 import time
 
@@ -56,8 +55,7 @@ def sanitized_services(text):
 
 
 def pps_mapping(cells, controller, falling):
-    if len(cells)!=12 or len(controller)!=4 or struct.unpack('>III',cells)!=(struct.unpack('>I',controller)[0],18,0) or falling:
-        raise ValueError('BCM18 rising PPS device-tree mapping required')
+    return pps_checker().pps_mapping(cells, controller, falling)
 
 
 def observation_equal(actual, expected, new_boot=False):
@@ -132,44 +130,15 @@ def load_module(root, name, digest, helper):
     return module
 
 
-def gpio_pps_metadata(sysroot=Path('/sys'), devroot=Path('/dev')):
-    gpio = sysroot/'firmware/devicetree/base/soc/gpio@7e200000'
-    if b'brcm,bcm2711-gpio' not in (gpio/'compatible').read_bytes().split(b'\0'):
-        raise ValueError('Pi 4 GPIO controller required')
-    platforms = []
-    driver = sysroot/'bus/platform/drivers/pps-gpio'
-    entries = list(driver.iterdir())
-    if len(entries) > 32:
-        raise ValueError('bounded PPS platform registry required')
-    for link in entries:
-        if link.name in ('module','bind','unbind','uevent') or not link.is_symlink():
-            continue
-        platform = link.resolve(strict=True)
-        if (not platform.is_relative_to(sysroot/'devices/platform')
-                or (platform/'driver').resolve(strict=True) != driver
-                or (platform/'subsystem').resolve(strict=True) != sysroot/'bus/platform'):
-            raise ValueError('bound PPS platform identity required')
-        node = (platform/'of_node').resolve(strict=True)
-        if not node.is_relative_to(sysroot/'firmware/devicetree/base'):
-            raise ValueError('PPS device-tree path escaped')
-        if b'pps-gpio' not in (node/'compatible').read_bytes().split(b'\0'):
-            raise ValueError('PPS GPIO compatibility required')
-        pps_mapping((node/'gpios').read_bytes(),(gpio/'phandle').read_bytes(),(node/'assert-falling-edge').exists())
-        platforms.append((platform,node))
-    classes = sorted((sysroot/'class/pps').glob('pps[0-9]*'))
-    if len(platforms) != 1 or len(classes) != 1:
-        raise ValueError('one GPIO PPS platform and class required')
-    platform,node = platforms[0]; path = classes[0]
-    if not path.resolve(strict=True).is_relative_to(sysroot/'devices'):
-        raise ValueError('PPS class escaped sysfs devices')
-    name = (path/'name').read_text().strip()
-    if name != platform.name+'.-1':
-        raise ValueError('PPS class/platform source identity mismatch')
-    dev = devroot/path.name; info = dev.stat()
-    if (not stat.S_ISCHR(info.st_mode) or
-            (path/'dev').read_text().strip() != f'{os.major(info.st_rdev)}:{os.minor(info.st_rdev)}'):
-        raise ValueError('PPS character-device identity mismatch')
-    return {'device':str(dev),'of_node':str(node),'name':name,'platform':str(platform)}
+def pps_checker():
+    # Standalone checker is a verified member of new host bundles.
+    spec = importlib.util.spec_from_file_location('gpio_pps_checker', Path(__file__).with_name('check-pps.py'))
+    checker = importlib.util.module_from_spec(spec); spec.loader.exec_module(checker)
+    return checker
+
+
+def gpio_pps_metadata(sysroot=Path('/sys'), devroot=Path('/dev'), observation=None):
+    return pps_checker().gpio_pps_metadata(sysroot, devroot, observation)
 
 
 def uart_ancestry(tty, sysroot=Path('/sys'), chain=None):
@@ -367,7 +336,7 @@ class Transaction:
                       '--on-active=5s','--timer-property=AccuracySec=1s','/usr/bin/systemctl','reboot'])
             return self.state()
 
-    def hardware_metadata(self):
+    def hardware_metadata(self, expected_pps=None):
         alias=Path(self.recipe['uart_alias'])
         observation={'boot_id':boot_id(),'alias':str(alias),'uart':None,'ancestors':[]}
         try:
@@ -386,7 +355,18 @@ class Transaction:
         driver=self.recipe['uart_driver']
         uinfo=uart.stat()
         # Metadata only: no stty, GNSS polling, PPS ioctls or RTC read/write.
-        pps=gpio_pps_metadata();rtc=[]
+        observation={'boot_id':boot_id()}
+        try:
+            pps=gpio_pps_metadata(observation=observation)
+            if expected_pps is not None and pps != expected_pps:
+                observation['expected']=expected_pps
+                raise ValueError('accepted GPIO PPS mapping drift')
+        except (OSError, ValueError) as error:
+            observation['error']=str(error)[:500]
+            raise
+        finally:
+            state=self.state();state['pps_observation']=observation;self.write('state.json',state)
+        rtc=[]
         for path in sorted(Path('/sys/class/rtc').glob('rtc[0-9]*')):
             node=path/'device/of_node'
             compatible=(node/'compatible').read_bytes() if (node/'compatible').exists() else b''

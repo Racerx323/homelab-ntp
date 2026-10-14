@@ -654,8 +654,38 @@ structural checks passed; handoff failed with
 `recovered` through both endpoints, and transient cleanup completed. Preserve
 its recovered receipt, terminal startup record and all source evidence. No
 continuous-monitor handoff or timing acceptance was achieved. Do not replay it.
-Review retained evidence and the active-runtime PPS enumeration path offline
-before preparing any separately approved inspection or successor activation.
+The repository PPS correction is implemented and tested offline. The standalone
+`check-pps.py` accepts an explicit GPIO mapping JSON and its SHA-256; it performs
+metadata reads only and returns selected identity, bounded class/platform inventory
+and a rejection reason. Host configuration delegates to that tool. New runtime
+revalidation and monitor manifests pin both current hardware and PPS checkers;
+the successor rejects checker bytes that differ from its accepted prerequisite.
+The monitor retains handoff PPS observations in operation state before recovery.
+The actual hardware checker now participates in the handoff regression fixture;
+an additional unrelated PPS class passes, while missing/duplicate sources,
+character-device changes and accepted mapping drift fail.
+
+### Deployment artifact contract and remaining migration
+
+All executable artifacts come from maintained repository sources. Configuration,
+baselines, target identity and code versions are explicit hash-bound manifest
+inputs. A current baseline means an explicitly accepted revision, never a mutable
+`latest` lookup. Evidence remains a data/provenance input or output; it must not
+supply executable implementations. This applies to all deployment artifacts,
+not only the PPS checker. Historical executed bundles remain immutable.
+
+The PPS path now follows that contract. Remaining legacy orchestration does not:
+
+| Existing path | Required successor change |
+| --- | --- |
+| `service-cutover-stage.py` constructor loads `reference.py`; `unchanged()` loads the historical runtime checker | Bind maintained acquisition/runtime libraries as explicit code inputs; consume historical observations as data. |
+| `runtime-continuity.py` reconstructs a transaction from the old runtime archive | Replace inherited transaction construction with a repository-owned runtime validator and explicit baseline schema. |
+| Revalidation and monitor preflight load predecessor/restoration executable validators | Validate historical receipts/state using maintained schema readers; do not import prior operation implementations. |
+
+These are migration requirements, not completed fixes. Remove and test these
+remaining executable dependencies before sealing another activation review.
+The offline PPS fix does not authorize target contact, a new baseline capture or
+activation. Preserve monitor v3's terminal recovery evidence.
 
 The old-action audit covers these reachable dependencies:
 
@@ -1060,7 +1090,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. V6 journal gate passed, but restoration is held on continuity drift; readback 13 matches on both endpoints. Source cleanup blocked; diagnostic inspection and closure complete. PPS deadline confirmed; historical boot/PID baseline and failed timeservice state differ. Timer was waiting at capture; later outcome unknown. Frozen-checker replay isolates failed timeservice state; guarded reset executed; restoration continuation accepted through both endpoints and closed. Old timer already absent/inactive; historical v6 held state and evidence preserved. Offline PPS replay complete: three passing updates did not fit the retained trajectory before the bootstrap deadline. Continuous PPS-first monitoring and terminal retention implemented/tested locally; start-and-monitor v1 stopped in preflight on expired nested hardware acceptance; conditional readback found no operation state; partial stage retained. Read-only hardware/runtime revalidation v1 held on runtime binding; matching dual-stack readback and diagnostic closure complete; revalidation v2 prerequisites accepted through both endpoints; diagnostic closure complete; monitor v2 startup/early/workstation checks passed; handoff rejected historical boot-ID comparison; dual-stack recovery and transient cleanup complete; handoff continuity corrected/tested offline; read-only revalidation v3 accepted against recovered monitor v2 through both endpoints; diagnostic closure complete; monitor v3 startup and workstation structural checks passed; handoff rejected PPS platform/class cardinality; approved recovery matched through both endpoints and transient cleanup completed; PPS checker investigation remains pending; successor recovery tested past historical expiry. Monitor v3 recovered after the PPS hardware handoff check failed; any successor needs a fresh sealed review and separate execution approval. Persistent warm-restart policy and timing acceptance remain pending. |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. V6 journal gate passed, but restoration is held on continuity drift; readback 13 matches on both endpoints. Source cleanup blocked; diagnostic inspection and closure complete. PPS deadline confirmed; historical boot/PID baseline and failed timeservice state differ. Timer was waiting at capture; later outcome unknown. Frozen-checker replay isolates failed timeservice state; guarded reset executed; restoration continuation accepted through both endpoints and closed. Old timer already absent/inactive; historical v6 held state and evidence preserved. Offline PPS replay complete: three passing updates did not fit the retained trajectory before the bootstrap deadline. Continuous PPS-first monitoring and terminal retention implemented/tested locally; start-and-monitor v1 stopped in preflight on expired nested hardware acceptance; conditional readback found no operation state; partial stage retained. Read-only hardware/runtime revalidation v1 held on runtime binding; matching dual-stack readback and diagnostic closure complete; revalidation v2 prerequisites accepted through both endpoints; diagnostic closure complete; monitor v2 startup/early/workstation checks passed; handoff rejected historical boot-ID comparison; dual-stack recovery and transient cleanup complete; handoff continuity corrected/tested offline; read-only revalidation v3 accepted against recovered monitor v2 through both endpoints; diagnostic closure complete; monitor v3 startup and workstation structural checks passed; handoff rejected PPS platform/class cardinality; approved recovery matched through both endpoints and transient cleanup completed; PPS checker corrected and real transition tested offline; remaining historical executable dependencies must be migrated before another activation review; successor recovery tested past historical expiry. Monitor v3 recovered after the PPS hardware handoff check failed; any successor needs a fresh sealed review and separate execution approval. Persistent warm-restart policy and timing acceptance remain pending. |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

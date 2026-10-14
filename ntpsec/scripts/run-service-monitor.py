@@ -15,7 +15,7 @@ import time
 import types
 
 ROOT = Path(__file__).resolve().parents[1]
-PATHS = {
+PATHS = {'pps-checker.py': 'scripts/check-pps.py', 'hardware-checker.py': 'scripts/host-configuration-stage.py',
     'controller.py': 'scripts/run-service-monitor.py', 'stage.py': 'scripts/service-monitor-stage.py',
     'base-stage.py': 'scripts/service-cutover-stage.py', 'base-controller.py': 'scripts/run-service-cutover.py',
     'transport.py': 'scripts/run-foundation-preflight.py', 'client.py': 'scripts/check-time-client.py',
@@ -107,6 +107,8 @@ def revalidation(files):
             or proof['cleanup'] != {'spec_sha256': sha(archive['spec.json']), 'result': {
                 'phase': 'cleaned', 'evidence_preserved': True, 'report_sha256': receipt['report_sha256']}}
             or archive['continuity.py'] != files['runtime-continuity.py']
+            or archive['hardware-checker.py'] != files['hardware-checker.py']
+            or archive['pps-checker.py'] != files['pps-checker.py']
             or archive['stage.py'] != files['revalidation-controller.py']):
         raise ValueError('accepted closed revalidation and matching continuity checker required')
     origin = unpack(archive['monitor.tar'])
@@ -233,7 +235,7 @@ review; do not rearm, replay or clean a held stage. Monitoring has no expiry
 shutdown; later readbacks/recovery address only this already-started operation.
 
 From the repository root, use `python3 -I -B ntpsec/scripts/run-service-monitor.py
-execute --bundle /home/aaron/code/.local-evidence/homelab-ntp/current/{spec['operation_id']}/service-monitor.tar
+execute --bundle <review-directory>/service-monitor.tar
 --sha256 <approved-sha256> --mode <mode>` (one shell command).
 Use `start` once, then `handoff` only after observing startup. Retrieve stored
 state with `readback --attempt N`; capture fresh status using `observe --attempt N`

@@ -24,7 +24,7 @@ def module(name):
 c=module('run-foundation-preflight.py')
 n=module('run-host-network.py')
 s=module('host-configuration-stage.py')
-COMMON={'host-configuration-stage.py','host-network-stage.py','foundation-install.py',
+COMMON={'check-pps.py','host-configuration-stage.py','host-network-stage.py','foundation-install.py',
         'inspect-source-destinations.py','clockmaker.py','baseline.json','release.json',
         'network-spec.json','network-acceptance.json','network-cleanup.json','host-recipe.json',
         'architecture.md','operations.md','history.md','installation-assets.json',
@@ -401,7 +401,8 @@ def seal_acceptance(args):
     raw=c.private_file(args.hardware_dir/'host-configuration.tar')
     if c.sha(raw)!=args.hardware_sha256:raise ValueError('source hardware hash mismatch')
     old=inspector.archive_inputs(raw);source=json.loads(old['spec.json'])
-    files={name:old[name] for name in COMMON|HARDWARE|FRESH}
+    files={name:(ROOT/'scripts'/name).read_bytes() if name.endswith('.py') else old[name]
+           for name in COMMON|HARDWARE|FRESH}
     files.update({'source-hardware.tar':raw,'source-spec.json':old['spec.json'],
         'timing-inspection.tar':c.private_file(args.timing_dir/'registry-inspection.tar'),
         'timing-result.json':c.private_file(args.timing_dir/'capture-result.json'),

@@ -44,6 +44,9 @@ def hardware_fixture():
 
 
 class HardwareTests(unittest.TestCase):
+    def setUp(self):
+        self.enterContext(patch.object(host.Transaction, 'hardware_metadata', side_effect=lambda tx, expected: tx.hardware_metadata()))
+
     def test_frozen_age_rejection_becomes_fresh_fact_check_without_rewriting_history(self):
         tx, data, state = hardware_fixture(); original = copy.deepcopy(data)
         with patch.object(host, 'boot_id', return_value='fixture-boot'), patch.object(continuity.time, 'time', return_value=1000+7*86400):
@@ -81,7 +84,7 @@ class HardwareTests(unittest.TestCase):
                 root = Path(temporary); dest = root/'config'; dest.write_bytes(b'candidate')
                 cls = monitor.transaction_class(base, types.SimpleNamespace())
                 tx = cls.__new__(cls); tx.root = root; tx.s = {'recipe': {'timeservice': {}}, 'operation_id': 'fixture', 'recovery_unit': 'fixture', 'purpose': 'service-monitor'}
-                tx.f = {'candidate': b'candidate', 'runtime-continuity.py': b'fixture'}
+                tx.f = {'candidate': b'candidate', 'runtime-continuity.py': b'fixture', 'hardware-checker.py': b'host', 'pps-checker.py': b'pps'}
                 tx.current = {'phase': 'monitoring', 'installed': [str(dest)], 'created_directories': []}
                 tx.state = lambda: copy.deepcopy(tx.current); tx.lock = lambda: nullcontext()
                 def write(name, value):
@@ -94,7 +97,7 @@ class HardwareTests(unittest.TestCase):
                 tx.run = Mock(return_value='saved'); tx.systemctl = Mock(return_value='not-found')
                 tx.snapshot = lambda name: {'sha256': c.sha(Path(name).read_bytes())}
                 tx.replace = lambda name, raw, *args: Path(name).write_bytes(raw)
-                helper = types.SimpleNamespace(context=lambda *args: continuity.hardware_gate(hw, host))
+                helper = types.SimpleNamespace(context=lambda *args: continuity.hardware_gate(hw, host), checker=lambda *args: host)
                 with patch.dict(base.DESTINATIONS, {str(dest): ('candidate', 0o644)}, clear=True), \
                         patch.object(base, 'clear_restored_failure'), patch.object(monitor, 'module', return_value=helper), \
                         patch.object(host, 'boot_id', return_value='fixture-boot'), patch.object(continuity.time, 'time', return_value=9*86400):
@@ -123,8 +126,8 @@ class ContextTests(unittest.TestCase):
                 check = types.SimpleNamespace(probe=Mock(return_value={'hardware': {}}), core=types.SimpleNamespace(i=types.SimpleNamespace(command=observer, observation=lambda: {'boot': 'same'})))
                 with patch.object(continuity, 'transaction', return_value=check), patch.object(continuity.os, 'close') as close:
                     if changed:
-                        with self.assertRaisesRegex(ValueError, 'source changed'): continuity.context(tx)
-                    else: self.assertEqual(continuity.context(tx)['observation'], {'boot': 'same'})
+                        with self.assertRaisesRegex(ValueError, 'source changed'): continuity.context(tx, host)
+                    else: self.assertEqual(continuity.context(tx, host)['observation'], {'boot': 'same'})
                     close.assert_called_once_with(17); check.probe.assert_called_once()
                     self.assertIs(check.core.i.command, observer)
 
@@ -479,18 +482,20 @@ class ReceiptTests(unittest.TestCase):
     def test_successor_binds_real_validation_receipt_closure_and_checker(self):
         successor = load('run-service-monitor.py'); spec, report = self.fixture()
         raw = (ROOT/'scripts/run-runtime-revalidation.py').read_bytes()
-        archive = {'spec.json': c.encoded(spec), 'continuity.py': b'checker', 'stage.py': raw, 'monitor.tar': b'origin'}
+        archive = {'spec.json': c.encoded(spec), 'continuity.py': b'checker', 'hardware-checker.py': b'host', 'pps-checker.py': b'pps', 'stage.py': raw, 'monitor.tar': b'origin'}
         receipt = c.terminal(spec, c.sha(b'archive'), dict.fromkeys(spec['endpoints'], report))
         response = {'spec_sha256': c.sha(archive['spec.json']), 'result': report}
         proof = {'readbacks': [response, copy.deepcopy(response)], 'acceptance': receipt, 'cleanup': {
             'spec_sha256': response['spec_sha256'], 'result': {'phase': 'cleaned', 'evidence_preserved': True,
                 'report_sha256': receipt['report_sha256']}}}
         origin = {name: name.encode() for name in (*successor.REFERENCE, 'restoration.tar', 'restoration-proof.json')}
-        for case in ('valid', 'closure', 'checker', 'readback', 'origin'):
-            files = dict(origin, **{'revalidation-controller.py': raw, 'runtime-continuity.py': b'checker', 'revalidation.tar': b'archive'})
+        for case in ('valid', 'closure', 'checker', 'pps_checker', 'hardware_checker', 'readback', 'origin'):
+            files = dict(origin, **{'revalidation-controller.py': raw, 'runtime-continuity.py': b'checker', 'hardware-checker.py': b'host', 'pps-checker.py': b'pps', 'revalidation.tar': b'archive'})
             value = copy.deepcopy(proof)
             if case == 'closure': value['cleanup']['result']['evidence_preserved'] = False
             if case == 'checker': files['runtime-continuity.py'] = b'other'
+            if case == 'pps_checker': files['pps-checker.py'] = b'other'
+            if case == 'hardware_checker': files['hardware-checker.py'] = b'other'
             if case == 'readback': value['readbacks'][1]['result']['epoch'] += 1
             if case == 'origin': files['reference.tar'] = b'other'
             files['revalidation-proof.json'] = c.encoded(value)

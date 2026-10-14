@@ -20,7 +20,7 @@ import time
 import types
 
 ROOT = Path(__file__).resolve().parents[1]
-PATHS = {'stage.py': 'scripts/run-runtime-revalidation.py',
+PATHS = {'pps-checker.py': 'scripts/check-pps.py', 'hardware-checker.py': 'scripts/host-configuration-stage.py', 'stage.py': 'scripts/run-runtime-revalidation.py',
          'continuity.py': 'scripts/runtime-continuity.py', 'base.py': 'scripts/service-cutover-stage.py',
          'controller.py': 'scripts/run-service-cutover.py', 'transport.py': 'scripts/run-foundation-preflight.py',
          'monitor-controller.py': 'scripts/run-service-monitor.py',
@@ -152,7 +152,7 @@ def capture(h, spec, files):
         base = frozen(files['base.py']); continuity = frozen(files['continuity.py'])
         class Transaction(base.Transaction):
             def runtime_context(self, create=False):
-                result = continuity.context(self, create)
+                result = continuity.context(self, continuity.checker(files['hardware-checker.py'], files['pps-checker.py']), create)
                 self.write('current-runtime.json', result)
                 return result
         candidate = dict(old, stage=spec['stage'], operation_id=spec['operation_id'])

@@ -323,7 +323,8 @@ class RealHandoffTests(unittest.TestCase):
         base = load('service-cutover-stage.py'); acquisition = load('run-gpsd-acquisition.py')
         for case in ('valid', 'journal_reader', 'reader_exits', 'boot', 'inventory', 'python',
                      'preflight', 'native', 'candidate', 'extra_child', 'reader_args', 'reader_uid',
-                     'missing_daemon', 'competing_daemon', 'credentials', 'journal'):
+                     'missing_daemon', 'competing_daemon', 'credentials', 'journal', 'pps_extra',
+                     'pps_missing', 'pps_duplicate', 'pps_identity', 'pps_mapping'):
             with self.subTest(case=case), tempfile.TemporaryDirectory() as temporary, ExitStack() as stack:
                 root = Path(temporary)
                 def mapped(value):
@@ -337,7 +338,7 @@ class RealHandoffTests(unittest.TestCase):
                 tx.state = lambda: copy.deepcopy(state); tx.lock = lambda: nullcontext()
                 tx.write = lambda name, value: state.update(value) if name == 'state.json' else put(root/name, c.encoded(value))
                 tx.h = types.SimpleNamespace(read=lambda path, **kw: mapped(path).read_bytes())
-                tx.retained = Mock(); tx.hardware_gate = Mock(); tx.cancel_timer = Mock()
+                tx.retained = Mock(); tx.cancel_timer = Mock()
                 expected = {'boot_id': 'current-boot', 'inventory': {'gpsd': 'pinned'}, 'python': {'version': [3, 13]},
                             'active_daemons': [], 'services': 'baseline'}
                 put(root/'fresh-preflight.json', c.encoded({'observation': expected, 'checks': 'passed',
@@ -357,6 +358,26 @@ class RealHandoffTests(unittest.TestCase):
                     accounts=lambda: {}, state=lambda: {'created_account': {}, 'cache_after': {}}, snapshot_file=lambda p: {},
                     core=types.SimpleNamespace(i=types.SimpleNamespace(observation=lambda: observed),
                         cm=types.SimpleNamespace(inspect_install=lambda *a: native)), network_checks=Mock())
+                helper = load('runtime-continuity.py')
+                current = helper.checker(tx.f['hardware-checker.py'], tx.f['pps-checker.py'])
+                fixture_spec = importlib.util.spec_from_file_location('pps_fixture', ROOT/'tests/pps_fixture.py')
+                fixture_module = importlib.util.module_from_spec(fixture_spec); fixture_spec.loader.exec_module(fixture_module)
+                tree = fixture_module.HardwareTree(stack, current)
+                accepted, hardware_data = tree.bind(check)
+                original_hardware_data = copy.deepcopy(hardware_data)
+                # Stopped preflight uses real immutable receipt and metadata validation.
+                self.assertEqual(helper.hardware_gate(check, current), accepted)
+                if case == 'pps_extra': tree.add_class()
+                if case == 'pps_missing': tree.remove_class('pps0')
+                if case == 'pps_duplicate': tree.add_class(name='pps@12.-1')
+                if case == 'pps_identity': tree.put('/sys/devices/virtual/pps/pps0/dev', b'250:0')
+                if case == 'pps_mapping':
+                    tree.remove_class('pps0'); tree.add_class('pps2', 'pps@12.-1', '249:0')
+                    tree.devices['/dev/pps2'] = tree.devices['/dev/pps0']; tree.put('/dev/pps2', b'')
+                original_module = stage.module
+                stack.enter_context(patch.object(helper, 'checker', return_value=current))
+                stack.enter_context(patch.object(stage, 'module', side_effect=lambda raw, name:
+                    helper if name == 'current_runtime' else original_module(raw, name)))
                 host = types.SimpleNamespace(Transaction=lambda spec: check, unit_states=lambda text: {})
                 put(root/'runtime-check/spec.json', b'{}')
                 tx.f['receiver-runtime.json'] = b'{"runtime":{"files":{}}}'
@@ -380,7 +401,10 @@ class RealHandoffTests(unittest.TestCase):
                     if case == 'reader_uid': put('/proc/53/status', b'Uid: 1 1 1 1\nGid: 0 0 0 0\n')
                     put('/proc/53/cmdline', ('\0'.join(argv)+'\0').encode())
                 put('/proc/42/task/42/children', ' '.join(children).encode())
-                def readlink(path):
+                original_readlink = base.os.readlink
+                def readlink(path, *args, **kwargs):
+                    if not str(path).startswith('/proc/'):
+                        return original_readlink(path, *args, **kwargs)
                     child = Path(path).parent.name
                     if child == '53' and case == 'reader_exits': raise FileNotFoundError(path)
                     return executable[child]
@@ -411,14 +435,48 @@ class RealHandoffTests(unittest.TestCase):
                     (stage.time, 'time', lambda: 1000), (stage.time, 'monotonic', lambda: 1000)):
                     stack.enter_context(patch.object(obj, name, value))
                 stack.enter_context(patch.dict(base.DIRECTORIES, {}, clear=True))
-                if case in ('valid', 'journal_reader', 'reader_exits'):
+                if case in ('valid', 'journal_reader', 'reader_exits', 'pps_extra'):
                     result = tx.accept(proofs(tx))
                     self.assertEqual(result['phase'], 'monitoring'); self.assertFalse(result['time_service_accepted'])
                     self.assertFalse(result['handoff_measurement']['checks']['pps_selected'])
-                    tx.cancel_timer.assert_called_once(); check.network_checks.assert_called_once(); tx.hardware_gate.assert_called_once()
+                    tx.cancel_timer.assert_called_once(); check.network_checks.assert_called_once()
+                    self.assertEqual(result['pps_handoff_observation']['selected']['name'], 'pps@12.-1')
+                    if case == 'pps_extra':
+                        self.assertEqual(len(result['pps_handoff_observation']['classes']), 2)
+                        # Actual recovery restores its file and then invokes real current hardware validation.
+                        dest = root/'candidate'; dest.write_bytes(b'candidate')
+                        state.update(installed=[str(dest)], created_directories=[])
+                        before = {'files': {str(dest): {'sha256': c.sha(b'old'),
+                            'base64': base64.b64encode(b'old').decode(), 'mode': 0o644, 'uid': 0, 'gid': 0}},
+                            'serial': {}, 'termios': 'saved'}
+                        tx.h.read = lambda path, **kw: c.encoded(before)
+                        tx.h.sync = Mock(); tx.run = Mock(return_value='saved')
+                        tx.a = types.SimpleNamespace(idle=Mock(), serial_identity=lambda: {})
+                        tx.replace = lambda name, raw, *args: Path(name).write_bytes(raw)
+                        tx.snapshot = lambda name: {'sha256': c.sha(Path(name).read_bytes())}
+                        def restore_systemctl(*args):
+                            if args[:2] == ('show', 'timeservice.service'):
+                                return 'loaded'
+                            if args[:2] == ('stop', 'timeservice.service'):
+                                tree.remove_class()
+                            return 'not-found'
+                        tx.systemctl = restore_systemctl
+                        tx.runtime_context = lambda *args: helper.hardware_gate(check, current)
+                        with patch.dict(base.DESTINATIONS, {str(dest): ('candidate', 0o644)}, clear=True), \
+                                patch.object(base, 'clear_restored_failure'):
+                            tx.f['candidate'] = b'candidate'
+                            self.assertEqual(tx.recover()['phase'], 'recovered')
+                        self.assertEqual(dest.read_bytes(), b'old')
+                        self.assertEqual(len(check.state()['pps_observation']['classes']), 1)
+                        self.assertEqual(len(tx.state()['pps_handoff_observation']['classes']), 2)
                 else:
                     with self.assertRaises((ValueError, KeyError)): tx.accept(proofs(tx))
                     tx.cancel_timer.assert_not_called(); self.assertEqual(state['phase'], 'observing')
+                    if case.startswith('pps_'):
+                        observation = state['pps_handoff_observation']
+                        self.assertIn('classes', observation)
+                        self.assertIn('error', observation)
+                self.assertEqual(hardware_data, original_hardware_data)
 
 
 class ClientTests(unittest.TestCase):
