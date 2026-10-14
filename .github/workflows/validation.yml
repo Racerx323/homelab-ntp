@@ -18,6 +18,10 @@ jobs:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
       - name: Run synthetic collector tests
         run: ntpsec/tests/run.sh
+      - name: Verify native SHM permissions in an isolated IPC namespace
+        run: |
+          cc -std=c11 -O2 -Wall -Wextra -Werror ntpsec/tests/shm_access_fixture.c -o "$RUNNER_TEMP/ntp-shm-fixture"
+          sudo unshare --ipc --fork "$RUNNER_TEMP/ntp-shm-fixture" --private-root
 
   baseline:
     name: Baseline validation

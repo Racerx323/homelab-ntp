@@ -928,6 +928,15 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    changed identity or state still holds recovery. No repeated boot changes are
    implied. Structural handoff requires dual-stack management and workstation
    NTP responses, denied administrative queries, daemon safety and a live monitor.
+   PPS-first promotion grants the accepted NMEA NTP0 segment root:ntp 0660
+   access before daemon startup. Bind the exact segment identity and original
+   metadata, validate the ntp group, and persist mutation intent before IPC_SET.
+   Keep other segments unchanged. Recovery stops consumers before restoring
+   root:root 0600 on the same segment; replacement or unexplained metadata drift
+   holds recovery. Retain original and resulting change times. Pin the native
+   helper source and record its compiler and built executable hashes. Retain
+   bounded promotion replies and refclock diagnostics; an acknowledgment alone
+   never proves that an association was created.
    All deployment artifacts use durable repository-owned implementations and
    explicit versioned inputs. Each operation pins code, configuration, accepted
    baseline and target identity; evidence supplies data/provenance only. Production

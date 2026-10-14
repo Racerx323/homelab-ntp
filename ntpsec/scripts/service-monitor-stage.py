@@ -24,6 +24,18 @@ def module(raw, name):
 
 def transaction_class(base, controller):
     class Transaction(base.Transaction):
+        def shm_access(self):
+            return module(self.f['shm-access.py'], 'shm_access').Access(self)
+
+        def grant_shm_access(self):
+            self.shm_access().grant()
+
+        def expected_shm_inventory(self):
+            return self.shm_access().expected_inventory()
+
+        def restore_shm_access(self):
+            self.shm_access().restore()
+
         def runtime_context(self, create=False):
             helper = module(self.f['runtime-continuity.py'], 'current_runtime')
             checker = helper.checker(self.f['hardware-checker.py'], self.f['pps-checker.py'])
@@ -98,6 +110,7 @@ def transaction_class(base, controller):
                     raise ValueError('fresh restored-state continuity drift')
                 self.write('fresh-preflight.json', {'epoch': int(time.time()), 'observation': actual,
                     'restoration_sha256': self.s['restoration_sha256'], 'checks': 'passed'})
+                self.shm_access().prepare()
             finally:
                 os.close(fd)
 
@@ -150,6 +163,7 @@ def transaction_class(base, controller):
                     raise ValueError('installation watchdog reserve exhausted')
                 state.update(phase='monitoring', handoff_epoch=int(time.time()), time_service_accepted=False,
                              handoff_proofs=proofs, handoff_measurement=value, observations=0)
+                state['shm_access'] = self.shm_access().read()
                 self.write('state.json', state)
                 try:
                     self.cancel_timer()
@@ -190,6 +204,9 @@ def transaction_class(base, controller):
                 with self.lock(): return self.recover(locked=True)
             self.recovering = True
             result = super().recover(locked=True)
+            if (self.root/'shm-access-state.json').exists():
+                result['shm_access'] = self.shm_access().read()
+                self.write('state.json', result)
             # RuntimeDirectory is gone after stop; retain the durable terminal record.
             if (self.root/'startup-monitor.json').exists():
                 result['startup_promotion'] = json.loads(self.h.read(self.root/'startup-monitor.json', limit=512*1024))

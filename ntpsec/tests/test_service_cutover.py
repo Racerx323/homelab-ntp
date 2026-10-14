@@ -440,6 +440,13 @@ class TransactionTests(unittest.TestCase):
             gate={'state':'passed' if passed else 'failed','supervisor_pid':100}
             tx.h=SimpleNamespace(ancestors=Mock(),read=Mock(return_value=stage.encoded(gate)))
             tx.run=Mock(return_value='{"system":{"leap":3}}');tx.systemctl=Mock(return_value='100')
+            order=[]
+            tx.grant_shm_access=lambda:order.append('grant')
+            def systemctl(*args):
+                if args==('start','timeservice.service'):
+                    self.assertEqual(order,['grant']);order.append('start')
+                return '100'
+            tx.systemctl=systemctl
             with patch.dict(stage.DIRECTORIES,{},clear=True),patch.object(stage.Path,'exists',return_value=True),patch.object(stage.time,'sleep'):
                 if passed:
                     self.assertEqual(tx.apply()['phase'],'observing');tx.recover.assert_not_called()
@@ -448,6 +455,16 @@ class TransactionTests(unittest.TestCase):
                 else:
                     with self.assertRaisesRegex(ValueError,'early GPSD'):tx.apply()
                     tx.recover.assert_called_once_with(locked=True)
+
+    def test_failed_shm_grant_recovers_without_starting_daemons(self):
+        tx=self.transaction({'phase':'staged','created_directories':[],'installed':[]})
+        tx.replace=Mock();tx.recover=Mock();tx.root=Path('/fixture')
+        tx.h=SimpleNamespace(ancestors=Mock());tx.run=Mock();tx.systemctl=Mock()
+        tx.grant_shm_access=Mock(side_effect=ValueError('segment replaced'))
+        with patch.dict(stage.DIRECTORIES,{},clear=True), self.assertRaisesRegex(ValueError,'segment replaced'):
+            tx.apply()
+        self.assertFalse(any(call.args==('start','timeservice.service') for call in tx.systemctl.call_args_list))
+        tx.recover.assert_called_once_with(locked=True)
 
     def test_measure_uses_json_compact_boot_and_retains_journal(self):
         tx=self.transaction({'supervisor_pid':100,'apply_monotonic':100});tx.root=Path('/fixture')

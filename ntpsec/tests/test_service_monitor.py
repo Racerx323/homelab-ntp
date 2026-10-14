@@ -198,6 +198,7 @@ class FakeTransaction:
         self.measure = Mock(return_value={'checks': dict.fromkeys(c.SAFETY, True)})
         self.monitor_record = Mock(return_value={'running': True, 'phase': 'bootstrap', 'started_monotonic': 900, 'elapsed_seconds': 100})
         self.systemctl = Mock(return_value='inactive\n')
+        self.shm_access = Mock(return_value=Mock(read=Mock(return_value={'phase': 'granted'})))
 
     def state(self): return copy.deepcopy(self.current)
     def lock(self): return nullcontext()
@@ -328,7 +329,7 @@ class ObservationTests(unittest.TestCase):
 class RealHandoffTests(unittest.TestCase):
     def test_inherited_handoff_uses_fresh_identity_and_rejects_drift(self):
         base = load('service-cutover-stage.py'); acquisition = load('run-gpsd-acquisition.py')
-        for case in ('valid', 'journal_reader', 'reader_exits', 'boot', 'inventory', 'python',
+        for case in ('valid', 'journal_reader', 'diagnostic_reader', 'reader_exits', 'boot', 'inventory', 'python',
                      'preflight', 'native', 'candidate', 'extra_child', 'reader_args', 'reader_uid',
                      'missing_daemon', 'competing_daemon', 'credentials', 'journal', 'pps_extra',
                      'pps_missing', 'pps_duplicate', 'pps_identity', 'pps_mapping'):
@@ -381,6 +382,23 @@ class RealHandoffTests(unittest.TestCase):
                 if case == 'pps_mapping':
                     tree.remove_class('pps0'); tree.add_class('pps2', 'pps@12.-1', '249:0')
                     tree.devices['/dev/pps2'] = tree.devices['/dev/pps0']; tree.put('/dev/pps2', b'')
+                shm_spec = importlib.util.spec_from_file_location('shm_fixture', ROOT/'tests/test_shm_access.py')
+                shm_fixture = importlib.util.module_from_spec(shm_spec); shm_spec.loader.exec_module(shm_fixture)
+                access = shm_fixture.s.Access(tx)
+                receipt = shm_fixture.receipt(tx)
+                receipt['boot_id'] = tx.s['boot_id']
+                receipt.update(phase='granted', after=dict(receipt['before'], gid=985, mode=0o660, ctime=101))
+                put(access.path, c.encoded(receipt))
+                kernel_shm = dict(receipt['after']); recovery_order = []
+                def native_io(value, operation='inspect', expected=None):
+                    if operation == 'restore':
+                        self.assertEqual(recovery_order, ['stop', 'idle'])
+                        self.assertEqual(access.read()['phase'], 'restore_pending')
+                        kernel_shm.update(gid=0, mode=0o600, ctime=102)
+                        recovery_order.append('restore')
+                    return dict(kernel_shm)
+                stack.enter_context(patch.object(access, 'native', side_effect=native_io))
+                tx.shm_access = lambda: access
                 original_module = stage.module
                 stack.enter_context(patch.object(helper, 'checker', return_value=current))
                 stack.enter_context(patch.object(stage, 'module', side_effect=lambda raw, name:
@@ -388,8 +406,9 @@ class RealHandoffTests(unittest.TestCase):
                 host = types.SimpleNamespace(Transaction=lambda spec: check, unit_states=lambda text: {})
                 put(root/'runtime-check/spec.json', b'{}')
                 tx.f['receiver-runtime.json'] = b'{"runtime":{"files":{}}}'
-                shm = b'key shmid perms size cpid uid gid cuid cgid nattch\n'
-                put('/proc/sysvipc/shm', shm); tx.rf = {'prior-shm-after.txt': shm}; tx.a = acquisition
+                shm = shm_fixture.INVENTORY
+                put('/proc/sysvipc/shm', shm.replace(b'17 600 96 123 0 0 ', b'17 660 96 123 0 985 '))
+                tx.rf = {'prior-shm-after.txt': shm}; tx.a = acquisition
                 def snapshot(name):
                     member, mode = base.DESTINATIONS[name]
                     return {'sha256': 'drift' if case == 'candidate' else c.sha(tx.f[member]), 'mode': mode, 'uid': 0, 'gid': 0}
@@ -399,12 +418,13 @@ class RealHandoffTests(unittest.TestCase):
                 put('/proc/52/status', b'Uid: 999 999 999 999\nGid: 985 985 985 985\n')
                 if case == 'credentials': put('/proc/52/status', b'Uid: 0 0 0 0\nGid: 0 0 0 0\n')
                 if case == 'missing_daemon': children.remove('52')
-                if case in ('journal_reader', 'reader_exits', 'reader_args', 'reader_uid', 'extra_child'):
+                if case in ('journal_reader', 'diagnostic_reader', 'reader_exits', 'reader_args', 'reader_uid', 'extra_child'):
                     children.append('53'); executable['53'] = '/usr/bin/journalctl' if case != 'extra_child' else '/usr/bin/sh'
                     put('/proc/53/status', b'Uid: 0 0 0 0\nGid: 0 0 0 0\n')
                     argv = ['/usr/bin/journalctl', '--quiet', '--no-pager', '--output=json', '--boot=currentboot',
                             '_PID=52', '_EXE=/usr/local/sbin/ntpd', '--lines=1000', '--after-cursor=s=cursor']
                     if case == 'reader_args': argv[5] = '_PID=99'
+                    if case == 'diagnostic_reader': argv = argv[:-2]+['--lines=200']
                     if case == 'reader_uid': put('/proc/53/status', b'Uid: 1 1 1 1\nGid: 0 0 0 0\n')
                     put('/proc/53/cmdline', ('\0'.join(argv)+'\0').encode())
                 put('/proc/42/task/42/children', ' '.join(children).encode())
@@ -442,7 +462,7 @@ class RealHandoffTests(unittest.TestCase):
                     (stage.time, 'time', lambda: 1000), (stage.time, 'monotonic', lambda: 1000)):
                     stack.enter_context(patch.object(obj, name, value))
                 stack.enter_context(patch.dict(base.DIRECTORIES, {}, clear=True))
-                if case in ('valid', 'journal_reader', 'reader_exits', 'pps_extra'):
+                if case in ('valid', 'journal_reader', 'diagnostic_reader', 'reader_exits', 'pps_extra'):
                     result = tx.accept(proofs(tx))
                     self.assertEqual(result['phase'], 'monitoring'); self.assertFalse(result['time_service_accepted'])
                     self.assertFalse(result['handoff_measurement']['checks']['pps_selected'])
@@ -456,15 +476,16 @@ class RealHandoffTests(unittest.TestCase):
                         before = {'files': {str(dest): {'sha256': c.sha(b'old'),
                             'base64': base64.b64encode(b'old').decode(), 'mode': 0o644, 'uid': 0, 'gid': 0}},
                             'serial': {}, 'termios': 'saved'}
-                        tx.h.read = lambda path, **kw: c.encoded(before)
+                        tx.h.read = lambda path, **kw: path.read_bytes() if path == access.path else c.encoded(before)
                         tx.h.sync = Mock(); tx.run = Mock(return_value='saved')
-                        tx.a = types.SimpleNamespace(idle=Mock(), serial_identity=lambda: {})
+                        tx.a = types.SimpleNamespace(idle=lambda: recovery_order.append('idle'), serial_identity=lambda: {})
                         tx.replace = lambda name, raw, *args: Path(name).write_bytes(raw)
                         tx.snapshot = lambda name: {'sha256': c.sha(Path(name).read_bytes())}
                         def restore_systemctl(*args):
                             if args[:2] == ('show', 'timeservice.service'):
                                 return 'loaded'
                             if args[:2] == ('stop', 'timeservice.service'):
+                                recovery_order.append('stop')
                                 tree.remove_class()
                             return 'not-found'
                         tx.systemctl = restore_systemctl
@@ -473,6 +494,8 @@ class RealHandoffTests(unittest.TestCase):
                                 patch.object(base, 'clear_restored_failure'):
                             tx.f['candidate'] = b'candidate'
                             self.assertEqual(tx.recover()['phase'], 'recovered')
+                        self.assertEqual(recovery_order, ['stop', 'idle', 'restore'])
+                        self.assertEqual(access.read()['phase'], 'restored')
                         self.assertEqual(dest.read_bytes(), b'old')
                         self.assertEqual(len(check.state()['pps_observation']['classes']), 1)
                         self.assertEqual(len(tx.state()['pps_handoff_observation']['classes']), 2)

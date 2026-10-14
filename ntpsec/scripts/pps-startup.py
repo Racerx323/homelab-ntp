@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 """PPS-first cold-start qualification, one-shot promotion and optional monitoring."""
 import hashlib
+import base64
 import json
 import math
 import os
@@ -323,6 +324,27 @@ class Startup:
                 ('elapsed_seconds', 'machine', 'measurement', 'events', 'phase', 'error', 'statistics')})
             self.status['samples'] = self.status['samples'][-MONITOR_POLICY['retained_samples']:]
 
+    def promotion_diagnostics(self):
+        """Retain bounded refclock/config errors independently of qualification events."""
+        if self.pid is None: return
+        try:
+            result = subprocess.run(['/usr/bin/journalctl', '--quiet', '--no-pager', '--output=json',
+                '--boot='+self.boot.replace('-', ''), '_PID='+str(self.pid),
+                '_EXE=/usr/local/sbin/ntpd', '--lines=200'], capture_output=True,
+                timeout=5, check=True, env=ENV)
+            if len(result.stdout) > 256*1024: raise ValueError('promotion journal byte bound')
+            events(result.stdout, self.boot, self.pid, self.started)  # Provenance validation.
+            rows = [json.loads(line) for line in result.stdout.splitlines()]
+            selected = [row for row in rows if int(row['__MONOTONIC_TIMESTAMP'])/1e6 >= self.started
+                and (re.search(r'SHM|refclock|config', row.get('MESSAGE', ''), re.I)
+                     or int(row.get('PRIORITY', '7')) <= 4)]
+            raw = json.dumps(selected[-100:], sort_keys=True).encode()
+            if len(raw) > 64*1024: raise ValueError('promotion diagnostic bound')
+            self.status['promotion_journal'] = selected[-100:]
+            self.status['promotion_journal_tail_only'] = len(rows) == 200 or len(selected) > 100
+        except Exception as error:
+            self.status['promotion_journal_error'] = str(error)[:300]
+
     def tick(self, process):
         if self.status['phase'] == 'failed':
             raise ValueError('failed promotion is terminal; recovery required')
@@ -367,7 +389,16 @@ class Startup:
                 for command in COMMANDS:
                     self.status['commands'].append({'command': command, 'state': 'submitted'})
                     self.save()  # An uncertain command is never resubmitted, including after interruption.
-                    if not self.session.config(command):
+                    self.session.response = b''  # Never attribute a previous reply to this command.
+                    try:
+                        acknowledged = self.session.config(command)
+                    finally:
+                        reply = getattr(self.session, 'response', b'')
+                        if not isinstance(reply, bytes): reply = str(reply).encode()
+                        self.status['commands'][-1].update(response_base64=base64.b64encode(reply[:4096]).decode(),
+                            response_truncated=len(reply) > 4096)
+                        self.save()
+                    if not acknowledged:
                         raise ValueError('runtime configuration rejected')
                     self.status['commands'][-1]['state'] = 'authenticated_ack'
                     self.save()
@@ -375,6 +406,7 @@ class Startup:
                 self.status.update(phase='promoted')
                 followup = measure(self.session)
                 self.status.update(measurement=followup, elapsed_seconds=time.monotonic()-self.started)
+                self.promotion_diagnostics()
                 self.machine.observe(self.status['elapsed_seconds'], followup, journal)
             elif action == 'ready':
                 self.status['phase'] = 'ready'
@@ -385,6 +417,7 @@ class Startup:
                 self.next_poll = time.monotonic() + MONITOR_POLICY['stable_interval_seconds']
             self.remember(); self.save()
         except BaseException as error:
+            self.promotion_diagnostics()
             self.status.update(phase='failed', error=str(error)[:400], machine=vars(self.machine).copy())
             self.remember()
             try:

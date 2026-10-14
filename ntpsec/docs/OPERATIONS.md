@@ -696,9 +696,9 @@ passed structural handoff and reached PPS qualification at about 963 seconds.
 Promotion commands were acknowledged, but its immediate membership snapshot
 lacked NMEA. The checker triggered automatic recovery; dual-stack readback
 attempt 1 matched recovered state and transient cleanup completed. Preserve the
-terminal monitor evidence and monitor-v4 recovery records. Next: review promotion
-acknowledgments, actual association creation and the immediate membership check
-offline before another sealed operation. No prior approval transfers to changed
+terminal monitor evidence and monitor-v4 recovery records. The offline promotion
+analysis and permission correction below precede another sealed operation.
+No prior approval transfers to changed
 code; sustained timing and production acceptance remain pending.
 
 Offline promotion analysis identifies a privilege mismatch: NMEA is omitted at
@@ -709,11 +709,33 @@ attachment fails; command acknowledgment alone is insufficient. The original
 target SHM error has not been retrieved, so distinguish this diagnosis from a
 captured target errno. Longer settling does not resolve the permission barrier.
 
-The proposed correction is exact, reversible group access to the accepted NMEA
-segment, with unchanged root ownership, validated ntp group and mode 0660. It
-requires implementation/tests for metadata identity, authorized continuity,
-rollback and diagnostic retention before a new sealed execution review. It is
-not implemented or authorized for target execution. A duplicate refclock command
+The monitor implementation now grants reversible access to the accepted NMEA
+segment using repository-owned `shm-access.py` and `shm-access.c`. Preflight
+validates the ntp account/group and accepted NTP0 key, shmid, creator, size and
+root:root 0600 metadata. It builds the native helper against the target's system
+headers, records compiler/source/executable hashes, and pins the kernel sequence
+and change time in a protected receipt. The compiler must already be installed;
+this stage does not install dependencies. Before either daemon starts, the stage
+persists grant intent and changes only NTP0 to root:ntp 0660. Handoff checks the
+exact grant and leaves other SHM entries under their original continuity checks.
+
+Recovery stops both consumers and confirms idle state before restoring the same
+segment to root:root 0600. Write-ahead receipts cover interruption before or after
+either metadata change. Unexpected permissions, a changed identity or remaining
+attachments hold recovery. IPC_SET updates the kernel change time; recovery
+records that new value rather than pretending to restore the old timestamp.
+The helper never creates, removes, attaches to or writes sample data in SHM.
+Promotion retains bounded raw configuration replies, association measurements
+and provenance-checked refclock/error journal entries before recovery. Parser
+acknowledgment still does not satisfy the association membership check.
+
+Offline tests exercise real permission changes and credential-drop attachment in
+a disposable private IPC namespace, plus interrupted restoration and the actual
+handoff/recovery paths with external I/O fixtures. CI repeats the native test
+under `unshare --ipc`; workstation validation uses offline Podman with a private
+IPC namespace. These results do not establish target acceptance. Prepare fresh
+revalidation against monitor-v4's recovered records before a new monitor review;
+keep each execution separately hash-approved. A duplicate refclock command
 does not provide a verified way to clear a preloaded noselect association.
 
 ### Evidence retention and package pruning

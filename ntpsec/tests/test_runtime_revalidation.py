@@ -94,6 +94,8 @@ class HardwareTests(unittest.TestCase):
                           'mode': 0o644, 'uid': 0, 'gid': 0}}, 'serial': {}, 'termios': 'saved'}
                 tx.h = types.SimpleNamespace(read=lambda p, **kw: c.encoded(before), sync=Mock())
                 tx.a = types.SimpleNamespace(idle=Mock(), serial_identity=lambda: {}, context=Mock(side_effect=ValueError('expired legacy gate')))
+                # This fixture isolates receipt age; full SHM recovery runs in test_service_monitor.
+                tx.restore_shm_access = Mock()
                 tx.run = Mock(return_value='saved'); tx.systemctl = Mock(return_value='not-found')
                 tx.snapshot = lambda name: {'sha256': c.sha(Path(name).read_bytes())}
                 tx.replace = lambda name, raw, *args: Path(name).write_bytes(raw)
@@ -106,6 +108,7 @@ class HardwareTests(unittest.TestCase):
                         self.assertEqual(tx.current['phase'], 'recovery_held')
                     else: self.assertEqual(tx.recover()['phase'], 'recovered')
                 self.assertEqual(dest.read_bytes(), b'old'); tx.a.context.assert_not_called()
+                tx.restore_shm_access.assert_called_once()
                 self.assertEqual(historic['accepted_epoch'], 1000)
 
 

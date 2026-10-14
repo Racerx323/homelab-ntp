@@ -202,6 +202,15 @@ class Transaction:
     def hardware_gate(self,transaction):
         return transaction.hardware_gate()
 
+    def grant_shm_access(self):
+        pass
+
+    def restore_shm_access(self):
+        pass
+
+    def expected_shm_inventory(self):
+        return self.a.shm_inventory(self.rf['prior-shm-after.txt'])
+
     def preflight(self):
         self.retained();self.runtime_context(create=True);self.a.idle();self.a.prior_guard(self.h,self.alias,self.rf)
         expected=json.loads(self.f['receiver-runtime.json'])['runtime']
@@ -281,6 +290,7 @@ class Transaction:
                 self.systemctl('daemon-reload');self.systemctl('restart','avahi-daemon.service')
                 if self.s['recipe'].get('diagnostic'):self.start_packet_capture()
                 self.systemctl('stop','systemd-timesyncd.service')
+                self.grant_shm_access()
                 self.systemctl('start','timeservice.service')
                 deadline=time.monotonic()+55
                 while time.monotonic()<deadline:
@@ -339,8 +349,10 @@ class Transaction:
                   ('_PID='+str(daemons['/usr/local/sbin/ntpd']['pid'])).encode(),
                   b'_EXE=/usr/local/sbin/ntpd',b'--lines=1000']
         for argv,ids in readers:
-            if (argv[:len(expected)]!=expected or len(argv) not in (len(expected),len(expected)+1)
+            diagnostic=argv==expected[:-1]+[b'--lines=200']
+            if (not diagnostic and (argv[:len(expected)]!=expected or len(argv) not in (len(expected),len(expected)+1)
                     or len(argv)>len(expected) and not re.fullmatch(rb'--after-cursor=[A-Za-z0-9;=:_-]{1,1024}',argv[-1])
+                    )
                     or ids!={'Uid':[0]*4,'Gid':[0]*4}):
                 raise ValueError('unapproved startup journal reader')
         return daemons
@@ -385,7 +397,7 @@ class Transaction:
         normalized=[raw[0]]
         for line in raw[1:]:
             fields=line.split();fields[at]='0';normalized.append(' '.join(fields))
-        if self.a.shm_inventory(('\n'.join(normalized)+'\n').encode())!=self.a.shm_inventory(self.rf['prior-shm-after.txt']):
+        if self.a.shm_inventory(('\n'.join(normalized)+'\n').encode())!=self.expected_shm_inventory():
             raise ValueError('SHM ownership/membership drift')
         # Reuse network and hardware checks with only the explicitly changed continuity fields replaced.
         transaction.core.continuity=lambda:None
@@ -575,7 +587,8 @@ class Transaction:
                 self.write('state.json',state)
             for unit in ('ntpleapfetch.timer','timeservice.service'):
                 if self.systemctl('show',unit,'--property=LoadState','--value').strip()!='not-found':self.systemctl('disable',unit)
-            self.a.idle();before=json.loads(self.h.read(self.root/'before.json'))
+            self.a.idle();self.restore_shm_access()
+            before=json.loads(self.h.read(self.root/'before.json'))
             for name in reversed(state['installed']):
                 member,mode=DESTINATIONS[name];current=self.snapshot(name);old=before['files'][name]
                 temp=Path(name).with_name('.'+Path(name).name+'.'+self.s['operation_id'])

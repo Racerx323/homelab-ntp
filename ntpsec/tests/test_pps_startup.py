@@ -126,6 +126,49 @@ class PolicyTests(unittest.TestCase):
 
 
 class MutationTests(unittest.TestCase):
+    def test_acknowledged_but_missing_nmea_retains_reply_and_shm_error(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            runner = object.__new__(s.Startup); runner.root = Path(temporary)
+            runner.session = Mock()
+            def acknowledged(command):
+                runner.session.response = b'Config Succeeded\n'
+                return True
+            runner.session.config.side_effect = acknowledged
+            runner.machine = qualified(); runner.started = 0; runner.next_poll = 0
+            runner.pid = None; runner.boot = 'a'*32
+            runner.status = {'phase': 'bootstrap', 'commands': []}
+            process = Mock(pid=45); process.poll.return_value = None
+            missing = observation(5, True); del missing['peers'][1]
+            row = {'_BOOT_ID': 'a'*32, '_PID': '45', '_EXE': '/usr/local/sbin/ntpd',
+                   '__MONOTONIC_TIMESTAMP': '740000000', 'PRIORITY': '3',
+                   'MESSAGE': 'SHM: shmget(0) failed: Permission denied'}
+            with patch.object(s.time, 'monotonic', return_value=740), \
+                    patch.object(s, 'measure', side_effect=[observation(5), missing]), \
+                    patch.object(s, 'events', return_value=JOURNAL), \
+                    patch.object(s.subprocess, 'run', return_value=types.SimpleNamespace(stdout=json.dumps(row).encode())):
+                with self.assertRaisesRegex(ValueError, 'membership'): runner.tick(process)
+            record = json.loads((runner.root/'promotion.json').read_text())
+            self.assertEqual(record['phase'], 'failed')
+            self.assertEqual(record['promotion_journal'], [row])
+            self.assertEqual(record['measurement'], missing)
+            for command in record['commands']:
+                self.assertEqual(command['state'], 'authenticated_ack')
+                self.assertEqual(s.base64.b64decode(command['response_base64']), b'Config Succeeded\n')
+            with self.assertRaisesRegex(ValueError, 'terminal'): runner.tick(process)
+            self.assertEqual(runner.session.config.call_count, 4)
+
+    def test_diagnostic_journal_rejects_wrong_provenance_and_bounds(self):
+        runner = object.__new__(s.Startup); runner.pid = 45; runner.boot = 'a'*32
+        runner.started = 0
+        row = {'_BOOT_ID': 'b'*32, '_PID': '45', '_EXE': '/usr/local/sbin/ntpd',
+               '__MONOTONIC_TIMESTAMP': '1000000', 'MESSAGE': 'SHM: failure'}
+        for raw in (json.dumps(row).encode(), b'X'*(256*1024+1)):
+            runner.status = {}
+            with patch.object(s.subprocess, 'run', return_value=types.SimpleNamespace(stdout=raw)):
+                runner.promotion_diagnostics()
+            self.assertIn('promotion_journal_error', runner.status)
+            self.assertNotIn('promotion_journal', runner.status)
+
     def test_cold_trial_refuses_saved_drift_before_creating_credentials(self):
         config = json.loads((ROOT/'configs/service-cutover-recipe.json').read_text())['timeservice']
         config['pps_startup'] = s.POLICY

@@ -26,6 +26,27 @@ The current accepted source stage is
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
 
+## NMEA permission correction implemented offline — October 14, 2026
+
+Implemented the approved NTP0-only root:ntp 0660 grant with a native SysV IPC
+metadata helper and operation-bound write-ahead receipts. Preflight records the
+original identity/permissions and built helper provenance. Apply grants access
+before GPSD/ntpd start; handoff validates it without relaxing other SHM checks.
+Recovery stops consumers before restoring root:root 0600, including interrupted
+grant/restore cases. Drift holds recovery. No receiver/sample writes are added.
+
+Promotion now retains bounded configuration replies, actual association lists
+and refclock/error journal entries. Offline fixtures cover acknowledged commands
+with absent NMEA, permission drift, interruption and real handoff/recovery order.
+The native helper passed an isolated network-free IPC test: credential-dropped
+late attachment fails before the grant, succeeds afterward, and fails again
+after restoration. The same native fixture is wired into CI.
+
+No target contact occurred. Monitor-v4 recovery remains the last accepted target
+state; sustained timing and production acceptance remain pending. Next: prepare
+fresh revalidation from those recovered records, then a corrected monitor bundle
+for separate execution approval. Historical bundles remain unchanged.
+
 ## Offline NMEA promotion diagnosis — October 14, 2026
 
 Pinned NTPsec source and retained monitor-v4 metadata identify a permission

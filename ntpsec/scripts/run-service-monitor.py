@@ -29,6 +29,9 @@ PATHS = {
     'transport.py': 'scripts/run-foundation-preflight.py', 'client.py': 'scripts/check-time-client.py',
     'measure.py': 'scripts/measure-time-service.py',
     'pps-startup.py': 'scripts/pps-startup.py', 'gpsd-pairing.py': 'scripts/gpsd-pairing.py',
+    'shm-access.py': 'scripts/shm-access.py', 'shm-access.c': 'scripts/shm-access.c',
+    'shm-tests.py': 'tests/test_shm_access.py',
+    'shm-native-tests.c': 'tests/shm_access_fixture.c',
     'runtime-continuity.py': 'scripts/runtime-continuity.py',
     'revalidation-controller.py': 'scripts/run-runtime-revalidation.py',
     'ntp.conf': 'configs/j2-svntp1-ntp.conf', 'recipe.json': 'configs/service-cutover-recipe.json',
@@ -195,6 +198,15 @@ Root-owned 0700 staging binds all non-secret inputs. Preserve backups before
 installing the rendered service/configuration and fault-recovery unit. Arm an
 independent **600-second installation watchdog** before changes. Require the
 existing bounded receiver pairing gate and localhost ntpd functionality.
+
+Compile the pinned SHM metadata helper with the observed system compiler and
+record both hashes. Before starting either daemon, save the exact accepted NTP0
+identity and metadata, then grant only that unattached segment root:ntp 0660
+access. Keep all other SHM segments unchanged. Handoff requires the recorded
+grant; recovery stops both daemons, verifies the segment identity and restores
+root:root 0600 before validating the recovered baseline. Replaced segments or
+unexpected metadata hold recovery. Interrupted grants/restores use the durable
+write-ahead receipt. No SHM sample contents are written by the helper.
 
 Before handing off, require both pinned SSH endpoints, unchanged protected state,
 correct daemon identities and credentials, a live startup monitor, workstation
