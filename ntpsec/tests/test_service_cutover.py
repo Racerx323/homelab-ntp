@@ -192,8 +192,52 @@ class JournalTests(unittest.TestCase):
                 '_EXE':'/usr/local/sbin/ntpd','_COMM':'ntpd','_TRANSPORT':'syslog',
                 'SYSLOG_IDENTIFIER':'ntpd','_PID':'123','_BOOT_ID':'a'*32,'__MONOTONIC_TIMESTAMP':'110000000'}
 
-    def check(self,rows):
-        return stage.journal_health('\n'.join(json.dumps(r) for r in rows),'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',100,123)
+    def check(self,rows,**kwargs):
+        return stage.journal_health('\n'.join(json.dumps(r) for r in rows),'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',100,123,**kwargs)
+
+    def key_rows(self):
+        return [dict(self.row(),MESSAGE=message,__MONOTONIC_TIMESTAMP=str(110000000+i))
+                for i,message in enumerate(('AUTH: authreadkeys: reading /run/ntpsec-startup/control.key',
+                                           'AUTH: authreadkeys: added 1 keys'))]
+
+    def test_control_key_pair_requires_explicit_startup_profile_and_survives_promotion(self):
+        rows=self.key_rows()
+        self.assertFalse(self.check(rows)['healthy'])
+        for promoted in (None,800):
+            result=self.check(rows,control_key=True,promoted_monotonic=promoted)
+            self.assertTrue(result['healthy']);self.assertTrue(result['control_key_check_passed'])
+            self.assertEqual(result['startup_counts']['key_read'],1)
+            self.assertEqual(result['startup_counts']['key_added'],1)
+        nts=[dict(r,__MONOTONIC_TIMESTAMP=str(810000000+i)) for i,r in enumerate(self.telemetry())]
+        self.assertTrue(self.check(rows+nts,control_key=True,promoted_monotonic=800)['healthy'])
+
+    def test_control_key_missing_duplicate_reordered_and_late_pairs_rejected(self):
+        rows=self.key_rows()
+        cases=[[],rows[:1],rows[1:],rows[::-1],rows+rows,
+               rows+[dict(rows[1],__MONOTONIC_TIMESTAMP='111000000')],
+               [dict(r,__MONOTONIC_TIMESTAMP=str(810000000+i)) for i,r in enumerate(rows)],
+               [rows[0],dict(rows[1],__MONOTONIC_TIMESTAMP='109000000')]]
+        for n,case in enumerate(cases):
+            with self.subTest(case=n):
+                self.assertFalse(self.check(case,control_key=True,promoted_monotonic=800)['healthy'])
+
+    def test_control_key_exact_messages_provenance_and_window_are_required(self):
+        for index in (0,1):
+            changes=[('PRIORITY','2'),('_SYSTEMD_UNIT','avahi-daemon.service'),('_PID','124'),
+                     ('_EXE','/usr/bin/ntpd'),('_COMM','other'),('_TRANSPORT','stdout'),
+                     ('SYSLOG_IDENTIFIER','other'),('__MONOTONIC_TIMESTAMP','221000000')]
+            changes += [('MESSAGE',m) for m in ('AUTH: authreadkeys: reading /etc/ntp.keys',
+                        'AUTH: authreadkeys: added 0 keys','AUTH: authreadkeys: added 2 keys',
+                        self.key_rows()[index]['MESSAGE']+' suffix')]
+            for key,value in changes:
+                rows=self.key_rows();rows[index][key]=value
+                with self.subTest(index=index,key=key,value=value):
+                    self.assertFalse(self.check(rows,control_key=True)['healthy'])
+            rows=self.key_rows();rows[index]['_BOOT_ID']='b'*32
+            with self.assertRaises(ValueError):self.check(rows,control_key=True)
+        for message in ('AUTH: authreadkeys: file /run/ntpsec-startup/control.key: Permission denied',
+                        'AUTH: authreadkeys: invalid key','unrelated startup failure'):
+            self.assertFalse(self.check(self.key_rows()+[dict(self.row(),MESSAGE=message)],control_key=True)['healthy'])
 
     def test_one_exact_startup_advisory_or_no_errors(self):
         self.assertTrue(self.check([])['healthy'])
@@ -418,6 +462,22 @@ class TransactionTests(unittest.TestCase):
         argv=tx.run.call_args.args[0]
         self.assertIn('--boot='+'a'*32,argv);self.assertIn('--output=json',argv)
         self.assertFalse(any(arg.startswith('--since') for arg in argv))
+
+    def test_measure_checks_control_key_pair_for_pps_startup_even_after_promotion(self):
+        for complete in (False,True):
+            tx=self.transaction({'supervisor_pid':100,'apply_monotonic':100});tx.root=Path('/fixture')
+            tx.s['boot_id']='a'*32;tx.s['recipe']['timeservice']['pps_startup']={'enabled':True}
+            rows=JournalTests().key_rows() if complete else []
+            tx.run=Mock(side_effect=['{}','\n'.join(json.dumps(r) for r in rows)])
+            tx.systemctl.side_effect=['inactive','active','100','0','']
+            tx.h=SimpleNamespace(read=Mock(return_value=json.dumps({'supervisor_pid':100,'ntpd_pid':123,
+                'phase':'promoted','promoted_monotonic':800})))
+            texts=['122 123','Uid: 65534 65534 65534 65534\nGid: 20 20 20 20',
+                   'Uid: 999 999 999 999\nGid: 985 985 985 985']
+            with patch.object(stage,'measurement_checks',return_value={}),patch.object(stage.Path,'read_text',side_effect=texts),patch.object(stage.os,'readlink',side_effect=['/usr/local/sbin/gpsd','/usr/local/sbin/ntpd']):
+                result=stage.Transaction.measure(tx)
+            self.assertEqual(result['checks']['journal_health'],complete)
+            self.assertFalse(result['checks']['startup_ready'])
 
     def test_arm_timer_precedes_mutation_and_has_fixed_lifetime(self):
         tx=self.transaction();tx.root=Path('/var/lib/fixture');tx.run=Mock()

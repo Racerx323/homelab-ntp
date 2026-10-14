@@ -59,9 +59,11 @@ def measurement_checks(value,recipe):
 MINSANE_MESSAGE='SYNC: Found 5 servers, suggest minsane at least 3'
 
 
-def journal_health(raw,boot_id,apply_monotonic,ntpd_pid,promoted_monotonic=None):
+def journal_health(raw,boot_id,apply_monotonic,ntpd_pid,promoted_monotonic=None,control_key=False):
     """Classify bounded startup telemetry, without accepting NTS packet service."""
     allowed=[];unexpected=[];seen=set();counts={'minsane':0,'read':0,'cookies':0}
+    key_read_stamp=None
+    if control_key:counts.update(key_read=0,key_added=0)
     for line in raw.splitlines():
         row=json.loads(line)
         stamp=int(row['__MONOTONIC_TIMESTAMP'])/1_000_000
@@ -73,6 +75,9 @@ def journal_health(raw,boot_id,apply_monotonic,ntpd_pid,promoted_monotonic=None)
                   'SYSLOG_IDENTIFIER':'ntpd','_PID':str(ntpd_pid)}
         message=row.get('MESSAGE');kind=None
         if isinstance(message,str):
+            # Pinned 1.2.5 authreadkeys.c logs successful loading at LOG_ERR.
+            if control_key and message=='AUTH: authreadkeys: reading /run/ntpsec-startup/control.key':kind='key_read'
+            if control_key and message=='AUTH: authreadkeys: added 1 keys':kind='key_added'
             if message==MINSANE_MESSAGE:kind='minsane'
             read=re.fullmatch(r'NTSc: read ([1-9][0-9]{0,3}) bytes',message)
             cookies=re.fullmatch(r'NTSc: Got ([1-8]) cookies, length ([1-9][0-9]{0,2}), aead=(15|16|17)\.',message)
@@ -80,15 +85,20 @@ def journal_health(raw,boot_id,apply_monotonic,ntpd_pid,promoted_monotonic=None)
             if read and int(read[1])<=2048:kind='read'
             if cookies and int(cookies[2])<=192:kind='cookies'
         digest=sha(encoded(row))
-        origin=promoted_monotonic if promoted_monotonic is not None else apply_monotonic
+        key_message=kind in ('key_read','key_added')
+        origin=apply_monotonic if key_message or promoted_monotonic is None else promoted_monotonic
         if (kind and all(row.get(k)==v for k,v in expected.items())
                 and origin<=stamp<=origin+120 and digest not in seen
-                and counts[kind]<(1 if kind=='minsane' else 3)):
+                and counts[kind]<(1 if key_message or kind=='minsane' else 3)
+                and (kind!='key_added' or key_read_stamp is not None and stamp>=key_read_stamp)):
             counts[kind]+=1;allowed.append(row)
+            if kind=='key_read':key_read_stamp=stamp
         else:unexpected.append(row)
         seen.add(digest)
     paired=counts['read']==counts['cookies']
-    return {'healthy':not unexpected and paired,'allowed':allowed,'unexpected':unexpected,
+    loaded=not control_key or counts['key_read']==counts['key_added']==1
+    return {'healthy':not unexpected and paired and loaded,'allowed':allowed,'unexpected':unexpected,
+            'control_key_check_passed':loaded,
             'startup_counts':counts,'response_counts_match':paired}
 
 
@@ -363,7 +373,8 @@ class Transaction:
                 raise ValueError('startup promotion process identity')
             checks['startup_ready']=promotion.get('phase')=='ready'
         journal=journal_health(errors,self.s['boot_id'],self.state()['apply_monotonic'],ntpd_pid,
-                               promotion.get('promoted_monotonic') if promotion else None)
+                               promotion.get('promoted_monotonic') if promotion else None,
+                               control_key=bool(self.s['recipe']['timeservice'].get('pps_startup')))
         checks['journal_health']=journal['healthy']
         return {'checks':checks,'measurement':value,'journal':journal,'promotion':promotion}
 

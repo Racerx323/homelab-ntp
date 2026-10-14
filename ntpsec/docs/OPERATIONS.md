@@ -538,10 +538,17 @@ NTS upstreams. It provides no settled timing or NTS packet acceptance. The 2 MiB
 observer reported TPACKET_V3 with zero packets and zero drops before recovery;
 this does not qualify the buffer under traffic.
 
-Before another review, qualify the journal classifier against the pinned
-daemon's control-key status messages and retained records, with rejection tests
-for unexpected messages, provenance and counts. Any correction requires fresh
-sealing and separate execution approval. Retain the short functionality gate,
+The corrected classifier requires exactly one ordered control-key read/add pair
+when PPS startup is enabled: the fixed per-start key path, one added key, current
+daemon provenance and a 120-second apply-time window. That window does not move
+when NTS promotion begins. Other key-loading messages remain errors. Retained
+v5 journal replay and regression tests pass offline, including missing,
+duplicate, reordered, late, altered and wrong-origin records. This allowance
+does not establish timing, promotion or NTS authentication.
+
+Prepare a fresh review against the recovered v5 receipt and current inputs;
+execution requires a new sealed hash and separate approval. No successor bundle
+is sealed yet. Retain the short functionality gate,
 distinct-update timing checks, bounded observation, independent recovery timer
 and mandatory baseline restoration. Warm-restart policy and persistent service
 cutover remain pending.
@@ -758,7 +765,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. Journal classifier qualification is next. Persistent warm-restart policy and service cutover remain pending. |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. Journal classifier corrected and tested offline; fresh diagnostic review pending. Persistent warm-restart policy and service cutover remain pending. |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 
