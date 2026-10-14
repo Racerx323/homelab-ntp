@@ -2,9 +2,10 @@
 """Offline historical-expiry, live-drift, recovery and read-only receipt checks."""
 import base64
 import copy
-from contextlib import nullcontext
+from contextlib import ExitStack, nullcontext
 import importlib.util
 import json
+import os
 from pathlib import Path
 import tempfile
 import types
@@ -118,12 +119,269 @@ class ContextTests(unittest.TestCase):
                     load=Mock(), sha=c.sha, encoded=c.encoded)
                 tx = types.SimpleNamespace(a=a, h=types.SimpleNamespace(read=lambda p, **kw: data[str(p)]),
                     rf={'runtime-cleanup.json': c.encoded({'result': state})}, alias={'source_stage': '/source'}, root=root, run=Mock())
-                check = types.SimpleNamespace(probe=Mock(return_value={'hardware': {}}), core=types.SimpleNamespace(i=types.SimpleNamespace(observation=lambda: {'boot': 'same'})))
+                observer = Mock(return_value='strict observer')
+                check = types.SimpleNamespace(probe=Mock(return_value={'hardware': {}}), core=types.SimpleNamespace(i=types.SimpleNamespace(command=observer, observation=lambda: {'boot': 'same'})))
                 with patch.object(continuity, 'transaction', return_value=check), patch.object(continuity.os, 'close') as close:
                     if changed:
                         with self.assertRaisesRegex(ValueError, 'source changed'): continuity.context(tx)
                     else: self.assertEqual(continuity.context(tx)['observation'], {'boot': 'same'})
                     close.assert_called_once_with(17); check.probe.assert_called_once()
+                    self.assertIs(check.core.i.command, observer)
+
+
+class CaptureTests(unittest.TestCase):
+    """Real alias validation, constructor, preflight and context; host I/O is simulated."""
+
+    def test_capture_crosses_real_preflight_and_rejects_drift(self):
+        info = importlib.util.spec_from_file_location('acquisition_fixture', ROOT/'tests/test_gpsd_acquisition.py')
+        fixtures = importlib.util.module_from_spec(info); info.loader.exec_module(fixtures)
+        acquisition = load('run-gpsd-acquisition.py'); restoration = load('run-cutover-restoration.py')
+        for case in ('valid', 'old_path', 'runtime_drift', 'continuity_drift', 'worker_active', 'source_changed'):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as temporary, ExitStack() as stack:
+                sandbox = Path(temporary)
+                def mapped(value):
+                    p = Path(value)
+                    return p if p.is_relative_to(sandbox) else sandbox/str(p).lstrip('/')
+                def read(path, **kwargs): return mapped(path).read_bytes()
+                def create(path, raw):
+                    p = mapped(path); p.parent.mkdir(parents=True, exist_ok=True)
+                    with p.open('xb') as stream: stream.write(raw)
+                    p.chmod(0o600)
+                h = types.SimpleNamespace(read=read, create=create, ancestors=Mock(), sync=Mock(), sha=c.sha)
+                refspec, reference = fixtures.fixture()
+                runtime_files = acquisition.unpack(reference['runtime.tar'])
+                runtime = json.loads(runtime_files['spec.json']); runtime['members'] = {}
+                reference['runtime.tar'] = fixtures.archive({'spec.json': c.encoded(runtime)})
+                refspec['runtime_sha256'] = c.sha(reference['runtime.tar'])
+                receipt = json.loads(reference['runtime-acceptance.json'])
+                receipt.update(bundle_sha256=refspec['runtime_sha256'], spec_sha256=c.sha(c.encoded(runtime)))
+                reference['runtime-acceptance.json'] = c.encoded(receipt)
+                receipt = json.loads(reference['runtime-cleanup.json']); receipt['bundle_sha256'] = refspec['runtime_sha256']
+                reference['runtime-cleanup.json'] = c.encoded(receipt)
+                prior = acquisition.unpack(reference['prior.tar']); previous = json.loads(prior['spec.json'])
+                previous['runtime_sha256'] = refspec['runtime_sha256']
+                reference['prior.tar'] = fixtures.archive({'spec.json': c.encoded(previous)})
+                for name in ('prior-acceptance.json', 'prior-cleanup.json'):
+                    receipt = json.loads(reference[name]); receipt['spec_sha256'] = c.sha(c.encoded(previous))
+                    if 'bundle_sha256' in receipt: receipt['bundle_sha256'] = c.sha(reference['prior.tar'])
+                    reference[name] = c.encoded(receipt)
+                refspec['members'] = {n: c.sha(v) for n, v in reference.items()}
+                reference['spec.json'] = c.encoded(refspec)
+                reference_raw = fixtures.archive(reference)
+                old = dict(refspec, operation_id='failed', stage='/var/lib/ntp-acquire-failed',
+                           apply_unit='apply', recovery_unit='watchdog', recipe={'recovery_seconds': 600})
+                observed = {'boot_id': 'boot', 'active_daemons': []}
+                monitor_files = {'reference.tar': reference_raw, 'reference.py': (ROOT/'scripts/run-gpsd-acquisition.py').read_bytes(),
+                                 'receiver-runtime.json': c.encoded({'runtime': {'files': {}}}),
+                                 'reference-report.json': c.encoded({'evidence': {}}),
+                                 'restoration-proof.json': c.encoded({'cleanup': {'result': {'phase': 'cleaned'}}})}
+                old['members'] = {n: c.sha(v) for n, v in monitor_files.items()}
+                monitor_files['spec.json'] = c.encoded(old)
+                rspec = {'stage': '/var/lib/restoration', 'members': {}}
+                report = {'evidence': {'continuity-after.json': {
+                    'base64': base64.b64encode(c.encoded(observed)).decode(), 'sha256': c.sha(c.encoded(observed))}}}
+                source = {'spec.json': c.encoded({'stage': '/var/lib/held', 'recovery_unit': 'old-recovery'})}
+                for name, raw in monitor_files.items(): create(Path(old['stage'])/name, raw)
+                mapped(old['stage']).chmod(0o700)
+                create(Path(refspec['stage'])/'spec.json', c.encoded(refspec))
+                for name, raw in reference.items():
+                    if name != 'spec.json': create(Path(refspec['stage'])/name, raw)
+                create(Path(rspec['stage'])/'report.json', c.encoded(report))
+                create(Path(rspec['stage'])/'cleanup.json', c.encoded({'phase': 'cleaned'}))
+                create(Path(rspec['stage'])/'source-state-before.json', b'{}')
+                create(Path('/var/lib/held/state.json'), b'{}')
+                runtime_state = c.encoded(json.loads(reference['runtime-cleanup.json'])['result'])
+                create(Path(refspec['source_stage'])/'state.json', runtime_state)
+                files = {n: (ROOT/path).read_bytes() for n, path in c.PATHS.items()}
+                files.update({n: b'fixture' for n in c.EXTRA})
+                files['reference.py'] = monitor_files['reference.py']
+                spec = {k: old[k] for k in ('hostname', 'boot_id', 'kernel', 'endpoints', 'old_ipv4')}
+                spec.update(schema=1, purpose='runtime-revalidation', operation_id='replacement',
+                    stage='/var/lib/ntp-acquire-replacement', source_stage=old['stage'],
+                    source_sha256=c.sha(files['monitor.tar']), prepared_epoch=1, expires_epoch=86401)
+                if case == 'old_path': spec['stage'] = '/var/lib/ntp-revalidate-replacement'
+                spec['members'] = {n: c.sha(v) for n, v in files.items()}
+                files.update({'spec.json': c.encoded(spec), 'manifest.json': b'', 'review.md': b''})
+                create(Path(spec['stage'])/'spec.json', files['spec.json'])
+                mapped(spec['stage']).chmod(0o700)
+                def bootstrap(alias, raw):
+                    acquisition.validate(alias, raw)
+                    return h
+                def source_guard(*args):
+                    return os.open(sandbox/'lock', os.O_CREAT | os.O_RDWR, 0o600), {'state.json': runtime_state}
+                def run(tx, argv, **kwargs):
+                    if argv[:2] == ['/usr/bin/systemctl', 'show']:
+                        if '--property=DropInPaths' in argv: return ''
+                        if argv[-1] == '--value': return 'loaded' if case == 'worker_active' else 'not-found'
+                        return ('Id='+argv[2]+'\nLoadState=not-found\nActiveState=inactive\nSubState=dead\nFragmentPath=\nDropInPaths=\n')
+                    if argv == ['/usr/bin/stty', '-F', '/dev/serial0', '-g']: return 'saved'
+                    raise AssertionError('unexpected command: '+repr(argv))
+                def probe():
+                    if case == 'runtime_drift': raise ValueError('fixture native drift')
+                    if case == 'source_changed': mapped('/var/lib/held/state.json').write_bytes(b'changed')
+                    return {'phase': 'ready', 'boot_id': 'boot', 'hardware': {'uart': 'verified'}}
+                check = types.SimpleNamespace(probe=Mock(side_effect=probe), core=types.SimpleNamespace(i=types.SimpleNamespace(
+                    observation=lambda: {'boot_id': 'changed'} if case == 'continuity_drift' else observed)))
+                original_frozen = c.frozen
+                def frozen(raw):
+                    if raw == files['base.py']: return base
+                    if raw == files['continuity.py']: return continuity
+                    if raw == b'restoration': return restoration
+                    return original_frozen(raw)
+                for module, name, value in (
+                    (c, 'inputs', lambda _: (old, monitor_files, rspec, {'stage.py': b'restoration'}, report, source)),
+                    (c, 'Path', mapped), (base, 'Path', mapped), (continuity, 'Path', mapped),
+                    (c, 'frozen', frozen), (base, 'load', lambda _: acquisition),
+                    (acquisition, 'bootstrap', bootstrap), (acquisition, 'source_guard', source_guard),
+                    (acquisition, 'idle', Mock()), (acquisition, 'prior_guard', Mock()),
+                    (acquisition, 'serial_identity', lambda: {'target': '/dev/ttyAMA0'}),
+                    (acquisition, 'load', Mock()), (restoration, 'source_lock', lambda *a: os.open(sandbox/'source-lock', os.O_CREAT | os.O_RDWR, 0o600)),
+                    (continuity, 'transaction', lambda *a: check), (base.Transaction, 'run', run),
+                    (base.Transaction, 'snapshot', lambda *a: None), (c.time, 'time', lambda: 1000)):
+                    stack.enter_context(patch.object(module, name, value))
+                if case != 'valid':
+                    with self.assertRaisesRegex(ValueError, {'old_path': 'identity/window/member', 'runtime_drift': 'native drift',
+                            'continuity_drift': 'continuity drift', 'worker_active': 'worker/unit', 'source_changed': 'held source changed'}[case]):
+                        c.capture(h, spec, files)
+                    continue
+                result = c.capture(h, spec, files)
+                self.assertEqual(result['phase'], 'runtime_validated')
+                self.assertEqual(check.probe.call_count, 2)
+                self.assertTrue(mapped(Path(spec['stage'])/'before.json').is_file())
+                self.assertEqual(read('/var/lib/held/state.json'), b'{}')
+                self.assertEqual(read(Path(refspec['source_stage'])/'state.json'), runtime_state)
+                self.assertEqual(read(Path(old['stage'])/'spec.json'), monitor_files['spec.json'])
+                self.assertFalse(mapped(Path(old['stage'])/'state.json').exists())
+
+
+class ControllerTests(unittest.TestCase):
+    def test_prepare_rejects_local_review_or_spec_drift_before_start(self):
+        info = importlib.util.spec_from_file_location('acquisition_fixture', ROOT/'tests/test_gpsd_acquisition.py')
+        fixture = importlib.util.module_from_spec(info); info.loader.exec_module(fixture)
+        files = {n: (ROOT/path).read_bytes() for n, path in c.PATHS.items()}
+        files.update({'spec.json': b'{}', 'review.md': b'review', 'known_hosts': b'pinned'})
+        raw = fixture.archive(files)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); bundle = root/'bundle.tar'
+            bundle.write_bytes(raw); bundle.chmod(0o600)
+            for name in ('review.md', 'spec.json', 'known_hosts'):
+                (root/name).write_bytes(files[name]); (root/name).chmod(0o600)
+            with patch.object(c, 'frozen', return_value=types.SimpleNamespace(validate=Mock())):
+                c.prepare(bundle, c.sha(raw), current=True)
+                for name in ('review.md', 'spec.json'):
+                    (root/name).write_bytes(files[name]+b'\n')
+                    with self.assertRaisesRegex(ValueError, 'local revalidation review/spec drift'):
+                        c.prepare(bundle, c.sha(raw), current=True)
+                    c.prepare(bundle, c.sha(raw), current=False)
+                    (root/name).write_bytes(files[name])
+
+    def test_one_shot_transport_loss_then_expired_dual_readback_and_closure(self):
+        spec, report = ReceiptTests().fixture()
+        spec.update(old_ipv4=spec['endpoints'][0], members={}, stage='/var/lib/ntp-acquire-fixture')
+        files = {n: (ROOT/path).read_bytes() for n, path in c.PATHS.items()}
+        files['spec.json'] = c.encoded(spec)
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); args = types.SimpleNamespace(bundle=root/'bundle.tar', sha256='digest', mode='start', attempt=1)
+            calls = []
+            def transport(argv, **kwargs):
+                calls.append(argv)
+                compile(kwargs['input'], 'sealed-payload', 'exec')
+                self.assertIn('StrictHostKeyChecking=yes', argv)
+                self.assertIn('HostKeyAlias='+spec['old_ipv4'], argv)
+                if args.mode == 'start': return types.SimpleNamespace(returncode=255)
+                value = report if args.mode == 'readback' else {'phase': 'cleaned', 'evidence_preserved': True,
+                                                              'report_sha256': c.sha(c.encoded(report))}
+                kwargs['stdout'].write(c.encoded({'spec_sha256': c.sha(files['spec.json']), 'result': value})+b'CUTOVER_EXIT_STATUS=0\n')
+                return types.SimpleNamespace(returncode=0)
+            with patch.object(c, 'prepare', return_value=(spec, files)), patch.dict(os.environ, {'SSH_AUTH_SOCK': ''}), \
+                    patch('subprocess.run', side_effect=transport), patch.object(c.time, 'time', return_value=1100):
+                with self.assertRaisesRegex(ValueError, 'SSH agent'): c.execute(args)
+                self.assertFalse((root/'start-execution.json').exists()); self.assertEqual(calls, [])
+                with patch.dict(os.environ, {'SSH_AUTH_SOCK': '/fixture-agent'}):
+                    with self.assertRaisesRegex(ValueError, 'terminal lost'): c.execute(args)
+                    with self.assertRaises(FileExistsError): c.execute(args)
+                    self.assertEqual(len(calls), 1)
+                    args.mode = 'readback'
+                    with patch.object(c.time, 'time', return_value=spec['expires_epoch']+86400):
+                        self.assertEqual(set(c.execute(args)['phases'].values()), {'runtime_validated'})
+                        args.mode = 'cleanup'
+                        self.assertEqual(set(c.execute(args)['phases'].values()), {'cleaned'})
+            self.assertEqual(len(calls), 4)
+            self.assertTrue((root/'start-0-transport.json').is_file())
+            self.assertEqual(json.loads((root/'acceptance.json').read_bytes())['state'], 'runtime_validated')
+
+    def test_sealer_validates_alias_with_frozen_acquisition_validator(self):
+        info = importlib.util.spec_from_file_location('acquisition_fixture', ROOT/'tests/test_gpsd_acquisition.py')
+        fixture = importlib.util.module_from_spec(info); info.loader.exec_module(fixture)
+        reference, inputs = fixture.fixture(); inputs['spec.json'] = c.encoded(reference)
+        raw = fixture.archive(inputs)
+        files = {n: b'fixture' for n in set(c.PATHS)|c.EXTRA}
+        files['reference.py'] = (ROOT/'scripts/run-gpsd-acquisition.py').read_bytes()
+        spec = {k: reference[k] for k in ('hostname', 'boot_id', 'kernel', 'endpoints', 'old_ipv4')}
+        old = dict(spec, stage='/var/lib/ntp-acquire-failed')
+        spec.update(schema=1, purpose='runtime-revalidation', operation_id='fresh', stage='/var/lib/ntp-acquire-fresh',
+                    source_stage=old['stage'], source_sha256=c.sha(files['monitor.tar']), prepared_epoch=1000, expires_epoch=87400,
+                    members={n: c.sha(v) for n, v in files.items()})
+        files.update({'spec.json': c.encoded(spec), 'manifest.json': b'', 'review.md': b''})
+        monitor_files = {'reference.tar': raw}
+        with patch.object(c, 'inputs', return_value=(old, monitor_files, {}, {}, {}, {})):
+            c.validate(spec, files)
+            bad = dict(spec, stage='/var/lib/ntp-revalidate-fresh')
+            with self.assertRaisesRegex(ValueError, 'identity/window/member'): c.validate(bad, files)
+            receipt = json.loads(inputs['runtime-acceptance.json']); receipt['boot_id'] = 'different'
+            inputs['runtime-acceptance.json'] = c.encoded(receipt)
+            monitor_files['reference.tar'] = fixture.archive(inputs)
+            with self.assertRaisesRegex(ValueError, 'runtime/identity/boot/input'): c.validate(spec, files)
+
+
+class EntryTests(unittest.TestCase):
+    def test_timeout_and_missing_report_keep_partial_evidence_for_readback(self):
+        import socket
+        import subprocess
+        for timed_out in (False, True):
+            with self.subTest(timed_out=timed_out), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary)/'stage'
+                spec = {'stage': str(root), 'hostname': socket.gethostname(), 'kernel': os.uname().release,
+                        'boot_id': Path('/proc/sys/kernel/random/boot_id').read_text().strip(),
+                        'prepared_epoch': 1000, 'expires_epoch': 87400}
+                def create(path, raw):
+                    with path.open('xb') as stream: stream.write(raw)
+                h = types.SimpleNamespace(ancestors=Mock(), create=create, read=lambda p, **kw: p.read_bytes(), sync=Mock())
+                files = {'helper.py': b'helper', 'inspector.py': b'inspector', 'base.py': b'base'}
+                modules = {b'helper': h, b'inspector': types.SimpleNamespace(protected=lambda *a: h), b'base': base}
+                process = Mock(pid=98765)
+                count = 0
+                def wait(**kwargs):
+                    nonlocal count
+                    count += 1
+                    if count == 1:
+                        (root/'commands.jsonl').write_bytes(b'{"partial":true}\n')
+                        if timed_out: raise subprocess.TimeoutExpired('fixture', 190)
+                    return 0
+                process.wait.side_effect = wait
+                with patch.object(c, 'validate'), patch.object(c, 'frozen', side_effect=lambda raw: modules[raw]), \
+                        patch.object(c.os, 'geteuid', return_value=0), patch.dict(os.environ, {'SUDO_USER': 'ama'}), \
+                        patch.object(c.time, 'time', return_value=1100), patch.object(c.subprocess, 'Popen', return_value=process), \
+                        patch.object(c.os, 'killpg') as kill:
+                    result = c.entry(spec, files, 'start')
+                    self.assertEqual(result['phase'], 'validation_held')
+                    self.assertIn('commands.jsonl', result['evidence'])
+                    self.assertEqual(c.entry(spec, files, 'readback'), result)
+                    closure = c.entry(spec, files, 'cleanup', {'report_sha256': c.sha(c.encoded(result))})
+                    self.assertTrue(closure['evidence_preserved'])
+                    self.assertEqual(kill.call_count, int(timed_out))
+                    self.assertEqual(process.wait.call_count, 2 if timed_out else 1)
+
+    def test_unreadable_evidence_does_not_leave_running_report(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); (root/'before.json').symlink_to(root/'missing')
+            (root/'commands.jsonl').write_bytes(b'partial')
+            h = types.SimpleNamespace(read=lambda p, **kw: p.read_bytes(), create=lambda p, raw: p.write_bytes(raw), sync=Mock())
+            with patch.object(c, 'frozen', return_value=base):
+                c.write_report(h, root, {'base.py': b''}, {'phase': 'runtime_validated'})
+            report = json.loads((root/'report.json').read_bytes())
+            self.assertEqual(report['phase'], 'validation_held'); self.assertFalse(report['time_service_accepted'])
+            self.assertIn('commands.jsonl', report['evidence']); self.assertIn('before.json', report['error'])
 
 
 class ReceiptTests(unittest.TestCase):
@@ -140,7 +398,7 @@ class ReceiptTests(unittest.TestCase):
     def test_matching_readbacks_accept_prerequisites_only(self):
         spec, report = self.fixture(); result = c.terminal(spec, 'digest', dict.fromkeys(spec['endpoints'], report))
         self.assertEqual(result['state'], 'runtime_validated'); self.assertFalse(result['time_service_accepted'])
-        for case in ('missing_check', 'evidence', 'epoch', 'boot', 'timing', 'endpoint', 'observation', 'hardware'):
+        for case in ('missing_check', 'evidence', 'epoch', 'boot', 'timing', 'endpoint', 'observation', 'hardware', 'integer_check', 'float_epoch', 'current_epoch'):
             other = copy.deepcopy(report)
             if case == 'missing_check': other['checks'].pop('hardware')
             if case == 'evidence': other['evidence']['commands.jsonl']['sha256'] = 'changed'
@@ -149,6 +407,12 @@ class ReceiptTests(unittest.TestCase):
             if case == 'timing': other['time_service_accepted'] = True
             if case == 'observation': other['observation_sha256'] = 'changed'
             if case == 'hardware': other['hardware'] = {'wrong': True}
+            if case == 'integer_check': other['checks']['runtime'] = 1
+            if case == 'float_epoch': other['epoch'] = 1100.0
+            if case == 'current_epoch':
+                current = json.loads(base64.b64decode(other['evidence']['current-runtime.json']['base64']))
+                current['epoch'] = 1100.0; raw = c.encoded(current)
+                other['evidence']['current-runtime.json'] = {'sha256': c.sha(raw), 'base64': base64.b64encode(raw).decode()}
             results = dict.fromkeys(spec['endpoints'], other)
             if case == 'endpoint': results[spec['endpoints'][1]] = report | {'phase': 'validation_held'}
             with self.subTest(case=case), self.assertRaises(ValueError): c.terminal(spec, 'digest', results)

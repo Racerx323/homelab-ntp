@@ -580,12 +580,14 @@ always restores; its expired window is not extended by this operation.
 
 #### Read-only prerequisite revalidation
 
-The [revalidation v1 review](/home/aaron/code/.local-evidence/homelab-ntp/current/runtime-revalidation-20261014-v1/review.md)
-uses `scripts/run-runtime-revalidation.py`. Its approved capture is now closed
-with `validation_held`: runtime binding rejected before a fresh observation.
-Matching dual-stack readback and diagnostic closure preserve the evidence.
-Correct and test the stage-path binding before preparing a successor for separate
-execution approval; this held receipt cannot authorize activation.
+The [revalidation v2 review](/home/aaron/code/.local-evidence/homelab-ntp/current/runtime-revalidation-20261014-v2/review.md)
+uses `scripts/run-runtime-revalidation.py` and awaits separate execution approval.
+V1 remains closed with `validation_held`, matching dual-stack readback and diagnostic
+closure; its receipt cannot authorize activation. V2 uses the frozen validator's
+`/var/lib/ntp-acquire-<operation-id>` path contract. Sealing exercises the same
+runtime alias validation as preflight, and start checks the local review/spec
+against the archive before registering execution. A missing SSH-agent reference
+rejects locally without consuming the one-shot start.
 It binds the exact failed-monitor archive/rejection/readback and the accepted
 restoration evidence. Verify the failed stage has no operation state, backups,
 monitor record or worker/timer; preserve its partial files. Hold the original
@@ -600,6 +602,14 @@ cache, network and protected files through that current-hardware checker. Compar
 the fresh observer result with accepted restoration continuity and recheck source
 immutability. This validates metadata and prerequisites, not physical PPS quality
 or time service. Existing bounded network/egress probes remain included.
+
+Offline regression coverage traverses the real alias validator, transaction
+constructor, preflight and runtime context with simulated host I/O. It covers
+success and drift rejection, lost transport without replay, expiry-safe readback
+and closure, and worker timeout/missing-report evidence retention. Preserve the
+frozen observer's stderr rejection and require true boolean checks, integer epochs
+and bounded evidence in accepted receipts. These checks do not establish live
+hardware/runtime acceptance.
 
 One 180-second capture retains complete evidence or a held report. Reserve 190
 seconds before its start-window end. Up to three numbered dual-stack readbacks
@@ -993,7 +1003,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. V6 journal gate passed, but restoration is held on continuity drift; readback 13 matches on both endpoints. Source cleanup blocked; diagnostic inspection and closure complete. PPS deadline confirmed; historical boot/PID baseline and failed timeservice state differ. Timer was waiting at capture; later outcome unknown. Frozen-checker replay isolates failed timeservice state; guarded reset executed; restoration continuation accepted through both endpoints and closed. Old timer already absent/inactive; historical v6 held state and evidence preserved. Offline PPS replay complete: three passing updates did not fit the retained trajectory before the bootstrap deadline. Continuous PPS-first monitoring and terminal retention implemented/tested locally; start-and-monitor v1 stopped in preflight on expired nested hardware acceptance; conditional readback found no operation state; partial stage retained. Read-only hardware/runtime revalidation v1 held on runtime binding; matching dual-stack readback and diagnostic closure complete; corrected revalidation pending; successor recovery tested past historical expiry. Accept the new prerequisite report before sealing activation. Persistent warm-restart policy and timing acceptance remain pending. |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. V6 journal gate passed, but restoration is held on continuity drift; readback 13 matches on both endpoints. Source cleanup blocked; diagnostic inspection and closure complete. PPS deadline confirmed; historical boot/PID baseline and failed timeservice state differ. Timer was waiting at capture; later outcome unknown. Frozen-checker replay isolates failed timeservice state; guarded reset executed; restoration continuation accepted through both endpoints and closed. Old timer already absent/inactive; historical v6 held state and evidence preserved. Offline PPS replay complete: three passing updates did not fit the retained trajectory before the bootstrap deadline. Continuous PPS-first monitoring and terminal retention implemented/tested locally; start-and-monitor v1 stopped in preflight on expired nested hardware acceptance; conditional readback found no operation state; partial stage retained. Read-only hardware/runtime revalidation v1 held on runtime binding; matching dual-stack readback and diagnostic closure complete; audited replacement v2 prepared for separate approval; successor recovery tested past historical expiry. Accept the new prerequisite report before sealing activation. Persistent warm-restart policy and timing acceptance remain pending. |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

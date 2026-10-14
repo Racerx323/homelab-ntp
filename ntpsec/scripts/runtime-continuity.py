@@ -60,7 +60,8 @@ def context(tx, create=False):
                 if a.sha(h.read(sub/name)) != digest: raise ValueError('runtime helper input drift')
             if json.loads(h.read(sub/'spec.json')) != runtime: raise ValueError('runtime copy spec drift')
         check = transaction(a.load(sub/'host-configuration-stage.py'), runtime)
-        check.run = tx.run; check.core.run = tx.run; check.core.i.command = tx.run
+        check.run = tx.run; check.core.run = tx.run
+        # Keep the frozen observer's own timeout/output/stderr rejection contract.
         result = check.probe()
         if any(h.read(Path(alias['source_stage'])/name) != raw for name, raw in retained.items()):
             raise ValueError('original runtime source changed')
