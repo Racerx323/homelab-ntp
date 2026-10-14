@@ -840,7 +840,11 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    changes; neither authorizes automatic capture expansion or another trial.
    For the revised diagnostic, bind at most four unique public capture addresses
    to the original retained proof plus latest recovered upstream measurements.
-   Capture loss remains an evidence-completeness failure.
+   Capture loss remains an evidence-completeness failure, independently of NTS
+   authentication and timing results. Bind successor recovery provenance to the
+   numbered readback matching its terminal receipt; preserve earlier nonterminal
+   attempts without relabeling them. Review retained startup/discipline statistics
+   before changing calibration, polling, observation duration or timing limits.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.

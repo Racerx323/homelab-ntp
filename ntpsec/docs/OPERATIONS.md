@@ -454,12 +454,16 @@ remains false. Do not replay it. Use the existing
 network and latest recovered-transaction directories plus `--retained-dir` and its exact
 `--retained-sha256`. The checked-in `runtime-diagnostic-recipe.json` and current
 input hashes define the scope; do not reuse a historical executable bundle.
-V3 completed recovery, dual-stack readback and cleanup with partial diagnostic
+V4 completed recovery, dual-stack readback and cleanup with partial diagnostic
 evidence; see HISTORY. A successor binds that recovery and the original accepted
 retained proof by its immutable member hash.
 
 The [v4 review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-runtime-20261013-v4/review.md)
-is prepared offline for separate execution approval. Its candidate source
+completed its observation and mandatory recovery. Terminal dual-stack readback
+was attempt 11; cleanup is complete. NTS authentication passed in the trial, but
+PPS timing failed and capture drops withheld diagnostic acceptance. Preserve all
+nonterminal readbacks. A successor must resolve the terminal attempt from its
+matching receipt, not assume attempt 1 or relabel earlier evidence. Its candidate source
 restriction is `nomodify noquery`, without `notrust`: pinned 1.2.5 processes the
 legacy MAC requirement before NTS response validation. Every upstream still
 requires `nts`; Default LAN serving and localhost administration are unchanged.
@@ -471,7 +475,9 @@ original accepted retained proof and the latest recovered measurement. Bind both
 to the target and immutable receipts; reject unobserved additions, duplicates,
 non-public addresses or more than four entries. Both observed Cloudflare
 addresses are included. Do not dynamically expand capture. V3's reported loss
-remains unexplained; either drop counter still prevents complete evidence.
+remains unexplained and v4 also reported capture drops; either drop counter
+still prevents complete evidence. Review retained observer and timing statistics
+before preparing another trial. Do not infer network loss from observer drops.
 Preparation does not authorize another activation.
 
 This profile temporarily installs the same candidate file set and starts the

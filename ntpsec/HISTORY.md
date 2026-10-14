@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; runtime diagnostic v2 recovered after early gate; partial packet evidence retained; dual-stack readback and cleanup complete; runtime diagnostic v3 recovered on changed Cloudflare address; rejecting sample and journal retained; dual-stack readback and cleanup complete; source-authentication candidate corrected/tested offline; four-address runtime diagnostic v4 awaits separate execution approval |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; runtime diagnostic v2 recovered after early gate; partial packet evidence retained; dual-stack readback and cleanup complete; runtime diagnostic v3 recovered on changed Cloudflare address; rejecting sample and journal retained; dual-stack readback and cleanup complete; runtime diagnostic v4 completed 30 samples and recovered; 57/57 NTS replies authenticated; PPS timing and capture completeness failed; terminal dual-stack readback attempt 11 and cleanup complete |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -25,6 +25,40 @@ The current accepted source stage is
 `/home/ama/.ntp-source-build-mdns-20261012-v1`; the earlier v5 stage is preserved.
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
+
+## Runtime diagnostic v4 completed and recovered — October 13, 2026
+
+Executed approved archive `80d348c79af00f1ee8c0c2260eed57f50a0553adbfa2fe0e47bb79c56cc37def`
+once. The early serial SHM0/PPS SHM2 gate passed. The worker completed 30 samples
+within the 900-second observation window, then restored the baseline; recovery
+finished about 908 seconds after apply. Matching terminal dual-stack readback
+was attempt **11**, not attempt 1. Cleanup completed; all earlier readbacks,
+source archives, statistics and backups remain preserved.
+
+The final sample recorded 57 NTS sends and 57 good NTS receives, zero bad NTS
+receives and zero system bad-authentication events. All three upstreams passed
+the authentication/reach checks. This trial supports the source-policy correction;
+it does not establish future availability or time-service acceptance.
+
+PPS remained selected with full reach, but no post-600-second sample passed all
+timing checks. The final PPS offset was -30.728319 ms and peer jitter 27.804557 ms,
+against the unchanged 5 ms/1 ms limits. Frequency estimation changed from zero
+to about 159.668 ppm during startup and ended at 149.504 ppm. Loopstats, peerstats
+and clockstats are preserved for offline analysis; no calibration, poll change,
+threshold relaxation or automatic retry was performed.
+
+The observer retained 94 packets, reporting 114 received and 20 capture drops,
+with zero interface drops and unsupported records. Packet evidence is incomplete;
+these are observer counters, not proof of network-path loss. All 328 bounded
+journal records were retained. No diagnostic execution/evidence error occurred,
+but packet incompleteness withheld diagnostic acceptance. Time service remains
+unaccepted independently because timing limits failed and this profile always
+recovers.
+
+Next: analyze retained PPS/startup discipline statistics and packet-observer loss
+offline before proposing another bounded trial. Any successor must bind terminal
+readback attempt 11 and its matching receipt/cleanup, preserving the earlier
+nonterminal readbacks rather than renaming or overwriting them.
 
 ## Corrected source policy and diagnostic v4 prepared — October 13, 2026
 
