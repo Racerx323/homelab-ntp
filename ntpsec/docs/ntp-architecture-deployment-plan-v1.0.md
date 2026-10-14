@@ -909,8 +909,11 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    Bind its complete dual-stack report and closure, then reserve installation
    time within the new observation's start window. Seal a new operation identity
    against the accepted prerequisite archive, matching endpoint readbacks and
-   diagnostic closure. Prerequisite acceptance does not authorize activation or
-   establish timing acceptance. Recovery of the already-started
+   diagnostic closure. Handoff continuity must use that accepted current-boot
+   observation; inherited checks must not require the pre-reboot baseline's boot
+   ID. Exercise the full handoff path against retained historical and current
+   identities before sealing. Prerequisite acceptance does not authorize
+   activation or establish timing acceptance. Recovery of the already-started
    operation rechecks those actual facts without imposing a receipt-age limit;
    changed identity or state still holds recovery. No repeated boot changes are
    implied. Structural handoff requires dual-stack management and workstation
