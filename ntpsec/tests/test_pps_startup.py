@@ -3,6 +3,7 @@
 import copy
 import importlib.util
 import json
+import os
 from pathlib import Path
 import tempfile
 import types
@@ -223,6 +224,7 @@ class MonitorTests(unittest.TestCase):
         runner = object.__new__(s.Startup)
         runner.root = root/'runtime'; runner.root.mkdir()
         runner.evidence = root/'startup-monitor.json'
+        runner.statistics = root/'statistics'; runner.statistics.mkdir()
         runner.policy = s.MONITOR_POLICY; runner.cursor = None
         runner.session = Mock(); runner.session.config.return_value = True
         runner.machine = s.Machine(s.MONITOR_POLICY)
@@ -242,6 +244,16 @@ class MonitorTests(unittest.TestCase):
         self.assertEqual(json.loads((ROOT/'configs/pps-monitor-policy.json').read_text()), s.MONITOR_POLICY)
         self.assertNotIn('bootstrap_seconds', s.MONITOR_POLICY)
         self.assertNotIn('completion_seconds', s.MONITOR_POLICY)
+
+    def test_statistics_budget_counts_hardlinks_once_and_rejects_unsafe_entries(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); path = root/'peerstats'; path.write_bytes(b'123')
+            os.link(path, root/'peerstats.20261014')
+            self.assertEqual(s.statistics_usage(root), {'files': 2, 'unique_bytes': 3})
+            with path.open('wb') as stream: stream.truncate(8*1024**2+1)
+            with self.assertRaisesRegex(ValueError, 'storage bound'): s.statistics_usage(root)
+            path.write_bytes(b'123'); (root/'clockstats').symlink_to(path)
+            with self.assertRaisesRegex(ValueError, 'membership/type'): s.statistics_usage(root)
 
     def test_slow_start_has_no_selection_or_quality_deadline(self):
         m = s.Machine(s.MONITOR_POLICY)
@@ -356,6 +368,18 @@ class MonitorTests(unittest.TestCase):
             self.assertLess(len(raw), 512*1024)
             self.assertNotIn('AES', raw)
             self.assertNotIn('control.key', raw)
+
+    def test_large_rolling_history_evicts_oldest_without_stopping_monitor(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            runner = self.runner(Path(temporary))
+            runner.status['samples'] = [{'elapsed_seconds': n, 'measurement': 'x'*6000} for n in range(120)]
+            runner.status['sample_count'] = 120
+            runner.save()
+            saved = json.loads(runner.evidence.read_text())
+            self.assertLess(len(saved['samples']), 120)
+            self.assertEqual(saved['samples'][-1]['elapsed_seconds'], 119)
+            self.assertEqual(saved['sample_count'], 120)
+            self.assertLessEqual(runner.evidence.stat().st_size, 512*1024)
 
     def test_failed_evidence_write_preserves_failure_and_credential_cleanup(self):
         with tempfile.TemporaryDirectory() as temporary:

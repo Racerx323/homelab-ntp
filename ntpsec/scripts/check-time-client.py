@@ -8,7 +8,13 @@ import struct
 import time
 
 
-def ntp_response(raw, nonce):
+def ntp_response(raw, nonce, structural=False):
+    if structural:
+        if (len(raw)!=48 or raw[0]&7!=4 or (raw[0]>>3)&7 not in (3,4)
+                or not 1<=raw[1]<=16 or raw[24:32]!=nonce or not any(raw[40:48])):
+            raise ValueError('matching NTP protocol response required')
+        return {'stratum':raw[1],'leap':raw[0]>>6,'refid_hex':raw[12:16].hex(),
+                'time_service_accepted':False}
     if len(raw)!=48 or raw[0]&7!=4 or (raw[0]>>3)&7 not in (3,4) or raw[0]>>6!=0 or raw[1]!=1:
         raise ValueError('synchronized stratum-1 NTP response required')
     if raw[24:32]!=nonce or raw[12:16].rstrip(b'\0')!=b'PPS' or not any(raw[32:40]) or not any(raw[40:48]):
@@ -20,12 +26,12 @@ def ntp_response(raw, nonce):
     return {'stratum':raw[1],'leap':raw[0]>>6,'refid':'PPS'}
 
 
-def client_ntp(endpoint):
+def client_ntp(endpoint, structural=False):
     family=socket.AF_INET6 if ':' in endpoint else socket.AF_INET
     with socket.socket(family,socket.SOCK_DGRAM) as sock:
         sock.settimeout(3);sock.connect((endpoint,123))
         nonce=secrets.token_bytes(8);packet=bytearray(48);packet[0]=0x23;packet[40:48]=nonce
-        sock.send(packet);result=ntp_response(sock.recv(512),nonce)
+        sock.send(packet);result=ntp_response(sock.recv(512),nonce,structural)
         result['local_address']=sock.getsockname()[0]
         # A mode-6 READVAR response, including permission errors, violates localhost-only queries.
         sock.send(struct.pack('!BBHHHHH',0x26,2,1,0,0,0,0))
@@ -106,8 +112,12 @@ def browse(endpoints,hostname):
     return {'packets':packets,'matched':True}
 
 
-def check(spec,spec_sha256):
-    v4,v6=[client_ntp(e) for e in spec['endpoints']]
+def check(spec,spec_sha256,structural=False):
+    v4,v6=[client_ntp(e,structural) for e in spec['endpoints']]
+    if structural:
+        return {'target':spec['hostname'],'spec_sha256':spec_sha256,'epoch':int(time.time()),
+                'checks':{'ipv4':True,'ipv6':True,'queries_denied':True},
+                'observations':{'ipv4':v4,'ipv6':v6},'time_service_accepted':False}
     mdns=browse(spec['endpoints'],spec['hostname'])
     return {'target':spec['hostname'],'spec_sha256':spec_sha256,'epoch':int(time.time()),
             'checks':{'ipv4':True,'ipv6':True,'queries_denied':True,'mdns':True},

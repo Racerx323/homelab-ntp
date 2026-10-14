@@ -153,7 +153,7 @@ class Transaction:
         if len(p.stdout)>2*1024**2 or len(p.stderr)>65536:raise ValueError('command output bound')
         record=encoded({'argv':argv,'status':p.returncode,'stdout':p.stdout.decode(errors='replace'),
                         'stderr':p.stderr.decode(errors='replace')})
-        log='recovery-commands.jsonl' if getattr(self,'recovering',False) and self.s['recipe'].get('diagnostic') else 'commands.jsonl'
+        log='recovery-commands.jsonl' if getattr(self,'recovering',False) and (self.s['recipe'].get('diagnostic') or self.s.get('purpose')=='service-monitor') else 'commands.jsonl'
         fd=os.open(self.root/log,os.O_WRONLY|os.O_CREAT|os.O_APPEND|os.O_NOFOLLOW,0o600)
         try:
             info=os.fstat(fd)
@@ -270,7 +270,7 @@ class Transaction:
                 for name,(member,mode) in DESTINATIONS.items():
                     state['installed'].append(name);self.write('state.json',state)
                     self.replace(name,self.f[member],mode)
-                self.run(['/usr/bin/systemd-analyze','verify','/etc/systemd/system/timeservice.service','/etc/systemd/system/ntpleapfetch.service','/etc/systemd/system/ntpleapfetch.timer'])
+                self.run(['/usr/bin/systemd-analyze','verify',*[name for name in DESTINATIONS if name.startswith('/etc/systemd/system/')]])
                 self.systemctl('daemon-reload');self.systemctl('restart','avahi-daemon.service')
                 if self.s['recipe'].get('diagnostic'):self.start_packet_capture()
                 self.systemctl('stop','systemd-timesyncd.service')

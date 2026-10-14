@@ -547,9 +547,9 @@ The rendered configuration must bind `pps_monitor_evidence` to
 `/var/lib/ntp-acquire-<operation-id>/startup-monitor.json` in its root-owned
 0700 operation directory. Reject an existing record and unsafe ancestry. Write
 owner-private bounded status there before updating `/run/ntpsec-startup`.
-Retain the latest 120 observations, total sample count, latest measurement,
+Retain up to the latest 120 observations, total sample count, latest measurement,
 machine state, command acknowledgements and terminal reason, with a 512 KiB
-record bound. Raw keys, control authentication payloads and packet captures
+record bound, evicting oldest observations when needed to fit. Raw keys, control authentication payloads and packet captures
 are not recorded. Incremental, boot/PID-bound journal reads retain initialization
 progress without repeatedly scanning the complete lifetime journal. A failed
 evidence write must not block daemon or credential cleanup. Last observed ready
@@ -557,19 +557,54 @@ state plus a terminal `running=false` record is not a running-service claim.
 An uncatchable kill or power loss leaves only the last persisted observation;
 missing terminal metadata must not be inferred as a clean stop.
 
-This helper is implemented and tested offline, not activated. The existing
-`run-service-cutover.py --diagnostic` path still restores on its timer; do not
-use it as the new start-and-monitor operation. Before sealing, implement and
-test the distinct activation/recovery contract: retain an installation watchdog
-until structural startup and dual-stack access are proven, then explicitly
-hand off to continuous monitoring without a quality-expiry rollback. Define
-fault-triggered and operator-requested restoration, durable evidence readback,
-storage limits and source-stage retention. Startup handoff must not claim
-timing acceptance or bypass later workstation/client and mDNS acceptance.
+### Start-and-monitor activation and recovery
 
-Consume the accepted restoration continuation receipt and matching readbacks
-and closure when preparing a successor; preserve the held v6 history and
-source evidence. Any new trial needs a new sealed review and execution approval.
+`scripts/run-service-monitor.py` seals an independent activation stage against
+the accepted restoration archive, receipt, matching dual-stack readbacks and
+closure. The [prepared review](/home/aaron/code/.local-evidence/homelab-ntp/current/service-monitor-20261014-v1/review.md)
+requires separate execution approval. The old diagnostic remains unchanged and
+always restores; its expired window is not extended by this operation.
+
+Before mutation, freshly verify the restored baseline, native/runtime/network
+and hardware prerequisites, held source state, protected restoration members,
+idle old recovery worker and inactive old timer. Require exact current-boot
+continuity with the accepted restoration observation. Drift stops the stage.
+Root-owned 0700 staging binds current inputs and a unique operation identity.
+Back up destinations, arm a 600-second installation watchdog, install the
+rendered configuration/service and fault-recovery unit, then start once.
+The short receiver gate and localhost ntpd response must pass before handoff.
+
+Handoff requires both pinned SSH endpoints, unchanged protected configuration,
+daemon identities/credentials, a fresh live monitor record and workstation
+IPv4/IPv6 NTP responses with administrative queries denied. Leap-3/stratum-16
+responses are allowed for this structural check; no timing acceptance is issued.
+Only successful handoff cancels the watchdog. A queued watchdog checks committed
+state under the operation lock and leaves monitoring alone. Failed cancellation
+triggers restoration. Lost responses require readback, never a repeated start.
+
+After handoff, PPS-first monitoring has no timing-quality shutdown deadline.
+Systemd service failure invokes the staged recovery worker; an explicit operator
+recovery uses the same path. A clean external service stop does not invoke
+`OnFailure`. Warm restart is unsupported: leave timeservice disabled at boot,
+timesyncd enabled but stopped during this run, and leap-fetch disabled.
+Final synchronized workstation/mDNS acceptance and boot persistence remain pending.
+
+Statistics are checked each monitor interval: at most 128 regular named entries
+and 8 MiB of unique inode data; hardlinked current/dated pairs count once. An
+8 MiB per-file limit also applies to the service. These are fault bounds, not a
+disk quota or log-rotation policy. Exceeding a bound triggers recovery. Keep
+up to 60 numbered captures of durable monitor state at the 30/300-second cadence;
+exhausting that retrieval budget does not stop the service. Dual-stack readback
+returns stored state, not a new sample, and never accepts timing.
+
+Recovery stops the pair, preserves terminal monitor/statistics evidence, restores
+files/UART and the baseline clock service, then checks continuity. Conditional
+transient cleanup requires a matching recovered receipt and idle workers. Held
+recovery requires a new review. Preserve the original v6 held state and all
+source stages. Subsequent readback/recovery uses sealed helpers even if repository
+files change; a new start still requires unchanged current inputs. Start before
+the review's installation cutoff; monitoring and recovery of that started
+operation do not expire with its start window.
 
 ### Local packet-buffer qualification
 
@@ -908,7 +943,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. V6 journal gate passed, but restoration is held on continuity drift; readback 13 matches on both endpoints. Source cleanup blocked; diagnostic inspection and closure complete. PPS deadline confirmed; historical boot/PID baseline and failed timeservice state differ. Timer was waiting at capture; later outcome unknown. Frozen-checker replay isolates failed timeservice state; guarded reset executed; restoration continuation accepted through both endpoints and closed. Old timer already absent/inactive; historical v6 held state and evidence preserved. Offline PPS replay complete: three passing updates did not fit the retained trajectory before the bootstrap deadline. Continuous PPS-first monitoring and terminal retention implemented/tested locally; prepare a separate start-and-monitor activation/recovery stage bound to the continuation receipt. Persistent warm-restart policy and service cutover remain pending. |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. V6 journal gate passed, but restoration is held on continuity drift; readback 13 matches on both endpoints. Source cleanup blocked; diagnostic inspection and closure complete. PPS deadline confirmed; historical boot/PID baseline and failed timeservice state differ. Timer was waiting at capture; later outcome unknown. Frozen-checker replay isolates failed timeservice state; guarded reset executed; restoration continuation accepted through both endpoints and closed. Old timer already absent/inactive; historical v6 held state and evidence preserved. Offline PPS replay complete: three passing updates did not fit the retained trajectory before the bootstrap deadline. Continuous PPS-first monitoring and terminal retention implemented/tested locally; independent start-and-monitor activation/recovery stage prepared and tested against the continuation receipt; sealed execution approval pending. Persistent warm-restart policy and timing acceptance remain pending. |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

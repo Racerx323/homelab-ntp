@@ -47,6 +47,22 @@ def create(path, raw):
         stream.write(raw); stream.flush(); os.fsync(stream.fileno())
 
 
+def statistics_usage(root):
+    """Bound retained ntpd statistics without reading or deleting their contents."""
+    if not stat.S_ISDIR(root.lstat().st_mode):
+        raise ValueError('regular statistics directory required')
+    total = 0; seen = set(); count = 0
+    for path in root.iterdir():
+        count += 1; info = path.lstat()
+        if (count > 128 or not stat.S_ISREG(info.st_mode)
+                or not re.fullmatch(r'(?:loopstats|peerstats|clockstats)(?:\.\d{8})?', path.name)):
+            raise ValueError('statistics membership/type bound')
+        identity = (info.st_dev, info.st_ino)
+        if identity not in seen: total += info.st_size; seen.add(identity)
+        if total > 8*1024**2: raise ValueError('statistics storage bound exceeded')
+    return {'files': count, 'unique_bytes': total}
+
+
 def bootstrap(raw, keyfile):
     lines = raw.decode().splitlines()
     active = [line.split('#', 1)[0].strip() for line in lines]
@@ -237,6 +253,7 @@ class Startup:
         self.policy = config['pps_startup']
         self.evidence = None
         self.cursor = None
+        self.statistics = Path('/var/log/ntpstats')
         if self.policy == MONITOR_POLICY:
             # Each operation owns a distinct protected destination; never reuse it.
             self.evidence = Path(config.get('pps_monitor_evidence', ''))
@@ -285,6 +302,10 @@ class Startup:
 
     def save(self):
         raw = (json.dumps(self.status, sort_keys=True)+'\n').encode()
+        if getattr(self, 'policy', POLICY) == MONITOR_POLICY:
+            while len(raw) > 512*1024 and len(self.status['samples']) > 1:
+                self.status['samples'].pop(0)
+                raw = (json.dumps(self.status, sort_keys=True)+'\n').encode()
         if len(raw) > 512*1024:
             raise ValueError('startup status size bound')
         targets = [self.root/'promotion.json']
@@ -299,7 +320,7 @@ class Startup:
         if getattr(self, 'policy', POLICY) == MONITOR_POLICY:
             self.status['sample_count'] += 1
             self.status['samples'].append({key: self.status.get(key) for key in
-                ('elapsed_seconds', 'machine', 'measurement', 'events', 'phase', 'error')})
+                ('elapsed_seconds', 'machine', 'measurement', 'events', 'phase', 'error', 'statistics')})
             self.status['samples'] = self.status['samples'][-MONITOR_POLICY['retained_samples']:]
 
     def tick(self, process):
@@ -312,6 +333,9 @@ class Startup:
         self.next_poll = now + (MONITOR_POLICY['interval_seconds'] if monitoring else POLICY['interval_seconds'])
         self.status.update(elapsed_seconds=now-self.started, measurement=None, events=[])
         try:
+            if monitoring:
+                self.status['statistics'] = None
+                self.status['statistics'] = statistics_usage(self.statistics)
             if process.poll() is not None or self.pid is not None and self.pid != process.pid:
                 raise ValueError('ntpd process continuity failed')
             self.pid = process.pid; self.status['ntpd_pid'] = self.pid

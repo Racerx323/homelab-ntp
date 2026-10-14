@@ -894,7 +894,17 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    the temporary runtime directory without obstructing recovery. A new activation
    stage must separately prove installation/access safety before handing off
    from its installation watchdog to continuous monitoring. Fault-triggered and
-   operator-requested recovery remain required. Running while unqualified is not
+   operator-requested recovery remain required. The independent monitor stage
+   uses a 600-second installation watchdog and a fresh read-only preflight against
+   the accepted restoration observation; historical execution windows stay
+   unchanged. Structural handoff requires dual-stack management and workstation
+   NTP responses, denied administrative queries, daemon safety and a live monitor.
+   Unsynchronized responses can establish transport only. Keep cold-start service
+   boot enablement and leap-fetch disabled pending their later acceptance; retain
+   baseline timesyncd enablement for reboot. Service failure invokes recovery;
+   clean external stop needs explicit recovery. Bound statistics and durable
+   evidence with resource-fault recovery, separate from timing quality. Up to
+   60 numbered observations do not limit service duration. Running while unqualified is not
    timing acceptance. The old bounded diagnostic retains mandatory recovery and
    must not be used for this operation. See OPERATIONS for implementation and
    remaining activation requirements, and HISTORY for evidence and outcomes.
