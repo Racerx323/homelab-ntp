@@ -256,7 +256,7 @@ def seal(args):
     files = {n: (ROOT/path).read_bytes() for n, path in PATHS.items()}
     files.update({n: source[n] for n in REFERENCE})
     files.update({'restoration.tar': raw, 'restoration-proof.json': encoded(proof)})
-    fresh_raw = transport.private_file(args.revalidation_dir/'runtime-revalidation.tar', 32*1024**2)
+    fresh_raw = transport.private_file(args.revalidation_dir/'runtime-revalidation.tar', 64*1024**2)
     if sha(fresh_raw) != args.revalidation_sha256: raise ValueError('revalidation archive digest')
     fresh_proof = {'acceptance': json.loads(transport.private_file(args.revalidation_dir/'acceptance.json')),
         'readbacks': [json.loads(transport.private_file(args.revalidation_dir/f'readback-{args.revalidation_attempt}-{i}-result.json', 32*1024**2)) for i in (0, 1)],
@@ -286,6 +286,7 @@ def seal(args):
         for name, data in sorted(files.items()):
             info = tarfile.TarInfo(name); info.mode = 0o600; info.size = len(data); info.mtime = 0
             tar.addfile(info, io.BytesIO(data))
+    prepare(bundle, sha(bundle.read_bytes()))
     result = {'bundle': str(bundle), 'sha256': sha(bundle.read_bytes()), 'target': spec['hostname'],
               'start_before_epoch': spec['expires_epoch']-600, 'execution_authorized': False}
     transport.write_new(args.output/'sealing.json', result)
@@ -299,6 +300,9 @@ def prepare(bundle, checksum, require_current=True):
     files = unpack(raw); spec = json.loads(files['spec.json']); frozen(files['controller.py']).validate(spec, files)
     if require_current and any(files.get(n) != (ROOT/path).read_bytes() for n, path in PATHS.items()):
         raise ValueError('current monitor input drift')
+    if require_current and any(transport.private_file(bundle.parent/name, 96*1024**2) != files[name]
+                               for name in ('spec.json', 'review.md')):
+        raise ValueError('local monitor review/spec drift')
     if require_current and time.time()+600 >= spec['expires_epoch']:
         raise ValueError('fresh prerequisite window cannot cover installation watchdog')
     if transport.private_file(bundle.parent/'known_hosts', 4096) != files['known_hosts']:
@@ -310,6 +314,8 @@ def execute(args):
     os.umask(0o077)
     spec, files = prepare(args.bundle.absolute(), args.sha256, require_current=args.mode == 'start')
     directory = args.bundle.absolute().parent
+    if not os.environ.get('SSH_AUTH_SOCK'):
+        raise ValueError('existing SSH agent required before registering execution')
     transport = frozen(files['transport.py'])
     base = frozen(files['base-controller.py'])
     # Frozen functions retain their own globals rather than the namespace wrapper.

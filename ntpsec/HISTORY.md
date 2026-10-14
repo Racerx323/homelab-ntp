@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; runtime diagnostic v2 recovered after early gate; partial packet evidence retained; dual-stack readback and cleanup complete; runtime diagnostic v3 recovered on changed Cloudflare address; rejecting sample and journal retained; dual-stack readback and cleanup complete; runtime diagnostic v4 completed 30 samples and recovered; 57/57 NTS replies authenticated; PPS timing and capture completeness failed; terminal dual-stack readback attempt 11 and cleanup complete; retained analysis complete; larger buffer passed isolated local fixture; cold-start promotion and receipt-selected recovery implemented and tested locally; runtime diagnostic v5 recovered after its first sample rejected control-key journal messages; dual-stack readback and cleanup complete; journal classifier corrected and tested offline; diagnostic v6 executed; 30 samples retained; recovery held on continuity drift; matching readback 13 retained; restoration and source cleanup remain unaccepted; recovery inspection captured and closed; PPS qualification deadline confirmed; historical boot/PID baseline and failed timeservice state differ; recovery timer still waiting at capture; exact frozen-checker replay isolates failed timeservice state; guarded reset tested; restoration continuation accepted through both endpoints and closed; old timer already absent/inactive; original v6 held state/evidence preserved; Offline PPS replay complete; continuous PPS-first monitor and terminal retention implemented/tested locally; start-and-monitor v1 stopped in preflight on expired nested hardware acceptance; conditional readback found no state file; partial stage retained; read-only hardware/runtime revalidation v1 executed and held on runtime binding; matching dual-stack readback and diagnostic closure complete; revalidation v2 prerequisites accepted through both endpoints; diagnostic closure complete; monitor v2 started and passed early/workstation checks; handoff rejected historical boot-ID comparison; recovered through both endpoints and transient cleanup complete; corrected handoff review pending; successor recovery checker tested past historical expiry; PPS qualification and service activation remain pending |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; runtime diagnostic v2 recovered after early gate; partial packet evidence retained; dual-stack readback and cleanup complete; runtime diagnostic v3 recovered on changed Cloudflare address; rejecting sample and journal retained; dual-stack readback and cleanup complete; runtime diagnostic v4 completed 30 samples and recovered; 57/57 NTS replies authenticated; PPS timing and capture completeness failed; terminal dual-stack readback attempt 11 and cleanup complete; retained analysis complete; larger buffer passed isolated local fixture; cold-start promotion and receipt-selected recovery implemented and tested locally; runtime diagnostic v5 recovered after its first sample rejected control-key journal messages; dual-stack readback and cleanup complete; journal classifier corrected and tested offline; diagnostic v6 executed; 30 samples retained; recovery held on continuity drift; matching readback 13 retained; restoration and source cleanup remain unaccepted; recovery inspection captured and closed; PPS qualification deadline confirmed; historical boot/PID baseline and failed timeservice state differ; recovery timer still waiting at capture; exact frozen-checker replay isolates failed timeservice state; guarded reset tested; restoration continuation accepted through both endpoints and closed; old timer already absent/inactive; original v6 held state/evidence preserved; Offline PPS replay complete; continuous PPS-first monitor and terminal retention implemented/tested locally; start-and-monitor v1 stopped in preflight on expired nested hardware acceptance; conditional readback found no state file; partial stage retained; read-only hardware/runtime revalidation v1 executed and held on runtime binding; matching dual-stack readback and diagnostic closure complete; revalidation v2 prerequisites accepted through both endpoints; diagnostic closure complete; monitor v2 started and passed early/workstation checks; handoff rejected historical boot-ID comparison; recovered through both endpoints and transient cleanup complete; handoff continuity corrected/tested offline; read-only revalidation v3 prepared against recovered monitor v2, awaiting approval; successor recovery checker tested past historical expiry; PPS qualification and service activation remain pending |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -25,6 +25,45 @@ The current accepted source stage is
 `/home/ama/.ntp-source-build-mdns-20261012-v1`; the earlier v5 stage is preserved.
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
+
+## Handoff continuity audit and replacement prerequisite review — October 14, 2026
+
+Audited the reachable old-action paths through sealing, preflight, inherited
+handoff/measurement, monitoring, recovery and cleanup. The confirmed handoff
+fault compared the current boot with the pre-reboot runtime baseline. Handoff
+now compares packages/boot/Python with the operation's protected fresh-preflight
+observation, whose digest must match the accepted prerequisite report. Historical
+native, file, account, loader and SHM provenance checks remain in force.
+
+The audit also found inconsistent handling of the supervisor's temporary
+`journalctl` child: measurement allowed it, but unchanged-state checking counted
+it as an extra daemon. Both paths now validate the exact scoped arguments and
+root credentials, and still reject unknown children, missing/competing daemons,
+wrong credentials and genuine drift. This race was identified offline; it was
+not the recorded v2 failure. Retained observations exclude Avahi/timesyncd, so
+no stale-PID claim or normalization is warranted for their recovery restarts.
+
+The next prerequisite capture binds recovered monitor v2, matching readback
+attempt 2, its recovered receipt and transient cleanup. It verifies that retained
+stage/state and absent workers, rechecks the original restoration/source chain,
+and preserves exact observation comparisons. Local start guards also require
+review/spec bytes to match the archive and an SSH-agent reference before
+registering an execution. No target contact occurred during this work.
+
+Initial local sealing rejected the 36,526,080-byte retained monitor archive at
+the old 32 MiB input bound, before creating an output stage. Archive inputs and
+protected staging now share an explicit 64 MiB bound; ordinary file/report and
+capture bounds remain unchanged. Local regression checks cover the protection
+path, and sealing validates the complete output archive.
+
+Prepared [read-only revalidation v3](/home/aaron/code/.local-evidence/homelab-ntp/current/runtime-revalidation-20261014-v3/review.md);
+the bundle digest is in adjacent `sealing.json`. Scope: one bounded capture,
+conditional dual-stack readback and diagnostic closure; no service/boot change.
+Offline tests exercise real inherited handoff/measurement and recovered-source
+capture with simulated host I/O. Prior executed evidence remains unchanged.
+
+Next: separately approve and accept this prerequisite capture. Only then seal
+a replacement PPS-first activation review. Timing acceptance remains false.
 
 ## Monitor v2 handoff rejected; baseline restored — October 14, 2026
 

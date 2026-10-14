@@ -311,6 +311,39 @@ class Transaction:
                 state=self.state();state.update(phase='apply_held',error=str(error)[:500]);self.write('state.json',state)
                 self.recover(locked=True);raise
 
+    def continuity_observation(self, transaction):
+        return transaction.baseline['observation']
+
+    def daemon_children(self):
+        """Identify daemon children, allowing only the pinned startup journal reader."""
+        pid=self.state()['supervisor_pid']; daemons={}; readers=[]
+        children=Path('/proc/'+str(pid)+'/task/'+str(pid)+'/children').read_text().split()
+        for child in children:
+            try:
+                executable=os.readlink('/proc/'+child+'/exe')
+                status=Path('/proc/'+child+'/status').read_text().splitlines()
+                argv=Path('/proc/'+child+'/cmdline').read_bytes().rstrip(b'\0').split(b'\0') if executable=='/usr/bin/journalctl' else []
+            except FileNotFoundError:
+                continue  # A short-lived reader may exit; missing daemons still fail below.
+            ids={line.split(':',1)[0]:[int(v) for v in line.split(':',1)[1].split()] for line in status if line.startswith(('Uid:','Gid:'))}
+            if executable=='/usr/bin/journalctl' and self.s['recipe']['timeservice'].get('pps_startup'):
+                readers.append((argv,ids));continue
+            if executable not in ('/usr/local/sbin/gpsd','/usr/local/sbin/ntpd') or executable in daemons:
+                raise ValueError('unexpected or duplicate supervisor child')
+            daemons[executable]={'pid':int(child),'ids':ids}
+        if set(daemons)!={'/usr/local/sbin/gpsd','/usr/local/sbin/ntpd'} or len(readers)>1:
+            raise ValueError('missing daemon or duplicate journal reader')
+        expected=[b'/usr/bin/journalctl',b'--quiet',b'--no-pager',b'--output=json',
+                  ('--boot='+self.s['boot_id'].replace('-','')).encode(),
+                  ('_PID='+str(daemons['/usr/local/sbin/ntpd']['pid'])).encode(),
+                  b'_EXE=/usr/local/sbin/ntpd',b'--lines=1000']
+        for argv,ids in readers:
+            if (argv[:len(expected)]!=expected or len(argv) not in (len(expected),len(expected)+1)
+                    or len(argv)>len(expected) and not re.fullmatch(rb'--after-cursor=[A-Za-z0-9;=:_-]{1,1024}',argv[-1])
+                    or ids!={'Uid':[0]*4,'Gid':[0]*4}):
+                raise ValueError('unapproved startup journal reader')
+        return daemons
+
     def unchanged(self):
         self.retained()
         root=self.root/'runtime-check';m=load(root/'host-configuration-stage.py')
@@ -319,11 +352,11 @@ class Transaction:
             if sha(self.h.read(Path(name)))!=digest:raise ValueError('boot configuration drift')
         if transaction.accounts()!=transaction.state()['created_account']:raise ValueError('runtime account drift')
         if transaction.snapshot_file(Path('/etc/ld.so.cache'))!=transaction.state()['cache_after']:raise ValueError('loader cache drift')
-        observed=transaction.core.i.observation();expected=transaction.baseline['observation']
+        observed=transaction.core.i.observation();expected=self.continuity_observation(transaction)
         for name in ('inventory','boot_id','python'):
             if observed[name]!=expected[name]:raise ValueError('package/boot/Python drift')
-        children=set(Path('/proc/'+str(self.state()['supervisor_pid'])+'/task/'+str(self.state()['supervisor_pid'])+'/children').read_text().split())
-        if {str(p['pid']) for p in observed['active_daemons']}!=children or len(children)!=2:
+        children=self.daemon_children()
+        if {p['pid'] for p in observed['active_daemons']}!={p['pid'] for p in children.values()} or len(observed['active_daemons'])!=2:
             raise ValueError('competing or missing time daemon')
         native=transaction.core.cm.inspect_install(root/'release.json',transaction.spec['members']['release.json'])
         expected_native=transaction.baseline['installed_state']
@@ -375,17 +408,9 @@ class Transaction:
         checks['same_supervisor']=pid==self.state()['supervisor_pid']
         checks['no_restarts']=self.systemctl('show','timeservice.service','--property=NRestarts','--value').strip()=='0'
         checks['no_overrides']=not self.systemctl('show','timeservice.service','--property=DropInPaths','--value').strip()
-        children=Path('/proc/'+str(pid)+'/task/'+str(pid)+'/children').read_text().split()
-        identities={};ntpd_pid=None
-        for child in children:
-            executable=os.readlink('/proc/'+child+'/exe')
-            if executable=='/usr/bin/journalctl' and self.s['recipe']['timeservice'].get('pps_startup'):
-                continue
-            status=Path('/proc/'+child+'/status').read_text().splitlines()
-            ids={line.split(':',1)[0]:[int(v) for v in line.split(':',1)[1].split()] for line in status if line.startswith(('Uid:','Gid:'))}
-            if executable in identities:raise ValueError('duplicate daemon child')
-            identities[executable]=ids
-            if executable=='/usr/local/sbin/ntpd':ntpd_pid=int(child)
+        children=self.daemon_children()
+        identities={name:row['ids'] for name,row in children.items()}
+        ntpd_pid=children['/usr/local/sbin/ntpd']['pid']
         checks['credentials']=identities=={'/usr/local/sbin/gpsd':{'Uid':[65534]*4,'Gid':[20]*4},
                                            '/usr/local/sbin/ntpd':{'Uid':[999]*4,'Gid':[985]*4}}
         errors=self.run(['/usr/bin/journalctl','--quiet','--no-pager','--output=json',
@@ -628,7 +653,8 @@ def entry(spec,files,mode,proofs=None):
     tx=Transaction(spec,files);tx.h.ancestors(root)
     if stat.S_IMODE(root.stat().st_mode)!=0o700 or tx.h.read(root/'spec.json')!=encoded(spec):raise ValueError('protected stage mismatch')
     for name,digest in spec['members'].items():
-        if sha(tx.h.read(root/name,limit=32*1024**2))!=digest:raise ValueError('sealed cutover input drift')
+        limit=64*1024**2 if spec.get('purpose')=='service-monitor' and name.endswith('.tar') else 32*1024**2
+        if sha(tx.h.read(root/name,limit=limit))!=digest:raise ValueError('sealed cutover input drift')
     if mode=='start':
         tx.preflight();tx.arm()
         tx.run(['/usr/bin/systemd-run','--quiet','--unit='+spec['apply_unit'],

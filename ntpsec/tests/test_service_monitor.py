@@ -2,7 +2,7 @@
 """Offline activation handoff, watchdog races, observation and recovery boundaries."""
 import copy
 import base64
-from contextlib import nullcontext
+from contextlib import nullcontext, ExitStack
 import importlib.util
 import io
 import json
@@ -54,6 +54,38 @@ def bind(spec, files):
 
 
 class BindingTests(unittest.TestCase):
+    def test_missing_agent_does_not_register_an_execution(self):
+        spec, files, _ = fixture()
+        with tempfile.TemporaryDirectory() as temporary, patch.dict(c.os.environ, {}, clear=True), \
+                patch.object(c, 'prepare', return_value=(spec, files)):
+            root = Path(temporary)
+            args = types.SimpleNamespace(bundle=root/'service-monitor.tar', sha256='bound', mode='start')
+            with self.assertRaisesRegex(ValueError, 'SSH agent'): c.execute(args)
+            self.assertEqual(list(root.iterdir()), [])
+
+    def test_current_start_requires_local_review_and_spec_bytes(self):
+        spec, files, _ = fixture()
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary); root.chmod(0o700)
+            for name, path in c.PATHS.items():
+                p = root/path; p.parent.mkdir(parents=True, exist_ok=True); p.write_bytes(files[name])
+            for name in ('review.md', 'spec.json', 'known_hosts'):
+                (root/name).write_bytes(files[name]); (root/name).chmod(0o600)
+            bundle = root/'service-monitor.tar'
+            with tarfile.open(bundle, 'w') as archive:
+                for name, raw in files.items():
+                    item = tarfile.TarInfo(name); item.size = len(raw); archive.addfile(item, io.BytesIO(raw))
+            bundle.chmod(0o600); digest = c.sha(bundle.read_bytes())
+            transport = c.load(ROOT/'scripts/run-foundation-preflight.py')
+            with patch.object(c, 'ROOT', root), patch.object(c, 'load', return_value=transport), \
+                    patch.object(c, 'frozen', return_value=types.SimpleNamespace(validate=Mock())), patch.object(c.time, 'time', return_value=400):
+                c.prepare(bundle, digest)
+                for name in ('review.md', 'spec.json'):
+                    (root/name).write_bytes(b'edited')
+                    with self.assertRaisesRegex(ValueError, 'local monitor review/spec drift'): c.prepare(bundle, digest)
+                    c.prepare(bundle, digest, require_current=False)
+                    (root/name).write_bytes(files[name])
+
     def test_real_restoration_terminal_api_and_closure(self):
         # Exercise the frozen helper API rather than replacing restoration().
         helper = c.frozen((ROOT/'scripts/run-cutover-restoration.py').read_bytes())
@@ -200,13 +232,14 @@ class HandoffTests(unittest.TestCase):
                 tx.run = Mock(); tx.systemctl = Mock(side_effect=['loaded' if case == 'collision' else 'not-found', ''])
                 validator = types.SimpleNamespace(source_lock=Mock(return_value=17),
                     timer_state=Mock(return_value={'timer': {'ActiveState': 'active' if case == 'timer' else 'inactive'}}),
-                    evidence=Mock(return_value=b'{"identity":"expected"}'))
+                    evidence=Mock(return_value=b'{"identity":"expected"}'),
+                    validate=Mock(return_value=(old, {}, None)), failed_stage=Mock())
                 observed = {'identity': 'changed' if case == 'continuity' else 'expected'}
                 checker = types.SimpleNamespace(Transaction=lambda spec: types.SimpleNamespace(
                     core=types.SimpleNamespace(i=types.SimpleNamespace(observation=lambda: observed))))
                 base.load.return_value = checker
                 with patch.object(c, 'validate', return_value=(rspec, {'stage.py': b''}, report, source)), \
-                        patch.object(c, 'revalidation', return_value=(fresh, {}, fresh_report)), \
+                        patch.object(c, 'revalidation', return_value=(fresh, {'stage.py': b'', 'monitor-proof.json': b'{}'}, fresh_report)), \
                         patch.object(stage, 'module', return_value=validator), patch.object(stage.os, 'close') as close, \
                         patch.object(FakeTransaction, 'preflight', create=True) as preflight:
                     if case == 'valid':
@@ -283,6 +316,109 @@ class ObservationTests(unittest.TestCase):
             result = tx.recover()
             self.assertFalse(result['startup_promotion']['running'])
             self.assertEqual(tx.calls, ['recover'])
+
+
+class RealHandoffTests(unittest.TestCase):
+    def test_inherited_handoff_uses_fresh_identity_and_rejects_drift(self):
+        base = load('service-cutover-stage.py'); acquisition = load('run-gpsd-acquisition.py')
+        for case in ('valid', 'journal_reader', 'reader_exits', 'boot', 'inventory', 'python',
+                     'preflight', 'native', 'candidate', 'extra_child', 'reader_args', 'reader_uid',
+                     'missing_daemon', 'competing_daemon', 'credentials', 'journal'):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as temporary, ExitStack() as stack:
+                root = Path(temporary)
+                def mapped(value):
+                    p = Path(value)
+                    return p if p.is_relative_to(root) else root/str(p).lstrip('/')
+                def put(path, raw):
+                    p = mapped(path); p.parent.mkdir(parents=True, exist_ok=True); p.write_bytes(raw)
+                cls = stage.transaction_class(base, c); tx = cls.__new__(cls)
+                tx.root = root; tx.s, tx.f, _ = fixture(); tx.s['boot_id'] = 'current-boot'
+                state = {'phase': 'observing', 'deadline': 1600, 'supervisor_pid': 42, 'apply_monotonic': 900}
+                tx.state = lambda: copy.deepcopy(state); tx.lock = lambda: nullcontext()
+                tx.write = lambda name, value: state.update(value) if name == 'state.json' else put(root/name, c.encoded(value))
+                tx.h = types.SimpleNamespace(read=lambda path, **kw: mapped(path).read_bytes())
+                tx.retained = Mock(); tx.hardware_gate = Mock(); tx.cancel_timer = Mock()
+                expected = {'boot_id': 'current-boot', 'inventory': {'gpsd': 'pinned'}, 'python': {'version': [3, 13]},
+                            'active_daemons': [], 'services': 'baseline'}
+                put(root/'fresh-preflight.json', c.encoded({'observation': expected, 'checks': 'passed',
+                    'restoration_sha256': tx.s['restoration_sha256']}))
+                if case == 'preflight': put(root/'fresh-preflight.json', b'{}')
+                observed = copy.deepcopy(expected)
+                observed['active_daemons'] = [{'pid': 51}, {'pid': 52}]
+                if case == 'competing_daemon': observed['active_daemons'].append({'pid': 90})
+                if case in ('boot', 'inventory', 'python'):
+                    observed[{'boot': 'boot_id'}.get(case, case)] = 'drift'
+                native = {'files': {'usr/local/bin/ntpq': {'sha256': 'pinned'}}}
+                old_native = copy.deepcopy(native)
+                if case == 'native': native['files']['usr/local/bin/ntpq']['sha256'] = 'drift'
+                check = types.SimpleNamespace(spec={'hardware_prerequisite': {'boot_hashes': {}}, 'members': {'release.json': 'digest'}},
+                    baseline={'observation': dict(expected, boot_id='historical-boot'), 'installed_state': old_native,
+                              'protected_files': {}, 'queries': {'time_units': {'stdout': ''}}},
+                    accounts=lambda: {}, state=lambda: {'created_account': {}, 'cache_after': {}}, snapshot_file=lambda p: {},
+                    core=types.SimpleNamespace(i=types.SimpleNamespace(observation=lambda: observed),
+                        cm=types.SimpleNamespace(inspect_install=lambda *a: native)), network_checks=Mock())
+                host = types.SimpleNamespace(Transaction=lambda spec: check, unit_states=lambda text: {})
+                put(root/'runtime-check/spec.json', b'{}')
+                tx.f['receiver-runtime.json'] = b'{"runtime":{"files":{}}}'
+                shm = b'key shmid perms size cpid uid gid cuid cgid nattch\n'
+                put('/proc/sysvipc/shm', shm); tx.rf = {'prior-shm-after.txt': shm}; tx.a = acquisition
+                def snapshot(name):
+                    member, mode = base.DESTINATIONS[name]
+                    return {'sha256': 'drift' if case == 'candidate' else c.sha(tx.f[member]), 'mode': mode, 'uid': 0, 'gid': 0}
+                tx.snapshot = snapshot
+                children = ['51', '52']; executable = {'51': '/usr/local/sbin/gpsd', '52': '/usr/local/sbin/ntpd'}
+                put('/proc/51/status', b'Uid: 65534 65534 65534 65534\nGid: 20 20 20 20\n')
+                put('/proc/52/status', b'Uid: 999 999 999 999\nGid: 985 985 985 985\n')
+                if case == 'credentials': put('/proc/52/status', b'Uid: 0 0 0 0\nGid: 0 0 0 0\n')
+                if case == 'missing_daemon': children.remove('52')
+                if case in ('journal_reader', 'reader_exits', 'reader_args', 'reader_uid', 'extra_child'):
+                    children.append('53'); executable['53'] = '/usr/bin/journalctl' if case != 'extra_child' else '/usr/bin/sh'
+                    put('/proc/53/status', b'Uid: 0 0 0 0\nGid: 0 0 0 0\n')
+                    argv = ['/usr/bin/journalctl', '--quiet', '--no-pager', '--output=json', '--boot=currentboot',
+                            '_PID=52', '_EXE=/usr/local/sbin/ntpd', '--lines=1000', '--after-cursor=s=cursor']
+                    if case == 'reader_args': argv[5] = '_PID=99'
+                    if case == 'reader_uid': put('/proc/53/status', b'Uid: 1 1 1 1\nGid: 0 0 0 0\n')
+                    put('/proc/53/cmdline', ('\0'.join(argv)+'\0').encode())
+                put('/proc/42/task/42/children', ' '.join(children).encode())
+                def readlink(path):
+                    child = Path(path).parent.name
+                    if child == '53' and case == 'reader_exits': raise FileNotFoundError(path)
+                    return executable[child]
+                values = {'--property=MainPID': '42', '--property=NRestarts': '0', '--property=DropInPaths': ''}
+                def systemctl(*args):
+                    if args[1] == tx.s['recovery_unit']+'.timer': return 'inactive'
+                    for key, value in values.items():
+                        if key in args: return value
+                    if args[1] == 'systemd-timesyncd.service': return 'inactive'
+                    if args[1] == 'timeservice.service': return 'active'
+                    return ''
+                tx.systemctl = systemctl
+                journal = []
+                for i, message in enumerate(('AUTH: authreadkeys: reading /run/ntpsec-startup/control.key', 'AUTH: authreadkeys: added 1 keys')):
+                    journal.append(json.dumps({'_BOOT_ID': 'currentboot', '__MONOTONIC_TIMESTAMP': str((901+i)*1000000),
+                        'PRIORITY': '3', '_SYSTEMD_UNIT': 'timeservice.service', '_EXE': '/usr/local/sbin/ntpd',
+                        '_COMM': 'ntpd', '_TRANSPORT': 'syslog', 'SYSLOG_IDENTIFIER': 'ntpd', '_PID': '52', 'MESSAGE': message}))
+                if case == 'journal': journal = []
+                measurement = {'system': {'leap': 3, 'stratum': 16}, 'peers': [
+                    {'status': 0, 'variables': {'srcadr': 'SHM(2)', 'reach': 0}}]}
+                tx.run = lambda argv, **kw: c.encoded(measurement).decode() if argv[0] == '/usr/bin/python3' else '\n'.join(journal)
+                put('/run/ntpsec-startup/promotion.json', c.encoded({'phase': 'bootstrap', 'supervisor_pid': 42, 'ntpd_pid': 52}))
+                put(root/'startup-monitor.json', c.encoded({'boot_id': tx.s['boot_id'], 'supervisor_pid': 42,
+                    'final_sha256': c.sha(tx.f['ntp.conf']), 'running': True, 'phase': 'bootstrap',
+                    'started_monotonic': 900, 'elapsed_seconds': 100}))
+                for obj, name, value in ((base, 'Path', mapped), (base, 'load', lambda p: host),
+                    (base.os, 'readlink', readlink), (c, 'revalidation', lambda f: ({}, {}, {'observation_sha256': c.sha(c.encoded(expected))})),
+                    (stage.time, 'time', lambda: 1000), (stage.time, 'monotonic', lambda: 1000)):
+                    stack.enter_context(patch.object(obj, name, value))
+                stack.enter_context(patch.dict(base.DIRECTORIES, {}, clear=True))
+                if case in ('valid', 'journal_reader', 'reader_exits'):
+                    result = tx.accept(proofs(tx))
+                    self.assertEqual(result['phase'], 'monitoring'); self.assertFalse(result['time_service_accepted'])
+                    self.assertFalse(result['handoff_measurement']['checks']['pps_selected'])
+                    tx.cancel_timer.assert_called_once(); check.network_checks.assert_called_once(); tx.hardware_gate.assert_called_once()
+                else:
+                    with self.assertRaises((ValueError, KeyError)): tx.accept(proofs(tx))
+                    tx.cancel_timer.assert_not_called(); self.assertEqual(state['phase'], 'observing')
 
 
 class ClientTests(unittest.TestCase):

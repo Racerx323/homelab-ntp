@@ -136,7 +136,7 @@ class CaptureTests(unittest.TestCase):
         info = importlib.util.spec_from_file_location('acquisition_fixture', ROOT/'tests/test_gpsd_acquisition.py')
         fixtures = importlib.util.module_from_spec(info); info.loader.exec_module(fixtures)
         acquisition = load('run-gpsd-acquisition.py'); restoration = load('run-cutover-restoration.py')
-        for case in ('valid', 'old_path', 'runtime_drift', 'continuity_drift', 'worker_active', 'source_changed'):
+        for case in ('valid', 'recovered', 'recovered_state', 'old_path', 'runtime_drift', 'continuity_drift', 'worker_active', 'source_changed'):
             with self.subTest(case=case), tempfile.TemporaryDirectory() as temporary, ExitStack() as stack:
                 sandbox = Path(temporary)
                 def mapped(value):
@@ -194,7 +194,17 @@ class CaptureTests(unittest.TestCase):
                 create(Path(refspec['source_stage'])/'state.json', runtime_state)
                 files = {n: (ROOT/path).read_bytes() for n, path in c.PATHS.items()}
                 files.update({n: b'fixture' for n in c.EXTRA})
+                files['monitor-proof.json'] = b'{}'
                 files['reference.py'] = monitor_files['reference.py']
+                if case in ('recovered', 'recovered_state'):
+                    state = {'phase': 'recovered', 'recovered_epoch': 900}
+                    response = {'spec_sha256': c.sha(monitor_files['spec.json']), 'result': state}
+                    proof = {'recovered': {'state': 'recovered', 'bundle_sha256': c.sha(files['monitor.tar']),
+                        'spec_sha256': response['spec_sha256'], 'state_sha256': c.sha(c.encoded(state)), 'time_service_accepted': False},
+                        'readbacks': [response, copy.deepcopy(response)],
+                        'cleanup': {'spec_sha256': response['spec_sha256'], 'result': dict(state, transient_cleanup=True)}}
+                    files['monitor-proof.json'] = c.encoded(proof)
+                    create(Path(old['stage'])/'state.json', c.encoded(proof['cleanup']['result'] if case == 'recovered' else state))
                 spec = {k: old[k] for k in ('hostname', 'boot_id', 'kernel', 'endpoints', 'old_ipv4')}
                 spec.update(schema=1, purpose='runtime-revalidation', operation_id='replacement',
                     stage='/var/lib/ntp-acquire-replacement', source_stage=old['stage'],
@@ -239,9 +249,10 @@ class CaptureTests(unittest.TestCase):
                     (continuity, 'transaction', lambda *a: check), (base.Transaction, 'run', run),
                     (base.Transaction, 'snapshot', lambda *a: None), (c.time, 'time', lambda: 1000)):
                     stack.enter_context(patch.object(module, name, value))
-                if case != 'valid':
+                if case not in ('valid', 'recovered'):
                     with self.assertRaisesRegex(ValueError, {'old_path': 'identity/window/member', 'runtime_drift': 'native drift',
-                            'continuity_drift': 'continuity drift', 'worker_active': 'worker/unit', 'source_changed': 'held source changed'}[case]):
+                            'continuity_drift': 'continuity drift', 'worker_active': 'worker/unit', 'source_changed': 'held source changed',
+                            'recovered_state': 'recovered source state drift'}[case]):
                         c.capture(h, spec, files)
                     continue
                 result = c.capture(h, spec, files)
@@ -251,7 +262,8 @@ class CaptureTests(unittest.TestCase):
                 self.assertEqual(read('/var/lib/held/state.json'), b'{}')
                 self.assertEqual(read(Path(refspec['source_stage'])/'state.json'), runtime_state)
                 self.assertEqual(read(Path(old['stage'])/'spec.json'), monitor_files['spec.json'])
-                self.assertFalse(mapped(Path(old['stage'])/'state.json').exists())
+                if case == 'recovered': self.assertEqual(json.loads(read(Path(old['stage'])/'state.json')), proof['cleanup']['result'])
+                else: self.assertFalse(mapped(Path(old['stage'])/'state.json').exists())
 
 
 class ControllerTests(unittest.TestCase):
@@ -316,6 +328,7 @@ class ControllerTests(unittest.TestCase):
         reference, inputs = fixture.fixture(); inputs['spec.json'] = c.encoded(reference)
         raw = fixture.archive(inputs)
         files = {n: b'fixture' for n in set(c.PATHS)|c.EXTRA}
+        files['monitor-proof.json'] = b'{}'
         files['reference.py'] = (ROOT/'scripts/run-gpsd-acquisition.py').read_bytes()
         spec = {k: reference[k] for k in ('hostname', 'boot_id', 'kernel', 'endpoints', 'old_ipv4')}
         old = dict(spec, stage='/var/lib/ntp-acquire-failed')
@@ -335,6 +348,31 @@ class ControllerTests(unittest.TestCase):
 
 
 class EntryTests(unittest.TestCase):
+    def test_protected_revalidation_binds_identity_modes_and_large_archive_limit(self):
+        import socket
+        for case in ('valid', 'mode', 'boot', 'spec', 'member'):
+            with self.subTest(case=case), tempfile.TemporaryDirectory() as temporary:
+                root = Path(temporary); root.chmod(0o755 if case == 'mode' else 0o700)
+                spec = {'stage': str(root), 'hostname': socket.gethostname(), 'kernel': os.uname().release,
+                    'boot_id': Path('/proc/sys/kernel/random/boot_id').read_text().strip(),
+                    'members': {'monitor.tar': c.sha(b'archive'), 'stage.py': c.sha(b'stage')}}
+                if case == 'boot': spec['boot_id'] = 'wrong'
+                limits = {}
+                def read(path, limit=0):
+                    limits[path.name] = limit
+                    if path.name == 'spec.json': return b'wrong' if case == 'spec' else c.encoded(spec)
+                    if path.name == 'monitor.tar': return b'wrong' if case == 'member' else b'archive'
+                    return b'stage'
+                h = types.SimpleNamespace(ancestors=Mock(), read=read)
+                with patch.object(c.os, 'geteuid', return_value=0), patch.object(c, 'frozen', return_value=h):
+                    if case == 'valid':
+                        self.assertIs(c.protected(spec, {'helper.py': b'helper'}), h)
+                        self.assertEqual(limits['monitor.tar'], 64*1024**2)
+                        self.assertEqual(limits['stage.py'], 32*1024**2)
+                        h.ancestors.assert_called_once_with(root)
+                    else:
+                        with self.assertRaises(ValueError): c.protected(spec, {'helper.py': b'helper'})
+
     def test_timeout_and_missing_report_keep_partial_evidence_for_readback(self):
         import socket
         import subprocess
@@ -359,7 +397,7 @@ class EntryTests(unittest.TestCase):
                         if timed_out: raise subprocess.TimeoutExpired('fixture', 190)
                     return 0
                 process.wait.side_effect = wait
-                with patch.object(c, 'validate'), patch.object(c, 'frozen', side_effect=lambda raw: modules[raw]), \
+                with patch.object(c, 'validate'), patch.object(c, 'protected', return_value=h), patch.object(c, 'frozen', side_effect=lambda raw: modules[raw]), \
                         patch.object(c.os, 'geteuid', return_value=0), patch.dict(os.environ, {'SUDO_USER': 'ama'}), \
                         patch.object(c.time, 'time', return_value=1100), patch.object(c.subprocess, 'Popen', return_value=process), \
                         patch.object(c.os, 'killpg') as kill:
@@ -385,6 +423,27 @@ class EntryTests(unittest.TestCase):
 
 
 class ReceiptTests(unittest.TestCase):
+    def test_recovered_source_requires_matching_readbacks_receipt_and_cleanup(self):
+        old = {'stage': '/var/lib/ntp-acquire-prior'}; files = {'spec.json': c.encoded(old)}
+        state = {'phase': 'recovered', 'supervisor_pid': 42}
+        first = {'spec_sha256': c.sha(files['spec.json']), 'result': state}
+        proof = {'recovered': {'state': 'recovered', 'bundle_sha256': 'archive',
+            'spec_sha256': first['spec_sha256'], 'state_sha256': c.sha(c.encoded(state)), 'time_service_accepted': False},
+            'readbacks': [first, copy.deepcopy(first)],
+            'cleanup': {'spec_sha256': first['spec_sha256'], 'result': dict(state, transient_cleanup=True)}}
+        for case in ('valid', 'readback', 'receipt', 'cleanup', 'phase', 'extra'):
+            value = copy.deepcopy(proof)
+            if case == 'readback': value['readbacks'][1]['result']['supervisor_pid'] = 43
+            if case == 'receipt': value['recovered']['state_sha256'] = 'wrong'
+            if case == 'cleanup': value['cleanup']['result']['transient_cleanup'] = False
+            if case == 'phase':
+                for row in value['readbacks']: row['result']['phase'] = 'recovery_held'
+            if case == 'extra': value['start'] = {}
+            with self.subTest(case=case):
+                if case == 'valid': self.assertEqual(c.recovered_source(old, files, value), proof['cleanup']['result'])
+                else:
+                    with self.assertRaises(ValueError): c.recovered_source(old, files, value)
+
     def fixture(self):
         spec = {'endpoints': ['192.0.2.1', '2001:db8::1'], 'boot_id': 'boot', 'prepared_epoch': 1000, 'expires_epoch': 87400}
         evidence = {n: {'sha256': c.sha(b'{}'), 'base64': base64.b64encode(b'{}').decode()} for n in c.EVIDENCE}
@@ -457,7 +516,7 @@ class ReceiptTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as temporary:
             root = Path(temporary); spec = {'stage': str(root)}; report = c.encoded({'phase': 'validation_held'})
             h = types.SimpleNamespace(read=lambda *args, **kw: report, create=lambda p, raw: p.write_bytes(raw))
-            with patch.object(c, 'validate'), patch.object(c, 'frozen', return_value=types.SimpleNamespace(protected=lambda *args: h)):
+            with patch.object(c, 'validate'), patch.object(c, 'protected', return_value=h):
                 with self.assertRaises(ValueError): c.entry(spec, {'inspector.py': b''}, 'cleanup', {'report_sha256': 'wrong'})
                 result = c.entry(spec, {'inspector.py': b''}, 'cleanup', {'report_sha256': c.sha(report)})
             self.assertTrue(result['evidence_preserved']); self.assertEqual(sorted(p.name for p in root.iterdir()), ['cleanup.json'])

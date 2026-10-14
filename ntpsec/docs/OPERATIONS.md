@@ -583,18 +583,20 @@ always restores; its expired window is not extended by this operation.
 The [revalidation v2 review](/home/aaron/code/.local-evidence/homelab-ntp/current/runtime-revalidation-20261014-v2/review.md)
 used `scripts/run-runtime-revalidation.py`; its approved capture passed all seven
 prerequisite checks. Readback attempt 1 matched through both endpoints and
-diagnostic closure completed. Bind that archive, accepted receipt, both readbacks
-and closure when preparing a fresh monitor activation review. Activation still
-requires separate execution approval.
+diagnostic closure completed. Monitor v2 consumed that prerequisite and later
+recovered. A replacement revalidation must bind the recovered monitor before
+another activation review. Activation still requires separate execution approval.
 V1 remains closed with `validation_held`, matching dual-stack readback and diagnostic
 closure; its receipt cannot authorize activation. V2 uses the frozen validator's
 `/var/lib/ntp-acquire-<operation-id>` path contract. Sealing exercises the same
 runtime alias validation as preflight, and start checks the local review/spec
 against the archive before registering execution. A missing SSH-agent reference
 rejects locally without consuming the one-shot start.
-It binds the exact failed-monitor archive/rejection/readback and the accepted
-restoration evidence. Verify the failed stage has no operation state, backups,
-monitor record or worker/timer; preserve its partial files. Hold the original
+It binds either the exact preflight-failed monitor archive/rejection/readback or
+the recovered monitor archive, matching recovered readbacks, receipt and cleanup.
+For a preflight failure, require no operation state, backups or monitor record.
+For recovery, require the exact terminal state including transient cleanup.
+Require absent prior workers/timer in both cases; preserve all prior files. Hold the original
 source lock, verify immutable source/restoration members and idle recovery state,
 then recheck prerequisites using a new root-owned 0700 stage and private copies.
 
@@ -622,8 +624,10 @@ Conditional cleanup records closure without deleting any stage or changing
 services/timers. No boot changes, daemon activation, configuration/receiver writes
 or clock adjustment are included. Preserve incomplete evidence on failure.
 
-The successor monitor uses the same sealed continuity helper in preflight,
-unchanged-state checks and post-restoration validation. Offline recovery tests
+The successor monitor uses the same sealed continuity helper in preflight and
+post-restoration validation. Handoff uses the new operation's protected preflight
+observation, bound to the accepted revalidation digest, for packages/boot/Python;
+it retains native, account, loader, network, hardware and file checks. Offline recovery tests
 advance past historical expiry, restore original files and still reject live
 boot-file drift. Recovery has no receipt-age shutdown; its identity/content checks
 remain mandatory. Legacy cutover paths retain their original checker. Fresh
@@ -635,13 +639,42 @@ the accepted restoration. Startup and early/workstation checks passed, but
 handoff rejected the inherited comparison with the historical runtime boot ID.
 Approved recovery completed; readback attempt 2 matched through both endpoints
 and transient cleanup completed. Preserve this executed operation, backups and
-terminal evidence. Correct and test the current-boot handoff binding before
-preparing another review for separate approval. Neither v1 nor v2 is replayed.
+terminal evidence. The inherited handoff correction and full-path offline tests
+are complete. The next review is [read-only revalidation v3](/home/aaron/code/.local-evidence/homelab-ntp/current/runtime-revalidation-20261014-v3/review.md),
+bound to recovered monitor v2 and its matching readback attempt 2 and cleanup.
+Its digest is in adjacent `sealing.json`; execution remains separately gated.
+Neither monitor v1 nor v2 is replayed. Accept the new prerequisite observation
+before sealing another activation.
+
+The old-action audit covers these reachable dependencies:
+
+| Reference | Required use and checks |
+| --- | --- |
+| Original receiver/acquisition archives and retained SHM inventory | Immutable evidence of serial/PPS pairing and segment ownership; recheck members and retained bytes. Normalize only live attachment counts during activation. |
+| Accepted hardware/runtime and native-build artifacts | Immutable provenance; recheck current boot, boot files, mappings, accounts, loader and installed content. Never renew old timestamps. |
+| Original held diagnostic and restoration | Preserve held state exactly under its source lock; verify restoration report/closure and inactive old timer. |
+| Latest recovered monitor | Bind archive, recovered receipt, matching readbacks and cleanup; verify live stage members/state and absent workers before and after capture, and again before activation. |
+| Accepted prerequisite revalidation | Bind report, closure and exact checker bytes; require the full fresh observation to match at activation preflight. |
+| New activation's preflight and supervisor | Compare handoff identity with its protected, digest-bound observation. Inspect current child PIDs and credentials; permit only the exact scoped startup journal reader alongside GPSD/ntpd. |
+| New activation's backups, watchdog, fault unit and monitor record | Derive paths from its unique operation specification; recovery and cleanup address only this operation. Preserve all source stages. |
+
+Retained observation fields include SSH/NetworkManager service PIDs, but exclude
+Avahi/timesyncd. Their restart during recovery does not establish a stale-PID
+mismatch here. Keep exact observation comparison; no PID normalization is added.
+The only confirmed stale identity was the inherited historical boot-ID check.
+The journal-reader race is an offline code finding, not the observed v2 failure.
+Regression tests run the inherited unchanged/measurement and handoff path with
+simulated host I/O, including real drift rejection and watchdog retention.
+The retained monitor archive exceeds 32 MiB. Revalidation and monitor staging
+therefore allow sealed archive members up to 64 MiB, while ordinary stage members
+and reports retain their 32 MiB bounds and captured evidence remains capped at
+8 MiB. Archive parsing keeps flat-file, duplicate, manifest and aggregate bounds.
+Sealing checks the complete archive again before issuing its digest.
 
 Before mutation, freshly verify the restored baseline, native/runtime/network
 and hardware prerequisites, held source state, protected restoration members,
 idle old recovery worker and inactive old timer. Require exact current-boot
-continuity with the accepted restoration observation. Drift stops the stage.
+continuity with the newly accepted revalidation observation. Drift stops the stage.
 Root-owned 0700 staging binds current inputs and a unique operation identity.
 Back up destinations, arm a 600-second installation watchdog, install the
 rendered configuration/service and fault-recovery unit, then start once.
@@ -1016,7 +1049,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. V6 journal gate passed, but restoration is held on continuity drift; readback 13 matches on both endpoints. Source cleanup blocked; diagnostic inspection and closure complete. PPS deadline confirmed; historical boot/PID baseline and failed timeservice state differ. Timer was waiting at capture; later outcome unknown. Frozen-checker replay isolates failed timeservice state; guarded reset executed; restoration continuation accepted through both endpoints and closed. Old timer already absent/inactive; historical v6 held state and evidence preserved. Offline PPS replay complete: three passing updates did not fit the retained trajectory before the bootstrap deadline. Continuous PPS-first monitoring and terminal retention implemented/tested locally; start-and-monitor v1 stopped in preflight on expired nested hardware acceptance; conditional readback found no operation state; partial stage retained. Read-only hardware/runtime revalidation v1 held on runtime binding; matching dual-stack readback and diagnostic closure complete; revalidation v2 prerequisites accepted through both endpoints; diagnostic closure complete; monitor v2 startup/early/workstation checks passed; handoff rejected historical boot-ID comparison; dual-stack recovery and transient cleanup complete; corrected handoff review pending; successor recovery tested past historical expiry. Bind the accepted v2 prerequisite report and closure when sealing activation. Persistent warm-restart policy and timing acceptance remain pending. |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. V6 journal gate passed, but restoration is held on continuity drift; readback 13 matches on both endpoints. Source cleanup blocked; diagnostic inspection and closure complete. PPS deadline confirmed; historical boot/PID baseline and failed timeservice state differ. Timer was waiting at capture; later outcome unknown. Frozen-checker replay isolates failed timeservice state; guarded reset executed; restoration continuation accepted through both endpoints and closed. Old timer already absent/inactive; historical v6 held state and evidence preserved. Offline PPS replay complete: three passing updates did not fit the retained trajectory before the bootstrap deadline. Continuous PPS-first monitoring and terminal retention implemented/tested locally; start-and-monitor v1 stopped in preflight on expired nested hardware acceptance; conditional readback found no operation state; partial stage retained. Read-only hardware/runtime revalidation v1 held on runtime binding; matching dual-stack readback and diagnostic closure complete; revalidation v2 prerequisites accepted through both endpoints; diagnostic closure complete; monitor v2 startup/early/workstation checks passed; handoff rejected historical boot-ID comparison; dual-stack recovery and transient cleanup complete; handoff continuity corrected/tested offline; read-only revalidation v3 prepared against recovered monitor v2, awaiting approval; successor recovery tested past historical expiry. Accept a fresh revalidation bound to recovered monitor v2 before sealing activation. Persistent warm-restart policy and timing acceptance remain pending. |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

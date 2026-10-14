@@ -912,7 +912,14 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    diagnostic closure. Handoff continuity must use that accepted current-boot
    observation; inherited checks must not require the pre-reboot baseline's boot
    ID. Exercise the full handoff path against retained historical and current
-   identities before sealing. Prerequisite acceptance does not authorize
+   identities before sealing. After a recovered activation, bind its terminal
+   receipt, matching readbacks and cleanup to a new read-only revalidation;
+   verify its retained state and absent workers without replaying old actions.
+   Preserve exact observation comparisons. Bind handoff to the new operation's
+   protected preflight observation and the accepted revalidation digest. Permit
+   only the exact operation-scoped startup journal reader alongside the two
+   daemon children; retain all credential and competing-process checks.
+   Prerequisite acceptance does not authorize
    activation or establish timing acceptance. Recovery of the already-started
    operation rechecks those actual facts without imposing a receipt-age limit;
    changed identity or state still holds recovery. No repeated boot changes are

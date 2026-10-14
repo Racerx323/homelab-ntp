@@ -23,6 +23,7 @@ ROOT = Path(__file__).resolve().parents[1]
 PATHS = {'stage.py': 'scripts/run-runtime-revalidation.py',
          'continuity.py': 'scripts/runtime-continuity.py', 'base.py': 'scripts/service-cutover-stage.py',
          'controller.py': 'scripts/run-service-cutover.py', 'transport.py': 'scripts/run-foundation-preflight.py',
+         'monitor-controller.py': 'scripts/run-service-monitor.py',
          'tests.py': 'tests/test_runtime_revalidation.py', 'monitor-tests.py': 'tests/test_service_monitor.py',
          'acquisition-tests.py': 'tests/test_gpsd_acquisition.py',
          'architecture.md': 'docs/ntp-architecture-deployment-plan-v1.0.md',
@@ -31,6 +32,7 @@ EXTRA = {'monitor.tar', 'monitor-proof.json', 'helper.py', 'inspector.py', 'know
 CHECKS = {'restoration', 'failed_stage', 'idle_workers', 'runtime', 'hardware', 'continuity', 'source_preserved'}
 EVIDENCE = ('current-runtime.json', 'before.json', 'commands.jsonl', 'failed-stage.json')
 LIMIT = 32*1024**2
+ARCHIVE_LIMIT = 64*1024**2
 ENV = {'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL': 'C', 'PYTHONDONTWRITEBYTECODE': '1'}
 
 
@@ -51,11 +53,13 @@ def load(path):
 
 
 def inputs(files):
-    c = frozen(files['controller.py']); monitor = c.unpack(files['monitor.tar'])
+    c = frozen(files['monitor-controller.py']); monitor = c.unpack(files['monitor.tar'])
     old = json.loads(monitor['spec.json']); validator = frozen(monitor['controller.py'])
     validator.validate(old, monitor)
     proof = json.loads(files['monitor-proof.json'])
-    if (set(proof) != {'start', 'readback'}
+    if 'recovered' in proof:
+        recovered_source(old, monitor, proof)
+    elif (set(proof) != {'start', 'readback'}
             or proof['start'] != {'spec_sha256': sha(monitor['spec.json']), 'result': {
                 'phase': 'held', 'error': 'accepted bound hardware/reboot gate required'}}
             or proof['readback'] != {'spec_sha256': sha(monitor['spec.json']), 'result': {
@@ -68,10 +72,29 @@ def inputs(files):
     return old, monitor, rspec, restoration, report, source
 
 
+def recovered_source(old, monitor, proof):
+    """Bind the latest recovered operation, its matching readbacks and closure."""
+    if set(proof) != {'recovered', 'readbacks', 'cleanup'} or len(proof['readbacks']) != 2:
+        raise ValueError('closed recovered monitor proof required')
+    first, second = proof['readbacks']; state = first['result']
+    receipt = {'state': 'recovered', 'bundle_sha256': proof['recovered']['bundle_sha256'],
+               'spec_sha256': sha(monitor['spec.json']), 'state_sha256': sha(encoded(state)),
+               'time_service_accepted': False}
+    if (first != second or first['spec_sha256'] != receipt['spec_sha256']
+            or state.get('phase') != 'recovered' or proof['recovered'] != receipt
+            or proof['cleanup'] != {'spec_sha256': receipt['spec_sha256'],
+                                   'result': dict(state, transient_cleanup=True)}):
+        raise ValueError('matching recovered monitor receipt/readbacks/cleanup required')
+    return proof['cleanup']['result']
+
+
 def validate(spec, files):
     if set(files) != set(PATHS)|EXTRA|{'spec.json', 'manifest.json', 'review.md'}:
         raise ValueError('closed revalidation bundle required')
     old, *rest = inputs(files)
+    proof = json.loads(files['monitor-proof.json'])
+    if 'recovered' in proof and proof['recovered']['bundle_sha256'] != sha(files['monitor.tar']):
+        raise ValueError('recovered monitor archive binding')
     if (spec['schema'] != 1 or spec['purpose'] != 'runtime-revalidation'
             or not re.fullmatch(r'[a-z][a-z0-9-]{0,47}', spec['operation_id'])
             or spec['stage'] != '/var/lib/ntp-acquire-'+spec['operation_id']
@@ -90,13 +113,18 @@ def validate(spec, files):
     return (old, *rest)
 
 
-def failed_stage(h, old, monitor, run):
+def failed_stage(h, old, monitor, run, proof=None):
     root = Path(old['stage']); h.ancestors(root)
     if stat.S_IMODE(root.stat().st_mode) != 0o700: raise ValueError('private failed stage required')
     if h.read(root/'spec.json') != monitor['spec.json']: raise ValueError('failed stage spec drift')
     for name, digest in old['members'].items():
-        if sha(h.read(root/name, limit=LIMIT)) != digest: raise ValueError('failed stage member drift')
-    if any(os.path.lexists(root/name) for name in ('state.json', 'before.json', 'startup-monitor.json')):
+        if sha(h.read(root/name, limit=ARCHIVE_LIMIT if name.endswith('.tar') else LIMIT)) != digest: raise ValueError('failed stage member drift')
+    recovered = proof is not None and 'recovered' in proof
+    if recovered:
+        expected = recovered_source(old, monitor, proof)
+        if json.loads(h.read(root/'state.json', limit=LIMIT)) != expected:
+            raise ValueError('recovered source state drift')
+    elif any(os.path.lexists(root/name) for name in ('state.json', 'before.json', 'startup-monitor.json')):
         raise ValueError('failed stage progressed beyond approved preflight state')
     rows = {}
     for unit in (old['apply_unit']+'.service', old['recovery_unit']+'.service', old['recovery_unit']+'.timer',
@@ -104,7 +132,7 @@ def failed_stage(h, old, monitor, run):
         value = run(['/usr/bin/systemctl', 'show', unit, '--property=LoadState', '--value']).strip()
         if value != 'not-found': raise ValueError('unexpected monitor worker/unit: '+unit)
         rows[unit] = value
-    return {'source_spec_sha256': sha(monitor['spec.json']), 'state_absent': True, 'units': rows}
+    return {'source_spec_sha256': sha(monitor['spec.json']), 'state_absent': not recovered, 'units': rows}
 
 
 def capture(h, spec, files):
@@ -131,12 +159,13 @@ def capture(h, spec, files):
         tx = Transaction(candidate, monitor)
         clocks = restoration.timer_state(tx.run, held)
         if clocks['timer']['ActiveState'] != 'inactive': raise ValueError('old timer active')
-        failed = failed_stage(h, old, monitor, tx.run); tx.write('failed-stage.json', failed)
+        proof = json.loads(files['monitor-proof.json'])
+        failed = failed_stage(h, old, monitor, tx.run, proof); tx.write('failed-stage.json', failed)
         tx.preflight()  # Reads original prerequisites; writes only this operation's private copies.
         current = tx.runtime_context()
         if current['observation'] != json.loads(restoration.evidence(report, 'continuity-after.json')):
             raise ValueError('current restored-state continuity drift')
-        if failed_stage(h, old, monitor, tx.run) != failed: raise ValueError('failed stage changed during capture')
+        if failed_stage(h, old, monitor, tx.run, proof) != failed: raise ValueError('source stage changed during capture')
         if restoration.timer_state(tx.run, held) != clocks: raise ValueError('old recovery state changed')
         if h.read(Path(held['stage'])/'state.json') != before_state: raise ValueError('held source changed during capture')
         return {'phase': 'runtime_validated', 'epoch': int(time.time()), 'boot_id': spec['boot_id'],
@@ -146,9 +175,24 @@ def capture(h, spec, files):
     finally: os.close(fd)
 
 
+def protected(spec, files):
+    """Retain frozen protection rules with the explicit nested-archive bound."""
+    root = Path(spec['stage'])
+    if (os.geteuid() != 0 or socket.gethostname() != spec['hostname'] or os.uname().release != spec['kernel']
+            or Path('/proc/sys/kernel/random/boot_id').read_text().strip() != spec['boot_id']):
+        raise ValueError('approved target/kernel/boot identity required')
+    h = frozen(files['helper.py']); h.ancestors(root)
+    if stat.S_IMODE(root.stat().st_mode) != 0o700 or h.read(root/'spec.json') != encoded(spec):
+        raise ValueError('protected diagnostic stage mismatch')
+    for name, digest in spec['members'].items():
+        if sha(h.read(root/name, limit=ARCHIVE_LIMIT if name.endswith('.tar') else LIMIT)) != digest:
+            raise ValueError('sealed diagnostic input drift')
+    return h
+
+
 def entry(spec, files, mode, proofs=None):
     validate(spec, dict(files, **{'spec.json': encoded(spec), 'manifest.json': b'', 'review.md': b''}))
-    root = Path(spec['stage']); os.umask(0o077); inspector = frozen(files['inspector.py'])
+    root = Path(spec['stage']); os.umask(0o077)
     if mode == 'start':
         if (os.geteuid() != 0 or os.environ.get('SUDO_USER') != 'ama'
                 or socket.gethostname() != spec['hostname'] or os.uname().release != spec['kernel']
@@ -158,7 +202,7 @@ def entry(spec, files, mode, proofs=None):
         h = frozen(files['helper.py']); h.ancestors(root.parent); root.mkdir(mode=0o700)
         for name, raw in dict(files, **{'spec.json': encoded(spec)}).items(): h.create(root/name, raw)
         h.create(root/'report.json', encoded({'phase': 'running'}))
-    h = inspector.protected(spec, files)
+    h = protected(spec, files)
     if mode == 'start':
         try:
             with (root/'worker.stdout').open('xb') as out, (root/'worker.stderr').open('xb') as err:
@@ -234,15 +278,18 @@ Start before **{datetime.fromtimestamp(spec['expires_epoch']-190, timezone.utc).
 One capture in root-owned 0700 `{spec['stage']}`; all inputs/evidence 0600.
 The stage prefix satisfies the frozen acquisition validator's path contract.
 Sealing validates the exact runtime alias offline; execution rechecks it.
-Bind current inputs, accepted restoration receipt/closure, and the exact failed
-monitor archive with its preflight rejection and missing-state readback.
+Bind current inputs, accepted restoration receipt/closure, and the exact previous
+monitor archive with either its preflight rejection or recovered receipt,
+matching dual-stack readbacks and transient cleanup.
 Verify pinned SSH keys, same boot/kernel/host, original held-source lock, immutable
-stage members, inactive old timer, and absence of failed-monitor workers/state.
+stage members, inactive old timer, and absence of prior monitor workers.
+The prior stage must remain in its sealed missing-state or recovered/cleaned state.
 
 Recheck boot-file hashes, UART/PPS/RTC mapping and permissions, accepted hardware
 state/receipt, packages, native binaries, Python imports, accounts, loader cache,
 network, idle UART/SHM state and restored files. Use private runtime copies and
-compare current observation with the accepted restoration observation. Historical
+compare the full current observation exactly with the accepted restoration
+observation. Preserve the new full observation for activation. Historical
 acceptance timestamps remain unchanged: fresh checks establish a new observation,
 not a renewal of old approval. Original network checks include bounded dual-stack
 gateway/egress probes. No service start/stop, timer change, configuration/receiver
@@ -267,9 +314,9 @@ then the same bundle/hash with `--mode readback --attempt N`, and conditional `-
 
 
 def prepare(bundle, checksum, current=False):
-    t = load(ROOT/'scripts/run-foundation-preflight.py'); raw = t.private_file(bundle, LIMIT)
+    t = load(ROOT/'scripts/run-foundation-preflight.py'); raw = t.private_file(bundle, ARCHIVE_LIMIT)
     if sha(raw) != checksum: raise ValueError('approved revalidation archive digest')
-    files = load(ROOT/'scripts/run-service-cutover.py').unpack(raw)
+    files = load(ROOT/'scripts/run-service-monitor.py').unpack(raw)
     spec = json.loads(files['spec.json']); frozen(files['stage.py']).validate(spec, files)
     if current and any(files[n] != (ROOT/path).read_bytes() for n, path in PATHS.items()):
         raise ValueError('current revalidation input drift')
@@ -281,13 +328,18 @@ def prepare(bundle, checksum, current=False):
 
 
 def seal(args):
-    t = load(ROOT/'scripts/run-foundation-preflight.py'); c = load(ROOT/'scripts/run-service-cutover.py')
-    raw = t.private_file(args.source_dir/'service-monitor.tar', LIMIT)
+    t = load(ROOT/'scripts/run-foundation-preflight.py'); c = load(ROOT/'scripts/run-service-monitor.py')
+    raw = t.private_file(args.source_dir/'service-monitor.tar', ARCHIVE_LIMIT)
     if sha(raw) != args.source_sha256: raise ValueError('executed monitor archive digest')
     monitor = c.unpack(raw); old = json.loads(monitor['spec.json'])
     archive = c.unpack(monitor['restoration.tar'])
-    proof = {'start': json.loads(t.private_file(args.source_dir/'start-0-result.json')),
-             'readback': json.loads(t.private_file(args.source_dir/'readback-1-0-result.json'))}
+    if args.recovered_attempt is not None:
+        proof = {'recovered': json.loads(t.private_file(args.source_dir/'recovered-receipt.json')),
+                 'readbacks': [json.loads(t.private_file(args.source_dir/f'readback-{args.recovered_attempt}-{i}-result.json')) for i in range(2)],
+                 'cleanup': json.loads(t.private_file(args.source_dir/'cleanup-0-result.json'))}
+    else:
+        proof = {'start': json.loads(t.private_file(args.source_dir/'start-0-result.json')),
+                 'readback': json.loads(t.private_file(args.source_dir/'readback-1-0-result.json'))}
     files = {n: (ROOT/path).read_bytes() for n, path in PATHS.items()}
     files.update({'monitor.tar': raw, 'monitor-proof.json': encoded(proof), 'helper.py': archive['helper.py'],
                   'inspector.py': archive['inspector.py'], 'known_hosts': monitor['known_hosts'],
@@ -340,7 +392,7 @@ def main():
         root = Path(__file__).resolve().parent; spec = json.loads((root/'spec.json').read_bytes())
         files = {n: (root/n).read_bytes() for n in spec['members']}
         files.update({'spec.json': encoded(spec), 'manifest.json': b'', 'review.md': b''})
-        validate(spec, files); h = frozen(files['inspector.py']).protected(spec, files)
+        validate(spec, files); h = protected(spec, files)
         def expired(*args): raise TimeoutError('revalidation worker bound')
         signal.signal(signal.SIGALRM, expired); signal.alarm(180)
         try: result = capture(h, spec, files)
@@ -350,6 +402,7 @@ def main():
         return
     parser = argparse.ArgumentParser(description=__doc__); sub = parser.add_subparsers(dest='action', required=True)
     p = sub.add_parser('seal'); p.add_argument('--source-dir', type=Path, required=True); p.add_argument('--source-sha256', required=True)
+    p.add_argument('--recovered-attempt', type=int, choices=range(1, 61))
     p.add_argument('--operation-id', required=True); p.add_argument('--output', type=Path, required=True)
     p = sub.add_parser('execute'); p.add_argument('--bundle', type=Path, required=True); p.add_argument('--sha256', required=True)
     p.add_argument('--mode', choices=('start', 'readback', 'cleanup'), required=True); p.add_argument('--attempt', type=int, choices=(1, 2, 3), default=1)

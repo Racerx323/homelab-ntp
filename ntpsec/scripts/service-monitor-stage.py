@@ -31,6 +31,17 @@ def transaction_class(base, controller):
             host = base.load(self.root/'runtime-check'/'host-configuration-stage.py')
             return module(self.f['runtime-continuity.py'], 'current_runtime').hardware_gate(transaction, host)
 
+        def continuity_observation(self, transaction):
+            _, _, report = controller.revalidation(self.f)
+            fresh = json.loads(self.h.read(self.root/'fresh-preflight.json', limit=32*1024**2))
+            actual = fresh['observation']
+            if (sha(encoded(actual)) != report['observation_sha256']
+                    or actual['boot_id'] != self.s['boot_id']
+                    or fresh['checks'] != 'passed'
+                    or fresh['restoration_sha256'] != self.s['restoration_sha256']):
+                raise ValueError('operation preflight/revalidation binding drift')
+            return actual
+
         def preflight(self):
             fresh, fresh_files, fresh_report = controller.revalidation(self.f)
             fresh_root = Path(fresh['stage']); self.h.ancestors(fresh_root)
@@ -40,6 +51,10 @@ def transaction_class(base, controller):
             if (json.loads(self.h.read(fresh_root/'report.json', limit=32*1024**2)) != fresh_report
                     or json.loads(self.h.read(fresh_root/'cleanup.json')) != json.loads(self.f['revalidation-proof.json'])['cleanup']['result']):
                 raise ValueError('accepted revalidation report/closure drift')
+            checker = module(fresh_files['stage.py'], 'accepted_revalidation')
+            prior, prior_files, *_ = checker.validate(fresh, fresh_files)
+            prior_proof = json.loads(fresh_files['monitor-proof.json'])
+            checker.failed_stage(self.h, prior, prior_files, self.run, prior_proof)
             rspec, archive, report, source = controller.validate(self.s, dict(self.f,
                 **{'spec.json': encoded(self.s), 'manifest.json': b'', 'review.md': b''}))
             restored = Path(rspec['stage']); self.h.ancestors(restored)
@@ -69,8 +84,7 @@ def transaction_class(base, controller):
                 root = self.root/'runtime-check'
                 check = base.load(root/'host-configuration-stage.py').Transaction(json.loads(self.h.read(root/'spec.json')))
                 actual = check.core.i.observation()
-                expected = json.loads(validator.evidence(report, 'continuity-after.json'))
-                if actual != expected or sha(encoded(actual)) != fresh_report['observation_sha256']:
+                if sha(encoded(actual)) != fresh_report['observation_sha256']:
                     raise ValueError('fresh restored-state continuity drift')
                 self.write('fresh-preflight.json', {'epoch': int(time.time()), 'observation': actual,
                     'restoration_sha256': self.s['restoration_sha256'], 'checks': 'passed'})
