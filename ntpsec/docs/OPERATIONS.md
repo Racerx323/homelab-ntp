@@ -557,13 +557,23 @@ Readback attempt 13 returned matching held state over IPv4 and IPv6, following a
 sample-update mismatch in attempt 12. There is no recovered terminal receipt and
 cleanup is blocked. Preserve the stage, backups and all local/target evidence.
 Do not repeat start or force recovery through an unidentified continuity mismatch.
-Independent timer cancellation is not confirmed; its later result remains unknown.
+At the subsequent inspection, the independent timer was active/waiting with no
+recorded trigger and its recovery service inactive. Its later result remains unknown.
 
 The [sealed recovery inspection](/home/aaron/code/.local-evidence/homelab-ntp/current/cutover-recovery-inspection-20261013-v1/review.md)
-is prepared offline against v6's exact archive and matching held readback attempt
-13. Its adjacent receipt defines the hash and new inspection-only expiry. This
-does not renew v6's mutation window. Target identity and immutable source members
-must still match at execution; no target/controller contact occurred in preparation.
+completed one capture against v6's exact archive and matching held readback attempt
+13. Readback attempt 2 agreed over both endpoints, and diagnostic closure completed.
+Attempt 1 was blocked locally before connection. The journal confirms the PPS
+qualification deadline terminated ntpd before promotion. Continuity differs in
+the historical boot ID, SSH/NetworkManager PIDs and failed timeservice state;
+inventory, Python metadata and active-daemon observations match. Bootstrap
+timesyncd and Avahi were active; timeservice's unit and `/etc/ntp.conf` were absent.
+Retrieval acceptance does not accept restoration or authorize source cleanup.
+
+Next, correct/test recovery continuity using accepted current-boot evidence without
+rewriting historical baselines. Prepare a bounded restoration continuation with
+explicit failed-unit handling and fresh timer-state checks for separate approval.
+Resolve restoration before another timing trial or PPS-policy change.
 
 Use `run-cutover-inspection.py seal --recovery-held --source-attempt N` with the
 executed archive digest and retained matching readbacks. The mode copies bounded
@@ -797,7 +807,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. V6 journal gate passed, but restoration is held on continuity drift; readback 13 matches on both endpoints. Cleanup blocked; timer outcome unconfirmed; read-only recovery inspection sealed offline, awaiting execution approval. Persistent warm-restart policy and service cutover remain pending. |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. V6 journal gate passed, but restoration is held on continuity drift; readback 13 matches on both endpoints. Source cleanup blocked; diagnostic inspection and closure complete. PPS deadline confirmed; historical boot/PID baseline and failed timeservice state differ. Timer was waiting at capture; later outcome unknown. Correct/test recovery continuity and prepare a separately approved restoration continuation. Persistent warm-restart policy and service cutover remain pending. |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 
