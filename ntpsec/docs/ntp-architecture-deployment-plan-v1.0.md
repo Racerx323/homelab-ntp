@@ -907,7 +907,8 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    prerequisites. It preserves historical timestamps and requires exact accepted provenance plus
    fresh same-boot configuration, device, account, native and network checks.
    Bind its complete dual-stack report and closure, then reserve installation
-   time within the new observation's start window. Recovery of the already-started
+   time within the new observation's start window. Prerequisite acceptance does
+   not authorize activation or establish timing acceptance. Recovery of the already-started
    operation rechecks those actual facts without imposing a receipt-age limit;
    changed identity or state still holds recovery. No repeated boot changes are
    implied. Structural handoff requires dual-stack management and workstation
