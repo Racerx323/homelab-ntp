@@ -496,12 +496,13 @@ class TransactionTests(unittest.TestCase):
                 tx.a=SimpleNamespace(idle=Mock(),serial_identity=lambda:{'ok':True},context=Mock());tx.alias={};tx.rf={}
                 tx.snapshot=lambda n:{'sha256':stage.sha(Path(n).read_bytes())}
                 tx.replace=lambda n,raw,*args:Path(n).write_bytes(raw);tx.run=Mock(return_value='saved')
-                with patch.dict(stage.DESTINATIONS,{str(dest):('fixture',0o644)},clear=True):
+                with patch.dict(stage.DESTINATIONS,{str(dest):('fixture',0o644)},clear=True), patch.object(stage,'clear_restored_failure') as clear:
                     if drift:
                         with self.assertRaisesRegex(ValueError,'destination drift'):tx.recover()
                         self.assertEqual(dest.read_bytes(),b'foreign');self.assertEqual(tx.current['phase'],'recovery_held')
                     else:
                         self.assertEqual(tx.recover()['phase'],'recovered');self.assertEqual(dest.read_bytes(),b'original')
+                        clear.assert_called_once_with(tx.systemctl)
                         tx.a.context.assert_called_once();self.assertIn(unittest.mock.call('enable','--now','systemd-timesyncd.service'),tx.systemctl.call_args_list)
 
 

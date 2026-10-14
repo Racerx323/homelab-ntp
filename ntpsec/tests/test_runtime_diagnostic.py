@@ -370,7 +370,9 @@ class LifecycleTests(unittest.TestCase):
                 (tx.root/'packet-report.json').write_text('broken' if fault=='packet' else '{"complete":true}')
                 tx.h=types.SimpleNamespace(read=lambda path,**kw:stage.encoded(before) if path.name=='before.json' else path.read_bytes())
                 tx.a=types.SimpleNamespace(idle=Mock(),serial_identity=lambda:{},context=Mock());tx.alias={};tx.rf={}
-                tx.systemctl=Mock(return_value='not-found')
+                restored=('Id=timeservice.service\nLoadState=not-found\nActiveState=inactive\n'
+                          'SubState=dead\nMainPID=0\nFragmentPath=\nDropInPaths=\n')
+                tx.systemctl=Mock(side_effect=lambda *args:restored if '--no-pager' in args else 'not-found')
                 def run(argv,**kw):
                     if argv[0]=='/usr/bin/stty':return 'saved'
                     if fault=='journal':raise ValueError('journal unavailable')

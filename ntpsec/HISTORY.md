@@ -7,7 +7,7 @@ observations and the next deployment gate. Entries do not authorize live action.
 
 ## Current deployment state
 
-Last reconciled: October 13, 2026. These are retained observations, not a new
+Last reconciled: October 14, 2026. These are retained observations, not a new
 live inspection.
 
 | Component | Accepted state | Still pending |
@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; runtime diagnostic v2 recovered after early gate; partial packet evidence retained; dual-stack readback and cleanup complete; runtime diagnostic v3 recovered on changed Cloudflare address; rejecting sample and journal retained; dual-stack readback and cleanup complete; runtime diagnostic v4 completed 30 samples and recovered; 57/57 NTS replies authenticated; PPS timing and capture completeness failed; terminal dual-stack readback attempt 11 and cleanup complete; retained analysis complete; larger buffer passed isolated local fixture; cold-start promotion and receipt-selected recovery implemented and tested locally; runtime diagnostic v5 recovered after its first sample rejected control-key journal messages; dual-stack readback and cleanup complete; journal classifier corrected and tested offline; diagnostic v6 executed; 30 samples retained; recovery held on continuity drift; matching readback 13 retained; restoration and source cleanup remain unaccepted; recovery inspection captured and closed; PPS qualification deadline confirmed; historical boot/PID baseline and failed timeservice state differ; recovery timer still waiting at capture |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; runtime diagnostic v2 recovered after early gate; partial packet evidence retained; dual-stack readback and cleanup complete; runtime diagnostic v3 recovered on changed Cloudflare address; rejecting sample and journal retained; dual-stack readback and cleanup complete; runtime diagnostic v4 completed 30 samples and recovered; 57/57 NTS replies authenticated; PPS timing and capture completeness failed; terminal dual-stack readback attempt 11 and cleanup complete; retained analysis complete; larger buffer passed isolated local fixture; cold-start promotion and receipt-selected recovery implemented and tested locally; runtime diagnostic v5 recovered after its first sample rejected control-key journal messages; dual-stack readback and cleanup complete; journal classifier corrected and tested offline; diagnostic v6 executed; 30 samples retained; recovery held on continuity drift; matching readback 13 retained; restoration and source cleanup remain unaccepted; recovery inspection captured and closed; PPS qualification deadline confirmed; historical boot/PID baseline and failed timeservice state differ; recovery timer still waiting at capture; exact frozen-checker replay isolates failed timeservice state; guarded reset tested and restoration continuation prepared offline |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -25,6 +25,39 @@ The current accepted source stage is
 `/home/ama/.ntp-source-build-mdns-20261012-v1`; the earlier v5 stage is preserved.
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
+
+## Restoration continuation prepared — October 14, 2026
+
+Replayed the exact frozen runtime checker against the accepted recovery inspection.
+It already excludes reboot-related boot-ID/PID differences. Correcting only the
+unloaded timeservice failure state makes its observation comparison pass; package,
+Python, daemon and unrelated service drift remain rejected. The inspection's raw
+differences were findings, not proof that every listed field caused recovery failure.
+No historical baseline or executed bundle was edited.
+
+Added a guarded reset after ordinary cutover file restoration: require the exact
+unloaded, PID-zero failed timeservice state, reset only that unit, and confirm
+inactive/dead before the unchanged runtime checker runs. An already inactive unit
+requires no reset. Loaded, running, altered, incomplete or duplicate metadata holds.
+
+Prepared [restoration continuation v1](/home/aaron/code/.local-evidence/homelab-ntp/current/cutover-restoration-20261014-v1/review.md)
+from the accepted inspection, matching readbacks and cleanup, and the immutable v6
+archive. Its adjacent sealing receipt supplies the exact approval digest and expiry.
+It verifies that files, created directories and UART settings are already restored,
+takes the source lock, checks the retry timer/worker, stops only that obsolete timer,
+and conditionally clears timeservice failure metadata. It revalidates network,
+native/package/Python state, accounts, loader-cache and hardware metadata using a
+private copy of the original inputs. Historical acceptance age does not authorize
+new installation; the continuation has its own bounded restoration-only window.
+Original source state, backups, runtime evidence and accepted stages remain intact.
+
+Offline coverage includes frozen-checker behavior, exact reset/recheck, timer races,
+file/UART/new-observation drift, failure after mutation, matching terminal readback
+and closure. Preparation made no target contact. Next: separate execution approval
+for one continuation, conditional dual-stack readback and evidence-preserving
+closure. A held result leaves any timer stop/reset in place and requires review;
+never rearm the known-failing recovery or replay the trial. Persistent time service,
+PPS qualification and source-stage cleanup remain unaccepted.
 
 ## Read-only recovery inspection completed — October 13, 2026
 
@@ -36,8 +69,9 @@ only; v6 remains `recovery_held`, without restoration or source-cleanup acceptan
 
 The retained journal confirms `PPS qualification deadline`: the startup supervisor
 terminated ntpd and timeservice exited with status 1 before promotion. Recovery's
-continuity comparison differs in the historical boot ID, SSH/NetworkManager PIDs
-and timeservice's failed rather than inactive state. Package inventory, Python
+raw continuity comparison differs in the historical boot ID, SSH/NetworkManager
+PIDs and timeservice's failed rather than inactive state. The later frozen-checker
+replay establishes that only the failed service state caused rejection. Package inventory, Python
 metadata and active-daemon observations match. These differences do not establish
 a reboot during v6; the compared baseline predates the current boot.
 

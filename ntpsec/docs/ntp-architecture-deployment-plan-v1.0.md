@@ -873,12 +873,16 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    transitions while preserving immutable inputs and non-recovery state. Retain
    baseline/current differences without treating retrieval as restored-state
    acceptance or authorization to change services, timers or the source stage.
-   Recovery continuity must use accepted current-boot evidence rather than
-   historical pre-reboot boot IDs or service PIDs. Preserve historical baselines
-   and bind any corrected comparison in a separately approved continuation.
-   Account explicitly for failed-unit state left by a rejected startup; do not
-   silently normalize it or waive unrelated drift. Observe timer state afresh
-   before recovery and accept restoration before revising PPS qualification.
+   Diagnose continuity with the exact frozen comparator, not raw field differences:
+   its existing reboot-aware comparison may already permit boot/PID changes.
+   After verifying file restoration, clear only a confirmed unloaded, PID-zero
+   failed timeservice state and recheck inactive/dead. Reject unrelated drift.
+   A separately approved continuation may stop the obsolete retry timer under
+   the original lock, require an idle recovery worker, and revalidate restoration
+   using private copies of original inputs. Preserve historical source state and
+   evidence. Its independent window authorizes restoration checks only, not a new
+   installation or trial. A hold preserves any timer stop/reset; do not rearm or
+   replay automatically. Accept restoration before revising PPS qualification.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.

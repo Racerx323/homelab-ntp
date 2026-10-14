@@ -38,6 +38,26 @@ def load(path):
     module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);return module
 
 
+def clear_restored_failure(systemctl):
+    """Clear only an unloaded, stopped timeservice left failed by startup."""
+    def observed():
+        raw=systemctl('show','timeservice.service','--no-pager',
+                      '--property=Id,LoadState,ActiveState,SubState,MainPID,FragmentPath,DropInPaths')
+        rows=[line.split('=',1) for line in raw.splitlines() if '=' in line]
+        result=dict(rows)
+        if len(rows)!=len(result):raise ValueError('duplicate restored service properties')
+        return result
+    expected={'Id':'timeservice.service','LoadState':'not-found','ActiveState':'inactive',
+              'SubState':'dead','MainPID':'0','FragmentPath':'','DropInPaths':''}
+    actual=observed()
+    if actual==expected:return False
+    if actual!=dict(expected,ActiveState='failed',SubState='failed'):
+        raise ValueError('unexpected restored timeservice state')
+    systemctl('reset-failed','timeservice.service')
+    if observed()!=expected:raise ValueError('timeservice failure reset not confirmed')
+    return True
+
+
 def measurement_checks(value,recipe):
     peers=value['peers'];pps=[p for p in peers if p['variables'].get('srcadr') in ('SHM(2)','127.127.28.2')]
     if len(pps)!=1:raise ValueError('one PPS association required')
@@ -558,6 +578,7 @@ class Transaction:
             if self.run(['/usr/bin/stty','-F','/dev/serial0','-g']).strip()!=before['termios']:raise ValueError('UART recovery failed')
             self.systemctl('daemon-reload');self.systemctl('restart','avahi-daemon.service')
             self.systemctl('enable','--now','systemd-timesyncd.service')
+            clear_restored_failure(self.systemctl)
             self.a.context(self.h,self.alias,self.rf)
             if self.s['recipe'].get('diagnostic'):
                 try:
