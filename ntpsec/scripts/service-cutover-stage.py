@@ -121,7 +121,8 @@ class Transaction:
         if len(p.stdout)>2*1024**2 or len(p.stderr)>65536:raise ValueError('command output bound')
         record=encoded({'argv':argv,'status':p.returncode,'stdout':p.stdout.decode(errors='replace'),
                         'stderr':p.stderr.decode(errors='replace')})
-        fd=os.open(self.root/'commands.jsonl',os.O_WRONLY|os.O_CREAT|os.O_APPEND|os.O_NOFOLLOW,0o600)
+        log='recovery-commands.jsonl' if getattr(self,'recovering',False) and self.s['recipe'].get('diagnostic') else 'commands.jsonl'
+        fd=os.open(self.root/log,os.O_WRONLY|os.O_CREAT|os.O_APPEND|os.O_NOFOLLOW,0o600)
         try:
             info=os.fstat(fd)
             if not stat.S_ISREG(info.st_mode) or (info.st_uid,info.st_gid,info.st_nlink,stat.S_IMODE(info.st_mode))!=(0,0,1,0o600) or info.st_size+len(record)>8*1024**2:
@@ -437,6 +438,7 @@ class Transaction:
 
     def recover(self,locked=False):
         self.command_deadline=None  # Evidence deadlines must never prevent restoration.
+        self.recovering=True  # A full observation journal must not block recovery commands.
         if not locked:
             with self.lock():return self.recover(locked=True)
         state=self.state()

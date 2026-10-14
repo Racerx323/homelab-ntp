@@ -445,7 +445,7 @@ capture separately. Do not label missing historical data a successful check.
 
 ### Bounded NTS/PPS runtime diagnostic
 
-The [sealed runtime review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-runtime-20261013-v1/review.md)
+The [sealed runtime review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-runtime-20261013-v2/review.md)
 is prepared offline and awaits separate execution approval. Use the existing
 `run-service-cutover.py seal --diagnostic` path with the accepted receiver,
 network and recovered-cutover directories plus `--retained-dir` and its exact
@@ -490,6 +490,8 @@ Terminal readback also includes before/after addresses/routes and one bounded
 boot/monotonic-filtered service/worker journal (under 2000 records and 2 MiB).
 Missing or truncated evidence holds diagnostic acceptance without preventing
 restoration; preserve the original failure when evidence retrieval also fails.
+Recovery uses its own bounded command journal; observation log exhaustion must
+not prevent restoration commands. Preserve both logs in the private stage.
 
 Use one `execute --mode start`; do not replay it after uncertainty. Conditional
 numbered readbacks retrieve all samples and terminal packet/statistics evidence.

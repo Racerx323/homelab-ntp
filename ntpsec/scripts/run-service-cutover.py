@@ -361,7 +361,9 @@ recover regardless. Preserve runtime statistics, all samples and packet report.
 Retrieve one bounded terminal journal for this boot/operation's services and
 workers (under 2000 records, 2 MiB, filtered by monotonic apply time); truncation
 or missing journal/statistics holds diagnostic acceptance without preventing
-baseline restoration. Include before/after addresses and routes in readback.
+baseline restoration. Recovery uses a separate bounded command journal so a
+full observation log cannot block restoration. Include before/after addresses
+and routes in readback.
 
 Conditional readback (up to 60 numbered attempts, at least 30s apart), one explicit
 recovery and cleanup are in scope. Matching dual-stack recovered receipts are

@@ -28,7 +28,7 @@ end-of-project operator action. No cleanup here changes it.
 
 ## Bounded runtime diagnostic prepared — October 13, 2026
 
-Prepared the [runtime diagnostic review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-runtime-20261013-v1/review.md)
+Prepared the [runtime diagnostic review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-runtime-20261013-v2/review.md)
 from accepted retained diagnostics and cutover v3 recovery. Its adjacent sealing
 receipt binds the archive digest and execution window. Preparation and testing
 were offline; no daemon restart, target or controller contact occurred.

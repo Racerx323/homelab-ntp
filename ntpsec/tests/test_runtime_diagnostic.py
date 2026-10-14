@@ -5,6 +5,7 @@ import copy
 import ctypes
 import importlib.util
 import json
+import os
 from pathlib import Path
 import socket
 import struct
@@ -211,6 +212,22 @@ class LifecycleTests(unittest.TestCase):
         with patch.object(stage.subprocess,'run') as run,self.assertRaisesRegex(ValueError,'observation deadline'):
             tx.run(['ip','-json','address'])
         run.assert_not_called()
+
+    def test_full_observation_log_does_not_block_recovery_commands(self):
+        with tempfile.TemporaryDirectory() as name:
+            tx=self.transaction();tx.root=Path(name)
+            with (tx.root/'commands.jsonl').open('wb') as stream:stream.truncate(8*1024**2)
+            fstat=os.fstat
+            def owned(fd):
+                info=fstat(fd)
+                return types.SimpleNamespace(st_mode=info.st_mode,st_uid=0,st_gid=0,st_size=info.st_size,st_nlink=1)
+            result=types.SimpleNamespace(returncode=0,stdout=b'ok',stderr=b'')
+            with patch.object(stage.os,'fstat',side_effect=owned),patch.object(stage.subprocess,'run',return_value=result):
+                with self.assertRaisesRegex(ValueError,'command journal'):tx.run(['/usr/bin/true'])
+                tx.recovering=True
+                self.assertEqual(tx.run(['/usr/bin/true']),'ok')
+            self.assertEqual((tx.root/'commands.jsonl').stat().st_size,8*1024**2)
+            self.assertIn('/usr/bin/true',(tx.root/'recovery-commands.jsonl').read_text())
 
     def test_worker_always_recovers_and_distinguishes_error(self):
         for fail in (False,True):
