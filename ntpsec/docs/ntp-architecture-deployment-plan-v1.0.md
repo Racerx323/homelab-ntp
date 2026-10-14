@@ -919,6 +919,8 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    protected preflight observation and the accepted revalidation digest. Permit
    only the exact operation-scoped startup journal reader alongside the two
    daemon children; retain all credential and competing-process checks.
+   Require all seven revalidation checks, matching dual-stack terminal reports
+   and diagnostic closure before consuming that prerequisite in a successor.
    Prerequisite acceptance does not authorize
    activation or establish timing acceptance. Recovery of the already-started
    operation rechecks those actual facts without imposing a receipt-age limit;
