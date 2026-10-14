@@ -501,7 +501,7 @@ response MAC was also rejected. There was no outside
 network, and the daemon could not adjust the host clock. This proves local Mode 6
 compatibility, not upstream NTS authentication, PPS discipline or target
 acceptance. Offline tests cover timing transitions, stale samples, provenance,
-deadlines, uncertain/partial promotion and cleanup. The v5 review below is sealed offline; target execution remains unapproved.
+deadlines, uncertain/partial promotion and cleanup. The v5 trial below recovered on its first journal-health check; promotion was not reached.
 
 ### Local packet-buffer qualification
 
@@ -524,28 +524,27 @@ socket/kernel fixture, which is not run by ordinary unprivileged CI.
 
 ### Bounded NTS/PPS runtime diagnostic
 
-The fresh [v5 diagnostic review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-runtime-20261013-v5/review.md)
-is prepared offline; its adjacent `sealing.json` identifies the exact bundle
-SHA-256. It binds the current recipes/helpers/tests and governing documents, the
-accepted receiver and network evidence, original retained diagnostics, and v4's
-receipt-matching terminal readback attempt 11 with cleanup. Prior executed
-artifacts remain unchanged. Target preflight must recheck identity and baseline.
+The [v5 diagnostic review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-runtime-20261013-v5/review.md)
+was executed once and recovered. Its adjacent terminal receipt records matching
+IPv4/IPv6 recovered state from readback attempt 1; cleanup completed. Diagnostic
+and time-service acceptance remain false. Preserve the archive, rejecting sample,
+journal, statistics, receipts and backups; do not replay its start.
 
-Scope is one cold-start PPS-led activation, then authenticated promotion of
-selectable NMEA and all three NTS upstreams, with the 2 MiB packet observer.
-The packet scope is the three addresses present in both the original retained
-sample and v4 terminal measurement; the previous extra Cloudflare address is
-excluded. An unexpected resolved address still ends the trial.
-Early functionality and distinct-update gates precede timing acceptance.
-Observation ends by 1500 seconds; the independent 1800-second recovery timer
-remains armed. Every outcome restores the baseline. Conditional dual-stack
-readback, recovery and cleanup are included; time service is never accepted.
-No target/controller contact or live change occurred during preparation.
+The short serial/PPS gate passed and PPS was selected in the first startup
+sample. The first diagnostic sample failed journal health because control-key
+reading and one-key-added messages at priority 3 were unclassified. Promotion
+commands remained empty, so this trial did not add selectable NMEA or the three
+NTS upstreams. It provides no settled timing or NTS packet acceptance. The 2 MiB
+observer reported TPACKET_V3 with zero packets and zero drops before recovery;
+this does not qualify the buffer under traffic.
 
-Start before **October 14, 2026, at 11:11:04 a.m. CDT**; the inherited input window
-expires at **11:41:04 a.m. CDT** that day. This review does not extend that window.
-Separate approval of the sealed hash is required for execution. Warm-restart
-policy and persistent service cutover remain outside this diagnostic.
+Before another review, qualify the journal classifier against the pinned
+daemon's control-key status messages and retained records, with rejection tests
+for unexpected messages, provenance and counts. Any correction requires fresh
+sealing and separate execution approval. Retain the short functionality gate,
+distinct-update timing checks, bounded observation, independent recovery timer
+and mandatory baseline restoration. Warm-restart policy and persistent service
+cutover remain pending.
 
 The [sealed runtime review](/home/aaron/code/.local-evidence/homelab-ntp/current/nts-pps-runtime-20261013-v3/review.md)
 was executed once and recovered, with matching dual-stack readback and cleanup.
@@ -759,7 +758,7 @@ configuration and activation remain pending.
 | Foundation | Original foundation, pps-tools, bc and seven mDNS prerequisites accepted; 686 package records; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | New mDNS-enabled GPSD/NTPsec candidate accepted; 159 manifest entries; v5 evidence preserved | Preserve accepted build and installation receipts |
 | Live installation | Native installation, terminal readback and payload cleanup accepted; copied_not_activated | Preserve native installation receipt and retained root journal |
-| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. Fresh v5 diagnostic review sealed offline; separate hash-bound execution approval pending. Persistent warm-restart policy and service cutover remain pending. |
+| Runtime configuration | Hardware continuation, account/runtime v2, explicit-PPS pairing and receiver/runtime-input inspection accepted; cleanup complete; original evidence preserved | Runtime diagnostic v4 recovered; terminal attempt 11 and cleanup retained; PPS timing and capture completeness unaccepted. Cold-start promotion and larger buffering tested locally. V5 recovered on unclassified control-key journal messages before promotion; dual-stack readback and cleanup complete. Journal classifier qualification is next. Persistent warm-restart policy and service cutover remain pending. |
 | Maintenance/reporting | Policy installed; other assets are templates | Leapfile command/reload review, cron/relay rendering and delivery acceptance |
 | Node/network acceptance | Fixed dual-stack networking and native/service continuity accepted after recovery reboot | Fresh hardware/time acceptance, dual-stack NTP clients and monitoring remain pending |
 

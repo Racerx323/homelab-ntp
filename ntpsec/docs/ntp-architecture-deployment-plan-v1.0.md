@@ -859,9 +859,10 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    refuses an existing drift file; persistent warm-restart policy remains a
    prerequisite for service cutover. See OPERATIONS for scope and bounds. A new
    hash-bound review and separate approval are required for target execution.
-   The fresh v5 review is prepared offline against the retained terminal
-   attempt 11 and cleanup; its sealing receipt binds current inputs. Preparation
-   does not authorize target contact or extend the inherited execution window.
+   Before a successor review, qualify startup journal classification against
+   retained control-key loading records and the pinned daemon. Preserve strict
+   provenance and rejection tests; recovered trials do not establish promotion
+   or timing acceptance. See HISTORY for the v5 outcome.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.
