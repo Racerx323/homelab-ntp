@@ -28,6 +28,8 @@ class Stats(C.Structure):
 def library():
     lib=C.CDLL('libpcap.so.0.8')
     definitions={
+        'pcap_lib_version':([],C.c_char_p),
+        'pcap_fileno':([C.c_void_p],C.c_int),
         'pcap_create':([C.c_char_p,C.c_char_p],C.c_void_p),
         'pcap_set_snaplen':([C.c_void_p,C.c_int],C.c_int),
         'pcap_set_promisc':([C.c_void_p,C.c_int],C.c_int),
@@ -102,16 +104,21 @@ def capture(root,recipe):
         stopped=True
     signal.signal(signal.SIGTERM,stop);signal.signal(signal.SIGINT,stop)
     try:
-        for name,value in [('snaplen',128),('promisc',0),('timeout',100),('buffer_size',262144)]:
+        for name,value in [('snaplen',128),('promisc',0),('timeout',100),('buffer_size',recipe['buffer_bytes'])]:
             if getattr(lib,'pcap_set_'+name)(handle,value)!=0:raise ValueError('pcap setup failed: '+name)
         if lib.pcap_activate(handle)!=0 or lib.pcap_datalink(handle)!=1:raise ValueError('plain Ethernet capture required')
         if lib.pcap_setnonblock(handle,1,error)!=0:raise ValueError('nonblocking capture required')
+        # Linux PACKET_VERSION is read-only and identifies the actual backend.
+        with socket.fromfd(lib.pcap_fileno(handle),socket.AF_PACKET,socket.SOCK_RAW) as fd:
+            version=fd.getsockopt(263,10)  # SOL_PACKET, PACKET_VERSION (linux/if_packet.h)
+        report['backend']={'libpcap':lib.pcap_lib_version().decode('ascii'),
+                           'packet_version':version,'requested_buffer_bytes':recipe['buffer_bytes']}
         program=Program()
         if lib.pcap_compile(handle,C.byref(program),expression.encode(),1,0xffffffff)!=0:raise ValueError('BPF compilation failed')
         try:
             if lib.pcap_setfilter(handle,C.byref(program))!=0:raise ValueError('BPF installation failed')
         finally:lib.pcap_freecode(C.byref(program))
-        protected_write(root,'packet-ready.json',{'ready':True,'filter':expression,'pid':os.getpid()})
+        protected_write(root,'packet-ready.json',{'ready':True,'filter':expression,'pid':os.getpid(),'backend':report['backend']})
         deadline=time.monotonic()+recipe['capture_seconds']
         header=C.POINTER(Header)();data=C.POINTER(C.c_ubyte)()
         while not stopped and time.monotonic()<deadline:
@@ -122,7 +129,9 @@ def capture(root,recipe):
             row=packet(C.string_at(data,header.contents.caplen),header.contents.length,addresses)
             if row is None:report['unsupported']+=1
             else:
-                row['monotonic']=time.monotonic();report['packets'].append(row)
+                row['monotonic']=time.monotonic()
+                row['pcap_timestamp']={'seconds':header.contents.seconds,'microseconds':header.contents.microseconds}
+                report['packets'].append(row)
             if len(report['packets'])+report['unsupported']>=recipe['maximum_packets']:
                 report['capacity_reached']=True;break
         stats=Stats()

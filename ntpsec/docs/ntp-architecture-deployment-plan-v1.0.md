@@ -850,6 +850,11 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    estimate. Any PPS-led startup selection proposal must explicitly preserve or
    separately review the user-selected final selectable-NMEA behavior. Real local
    capture tests must precede claims that an observer buffering change fixes loss.
+   The 2 MiB observer candidate passed isolated x86-64 Linux/libpcap tests; target
+   qualification remains separate. The prepared PPS-led policy defers NMEA/NTS
+   associations, qualifies PPS on distinct updates, then adds the final sources
+   without a daemon restart. Authenticated promotion and failure recovery must be
+   implemented/tested before sealing a live stage; see OPERATIONS for the policy.
    Bind replacement stages independently from historical
    networking provenance; do not rewrite historical boot IDs. See HISTORY for
    execution evidence. Time-service/client acceptance remains pending.

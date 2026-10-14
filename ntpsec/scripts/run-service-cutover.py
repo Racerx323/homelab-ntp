@@ -29,6 +29,7 @@ INPUT_PATHS={
  'tests.py':'tests/test_service_cutover.py','supervisor-tests.py':'tests/test_clockmaker.py',
  'runtime-diagnostic.py':'scripts/runtime-diagnostic.py','diagnostic-tests.py':'tests/test_runtime_diagnostic.py',
  'diagnostic-recipe.json':'configs/runtime-diagnostic-recipe.json',
+ 'capture-linux-tests.py':'tests/test_runtime_capture_linux.py',
  'architecture.md':'docs/ntp-architecture-deployment-plan-v1.0.md','operations.md':'docs/OPERATIONS.md','history.md':'HISTORY.md'}
 EXTRA={'reference.py','reference.tar','reference-report.json','reference-receipt.json','reference-cleanup.json',
        'receiver-runtime.json','known_hosts','timeservice.json','network-evidence.json','recovery-evidence.json','diagnostic-evidence.json'}
@@ -190,9 +191,9 @@ def validate(spec,files):
     if spec.get('purpose')=='runtime-diagnostic':
         diagnostic=json.loads(files['diagnostic-recipe.json']);recipe['diagnostic']=diagnostic
         if (set(diagnostic)!={'observation_seconds','settling_seconds','interval_seconds','maximum_samples',
-                              'capture_seconds','maximum_packets','interface','upstream_addresses','nts_setup_seconds'}
+                              'capture_seconds','maximum_packets','interface','upstream_addresses','nts_setup_seconds','buffer_bytes'}
                 or [diagnostic[k] for k in ('observation_seconds','settling_seconds','interval_seconds','maximum_samples','capture_seconds','maximum_packets')]!=[900,600,30,30,1020,512]
-                or diagnostic['nts_setup_seconds']!=60 or diagnostic['interface']!='eth0' or not 3<=len(diagnostic['upstream_addresses'])==len(set(diagnostic['upstream_addresses']))<=4):
+                or diagnostic['buffer_bytes']!=2097152 or diagnostic['nts_setup_seconds']!=60 or diagnostic['interface']!='eth0' or not 3<=len(diagnostic['upstream_addresses'])==len(set(diagnostic['upstream_addresses']))<=4):
             raise ValueError('closed diagnostic bounds')
         for address in diagnostic['upstream_addresses']:
             if not ipaddress.ip_address(address).is_global:raise ValueError('public diagnostic upstream required')
@@ -344,7 +345,9 @@ clock corrections. Restore Avahi and bootstrap timesyncd after every outcome.
 Before daemon activation, require libpcap availability and a ready, non-promiscuous
 observer on eth0. Use a kernel BPF filter for UDP port 123 and only these retained
 upstream addresses from the original retained proof and latest recovered measurement: {', '.join(diagnostic['upstream_addresses'])}.
-Observe up to 512 packets for at most 1020 seconds (independent unit limit 1040s).
+Request a 2 MiB capture buffer and record libpcap version, actual packet-socket
+backend and libpcap timestamps. Observe up to 512 packets for at most 1020 seconds
+(independent unit limit 1040s).
 Persist only IP/port/direction, length, NTP header mode/leap/stratum and three
 timestamps, plus local monotonic observation time and drop counters. No packet
 payload, NTS cookie, TLS traffic or LAN-client traffic is saved. Plain Ethernet

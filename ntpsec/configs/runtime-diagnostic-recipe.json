@@ -6,6 +6,7 @@
   "maximum_samples": 30,
   "capture_seconds": 1020,
   "maximum_packets": 512,
+  "buffer_bytes": 2097152,
   "interface": "eth0",
   "upstream_addresses": [
     "2606:4700:f1::1",

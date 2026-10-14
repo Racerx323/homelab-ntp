@@ -152,7 +152,7 @@ class PacketTests(unittest.TestCase):
         self.assertIsNone(d.packet(changed,len(frame),[remote]))
 
     def capture(self,root,limit=1,status=1,drops=(0,0)):
-        lib=Mock();lib.pcap_create.return_value=1
+        lib=Mock();lib.pcap_create.return_value=1;lib.pcap_lib_version.return_value=b'fixture libpcap'
         for name in ('pcap_set_snaplen','pcap_set_promisc','pcap_set_timeout','pcap_set_buffer_size',
                      'pcap_activate','pcap_setnonblock','pcap_compile','pcap_setfilter','pcap_stats'):
             getattr(lib,name).return_value=0
@@ -169,8 +169,9 @@ class PacketTests(unittest.TestCase):
             return status
         lib.pcap_next_ex.side_effect=next_packet
         info=types.SimpleNamespace(st_mode=0o40700,st_uid=0,st_gid=0)
-        recipe={'upstream_addresses':[remote],'interface':'eth0','capture_seconds':1,'maximum_packets':limit}
-        with patch.object(d,'library',return_value=lib),patch.object(d.os,'geteuid',return_value=0),patch.object(d.Path,'lstat',return_value=info),patch.object(d.signal,'signal'):
+        recipe={'upstream_addresses':[remote],'interface':'eth0','capture_seconds':1,'maximum_packets':limit,'buffer_bytes':2097152}
+        with patch.object(d,'library',return_value=lib),patch.object(d.os,'geteuid',return_value=0),patch.object(d.Path,'lstat',return_value=info),patch.object(d.signal,'signal'),patch.object(d.socket,'fromfd') as socket_fd:
+            socket_fd.return_value.__enter__.return_value.getsockopt.return_value=2
             if status<0:
                 with self.assertRaises(ValueError):d.capture(root,recipe)
             else:d.capture(root,recipe)
@@ -180,6 +181,9 @@ class PacketTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as name:
             root=Path(name);lib,report=self.capture(root)
             self.assertTrue(report['capacity_reached']);self.assertFalse(report['complete'])
+            lib.pcap_set_buffer_size.assert_called_once_with(1,2097152)
+            self.assertEqual(report['backend']['packet_version'],2)
+            self.assertIn('pcap_timestamp',report['packets'][0])
             lib.pcap_set_promisc.assert_called_once_with(1,0);lib.pcap_setfilter.assert_called_once();lib.pcap_close.assert_called_once()
             self.assertEqual(len(report['packets']),1);self.assertEqual((root/'packet-report.json').stat().st_mode&0o777,0o600)
 
@@ -375,6 +379,24 @@ class LifecycleTests(unittest.TestCase):
                 self.assertIn(unittest.mock.call('enable','--now','systemd-timesyncd.service'),tx.systemctl.call_args_list)
                 if fault=='packet':self.assertFalse(tx.current['packet_observation']['complete'])
                 else:self.assertIn('journal unavailable',tx.current['diagnostic_error'])
+
+
+class LinuxFixtureGuardTests(unittest.TestCase):
+    def test_existing_interfaces_are_rejected_before_mutation(self):
+        fixture=load(ROOT/'tests/test_runtime_capture_linux.py')
+        with patch.object(fixture.os,'geteuid',return_value=0), \
+             patch.object(fixture.sys,'argv',['fixture','--output','/unused']), \
+             patch.object(fixture,'run',return_value='[{"ifname":"lo"},{"ifname":"eth0"}]') as command:
+            with self.assertRaisesRegex(ValueError,'fresh isolated'):fixture.main()
+        command.assert_called_once_with('ip','-j','link','show')
+
+    def test_nonroot_fixture_is_rejected(self):
+        fixture=load(ROOT/'tests/test_runtime_capture_linux.py')
+        with patch.object(fixture.os,'geteuid',return_value=1000), \
+             patch.object(fixture.sys,'argv',['fixture','--output','/unused']), \
+             patch.object(fixture,'run') as command:
+            with self.assertRaisesRegex(ValueError,'namespace root'):fixture.main()
+        command.assert_not_called()
 
 
 class MeasurementTests(unittest.TestCase):

@@ -16,7 +16,7 @@ live inspection.
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; runtime diagnostic v2 recovered after early gate; partial packet evidence retained; dual-stack readback and cleanup complete; runtime diagnostic v3 recovered on changed Cloudflare address; rejecting sample and journal retained; dual-stack readback and cleanup complete; runtime diagnostic v4 completed 30 samples and recovered; 57/57 NTS replies authenticated; PPS timing and capture completeness failed; terminal dual-stack readback attempt 11 and cleanup complete; retained startup/capture analysis complete, next preparation pending |
+| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; runtime diagnostic v2 recovered after early gate; partial packet evidence retained; dual-stack readback and cleanup complete; runtime diagnostic v3 recovered on changed Cloudflare address; rejecting sample and journal retained; dual-stack readback and cleanup complete; runtime diagnostic v4 completed 30 samples and recovered; 57/57 NTS replies authenticated; PPS timing and capture completeness failed; terminal dual-stack readback attempt 11 and cleanup complete; retained analysis complete; larger buffer passed isolated local fixture; PPS-led startup policy prepared, promotion integration pending |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -25,6 +25,39 @@ The current accepted source stage is
 `/home/ama/.ntp-source-build-mdns-20261012-v1`; the earlier v5 stage is preserved.
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
+
+## Local buffer qualification and PPS-led policy — October 13, 2026
+
+Implemented a 2 MiB observer-buffer candidate with libpcap/backend metadata and
+packet timestamps. Tested the actual collector in a fresh rootless network
+namespace using synthetic Ethernet/IP/UDP/NTP frames and Debian libpcap 1.10.5-2
+extracted privately, without host package installation. The attempted local source
+build lacked flex/lex; its log is preserved. No target/controller contact occurred.
+
+The real x86-64 Linux fixture confirmed TPACKET_V3. Three spaced and three burst
+comparisons were run for each address family. The 256 KiB control dropped
+30/32/34 packets (IPv4 spaced), 142/90/106 (IPv4 burst), 31/20/32 (IPv6 spaced)
+and 142/94/90 (IPv6 burst). The 2 MiB candidate captured every expected packet
+in all twelve cases: 2880 packets, zero drops, exact request/response identifiers.
+Evidence, package hash, worker logs, source hash and backend metadata remain in
+private local-capture storage. This reproduces observer loss locally and validates
+the candidate there, not on the Raspberry Pi. Drop rejection remains mandatory.
+
+Prepared the explicit PPS-led startup policy in OPERATIONS. It defers NMEA/NTS
+association creation until PPS frequency/timing qualification, then restores the
+requested final selectable NMEA and three NTS sources without restarting ntpd.
+Distinct PPS updates must advance the acceptance sequence; repeated queries of
+one sample cannot. No serial calibration or startup frequency seed is proposed.
+
+The policy is not integrated into the supervisor. Authenticated localhost Mode 6
+promotion, exact pinned-version event parsing, partial-promotion recovery and
+terminal-readback provenance handling require implementation/testing before a
+live bundle can be sealed. The current final ntp.conf is unchanged. No new target
+execution review or approval hash was created.
+
+Next: implement/test the prepared startup state machine and protected promotion
+path against pinned NTPsec 1.2.5, then prepare a separately reviewed bounded
+trial with the tested observer candidate and explicit recovery reserve.
 
 ## Retained startup and capture analysis — October 13, 2026
 
