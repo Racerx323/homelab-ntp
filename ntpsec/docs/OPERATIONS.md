@@ -689,6 +689,27 @@ The superseded `run-service-cutover.py seal` entry point rejects new trials.
 Historical bundles retain their original execution behavior and evidence; this
 migration does not retroactively validate them. New preparation rejects changed
 repository code, including the transitive runtime helpers.
+New revalidation uses schema 2 and a flat `monitor-inputs.tar` store instead of
+embedding the previous monitor package. The sealer verifies the complete source
+archive against its approved hash, then retains only the original spec/member
+manifest, receiver inputs, restoration inputs and their proofs. The previous
+revalidation subtree and top-level old executable copies are excluded. The
+source archive digest and the new input-store digest are separate bindings.
+
+The store contains `artifact-index.json` and blobs named by SHA-256. Each distinct
+blob appears once. The index gives exact byte-reconstruction recipes for legacy
+provenance archives, including headers and padding; readers verify reconstructed
+digests in memory and never extract or execute their contents. Current scripts
+remain ordinary pinned repository inputs. This compatibility representation
+preserves existing receipt validation without copying every failed trial forward.
+Successor monitor preparation reads the same selected input contract.
+
+Enforce closed store membership, object hashes, no cycles or unused objects,
+64 MiB stored/root bounds and a 96 MiB aggregate reconstruction bound. Existing
+64 MiB member/staging limits remain. Only the local sealer accepts an original
+source archive up to 96 MiB. Preserve the original executed package for audit;
+the smaller projection does not authorize deleting source evidence or target
+staging. Fresh-install entry paths remain a separate pending migration.
 Read-only revalidation v4 was accepted on October 14 through matching IPv4/IPv6
 readbacks using maintained sources; diagnostic closure completed. Hardware,
 runtime, restoration, continuity and idle-worker checks passed. Monitor v4 then

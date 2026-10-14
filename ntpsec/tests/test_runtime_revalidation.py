@@ -509,7 +509,8 @@ class ReceiptTests(unittest.TestCase):
             if case == 'origin': files['reference.tar'] = b'other'
             files['revalidation-proof.json'] = c.encoded(value)
             with self.subTest(case=case), patch.object(successor, 'frozen', side_effect=lambda raw: reader if raw == code['runtime-artifacts.py'] else c), \
-                    patch.object(c, 'validate'), patch.object(successor, 'unpack', side_effect=[archive, origin]):
+                    patch.object(c, 'validate'), patch.object(successor, 'unpack', return_value=archive), \
+                    patch.object(reader, 'monitor_source', return_value=({}, origin, 'original-digest')):
                 if case == 'valid': self.assertEqual(successor.revalidation(files)[2], report)
                 else:
                     with self.assertRaises(ValueError): successor.revalidation(files)

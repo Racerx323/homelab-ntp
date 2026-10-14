@@ -942,6 +942,13 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    baseline and target identity; evidence supplies data/provenance only. Production
    scripts must not depend on workstation evidence paths or execute code imported
    from historical operation archives. Preserve retained archives unchanged. Revalidation and monitor operations use
+   flat, explicit input manifests: retain only consumed baseline/provenance data
+   and recovery proofs, store each distinct content blob once, and keep source
+   archive identities separate from derived input-store identities. Never embed
+   a previous trial's full revalidation package in its successor. Where legacy
+   receipts need exact archive bytes, reconstruct them only in bounded memory
+   from hash-verified data objects; never execute their archived code. Preserve
+   original executed packages separately for audit. Revalidation and monitors use
    maintained data readers and current manifest code for every reconstructed
    runtime dependency; the successor requires code equality with its accepted
    prerequisite. The old cutover sealer is retired.

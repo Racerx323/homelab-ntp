@@ -26,6 +26,34 @@ The current accepted source stage is
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
 
+## Fresh runtime revalidation v5 preparation — October 14, 2026
+
+Prepared read-only revalidation against monitor-v4's exact recovered archive,
+matching dual-stack terminal readbacks and completed transient cleanup. Current
+repository checkers and maintained data readers validate these inputs offline.
+The NMEA permission correction is committed and published as `1f5e610`; its CI
+passed. Revalidation does not grant SHM access or activate either daemon.
+
+Monitor-v4's 75,059,200-byte archive contained 67 nested archive instances and
+1,768 leaf copies representing 228 distinct contents. The initial limit increase
+was replaced with flat, content-addressed inputs. The new sealer verifies the
+original archive, selects only the original spec/member manifest and consumed
+receiver/restoration data, then stores each distinct byte object once. The
+56.7 MB prior-revalidation subtree and obsolete top-level executable copies are
+excluded. The selected input store is 10,188,800 bytes. Historical archives remain
+unchanged; no deletion occurred.
+
+Schema-2 revalidation uses `monitor-inputs.tar`, separately binding its digest and
+the original source archive digest. Legacy provenance archives reconstruct in
+bounded memory only for data validation. New operations use current repository
+implementations. Existing 64 MiB member/staging limits remain; only the local
+sealer may read the original source up to 96 MiB. Tests cover reconstruction,
+deduplication, missing/changed/unreferenced objects, cycles and size limits.
+
+No target contact occurred. Execute only after approval of the new sealed
+revalidation hash; require matching dual-stack acceptance and diagnostic closure
+before preparing the next PPS-first monitor activation for separate approval.
+
 ## NMEA permission correction implemented offline — October 14, 2026
 
 Implemented the approved NTP0-only root:ntp 0660 grant with a native SysV IPC

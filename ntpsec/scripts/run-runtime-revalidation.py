@@ -37,10 +37,12 @@ PATHS = {
          'architecture.md': 'docs/ntp-architecture-deployment-plan-v1.0.md',
          'operations.md': 'docs/OPERATIONS.md', 'history.md': 'HISTORY.md'}
 EXTRA = {'monitor.tar', 'monitor-proof.json', 'known_hosts'}
+FLAT_EXTRA = {'monitor-inputs.tar', 'monitor-proof.json', 'known_hosts'}
 CHECKS = {'restoration', 'failed_stage', 'idle_workers', 'runtime', 'hardware', 'continuity', 'source_preserved'}
 EVIDENCE = ('current-runtime.json', 'before.json', 'commands.jsonl', 'failed-stage.json')
 LIMIT = 32*1024**2
 ARCHIVE_LIMIT = 64*1024**2
+SOURCE_ARCHIVE_LIMIT = 96*1024**2
 ENV = {'PATH': '/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin', 'LC_ALL': 'C', 'PYTHONDONTWRITEBYTECODE': '1'}
 
 
@@ -63,7 +65,7 @@ def load(path):
 def inputs(files):
     c = frozen(files['monitor-controller.py'])
     reader = frozen(files['runtime-artifacts.py'])
-    old, monitor = reader.archive(files['monitor.tar'], 'service-monitor')
+    old, monitor, _ = reader.monitor_source(files['monitor-inputs.tar'] if 'monitor-inputs.tar' in files else files['monitor.tar'])
     if old['schema'] != 2 or old['apply_unit'] != 'ntp-monitor-'+old['operation_id'] or old['recovery_unit'] != old['apply_unit']+'-watchdog':
         raise ValueError('historical monitor worker identity')
     proof = json.loads(files['monitor-proof.json'])
@@ -101,20 +103,25 @@ def recovered_source(old, monitor, proof):
 
 
 def validate(spec, files):
-    if set(files) != set(PATHS)|EXTRA|{'spec.json', 'manifest.json', 'review.md'}:
+    extras = FLAT_EXTRA if spec['schema'] == 2 else EXTRA
+    if set(files) != set(PATHS)|extras|{'spec.json', 'manifest.json', 'review.md'}:
         raise ValueError('closed revalidation bundle required')
     old, *rest = inputs(files)
     proof = json.loads(files['monitor-proof.json'])
-    if 'recovered' in proof and proof['recovered']['bundle_sha256'] != sha(files['monitor.tar']):
+    monitor = rest[0]
+    original_hash = (json.loads(monitor['projection.json'])['source_sha256']
+                     if 'projection.json' in monitor else sha(files['monitor.tar']))
+    if 'recovered' in proof and proof['recovered']['bundle_sha256'] != original_hash:
         raise ValueError('recovered monitor archive binding')
-    if (spec['schema'] != 1 or spec['purpose'] != 'runtime-revalidation'
+    if (spec['schema'] not in (1, 2) or (spec['schema'] == 2) != ('projection.json' in monitor)
+            or spec['purpose'] != 'runtime-revalidation'
             or not re.fullmatch(r'[a-z][a-z0-9-]{0,47}', spec['operation_id'])
             or spec['stage'] != '/var/lib/ntp-acquire-'+spec['operation_id']
-            or spec['source_stage'] != old['stage'] or spec['source_sha256'] != sha(files['monitor.tar'])
+            or spec['source_stage'] != old['stage'] or spec['source_sha256'] != original_hash
             or any(spec[k] != old[k] for k in ('hostname', 'boot_id', 'kernel', 'endpoints', 'old_ipv4'))
             or type(spec['prepared_epoch']) is not int or type(spec['expires_epoch']) is not int
             or not 0 < spec['expires_epoch']-spec['prepared_epoch'] <= 86400
-            or spec['members'] != {n: sha(files[n]) for n in set(PATHS)|EXTRA}):
+            or spec['members'] != {n: sha(files[n]) for n in set(PATHS)|extras}):
         raise ValueError('revalidation identity/window/member binding')
     # Exercise the exact alias consumed by Transaction.runtime_context before SSH.
     reference = frozen(files['reference.py'])
@@ -291,8 +298,15 @@ One capture in root-owned 0700 `{spec['stage']}`; all inputs/evidence 0600.
 The stage prefix satisfies the frozen acquisition validator's path contract.
 Sealing validates the exact runtime alias offline; execution rechecks it.
 Bind current inputs, accepted restoration receipt/closure, and the exact previous
-monitor archive with either its preflight rejection or recovered receipt,
+monitor identity with either its preflight rejection or recovered receipt,
 matching dual-stack readbacks and transient cleanup.
+The sealer verifies the complete original archive hash, then carries forward only
+the consumed receiver/restoration inputs and original spec/member manifest in
+`monitor-inputs.tar`. Its flat content-addressed store holds each distinct blob
+once. It excludes prior revalidation bundles and obsolete top-level executable
+copies. Legacy provenance inputs reconstruct byte-for-byte in bounded memory for
+data validation only; all executable implementations come from this operation's
+pinned repository sources. The original archive remains immutable audit evidence.
 Verify pinned SSH keys, same boot/kernel/host, original held-source lock, immutable
 stage members, inactive old timer, and absence of prior monitor workers.
 The prior stage must remain in its sealed missing-state or recovered/cleaned state.
@@ -341,7 +355,7 @@ def prepare(bundle, checksum, current=False):
 
 def seal(args):
     t = load(ROOT/'scripts/run-foundation-preflight.py'); c = load(ROOT/'scripts/run-service-monitor.py')
-    raw = t.private_file(args.source_dir/'service-monitor.tar', ARCHIVE_LIMIT)
+    raw = t.private_file(args.source_dir/'service-monitor.tar', SOURCE_ARCHIVE_LIMIT)
     if sha(raw) != args.source_sha256: raise ValueError('executed monitor archive digest')
     monitor = c.unpack(raw); old = json.loads(monitor['spec.json'])
     if args.recovered_attempt is not None:
@@ -352,9 +366,10 @@ def seal(args):
         proof = {'start': json.loads(t.private_file(args.source_dir/'start-0-result.json')),
                  'readback': json.loads(t.private_file(args.source_dir/'readback-1-0-result.json'))}
     files = {n: (ROOT/path).read_bytes() for n, path in PATHS.items()}
-    files.update({'monitor.tar': raw, 'monitor-proof.json': encoded(proof), 'known_hosts': monitor['known_hosts']})
+    projected = frozen(files['runtime-artifacts.py']).project_monitor(raw, args.source_sha256)
+    files.update({'monitor-inputs.tar': projected, 'monitor-proof.json': encoded(proof), 'known_hosts': monitor['known_hosts']})
     now = int(time.time()); spec = {k: old[k] for k in ('hostname', 'boot_id', 'kernel', 'endpoints', 'old_ipv4')}
-    spec.update(schema=1, purpose='runtime-revalidation', operation_id=args.operation_id,
+    spec.update(schema=2, purpose='runtime-revalidation', operation_id=args.operation_id,
         stage='/var/lib/ntp-acquire-'+args.operation_id, source_stage=old['stage'], source_sha256=sha(raw),
         prepared_epoch=now, expires_epoch=now+86400, members={n: sha(v) for n, v in files.items()})
     files.update({'spec.json': encoded(spec), 'review.md': review(spec).encode()})

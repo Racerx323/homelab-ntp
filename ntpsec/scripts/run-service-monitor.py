@@ -106,7 +106,8 @@ def revalidation(files):
             or archive['stage.py'] != files['revalidation-controller.py']
             or any(archive[n] != files[n] for n in frozen(files['runtime-artifacts.py']).CODE_PATHS)):
         raise ValueError('accepted closed revalidation and matching continuity checker required')
-    origin = unpack(archive['monitor.tar'])
+    _, origin, _ = frozen(files['runtime-artifacts.py']).monitor_source(
+        archive['monitor-inputs.tar'] if 'monitor-inputs.tar' in archive else archive['monitor.tar'])
     if any(files[n] != origin[n] for n in (*REFERENCE, 'restoration.tar', 'restoration-proof.json')):
         raise ValueError('revalidated runtime/restoration provenance drift')
     return spec, archive, report
