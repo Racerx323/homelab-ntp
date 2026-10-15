@@ -856,8 +856,9 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    without a daemon restart. Authenticated promotion passed an isolated pinned-1.2.5 daemon fixture;
    timing and failure/recovery paths have offline tests. Observation ends by
    1500 seconds with an independent 1800-second recovery timer. This diagnostic
-   refuses an existing drift file; persistent warm-restart policy remains a
-   prerequisite for service cutover. See OPERATIONS for scope and bounds. A new
+   refuses an existing drift file; production uses the ordinary all-source
+   startup policy below, with live persistence validation still pending.
+   See OPERATIONS for scope and bounds. A new
    hash-bound review and separate approval are required for target execution.
    Startup journal classification permits the pinned daemon's exact one-key
    loading pair only for the PPS-startup profile, with current daemon provenance,
@@ -1027,6 +1028,30 @@ If boot, network, GPS/PPS, or client acceptance fails, remove the new card and
 reinstall that node's preserved Debian 11 card. Validate the old node's NTP
 health and client responses. A media swap is the recovery action; copying the
 old network profile or NTP config onto the new image is not a rollback.
+
+### Production startup policy
+
+The approved production policy starts NTPsec against the complete final host
+configuration: preferred PPS, selectable NMEA and all three NTS upstreams are
+configured at daemon launch. NTPsec performs source selection and clock
+discipline. The PPS-first promotion policy above applies to the monitoring
+trial, not routine production starts, service restarts or boots.
+
+Preserve and reuse NTPsec's learned drift file; do not delete it or require
+cold-start frequency events on restart. Keep the GPSD serial/PPS functionality
+gate and existing source restrictions. Its receiver-readiness timeout is distinct
+from timing convergence: degraded timing does not impose a shutdown deadline.
+Observe every 30 seconds while converging or degraded and every 300 seconds
+when ready, using fresh records identified by boot and daemon invocation.
+
+Production acceptance requires a separately sealed transition from the running
+monitor profile, a controlled service restart with saved drift, and a subsequent
+boot test. Verify all five associations, NMEA/PPS shared-memory access, NTS
+authentication, timing, dual-stack clients and native Windows discovery after
+each transition. Prove receiver readiness and segment access after boot rather
+than relying on permissions retained from the trial. Preserve current evidence
+and define recovery for each transition before execution. Local supervisor
+tests do not establish live restart, drift reuse or reboot acceptance.
 
 ### Phase 3A: evaluate and accept measured optimizations
 

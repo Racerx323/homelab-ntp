@@ -147,6 +147,47 @@ class BindingTests(unittest.TestCase):
 
 
 class StartupTests(unittest.TestCase):
+    def test_ordinary_start_restart_and_child_failure_preserve_saved_state(self):
+        config=json.loads((ROOT/'configs/service-cutover-recipe.json').read_text())['timeservice']
+        self.assertNotIn('pps_startup',config)
+        # Exercise the real supervisor; only daemon I/O, receiver gate and signals
+        # are simulated. This does not prove ntpd consumes drift or survives boot.
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d)
+            drift=root/'ntp.drift';drift.write_text('1.250\n')
+            evidence=root/'startup-monitor.json';evidence.write_text('{"retained":true}\n')
+            before={p:p.read_bytes() for p in (drift,evidence)}
+            real_path=service.Path
+            def mapped_path(value):
+                if str(value)=='/var/lib/ntpsec/drift/ntp.drift':return drift
+                return real_path(value)
+            for failed in (False,False,True):
+                with self.subTest(failed=failed):
+                    children=[Mock(),Mock()]
+                    for child in children:child.poll.return_value=None
+                    handlers={}
+                    def register(sig,handler):
+                        old=handlers.get(sig,service.signal.SIG_DFL)
+                        handlers[sig]=handler
+                        return old
+                    def observe(_):
+                        if failed:children[1].poll.return_value=1
+                        else:handlers[service.signal.SIGTERM](service.signal.SIGTERM,None)
+                    with patch.object(service,'Path',side_effect=mapped_path), \
+                            patch.object(service.signal,'signal',side_effect=register), \
+                            patch.object(service.subprocess,'run'), \
+                            patch.object(service.subprocess,'Popen',side_effect=children) as launch, \
+                            patch.object(service,'check_startup') as gate, \
+                            patch.object(service.importlib.util,'spec_from_file_location',side_effect=AssertionError('trial helper loaded')), \
+                            patch.object(service.time,'sleep',side_effect=observe):
+                        self.assertEqual(service.supervise(config),1 if failed else 0)
+                    self.assertEqual([c.args[0] for c in launch.call_args_list],
+                                     [config['gpsd'],config['ntpd']])
+                    gate.assert_called_once()
+                    children[0].terminate.assert_called_once()
+                    for child in children:child.wait.assert_called_once()
+                    self.assertEqual({p:p.read_bytes() for p in before},before)
+
     def test_failed_pairing_prevents_ntpd_and_stops_gpsd(self):
         config=json.loads((ROOT/'configs/service-cutover-recipe.json').read_text())['timeservice']
         process=Mock();process.poll.return_value=None

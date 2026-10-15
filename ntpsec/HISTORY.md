@@ -15,8 +15,8 @@ live inspection.
 | Rebuilt node | Former j1-svntp1 renamed j2-svntp1; spare-card first boot accepted | Full hardware/time/network acceptance |
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
 | Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
-| Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; new mDNS-enabled build/tests/native staging accepted; 159-entry manifest; v5 evidence preserved | Native installation and runtime prerequisites accepted; final configuration and activation pending |
-| Runtime | Hardware continuation, account/runtime v2 and receiver/runtime-input inspection accepted; cleanup complete; copied_not_activated | Cutover v1 recovered; retained journal identified minsane recommendation; diagnostic v2 accepted and cleaned; all three NTS-KE IPv6 connections refused before TLS; UniFi/NTS transport inspection accepted and cleaned; IPv4 TCP succeeds, IPv6 refuses; IPv6 permit v2 policy/TCP accepted; both rules enabled; diagnostics cleaned; cutover v2 early gate passed; NTS cookies acquired; error-priority response diagnostics blocked journal acceptance; recovered through both endpoints and cleaned; v3 journal health passed; NTS reach and PPS thresholds remained unsatisfied across five probes; recovered through both endpoints and cleaned; retained NTS/PPS diagnostics accepted through both endpoints and cleaned; startup statistics recovered; runtime diagnostic v2 recovered after early gate; partial packet evidence retained; dual-stack readback and cleanup complete; runtime diagnostic v3 recovered on changed Cloudflare address; rejecting sample and journal retained; dual-stack readback and cleanup complete; runtime diagnostic v4 completed 30 samples and recovered; 57/57 NTS replies authenticated; PPS timing and capture completeness failed; terminal dual-stack readback attempt 11 and cleanup complete; retained analysis complete; larger buffer passed isolated local fixture; cold-start promotion and receipt-selected recovery implemented and tested locally; runtime diagnostic v5 recovered after its first sample rejected control-key journal messages; dual-stack readback and cleanup complete; journal classifier corrected and tested offline; diagnostic v6 executed; 30 samples retained; recovery held on continuity drift; matching readback 13 retained; restoration and source cleanup remain unaccepted; recovery inspection captured and closed; PPS qualification deadline confirmed; historical boot/PID baseline and failed timeservice state differ; recovery timer still waiting at capture; exact frozen-checker replay isolates failed timeservice state; guarded reset tested; restoration continuation accepted through both endpoints and closed; old timer already absent/inactive; original v6 held state/evidence preserved; Offline PPS replay complete; continuous PPS-first monitor and terminal retention implemented/tested locally; start-and-monitor v1 stopped in preflight on expired nested hardware acceptance; conditional readback found no state file; partial stage retained; read-only hardware/runtime revalidation v1 executed and held on runtime binding; matching dual-stack readback and diagnostic closure complete; revalidation v2 prerequisites accepted through both endpoints; diagnostic closure complete; monitor v2 started and passed early/workstation checks; handoff rejected historical boot-ID comparison; recovered through both endpoints and transient cleanup complete; handoff continuity corrected/tested offline; read-only revalidation v3 accepted against recovered monitor v2 through both endpoints; diagnostic closure complete; monitor v3 startup and workstation structural checks passed; handoff rejected PPS platform/class cardinality; approved recovery matched through both endpoints and transient cleanup completed; PPS checker corrected and real transition tested offline; historical executable dependencies migrated and tested offline; revalidation v4 accepted and closed; monitor v4 structural handoff and PPS qualification passed; immediate promotion snapshot lacked NMEA and triggered automatic recovery; matching dual-stack readback and transient cleanup complete; sustained timing and production acceptance remain pending |
+| Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; mDNS-enabled build, native installation and runtime prerequisites accepted; 159-entry manifest | Preserve accepted source and installation records |
+| Runtime | Monitor-v5 handoff and PPS-first qualification passed; all five sources reached readiness; retained dual-stack client timing and native Windows mDNS acceptance passed | All-source production transition; saved-drift restart and reboot validation; remaining per-node production gates |
 | Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
@@ -25,6 +25,228 @@ The current accepted source stage is
 `/home/ama/.ntp-source-build-mdns-20261012-v1`; the earlier v5 stage is preserved.
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
+
+## Repository checkpoint: client acceptance and production startup
+
+Repository changes include the bounded client acceptance controller, retained
+mDNS diagnostics, paired Windows/WSL discovery and native Windows acceptance,
+with offline tests. The plan specifies normal all-source production startup;
+the supervisor regression covers repeat starts and cleanup with saved state.
+Full repository pre-commit and working-tree secret scanning passed before this
+checkpoint; publication validation is recorded separately by Git hooks and CI.
+Private captures and sealed operation bundles remain outside Git.
+
+Resume at the production transition preparation described in OPERATIONS.
+Fresh continuity collection, durable SHM access across boot and tested recovery
+that preserves drift are prerequisites to a sealed live review. Do not replay
+historical trials or restart the drift-rejecting PPS-first profile. No live
+restart, reboot, production acceptance or deployment is implied by this commit.
+The separate fresh-install entry path remains deferred until j2 production
+acceptance and before work on the next node.
+
+## Production startup policy clarified — October 14, 2026
+
+The operator approved making normal all-source startup explicit and validating
+saved-drift reuse and restart/reboot behavior. The governing plan now separates
+the PPS-first monitoring trial from production startup: preferred PPS, selectable
+NMEA and three NTS sources are configured together at daemon launch. The existing
+ordinary supervisor already provides that launch path; no live profile changed.
+
+Added local regression coverage for ordinary start/stop, repeat start, saved-state
+preservation and daemon-failure cleanup. Daemon I/O and receiver readiness are
+simulated; these tests do not establish installed ntpd drift reuse or reboot
+acceptance. The operations runbook defines the live transition and persistence
+checks, including fresh SHM access and recovery that preserves learned drift.
+
+Next: prepare current-state collection and a reversible production transition.
+Do not reuse the cold-start recovery profile with saved drift, or assume the
+operation-bound NMEA grant survives reboot. A complete tested transition/recovery
+bundle still needs sealing and separate execution approval before target contact.
+The accepted client evidence remains valid for its capture; overall production
+acceptance remains pending. No target contact, restart, reboot or push occurred.
+
+## Client timing and native discovery accepted — October 14, 2026
+
+Executed the approved native-discovery client bundle once. Both fixed address
+families returned synchronized stratum-1 PPS responses with leap 0 and matching
+nonce/timestamp checks; external administrative queries were denied. Native
+Windows received three mDNS replies and verified the target PTR/SRV port 123,
+hostname, IPv4 address and fixed IPv6 ULA using the repository matcher. The
+retained result has `client_accepted: true` and all four client checks true.
+
+No service/configuration changes, recovery, cleanup or repeat capture occurred.
+The WSL multicast discrepancy remains separate from the accepted native discovery
+path. IPv6 address advertisement was verified over IPv4 multicast, not IPv6
+multicast transport. Calibrated UTC accuracy and overall production acceptance
+remain unaccepted. Restart/reboot persistence, Phase 5 unicast DNS deployment and
+the other production gates remain pending. Evidence is retained in the sibling
+`client-native-discovery-20261014-v1` directory.
+
+## Native Windows discovery client acceptance preparation — October 14, 2026
+
+Prepare fresh IPv4/IPv6 client timing and administrative-query checks followed
+by native Windows mDNS discovery, using the same raw-reply parser/matcher that
+passed the paired diagnostic. Require completed native queries, exact bytes/order
+and the observed bound source. Retain partial results and leave the service
+unchanged on failure. The new sibling bundle contains repository code and explicit
+inputs, with no historical archives. Execute only after its sealed hash approval;
+the successful diagnostic is not relabeled as final client acceptance.
+
+## Paired mDNS capture: Windows matched, WSL empty — October 14, 2026
+
+Executed the approved paired diagnostic once. Identical query bytes/order and
+explicit shared source/interface selection were verified. Native Windows received
+three replies from the target UDP 5353 endpoint; the existing parser/matcher
+accepted the `_ntp._udp.local` PTR, port-123 SRV, host IPv4 and expected fixed IPv6
+ULA. WSL received no replies. Both captures completed within their bounds.
+
+The operator also reported both IPv4 and IPv6 advertisements in the browser;
+native packet evidence now independently confirms the required address mapping.
+This establishes server discovery functionality from native Windows, not a missing
+advertisement or parser rejection. It narrows the empty diagnostic to the WSL
+delivery path; different ephemeral ports and sequential timing remain differences,
+and the capture does not locate a drop or prove a firewall/WSL defect.
+
+No service/configuration changes, retries or recovery occurred. Diagnostic-only
+client/production acceptance flags remain false by design. Use native Windows
+discovery for the next separately approved client acceptance stage; avoid changing
+the working server advertisement solely to satisfy the WSL path. Phase 5 unicast
+DNS changes and production persistence gates remain separate. Evidence is in
+`mdns-paired-20261014-v1`.
+
+## Paired Windows/WSL mDNS preparation — October 14, 2026
+
+Prepare one sequential native Windows/WSL comparison bound to the observed
+shared workstation IPv4 address. Use identical query bytes, multicast TTL,
+interface selection and bounded receive windows; retain raw replies and process
+both with the existing repository DNS parser/matcher. Native Windows uses bundled
+PowerShell/.NET code; no Windows Python installation is required. Preserve the
+service and all earlier evidence. The new sibling bundle embeds no old archives
+and requires separate hash-bound execution approval.
+
+## Windows/WSL interface comparison — October 14, 2026
+
+Approved local read-only inspection confirmed WSL mirrored networking. Windows
+Ethernet 3 (Intel X550, interface index 13) and the retained diagnostic eth0 have
+the same MAC, IPv4 address and /22 prefix. Windows selects Ethernet 3 for the
+target IPv4 route; Ethernet 3 has an IPv4 multicast route, and the retained WSL
+multicast lookup selected eth0. The Default LAN ULA used by the diagnostic is
+also present on Ethernet 3. A simple wrong-adapter mismatch is not supported.
+
+Windows Find-NetRoute could not resolve the multicast lookup; the subsequent
+read-only collection retained the actual multicast route table instead. That
+API rejection is not evidence of a missing multicast route. No network probes,
+firewall/route changes or target contact occurred in this comparison.
+
+Browser advertisement versus an empty ephemeral-socket capture remains a
+transport/query-method question. Next diagnostic should compare equivalent
+queries on native Windows and WSL, or observe packet traversal, without assuming
+a server, firewall or WSL defect. Evidence remains in the new sibling directory
+`mdns-interface-comparison-20261014-v1`. Client mDNS acceptance stays pending.
+
+## Workstation mDNS diagnostic completed — October 14, 2026
+
+Executed the approved diagnostic once. All four local interface/route commands
+completed; IPv4, IPv6 and multicast route selection used eth0. Three mDNS queries
+were submitted from the ephemeral socket, but no replies arrived during the
+bounded receive windows. No DNS parser rejection occurred because no packets
+were received. This does not establish whether queries reached the target or
+where replies were lost. No service/configuration changes or retries occurred.
+
+The operator separately reported a browser advertisement at 19:29:10 CDT for
+j2-svntp1.local, `_ntp._udp`, port 123 and IPv4 10.1.0.51 via Ethernet 3.
+This is operator-provided evidence, not a capture from the diagnostic environment;
+it does not establish the browser's IPv6 address mapping. Next: compare browser
+and diagnostic interface/transport paths before proposing server or DNS changes.
+Client mDNS and production acceptance remain pending. Evidence is retained in
+the independent `mdns-diagnostic-20261014-v1` directory.
+
+## Workstation mDNS diagnostic preparation — October 14, 2026
+
+Prepare a separate bounded diagnostic against monitor-v5 identity and retained
+ready observation 31. Retain workstation interface/route metadata and raw DNS
+replies with source, decoding and original-checker matching details. Reuse the
+repository workstation controller with an explicit diagnostic purpose; embed no
+historical archives and change no service/configuration. Execute only after
+approval of the new sealed hash. Phase 5 Unbound SRV/AAAA/IPv6 PTR work remains
+separate; this capture does not query the unicast DNS resolvers.
+
+## Client acceptance v1 held on mDNS — October 14, 2026
+
+Executed the approved workstation capture once. Both fixed address families
+returned synchronized stratum-1 PPS responses, with matching nonce/timestamp
+checks and denied administrative queries. The mDNS checker did not establish the
+required PTR/SRV target and dual-address mapping, so `client_accepted` and
+`production_accepted` remain false. Partial IPv4/IPv6 results are retained in
+`client-acceptance-20261014-v1/result.json`.
+
+No service or configuration changes, recovery or repeat capture occurred. The
+mDNS failure records only the aggregate rejection, not received DNS records;
+it cannot distinguish missing advertisement, multicast path limitations or
+checker behavior. Next: prepare a bounded discovery diagnostic with retained
+reply details and workstation route/interface evidence for separate approval.
+Preserve the running monitor-v5 stage and recovery inputs.
+
+## Client acceptance preparation — October 14, 2026
+
+Monitor-v5 observation 31 retained nine ready samples spanning 40 minutes, with
+PPS selected, stratum 1, leap 0, and all five sources reachable. Prepare a separate
+workstation client timing/mDNS review using the existing protocol checker and a
+repository-owned one-shot controller. Bind monitor-v5 identity and observation
+digests without embedding historical archives. Partial failures remain evidence;
+no service mutation or recovery is part of this capture. Execution requires the
+new sealed hash approval. Production acceptance remains pending.
+
+## PPS-first monitor v5 running and ready — October 14, 2026
+
+Executed the approved bundle once against accepted runtime revalidation v5.
+Receiver pairing, early ntpd functionality, structural safety and workstation
+IPv4/IPv6 responses with administrative queries denied passed. Structural handoff
+canceled the installation watchdog; the continuous PPS-first monitor remained
+active.
+
+PPS qualified and promotion succeeded at about 963 seconds. All five associations
+were created, including NMEA SHM unit 0. NMEA received samples and all three NTS
+upstreams became authenticated and reachable. Observation 30 recorded `ready` at
+about 1,174 seconds, with PPS selected, stratum 1, leap 0, full PPS reach, offset
+-0.240 ms and jitter 0.070 ms. Matching dual-stack readback attempt 1 retained the
+`monitoring` receipt. The service remains running with five-minute monitoring;
+degradation resumes the faster cadence. No recovery or cleanup was performed.
+
+This establishes startup/promotion success, not final production acceptance.
+Sustained timing, final client/mDNS acceptance, warm restart/reboot persistence
+and the remaining production gates are pending. Preserve the active stage and
+recovery inputs. Further approved observation numbering resumes at 31; the sealed
+operation allows at most 60. Evidence is in the independent sibling directory
+`service-monitor-20261014-v5`.
+
+## PPS-first monitor v5 preparation — October 14, 2026
+
+Prepare the activation/recovery review against accepted, closed runtime
+revalidation v5. Use a new sibling operation directory, never a directory inside
+a prior failed run. Pin current repository implementations, including the NTP0
+permission grant/restore and promotion diagnostics. The revalidation input uses
+the selected flat data store; the original monitor-v4 archive is not carried
+forward. Required restoration and receiver provenance remain immutable inputs.
+
+Retain PPS-first isolation, the installation watchdog and fault recovery, with no
+timing-quality shutdown deadline. Promotion adds selectable NMEA and all three
+NTS sources after PPS qualification. Preparation does not authorize execution;
+require separate approval of the sealed hash before target contact.
+
+## Runtime revalidation v5 accepted — October 14, 2026
+
+Executed the approved schema-2 bundle once. Hardware, runtime, continuity,
+restoration, idle-worker and source-preservation checks passed. Conditional
+readback attempt 1 returned matching `runtime_validated` reports over IPv4 and
+IPv6. Diagnostic closure completed with evidence preserved. No activation or
+service/configuration mutation occurred; timing and production acceptance remain
+pending.
+
+The accepted receipt and closure are retained under
+`runtime-revalidation-20261014-v5`. Next: prepare a fresh PPS-first monitor
+activation/recovery bundle against this accepted observation, including the
+repository NMEA SHM access correction, for separate execution approval.
 
 ## Fresh runtime revalidation v5 preparation — October 14, 2026
 
@@ -1494,6 +1716,19 @@ reboot was performed. Metadata resolution remains unexecuted and requires
 its own sealed review and approval.
 
 ## Exact resume point
+
+As of the retained October 14 monitor-v5 and native client acceptance results,
+the PPS-first trial reached readiness and the client timing/discovery checks
+passed. Those observations are not a fresh live status check. Production
+startup is now specified as all five sources at daemon launch, preserving
+learned drift. Prepare fresh continuity observations and a tested, reversible
+transition from the monitor profile before sealing restart/boot validation.
+See the production startup policy entry above and OPERATIONS for the checks.
+Do not repeat installation or boot hardware changes from the historical resume
+point below. Overall production acceptance, restart/reboot persistence and the
+remaining per-node gates are pending.
+
+### Historical resume point after runtime discovery
 
 The current recipe requires mDNS support and runtime `-m`; NTPsec retains SHM
 because GPSD owns UART/PPS and exports both signals. The revised foundation

@@ -448,8 +448,8 @@ capture separately. Do not label missing historical data a successful check.
 The diagnostic recipe enables `pps-startup.py` through `timeservice.py`. It
 renders a private PPS-only bootstrap from the unchanged final profile and
 promotes sources in the same ntpd process. The ordinary service recipe does not
-enable this cold-start-only policy. Persistent restart behavior with an existing
-drift file needs a separate policy before service cutover. This diagnostic
+enable this cold-start-only policy. The production startup policy below uses
+the ordinary supervisor with saved drift; live persistence acceptance is pending. This diagnostic
 refuses that file rather than assuming a cold-start event sequence on restart.
 
 1. Run the existing bounded GPSD serial/PPS pairing gate. Bootstrap with only
@@ -519,6 +519,59 @@ keep PPS-first isolation and monitor convergence without a timing-quality
 shutdown deadline. No duration guarantees convergence. The version-1 diagnostic
 remains a bounded, mandatory-recovery operation; it cannot implement this decision.
 
+### Production startup and persistence validation
+
+The production policy uses the ordinary `timeservice` object in
+`configs/service-cutover-recipe.json` and the complete host configuration.
+It omits `pps_startup` and `pps_monitor_evidence`: all five sources are
+configured when ntpd starts, with PPS preferred and NMEA selectable. Preserve
+the learned drift file and let ntpd use it normally. Do not reuse the legacy
+cutover recipe's timed trial controller as a production lifecycle operation.
+
+The existing PPS-first monitor remains the running trial until a separately
+approved transition. Its existing-drift and evidence-collision guards remain
+valid for that trial; extending them into a permanent promotion mechanism is
+not required by the production policy.
+
+Prepare live validation in this order:
+
+1. Capture current service/configuration identities, boot/PIDs, drift ownership
+   and contents, SHM identities/access, receiver readiness, active monitoring
+   and recovery units. Bind these observations and repository inputs explicitly;
+   do not embed prior operation archives or infer current state from old results.
+2. Prepare a reversible transition to the ordinary supervisor configuration.
+   Preserve the accepted host configuration, learned drift and historical monitor
+   records. Check both SHM consumers before accepting startup. The monitor-v5
+   NMEA permission grant is operation-bound; establish whether initial ntpd
+   startup attaches successfully and whether a durable access step is needed.
+   Do not replay the old grant against newly created segments.
+3. Test controlled restart with saved drift. Verify the same configured drift
+   path and access, inspect daemon startup evidence, and record before/after
+   values. Normal daemon updates may change the file; byte equality after
+   running is not an acceptance requirement. Observe all five associations,
+   authenticated NTS, source selection, reach, stratum, leap, offset, jitter,
+   journals and IPv4/IPv6 client responses. Retain fresh per-invocation records.
+4. After restart acceptance, prepare boot enablement and a controlled reboot
+   with independent recovery access. Verify a new boot, service ordering,
+   recreated SHM identities/access, receiver readiness and saved-drift behavior.
+   Repeat timing/client/native Windows discovery acceptance. Keep leap timer
+   and watchdog changes in their own approved scope.
+
+Use the plan's 30-second convergence/degraded and 300-second ready cadence,
+without a timing-quality shutdown deadline. Process failure and invalid
+configuration remain faults. Recovery must preserve the learned drift and must
+not blindly restart the old PPS-first profile: that profile rejects saved drift.
+Seal the exact replacement, recovery commands, target identities and checks only
+after that recovery path is implemented and tested. No restart, reboot or boot
+enablement is authorized by this runbook alone.
+
+Offline coverage in `test_service_cutover.py` exercises the real ordinary
+supervisor through start, stop, repeat start and child failure, with daemon I/O
+and receiver readiness simulated. It verifies direct daemon arguments, absence
+of trial-helper loading, saved-state preservation and child cleanup. It cannot
+prove the installed daemon reads drift, SHM access after reboot, systemd ordering
+or target convergence; those remain live acceptance gates.
+
 ### Continuous PPS-first monitor candidate
 
 `configs/pps-monitor-policy.json` supplies the exact version-2 `pps_startup`
@@ -527,8 +580,8 @@ implements it without a first-selection, qualification or completion deadline.
 The existing serial/PPS pairing gate still requires five matched samples per
 source within its bounded startup window. A cold receiver that cannot satisfy
 that gate needs acquisition first; this candidate does not wait indefinitely
-for missing receiver functionality. Existing drift files remain rejected until
-a separate warm-restart policy is implemented.
+for missing receiver functionality. This trial rejects existing drift files.
+Production startup uses the ordinary supervisor described above instead.
 
 The helper observes every 30 seconds while qualifying. After at least 600
 seconds and ordered frequency initialization, require three distinct fresh PPS
@@ -558,6 +611,62 @@ An uncatchable kill or power loss leaves only the last persisted observation;
 missing terminal metadata must not be inferred as a clean stop.
 
 ### Start-and-monitor activation and recovery
+
+#### Workstation client acceptance
+
+After monitor readiness, `scripts/run-client-acceptance.py seal` prepares a
+separate workstation-only review from an explicit monitor archive hash and ready
+observation number. The small bundle pins repository code, target identity and
+provenance digests; it includes no previous operation archives. Use a new sibling
+operation directory. Approve its hash separately before execution.
+
+One bounded capture checks synchronized stratum-1 PPS responses over IPv4 and
+IPv6, administrative-query denial, and the `_ntp._udp` PTR/SRV mapping to port 123
+and both accepted host addresses. Discovery uses IPv4 multicast with unicast
+replies; it does not establish IPv6 multicast discovery. Preserve partial results
+on failure and do not replay a consumed or uncertain capture. The checker changes
+no service or configuration. It does not establish calibrated UTC accuracy,
+restart persistence or overall production acceptance.
+
+#### Client acceptance with native Windows discovery
+
+After the paired diagnostic establishes native Windows discovery, seal final
+client acceptance with `--native-discovery --source-ipv4 OBSERVED_ADDRESS`.
+Fresh WSL IPv4/IPv6 NTP responses and administrative-query denial are followed by
+native Windows discovery in the same bounded operation. Reuse the original
+parser/matcher; require completed native queries, exact query bytes/order and
+bound source address. Keep raw replies and partial timing results if discovery
+fails. Do not retry WSL multicast or alter the working advertisement. This
+accepts only client protocol/discovery checks, not calibrated UTC accuracy,
+production readiness or IPv6 multicast transport. Approve the new sealed hash
+separately; preserve previously executed bundles.
+
+#### Workstation mDNS diagnostic
+
+For a failed workstation mDNS check, seal the same controller with `--diagnostic`
+in a new sibling directory. `scripts/diagnose-mdns.py` retains local interface
+addresses and route selection, then uses the original checker's three multicast
+queries, parser and matching rules. Retain bounded raw replies, their source and
+query context, decoded records and parser failures, including replies rejected by
+the original source filter. No NTP or unicast DNS probes are included. Missing
+replies cannot distinguish absent advertisements from routing/filtering issues.
+This capture does not mutate the service or establish acceptance; approve its
+own sealed hash before execution. A distinct total-deadline exception prevents
+socket timeout handling from swallowing the capture bound.
+
+#### Paired Windows/WSL discovery
+
+Paired discovery diagnosis uses `--paired --source-ipv4 OBSERVED_ADDRESS` on the
+workstation controller. It sends the same query bytes sequentially through native
+Windows PowerShell/.NET and WSL Python, explicitly binding the shared IPv4 source
+and multicast interface. Both use TTL 255, three three-second receive windows and
+a 64-reply limit. Decode both captures with the same repository parser. Retain
+partial native output; do not replay a failed/uncertain attempt. Different
+ephemeral ports and sequential timing remain experimental differences. This
+comparison narrows the transport/query question without proving a drop location.
+It requires its own sealed hash approval and changes no service or configuration.
+
+#### Activation
 
 `scripts/run-service-monitor.py` seals an independent activation stage against
 the accepted restoration archive, receipt, matching dual-stack readbacks and
