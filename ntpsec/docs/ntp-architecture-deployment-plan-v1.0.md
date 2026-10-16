@@ -300,6 +300,164 @@ leapfile path, owner, group, mode, retry behavior, and installed NTPsec reload
 behavior. Do not add an `ntpd` restart without evidence that this build needs
 one.
 
+### Statistics, 30-day retention and ntpviz
+
+This section owns statistics collection, retention, storage limits and ntpviz
+analysis for both NTP nodes. Phase 3 must accept retention before extended
+observation. Required ntpviz hosting and dashboard acceptance follow completion
+of j2-svntp1 in [Phase 3B](#phase-3b-deploy-and-accept-the-private-ntpviz-dashboard),
+before installation of the next NTPsec server. Phase 3A experiments reuse this policy. Statistics are
+already enabled in the accepted j2 configuration. A policy and locally tested
+candidate do not establish live deployment or acceptance.
+
+#### Collection and storage
+
+Keep `statsdir /var/log/ntpstats/`, `statistics loopstats peerstats clockstats`
+and the corresponding `filegen ... type day enable` settings in each accepted
+host configuration. NTPsec owns daily file generation. Inspect the installed
+build's actual dated filenames, base-file links, ownership and open descriptors;
+do not rename, truncate, compress or remove an active file. Resolve daemon
+permissions and service sandbox access from observed facts.
+
+Include `protostats` in the same 30-day statistics-retention policy alongside
+`loopstats`, `peerstats` and `clockstats`. Confirm its actual writer, generation
+settings, ownership, base-file links and open descriptors before implementing
+cleanup. Its observed root ownership does not establish the writer or authorize
+an ownership/configuration change. Preserve the existing files during inspection.
+
+Measure daily growth and free bytes/inodes. Budget for at least 31 days of
+uncompressed statistics plus growth headroom; set an explicit free-space alert
+threshold before acceptance. Retention is age-based, not a disk quota. Do not
+silently shorten retention to recover space. Keep private operation evidence and
+any longer-lived comparison archives outside this cleanup directory, with their
+own approved retention and backup/restoration scope.
+
+#### Thirty-day retention through logrotate
+
+Use [the dedicated logrotate candidate](../templates/ntpstats-retention.logrotate)
+as `/etc/logrotate.d/ntpstats-retention`. It rotates only a private trigger at
+`/var/lib/ntpstats-retention/trigger`; a firstaction removes completed statistics.
+NTPsec's date-stamped files are never logrotate rotation targets. `rotate 0`
+applies to the disposable trigger, not to statistics. Do not use `rotate 30` on
+a wildcard of independently dated files: that does not implement 30-day retention.
+
+The retention rule keeps each completed file for at least 30 × 24 hours after
+its last write, then removes it at the next daily maintenance run. Thus cleanup
+normally leaves between 30 and 31 days of completed data, plus protected active
+files; a missed job can leave more. GNU find's `-mtime +29` expresses this minimum
+age because its day count is rounded down. Old filenames with recent writes are
+retained. The intended rule covers only `loopstats`, `peerstats`, `clockstats`
+and `protostats` with verified eight-digit date suffixes and existing `.gz`
+equivalents, at directory depth one. It must exclude symlinks, multiple-hardlink
+files and each stream's active-file inodes. Missing or indirect active base files
+must block cleanup rather than weaken protection.
+
+The candidate and disposable-file tests cover all four streams, including
+protostats. Require age-boundary, active/open hardlink, additional-hardlink,
+symlink, unexpected-name and missing-base rejection tests before deployment.
+An older dated protostats file may still be active; preserve its active inode
+and multiple links regardless of the suffix or owner. Local test success does
+not establish target deployment or scheduled-run acceptance.
+
+Keep statistics uncompressed within this first retention policy so collection and
+analysis share the original files. The trigger explicitly uses `nocompress`.
+Automatic statistics compression is not enabled; it would need its own completed-
+file protection and ntpviz/readback tests. Existing compressed archives within the
+managed directory follow the same age rule. No NTP reload/restart, copytruncate or
+active-file replacement is part of retention maintenance.
+
+Before live deployment:
+
+1. Inspect existing logrotate/cron/timer rules, directory ownership, links and
+   open files; identify and resolve overlapping cleanup without assuming none exists.
+   Confirm the candidate matches this build's naming/link behavior and GNU find.
+2. Verify the logrotate and findutils dependencies and the existing daily scheduler.
+   Provision the trigger directory root:root 0700, trigger root:root 0600 and
+   configuration root:root 0644. Missing trigger files are errors, not silently ignored.
+   Include exact paths, previewed deletion candidates and rollback in the sealed review.
+3. Run logrotate debug validation and disposable-file tests for both age boundaries,
+   active/hardlinked/symlinked files, unexpected names and missing base files.
+   [The repository test](../tests/test_stats_retention.py) exercises the actual
+   logrotate configuration; repeat it against the target's installed version.
+4. Accept a scoped first maintenance run and subsequent daily execution; prove
+   current files continue receiving records, old completed files are removed,
+   recent files survive and NTP continuity is unchanged. Check failure reporting
+   and free-space monitoring. Cleanup deletion cannot be undone without a backup;
+   rollback disables this rule and restores prior maintenance configuration only.
+
+Track delayed and recurring acceptance as OBS-01 and OBS-02 in the
+[observation register](#deferred-observation-and-ongoing-monitoring); plotting
+refresh/staleness acceptance is OBS-11.
+
+#### ntpviz analysis and measurement
+
+The accepted staged NTPsec manifest includes pinned-source ntpviz and its manual.
+Viewable ntpviz plots are mandatory Phase 3B work after the current server is
+complete; they do not block its Phase 3 completion. Retention remains mandatory
+Phase 3 baseline work.
+Generate plots on a separate always-on host and serve a private static dashboard,
+as selected by the operator. The host and dashboard hostname remain undecided
+pending resource and access review. Review matching NTPsec Python modules and
+pinned gnuplot dependencies on the analysis host. Do not install the distro `ntpsec-ntpviz` package into the source-built stack:
+its `python3-ntp` dependency would mix releases. Do not copy ARM binaries/extensions
+to an analysis host of another architecture. Plotting must not create an unreviewed
+public web service, scheduled task or unbounded collection load.
+
+Hosting requirements and acceptance:
+
+- Prefer an existing maintained Linux management VM or host with native Python 3,
+  the matching NTPsec Python modules/ntpviz and compatible gnuplot. GPS/PPS devices,
+  an NTP server daemon and system-clock adjustment privileges are not required for
+  plotting. A dedicated physical machine is not required by this design.
+- Use a non-root analysis account and a bounded scheduled read-only collection
+  path from each NTP node. Review credentials, host-key verification and network
+  access separately. No NTP configuration writes or remote root access are needed
+  for normal collection; grant only the statistics-read access actually required.
+- Budget at least 31 days of copied statistics per node, generated pages and a
+  temporary generation directory. Size from measured daily growth. Benchmark a
+  representative full 30-day plot for peak memory, CPU and elapsed time before
+  fixing resource limits or refresh frequency. No fixed minimum RAM/CPU has been
+  established by the retained evidence.
+- Serve generated HTML/images through a private static web endpoint, with the
+  approved network/access scope and TLS/proxy choice established before exposure.
+  Keep raw logs, credentials and collection state outside the served directory.
+  Existing Caddy integration is an option to review, not an assumed deployment.
+- Generate into a separate directory and publish only a completed report; retain
+  the last successful dashboard on failure. Display the generation timestamp and
+  latest input timestamp so stale data is visible. Bound job overlap and report
+  collection/rendering failures through an approved notification path.
+- Accept browser access from an approved management client, useful local and peer
+  plots, correct node labels/time windows, refresh behavior and stale/failure
+  handling. Include 24-hour, 7-day and 30-day views once enough retained data exists;
+  label shorter available history rather than implying a complete 30-day baseline.
+  Select the refresh cadence after measuring the chosen host.
+
+For each approved comparison:
+
+1. Record separate baseline/candidate directories, configuration hashes, UTC
+   windows, peer identities, load and thermal conditions. Keep convergence separate
+   from the comparison window. Allow several hours after poll changes and compare
+   daily cycles when temperature matters. A 24-hour capture samples a daily cycle;
+   it does not alone prove convergence or absolute accuracy.
+2. Transfer only the bounded logs needed for the approved window. Correlate
+   loopstats, peerstats and clockstats with receiver quality, PPS gaps, SHM freshness,
+   source selection and independent client timing. Add temperature/receiver inputs
+   only when needed; plots require documented `temps`/`gpsd` formats, not journal text.
+3. Use the same `--datadir`, `--starttime` and `--endtime` for `--local-offset`,
+   `--local-jitter`, `--local-stability`, `--peer-offsets` and `--peer-jitters` views.
+   Read actual peer identifiers from peerstats. Compare serial and PPS peers
+   separately, including local frequency/wander, gaps, fallback, loss and outliers.
+4. Use sustained serial measurements for calibration only when justified by a
+   reference of known quality. A plot against a disciplined system characterizes
+   that path; absolute UTC accuracy still requires an independent reference. Accept
+   valid failover/recovery and never treat forced GPS selection as success.
+
+Source references: pinned NTPsec
+[statistics commands](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/includes/mon-commands.adoc)
+and [ntpviz manual](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/includes/ntpviz-body.adoc),
+and the upstream [logrotate manual](https://github.com/logrotate/logrotate/blob/main/logrotate.8.in).
+Installed-version manuals and live observations remain authoritative for deployment.
+
 ## Repository ownership
 
 | Information | Source of truth |
@@ -390,6 +548,31 @@ acceptance record, and recovery path. Rebuild `j2-svntp1` first. Do not begin
 selected GPS/PPS, survived a reboot, and completed the agreed observation
 interval while `j1-svntp` remains available.
 
+### RTC package dependencies
+
+Include `util-linux-extra` in each node's reproducible installation inputs for
+hwclock and its manual. The verified Trixie arm64 candidate is
+`2.41.5-0+deb13u1`, pinned in `ntpsec/configs/rtc-installation-assets.json`.
+It installs the complete utility package, including other tools and six
+compatibility diversions; do not treat it as a single-binary copy.
+
+For this pinned candidate, required package dependencies are:
+
+| Package | Required version |
+| --- | --- |
+| libaudit1 | >= 1:2.2.1 |
+| libc6 | >= 2.38 |
+| libsmartcols1 | = 2.41.5-0+deb13u1 |
+| zlib1g | >= 1:1.1.4 |
+
+Compatibility also requires `util-linux >= 2.40.4-4~` and, if already installed,
+`initscripts >= 3.08-2~`; initscripts is not an additional installation requirement.
+Verify current versions before installation. Missing or incompatible dependencies
+require a new reviewed package scope, not implicit upgrades. Keep the package
+payload, version constraints and installation/readback evidence in the
+reproducibility audit. fake-hwclock is not a dependency; record its absence or
+handle a confirmed installation through the separate RTC commissioning procedure.
+
 ### Locked media choice and pre-imaging checks
 
 - Use **Raspberry Pi OS Lite (64-bit), Trixie** in Raspberry Pi Imager for the
@@ -426,12 +609,33 @@ and validate:
 | Network and DNS | Stable node IPv4 and ULA, retained Router Advertisement global IPv6 and default route, both DNS VIPs with DHCP/RA DNS replacement disabled; dual-stack reachability and reboot persistence |
 | `webmin` | Package provenance, service health, authenticated management access from an approved LAN path, intended bind/firewall scope, and no unintended External exposure; restore required settings from observed Debian 11 state only after review |
 | `needrestart` | Trixie package, enabled kernel checks with the Pi 4 filter, list-only reporting, actual kernel/service report and notification through the accepted msmtp/Mailrise path; no unattended restart of the combined time service |
-| `msmtp` | `msmtp` plus a sendmail-compatible transport if required by the notification workflow; protected relay configuration, successful test delivery through Mailrise, and no committed credentials |
+| `msmtp` | `msmtp` and `msmtp-mta` for the sendmail workflow; exact eight-package dependency selection in `configs/mail-installation-assets.json`; protected relay configuration, successful test delivery through Mailrise, and no committed credentials |
 | `munin-node` endpoint | Installed package and enabled service; observed listener and client allowlist; collection from the approved Munin poller over each intended address family; usable host metrics and no unintended External exposure. The Munin component owns endpoint configuration and plugin choices |
 | `watchdog` | Observed `/dev/watchdog` owner/driver and service configuration, reboot behavior and recovery path; enable only after the node can be recovered independently and a controlled acceptance test is approved |
 | GPS/RTC HAT | Verified board revision, antenna/fix, UART device and baud, I2C RTC identity and sane time, PPS GPIO and `/dev/pps*` pulses, `gpsd` feed and permissions, and persistence after reboot; choose boot overlays for the selected image and observed hardware |
 | Installed PoE HAT (PoE+ only if replaced) | Correct switch PoE class and power budget, boot and sustained power without undervoltage, fan detection/control and thermal behavior, and no GPIO/I2C conflict with the GPS/RTC HAT |
 | Source-built NTPsec/GPSD | Accepted per-target source revisions and installed-file manifests; actual config/tool/module paths and combined service ownership; GPS/PPS and sanity-source selection, leapfile and four-week timer, no competing time/GPS daemon, IPv4/IPv6 UDP 123 listeners and client responses, NTS/IPv4/IPv6 upstream behavior as configured |
+
+The reviewed mail dependency set is msmtp, msmtp-mta, libgsasl18, libgssglue1,
+libidn12, libntlm0, libsecret-1-0 and libsecret-common, with versions, architectures
+and hashes in that manifest. Recommended desktop/keyring packages are excluded.
+The packaged msmtpd listener is unnecessary for outbound reporting and remains
+masked/inactive under the scoped review. Transport submission, downstream receipt,
+reporter execution and daily cron activation are distinct acceptance observations;
+installing the packages or staging cron does not satisfy delivery acceptance.
+
+Webmin management scope revised October 15, 2026: direct HTTP from
+`10.1.0.0/22` and its matching Default LAN ULA `fd36:5aa8:6971:1::/64`.
+Use `ama` with its existing system authentication for authenticated acceptance.
+Do not infer access for other routed networks or globally addressed IPv6 clients.
+Use the fixed host IPv4 and ULA listeners on TCP 10000, with the approved subnet
+allowlist in place before first startup. HTTP login traffic is unencrypted;
+this is the operator's explicit interim decision. Moving all Webmin access behind
+the Caddy reverse-proxy cluster is a separate future project. TLS commissioning
+and proxy/controller changes are not part of this installation stage.
+For the reviewed 2.670 candidate, explicitly include `libsocket6-perl` for IPv6;
+review package dependencies and virtual providers before installing. Candidate
+package review is not an accepted installed-package inventory.
 
 Use the existing NTPsec/GPSD arrangement as input evidence, not as an
 installable Trixie artifact. Keep byte-exact Debian 11 `/etc/ntp.conf`
@@ -584,6 +788,15 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    GPSD, and NTPsec with the Trixie candidate configuration. Activate the
    leapfile timer after verifying its command and path. Do not enable watchdog
    resets until recovery is proven.
+   Complete RTC commissioning before final boot/persistence acceptance, following
+   [the RTC procedure](OPERATIONS.md#rtc-commissioning-and-fake-clock-handling).
+   First accept synchronized NTP convergence, then inspect the actual RTC
+   identity, UTC convention, boot-time clock handling and fake-hwclock mechanisms.
+   In a separately reviewed stage, set the RTC from accepted system time and
+   verify readback; disable or remove confirmed fake-clock mechanisms, recording
+   absence as not applicable. Preserve before-state and define recovery before
+   changes. Validate RTC initialization and service behavior across an approved
+   reboot. Device metadata alone does not establish RTC time acceptance.
    Verify UART aliases, serial-console ownership, Bluetooth use, PPS GPIO and
    edge from the actual board and device tree before rendering boot overlays.
    Use PL011 for the GPS UART where supported; apply `disable-bt`, `enable_uart`
@@ -683,6 +896,9 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    requires five distinct leap-0 timestamp matches per source on different
    SHM units with live children. Expose its durable result in the start response
    and subsequent readbacks; failure stops acquisition and restores UART.
+   This short gate does not establish cold-receiver startup support. Account
+   for the datasheet's PPS acquisition delay in the production startup policy
+   below before accepting cold-start behavior.
    Completed observation still requires at least 60 matches per source.
    Keep the gate and any longer window explicit in the approved bundle.
    Bind final host configuration to the observed serial/PPS unit mapping
@@ -1013,6 +1229,11 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
    connected client. Derive daemon identities from the accepted build and
    device permissions, preserving accepted release modes unless separately
    reviewed changes prove necessary.
+   Before extended observation, complete the mandatory
+   [statistics, retention and ntpviz policy](#statistics-30-day-retention-and-ntpviz)
+   retention acceptance gate, including daily cleanup and storage monitoring.
+   Complete required plotting separately in Phase 3B after this server is accepted.
+
 6. Query `j2-svntp1` directly from controlled clients over IPv4 and IPv6;
    confirm GPS/PPS selection, upstream reachability, leap state, Webmin
    management scope, approved Munin polling, delivered mail, needrestart
@@ -1022,6 +1243,8 @@ card boots or that its GPS, PPS, fan, mail, and NTP paths work.
 7. Only if the rebuilt node passes all gates, observe it for an agreed interval
    and finish its inventory record. Keep the existing primary DNAT active; do
    not switch DNAT merely to prove the standby rebuild.
+   Reconcile the [observation register](#deferred-observation-and-ongoing-monitoring)
+   and its current readiness checklist before declaring this phase complete.
    Review Phase 3A before promoting this configuration to the other node.
 
 If boot, network, GPS/PPS, or client acceptance fails, remove the new card and
@@ -1039,10 +1262,49 @@ trial, not routine production starts, service restarts or boots.
 
 Preserve and reuse NTPsec's learned drift file; do not delete it or require
 cold-start frequency events on restart. Keep the GPSD serial/PPS functionality
-gate and existing source restrictions. Its receiver-readiness timeout is distinct
-from timing convergence: degraded timing does not impose a shutdown deadline.
+gate and existing source restrictions. In production, receiver acquisition is a
+pending state with no elapsed-time shutdown deadline. Use bounded 30-second
+observation windows until five distinct leap-0 serial/PPS timestamp matches pass
+on the accepted SHM units. Keep GPSD running while acquiring; ntpd starts after
+pairing passes, with all configured sources. NTP convergence remains a separate
+acceptance check and degraded timing does not impose a shutdown deadline.
 Observe every 30 seconds while converging or degraded and every 300 seconds
 when ready, using fresh records identified by boot and daemon invocation.
+
+The Uputronics GPS HAT datasheet's “Note On PPS” states that, since u-blox
+firmware V3.00, the time pulse is withheld until all time parameters, including
+leap seconds, are known. PPS may therefore take up to 12.5 minutes to become
+available, even when cold-start positional lock occurs in the expected under
+30 seconds. Positional lock alone is not PPS readiness or valid-time acceptance.
+Verify the installed receiver firmware when applying this guidance.
+
+Cold-start acceptance must distinguish receiver acquisition, serial/PPS pairing
+and NTP convergence. `configs/production-startup-gate.json` defines the explicit
+production wait policy. The repository supervisor/pairing implementation supports
+it, with bounded per-window storage and progress reporting. A missing policy
+retains the legacy bounded trial behavior; deployment must install the reviewed
+policy as well as both helpers. Offline tests do not establish live acceptance.
+Do not classify missing PPS during the documented acquisition period as a
+hardware fault solely because positional lock has occurred. Monitor acquisition
+at the defined intervals, retain its state and start pairing validation when PPS
+is available. The 12.5-minute figure is receiver guidance, not an NTP convergence
+deadline or an instruction to shut down the service. Any startup implementation
+change requires its own tests and reviewed deployment scope. Device/SHM identity
+mismatches, malformed samples, rejected watch requests and child-process failures
+remain faults rather than acquisition waits. Stop requests must reap observers.
+
+Activation and boot controllers must recognize the protected `acquiring` record,
+retain the running receiver and return pending acceptance without invoking timed
+recovery solely for missing PPS. Resume must continue the existing invocation,
+never replay startup or reboot. Validate the record's boot, supervisor, GPSD
+identity and monotonic freshness; stale progress or a failed service is a fault.
+Start the 120-second structural and 600-second handoff limits only after pairing
+passes, retaining the 60-second handoff reserve. Keep command/transport limits.
+The transition watchdog checks pending acquisition independently; the boot stage
+continues to require console recovery and does not acquire a reboot-persistent
+watchdog. Approval expiry prevents a new apply/reboot, but must leave initiated
+acquisition resumable and recovery available. Repository support is prepared
+offline; deploy through a new sealed review, not an earlier bounded review.
 
 Production acceptance requires a separately sealed transition from the running
 monitor profile, a controlled service restart with saved drift, and a subsequent
@@ -1052,6 +1314,13 @@ each transition. Prove receiver readiness and segment access after boot rather
 than relying on permissions retained from the trial. Preserve current evidence
 and define recovery for each transition before execution. Local supervisor
 tests do not establish live restart, drift reuse or reboot acceptance.
+
+For the first all-source transition, the operator approved bootstrap-only
+fallback: stop candidate NTP, preserve learned drift and statistics, restore the
+prior service recipe/unit and start systemd-timesyncd without enabling the old
+PPS-first profile. This fallback does not serve NTP. A stopped node on bootstrap
+time is a recovery outcome, not production acceptance. Define and test this path
+before its hash-bound execution review; boot validation remains a later stage.
 
 ### Phase 3A: evaluate and accept measured optimizations
 
@@ -1106,7 +1375,7 @@ dispositions, not measured performance results or live-action approvals.
 | OPT-001-01: APT ntpsec, gpsd, gpsd-clients | Reject this installation command. Both applications and their clients come from pinned source; distro packages would conflict with that lifecycle. | Source lifecycle; Phases 2/3 |
 | OPT-001-02: pps-tools | Required and already in the foundation recipe/pins. Provides kernel PPS diagnostics; it is not an additional optimization. | Foundation; Phase 3 hardware acceptance |
 | OPT-001-03: setserial | Omit unless a verified serial-driver need emerges. The maintained GPSD supervisor initializes its selected UART with stty and GPSD at 115200; setserial is not a demonstrated prerequisite. | Phase 3 hardware review if needed |
-| OPT-001-04: ntpsec-ntpviz | Optional telemetry using pinned-source ntpviz, already in the accepted staged manifest. Do not install the distro package: its python3-ntp dependency mixes another release's modules with the source stack. Prefer plotting on the operator workstation; review compatible modules, gnuplot dependencies, statistics, retention and exposure before adoption. | Phase 3A; routine monitoring |
+| OPT-001-04: ntpsec-ntpviz | Required private dashboard; use the [statistics, retention and ntpviz policy](#statistics-30-day-retention-and-ntpviz) for source/dependency selection, placement and exposure. | Phase 3B; routine monitoring |
 | OPT-001-05: isolcpus=3 nohz_full=3 rcu_nocbs=3 | Experimental, not a baseline requirement. These flags neither pin ntpd to CPU 3 nor reserve that CPU for PPS IRQs. Check kernel support, task/IRQ/workqueue placement and housekeeping; boot-time scheduler-domain isolation is inflexible. Prefer a reversible affinity/cpuset trial. Full dynticks targets mostly-userspace workloads and can increase kernel-entry/exit overhead; ntpd/GPSD perform kernel I/O. | Phase 3A |
 | OPT-001-06: performance governor / cpufrequtils | Experimental. The governor requests the highest permitted policy frequency; it does not prevent thermal/firmware throttling or guarantee clock stability. Measure power/temperature and frequency wander. Inspect the actual driver and persistent policy mechanism; cpufrequtils is absent from the retained Trixie arm64 main index and is not an assumed prerequisite. | Phase 3A; resolve any selected tool separately |
 | OPT-001-07: arm_freq=1500 | Do not impose this as a timing requirement. It sets a CPU frequency parameter, not a fixed NTP timebase; the supported default depends on board/firmware and a forced value can reduce performance. Preserve supported defaults unless a separate measured experiment justifies a change. | Phase 3A |
@@ -1129,7 +1398,7 @@ current upstream guidance to the pinned target:
   [frequency/thermal management](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/raspberry-pi/frequency-management.adoc)
   and [legacy GPU memory](https://github.com/raspberrypi/documentation/blob/master/documentation/asciidoc/computers/legacy_config_txt/memory.adoc).
 - Pinned NTPsec [SHM driver](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/driver_shm.adoc)
-  and [ntpviz](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/includes/ntpviz-body.adoc).
+  and the [statistics, retention and ntpviz policy](#statistics-30-day-retention-and-ntpviz).
 
 #### OPT-002: indoor antenna placement and SHM calibration
 
@@ -1155,7 +1424,7 @@ as an isolated software experiment on the standby.
 | OPT-002-04: serial SHM calibration | Determine the actual serial SHM unit, protocol/message schedule, baud, GPSD timing behavior and stable bias. Document the calibration reference, sign, uncertainty and before/after results; calibrate serial and PPS paths separately. | Phase 3A; per-node host configuration if justified |
 | OPT-002-06: center SHM offset using ntpq -p | Useful initial diagnosis, not sufficient calibration evidence. Serial offset is relative to the already disciplined system clock and may reflect UART/receiver message latency. A PPS-disciplined local clock can help compare the serial path, but it does not independently prove GPS/PPS UTC accuracy. Use sustained statistics, receiver time-validity/accuracy reports where available and an independent reference of known uncertainty for absolute claims. | Phase 3A measurement |
 | OPT-002-07: gpsmon and four satellites above SNR 30 | Monitor through the reviewed running GPSD endpoint without opening the live UART independently or issuing receiver-control commands. Use observed versus used satellites, signal-strength units, geometry/fix status, UTC validity and reported time accuracy. Four satellites above 30 is a screening heuristic, not a universal timing/PPS criterion. Verify the exact M8 model/firmware and available timing mode; do not assume every M8 supports survey-in or needs a continuous 3D fix for valid time. | Phase 3 hardware/time acceptance; Phase 3A observation |
-| OPT-002-08: logging versus immediate tuning | First prepare bounded receiver/SHM/NTP logging and a placement baseline, with explicit capture/retention scope. Correlate receiver quality with PPS gaps, SHM freshness, source selection, frequency and client offsets before choosing any calibration or selection change. Accept valid failover/recovery; never count forced GPS selection as success. | Phase 3 baseline logging; Phase 3A evaluation |
+| OPT-002-08: logging versus immediate tuning | Establish the bounded measurement baseline defined in the [statistics, retention and ntpviz policy](#statistics-30-day-retention-and-ntpviz) before calibration or selection changes. | Phase 3 baseline instrumentation; Phase 3A |
 
 Use `/etc/ntp.conf`, the governed source-built runtime path, rather than the
 proposal's distro-package `/etc/ntpsec/ntp.conf`. No numeric calibration, global
@@ -1184,7 +1453,7 @@ PPS timing separately, then identify any driver or scheduling contribution.
 | OPT-003-04: FIFO 45 and Nice=-20 guarantee instant processing | Unadopted experiment with no guaranteed latency or jitter result. FIFO can preempt normal runnable work but does not eliminate IRQ, I/O, locks or throttling delays and can starve other work. Nice is not the FIFO priority control. Inspect actual thread policy, privileges, RT limits/budget and built-in behavior: pinned GPSD attempts nice(-10) as root; NTPsec can request FIFO with -N/-P. Do not infer effective policy from a unit file alone or add arbitrary priority 45. | Phase 3A; explicit starvation/access recovery and measured benefit required |
 | OPT-003-05: serial IRQ on CPU 2 adjacent to isolated CPU 3 | Conditional experiment, not a selected configuration. OPT-001 did not adopt CPU 3 isolation. CPU numbering does not establish an optimal cache placement; IRQ affinity does not pin GPSD/ntpd tasks or the separate GPIO PPS path. Identify the IRQ from the actual driver/sysfs mapping and counters, not a presumed tty name or IRQ 35. Check routability/shared users, allowed/effective affinity and any active irqbalance. Hex mask 4 denotes CPU 2; verify delivery and persistence without hard-coding a boot-dependent IRQ number. | Phase 3A |
 | OPT-003-06: restart gpsd/ntpsec to clear SHM and compile calibration | Reject the commands for this source deployment. Use the reviewed combined service transaction if a restart is needed; do not activate competing stock units. Restarting does not prove SysV SHM resources were removed and is not a compilation step for ntp.conf. Do not delete/reset shared memory as an optimization; preserve ownership/state and define any recovery separately. | Phase 3 lifecycle; approved Phase 3A transaction if needed |
-| OPT-003-11: next-day logging | Recommended measurement approach after baseline service acceptance. Scope receiver/SHM/NTP/client records, polling/retention and comparable load/thermal conditions; a 24-hour window can sample a daily cycle but does not alone prove convergence or absolute accuracy. Logging, receiver access and any scheduled plot generation still need the defined execution approval. | Phase 3 baseline instrumentation; Phase 3A |
+| OPT-003-11: next-day logging | Use the capture windows and acceptance limits in the [statistics, retention and ntpviz policy](#statistics-30-day-retention-and-ntpviz). Logging and receiver access still require scoped approval. | Phase 3 baseline instrumentation; Phase 3A |
 
 No serial flag, RT priority, CPU/IRQ placement, IPC reset
 or restart is adopted. Inspect effective behavior before testing one justified
@@ -1209,15 +1478,16 @@ kernel, driver and link state determine the supported controls.
 | Item | Disposition and potential improvement | Placement |
 | --- | --- | --- |
 | OPT-004-01: GPSD continuous acquisition and kernel PPS | Baseline requirement already supported by timeservice=yes and pps-tools. Verify that GPSD continuously acquires without an interactive client, uses the observed kernel PPS device/API and exports fresh serial and PPS samples to the intended SHM units. Kernel capture avoids userspace wakeup delay in the PPS timestamp. Verify device access and privilege drop in the combined service; package presence alone does not prove kernel PPS use. | Phase 3 hardware/runtime acceptance |
-| OPT-004-02: ntpviz measurement procedure | Adopt the measurement method for approved tuning trials. Collect bounded loopstats and peerstats; correlate local offset, frequency, jitter and wander with separate serial/PPS peer offsets and client measurements. Add compatible temperature/receiver logs when needed. Generate plots off-host with the pinned NTPsec tools/modules and reviewed analysis dependencies. Use sustained serial measurements to assess calibration only when justified. | Phase 3 instrumentation; Phase 3A; maintenance |
-| OPT-004-03: shorten PPS SHM polling | Worth testing after baseline acceptance. NTPsec's SHM driver supports minpoll/maxpoll down to 0, a one-second interval. Compare the accepted interval with shorter fixed intervals on the PPS association alone; serial and network polling are separate decisions. More frequent discipline updates may reduce offset/jitter but can worsen frequency stability. Select from matched ntpviz/client results after several hours of convergence, not the smallest setting by default. | Phase 3A |
+| OPT-004-02: ntpviz measurement procedure | Use the comparison procedure in the [statistics, retention and ntpviz policy](#statistics-30-day-retention-and-ntpviz) for approved tuning trials. | Phase 3 instrumentation; Phase 3A; maintenance |
+| OPT-004-03: shorten PPS SHM polling | Worth testing after baseline acceptance. NTPsec's SHM driver supports minpoll/maxpoll down to 0, a one-second interval. Compare the accepted interval with shorter fixed intervals on the PPS association alone; serial and network polling are separate decisions. More frequent discipline updates may reduce offset/jitter but can worsen frequency stability. Select from matched results under the [statistics, retention and ntpviz policy](#statistics-30-day-retention-and-ntpviz), not the smallest setting by default. | Phase 3A |
 | OPT-004-04: ARP and network polling | Conditional network-path trial. Observe IPv4 ARP and IPv6 neighbour discovery for the actual next hop, including the gateway for routed upstreams, and correlate resolution with delay/offset spikes. Linux reachability ageing is not a fixed 60-second deletion deadline. If resolution is a measured cause, compare an agreed local-server polling profile; a maxpoll of 5 caps the interval at 32 seconds only with a compatible minpoll. Respect upstream rate policy and load. This cannot improve GPIO PPS capture. | Phase 3 network baseline; Phase 3A |
 | OPT-004-05: thermal stability | Required cooling/power health is already in Phase 3. Correlate fan transitions, temperature and load with frequency wander, PPS timing and client error. Consider a supported, steadier fan policy only if it improves measured stability without overheating, undervoltage or excessive wear. Preserve the installed PoE HAT's safety controls; an optional policy must be rendered and accepted per node. | Phase 3 thermal acceptance; Phase 3A |
 | OPT-004-06: power-saving and scheduling ticks | Conditional experiments, not mandatory boot settings. Governor tuning remains OPT-001-06. Assess nohz=off separately on the actual kernel; it disables idle tick suppression and may reduce wakeup variation while adding interrupts, power and heat. Verify kernel support, effective idle/tick behavior and workload, then compare PPS/client metrics and thermal stability with reboot restoration. Do not combine it with the CPU-isolation trial. | Phase 3A |
 | OPT-004-07: IEEE 802.3az / EEE | High-priority network-latency candidate if supported and active. Inspect the observed Ethernet driver, host and switch-port EEE negotiation, LPI state, link errors and baseline client delay. Compare EEE enabled/disabled on one controlled link; wakeup latency is a plausible network timestamp effect. Evaluate host and switch controls separately and accept only repeatable benefit with link/access, power/thermal and reboot checks. Do not assume a supported feature is active. | Phase 3 network baseline; Phase 3A; switch changes owned by homelab-network |
 | OPT-004-08: software-timestamped PTP | Technically applicable as an optional LAN service extension, deferred pending a client precision requirement. It may improve selected wired clients' synchronisation but does not improve the GPS/PPS input or ordinary NTP clients automatically. Verify software TX/RX timestamp support on both ends, network transport/domain, switch path and LinuxPTP provenance. Preserve NTPsec as the server's clock owner; any PTP-to-NTP SHM integration needs unique units and prevention of source feedback, competing clock servos and election loops. Define GPS-loss/holdover announcements, client failover and recovery before an architecture change or installation. | Separate architecture/network/client decision before Phase 3A implementation |
 
-Start with ntpviz and thermal/link observation; prioritise PPS polling and
+Start with the [statistics, retention and ntpviz policy](#statistics-30-day-retention-and-ntpviz)
+and thermal/link observation; prioritise PPS polling and
 active EEE trials when their baselines justify them. ARP, governor and tick
 changes require evidence of a relevant contribution. PTP remains an optional
 extension, not a deployment prerequisite. No tuning values, new packages or
@@ -1226,8 +1496,7 @@ live changes are adopted by this review.
 Evidence: the requested [GPSD HOWTO](https://github.com/ntpsec/gpsd/blob/master/www/gpsd-time-service-howto.adoc)
 and the [pinned GPSD copy](https://gitlab.com/gpsd/gpsd/-/blob/1d622f5b2c7bf79fc117185be10048e7d4e73c66/www/gpsd-time-service-howto.adoc);
 pinned NTPsec [SHM polling](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/driver_shm.adoc),
-[ntpviz](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/includes/ntpviz-body.adoc)
-and [statistics](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/includes/mon-commands.adoc);
+the [statistics, retention and ntpviz policy](#statistics-30-day-retention-and-ntpviz) and its pinned references;
 Linux [ARP](https://man7.org/linux/man-pages/man7/arp.7.html),
 [neighbour handling](https://github.com/torvalds/linux/blob/v6.18/net/core/neighbour.c),
 [tick suppression](https://www.kernel.org/doc/html/latest/timers/no_hz.html)
@@ -1326,8 +1595,28 @@ pinned NTPsec [NTS client configuration and verification](https://gitlab.com/ntp
 [NTS options](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/includes/nts-commands.adoc)
 and [ntpq diagnostics](https://gitlab.com/ntpsec/ntpsec/-/blob/42b5703303c8c7e6513f3a119cfab670924dd7be/docs/includes/ntpq-body.adoc).
 
+### Phase 3B: deploy and accept the private ntpviz dashboard
+
+Start after completing and accepting the current `j2-svntp1` installation,
+including its Phase 3 observation and inventory gates. This required later stage
+must finish before beginning the next NTPsec server installation in Phase 4.
+The dashboard remains mandatory; only its placement in the rollout changes.
+
+Use the [statistics, retention and ntpviz policy](#statistics-30-day-retention-and-ntpviz)
+for the full requirements. Select the separate always-on host and private
+hostname, inspect its dependencies and access paths, size copied-log storage from
+observed growth, and benchmark representative plot generation for CPU and memory.
+Prepare the scoped collection, scheduler and private dashboard deployment review.
+Accept browser access, plots for available history, refresh and stale/failure
+handling before releasing the next-server installation gate. Do not require a
+full 30-day history before proceeding; label the actual available window.
+Record the accepted host, versions, access scope and operating procedure for reuse
+when the second NTP server is added. No host contact or deployment is authorized
+by this plan entry.
+
 ### Phase 4: rebuild and accept `j1-svntp`
 
+Require completed Phase 3B dashboard acceptance before starting this installation.
 Repeat the Phase 3 controls and Phase 3A review with `10.1.0.50` and
 `fd36:5aa8:6971:1::50`. First prove that rebuilt `j2-svntp1` serves clients
 independently. Complete the shared-antenna power-continuity gate above before
@@ -1427,6 +1716,16 @@ Acceptance requires:
   NTPsec, and installed PoE HAT checks in the per-node acceptance table pass on each
   host.
 - Both hosts retain their static IPv4 and permanent ULA after reboot.
+- Each RTC has commissioning evidence: device/driver identity, UTC policy,
+  synchronized system-time reference, set/readback results against a reviewed
+  tolerance, and boot-time initialization after reboot. Record fake-hwclock
+  package and hook before/after states, or verified absence. Battery retention
+  across power loss is a separate test and must remain explicitly pending if
+  untested; an ordinary reboot does not establish it.
+- The reproducibility audit covers RTC commissioning and fake-clock handling
+  through repository-owned procedures and pinned, versioned inputs. Retain the
+  installed package/hook decisions, exact approved changes, acceptance and
+  recovery records; do not depend on executable code from historical runs.
 - Both hosts retain global IPv6 and a Router Advertisement default route.
 - Each resolver view contains only the two DNS VIPs for its address family.
 - DHCP and Router Advertisement updates do not replace host DNS settings.
@@ -1445,9 +1744,51 @@ Acceptance requires:
 - Each repository passes its focused tests, full baseline, secret scan, and
   whitespace checks.
 
-Run an observation interval after the last change. Review offsets, jitter,
+Reconcile the [observation register](#deferred-observation-and-ongoing-monitoring)
+before closing this phase. Run an observation interval after the last change. Review offsets, jitter,
 reach, leap state, systemd failures, DNS errors, and UniFi counters before
 declaring acceptance.
+
+## Deferred observation and ongoing monitoring
+
+Use this register to carry delayed and recurring work across deployment stages.
+A successful installation or short acceptance sample does not close an observation
+that requires a scheduled run, elapsed time, sustained load or repeated collection.
+Private operation evidence supports an action; it must not be its only record.
+
+The [production-readiness follow-up register](PRODUCTION-READINESS.md#monitoring-and-deferred-observation-register)
+is the current checklist: retain each ID, node, status, next checkpoint, missing
+inputs and evidence reference there. HISTORY records completed observations and
+changes of disposition. This plan owns the requirements and phase gates; do not
+copy operational transcripts or volatile timer timestamps into it.
+
+| ID | Action and owning requirement | When to perform it | Closure or continuing obligation |
+| --- | --- | --- | --- |
+| OBS-01 | Scheduled statistics retention under [statistics policy](#statistics-30-day-retention-and-ntpviz) | After installation, at the next scheduler opportunity; revisit if initial state discovery defers rotation | Prove this rule executed, not merely that its timer fired. Preserve active/recent files and validate eligible-file removal with the approved fixture/live evidence. Required before Phase 3 extended observation; retain recurring cleanup health checks afterward |
+| OBS-02 | Statistics growth, storage budget and alerts under [statistics policy](#statistics-30-day-retention-and-ntpviz) | Separated collection samples before retention acceptance, then ongoing monitoring | Record sampling interval and representative growth, capacity/inodes and alert thresholds; prove active streams continue writing when events occur, alerts are collected and maintenance failures are reported. A preflight floor is not an ongoing alert. Required before Phase 3 extended observation |
+| OBS-03 | Scheduled needrestart reporting under [baseline acceptance](#per-node-baseline-and-acceptance) | First scheduled daily execution after activation, then recurring job-health checks | Prove scheduled execution and its outcome. A quiet successful scan need not send mail; a manual test does not prove cron ran. Required for reporting acceptance |
+| OBS-04 | Cron-generated failure notification under [baseline acceptance](#per-node-baseline-and-acceptance) | A separately approved controlled failure-path test | Prove cron-originated handling and downstream receipt, with exact test recipient/content approval. Preserve normal reporting; never infer delivery from SMTP acceptance alone |
+| OBS-05 | Leap-maintenance recurrence under [leapfile maintenance](#leapfile-maintenance) | Observe the next four-week scheduled recurrence, then each recurrence's health and leapfile validity | Retain actual service outcome, leapfile validity and subsequent schedule. A calculated future trigger or reload test is not a four-week soak. Keep open until observed; any phase-gate deferral requires an explicit recorded decision |
+| OBS-06 | Physical-host initial leap trigger under [leapfile maintenance](#leapfile-maintenance) | Next separately approved Pi reboot and its initial trigger window | Prove the actual host's initial maintenance invocation and subsequent recurrence schedule. Isolated container tests do not close this item; do not reboot solely because a checklist says it is due |
+| OBS-07 | Munin collection under [baseline acceptance](#per-node-baseline-and-acceptance) | After endpoint/poller setup, across the agreed observation interval, then continuously | Verify intended address-family polling, useful fresh metrics and failure/staleness visibility. Endpoint/plugin ownership remains with the monitoring repository. Required for Phase 3 host acceptance |
+| OBS-08 | Sustained PoE, fan, thermal and power health under [baseline acceptance](#per-node-baseline-and-acceptance) | During the agreed host observation interval and after relevant hardware/load changes | Record duration/load, fan/control, temperature, undervoltage/throttling and power evidence. Boot success is insufficient. Stress, switch changes and watchdog failure/recovery tests require their own approval |
+| OBS-09 | Final host and end-to-end observation under [Phase 3](#phase-3-rebuild-and-accept-j2-svntp1) and [Phase 8](#phase-8-end-to-end-acceptance) | After required changes and gates, over an explicitly agreed interval | Agree duration, sampling cadence, tolerances, owner and reset/retest rules before starting. Review time-service health, clients, DNS/network errors and relevant counters; record inventory. Required at the owning phase, then hand recurring health checks to operations |
+| OBS-10 | RTC battery-backed retention under [Phase 8](#phase-8-end-to-end-acceptance) | Separately approved power-loss test when recovery and antenna-power dependencies permit | Warm reboot evidence does not prove battery retention. Keep explicitly untested until a test or recorded disposition; do not silently add a power interruption to another stage |
+| OBS-11 | Required ntpviz refresh and stale/failure checks under [statistics policy](#statistics-30-day-retention-and-ntpviz) | Phase 3B after j2 completion and before the next NTPsec installation, then recurring dashboard operation | Select the analysis host and acceptance cadence; prove usable plots, refresh, last-good output and stale/failure visibility. Required before Phase 4, not a blocker for current Phase 3 completion |
+| OBS-12 | Webmin temporary-storage/load suitability under [baseline acceptance](#per-node-baseline-and-acceptance) | Before large uploads/backups and after material workload changes | Inspect expected workload and disk/RAM headroom. An idle-capacity snapshot does not qualify large jobs; Caddy migration remains a separate project |
+
+Before closing a phase, reconcile every applicable row with the current checklist.
+An unmet requirement remains open or has an explicit operator-approved disposition
+with its reason, owner and next checkpoint; it must not disappear into an outcome
+file. Do not invent an observation duration, tolerance or automatic reminder when
+none was agreed. Record those decisions as pending and resolve them before the
+corresponding acceptance window begins.
+
+After one-time acceptance, record the recurring check's actual scheduler or
+monitoring owner, cadence, alert destination and response procedure. Do not mark
+ongoing monitoring complete merely because its first sample passed. No polling,
+notification, service change, reboot or power-loss test is authorized by this
+register; live work retains the scoped approval requirements above.
 
 ## Rollback policy
 

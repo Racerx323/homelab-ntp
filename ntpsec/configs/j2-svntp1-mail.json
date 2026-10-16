@@ -1,0 +1,10 @@
+{
+  "relay": "mailrise.local.theama.co",
+  "port": 8025,
+  "sender_domain": "local.theama.co",
+  "sender": "j2-svntp1@local.theama.co",
+  "report_recipient": "notify@mailrise.xyz",
+  "failure_recipient": "notify.failure@mailrise.xyz",
+  "timezone": "America/Chicago",
+  "cron_activation": "pending downstream receipt and separate activation approval"
+}

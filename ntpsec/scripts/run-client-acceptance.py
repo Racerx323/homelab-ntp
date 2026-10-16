@@ -54,7 +54,7 @@ def review(spec):
         return f'''# Client timing acceptance with native Windows discovery
 
 Target **{spec['hostname']}**, operation `{spec['operation_id']}`.
-Bound monitor archive: `{spec['monitor_sha256']}`.
+Bound service archive: `{spec['monitor_sha256']}`.
 Execution expires at epoch `{spec['expires_epoch']}`; reserve 60 seconds.
 
 One workstation-only capture. From WSL, send one NTP request and one
@@ -211,28 +211,59 @@ def prepare(bundle, checksum):
     return spec, files
 
 
+def transition_observation(args):
+    """Consume a ready transition or boot observation as data, never archived code."""
+    boot=getattr(args,'production_boot',False)
+    path=ROOT/('scripts/run-production-boot.py' if boot else 'scripts/run-production-transition.py')
+    loader=importlib.util.spec_from_file_location('transition_sealer',path)
+    provider=importlib.util.module_from_spec(loader);loader.loader.exec_module(provider)
+    transition=provider.parent if boot else provider
+    spec,_=provider.prepare(args.monitor_dir/('production-boot.tar' if boot else 'production-transition.tar'),args.monitor_sha256)
+    observed=private(args.monitor_dir/f'observe-{args.observation}-outcome.json')
+    outcome=json.loads(observed)
+    label=f'observe-{args.observation}'+('-observe' if boot else '')
+    result=json.loads(private(args.monitor_dir/f'{label}-result.json'))
+    transport=json.loads(private(args.monitor_dir/f'{label}-transport.json'))
+    execution=json.loads(private(args.monitor_dir/f'observe-{args.observation}-execution.json'))
+    handoff=transition.handoff_result(args.monitor_dir,args.monitor_sha256)
+    health=result['health'];now=int(time.time())
+    if (outcome['bundle_sha256']!=args.monitor_sha256 or outcome.get('error')
+            or outcome.get('state')!=result or result['phase']!='monitoring'
+            or transport.get('returncode')!=0 or transport.get('error')
+            or execution['sha256']!=args.monitor_sha256 or execution['mode']!='observe'
+            or handoff['bundle_sha256']!=args.monitor_sha256 or handoff.get('error')
+            or handoff['state']['phase']!='monitoring'
+            or health['pair']!=handoff['state']['health']['pair']
+            or health['unit']['ActiveState']!='active' or health['unit']['NRestarts']!='0'
+            or outcome['timing_ready'] is not True or not transition.timing_ready(health['measurement'])
+            or not execution['epoch']<=health['epoch']<=now
+            or not 0<=now-health['epoch']<86400 or now>=spec['expires_epoch']-60):
+        raise ValueError('fresh ready transition observation and handoff required')
+    persistence=handoff['state']
+    if boot and (spec['purpose']!='production-boot'
+            or not result.get('new_boot_id') or result['new_boot_id']==persistence.get('boot_id')
+            or result['new_boot_id']!=handoff['state'].get('new_boot_id')
+            or persistence.get('drift_seed_observed') is not True
+            or health['unit'].get('UnitFileState')!='enabled'
+            or (spec.get('rtc_persistence') and persistence.get('rtc_after',{}).get('accepted') is not True)):
+        raise ValueError('accepted new-boot persistence proof required')
+    return spec,observed,sha(private(args.monitor_dir/'spec.json')),health['epoch']
+
+
 def seal(args):
-    path = ROOT/'scripts/run-service-monitor.py'
-    loader = importlib.util.spec_from_file_location('monitor_sealer', path)
-    monitor = importlib.util.module_from_spec(loader); loader.loader.exec_module(monitor)
-    spec, _ = monitor.prepare(args.monitor_dir/'service-monitor.tar', args.monitor_sha256, require_current=False)
-    observed = private(args.monitor_dir/f'observe-{args.observation}-0-result.json')
-    observation = json.loads(observed)
-    state = observation['result']; record = state['observation']; status = record['monitor']
-    now = int(time.time())
-    if (observation['spec_sha256'] != sha(private(args.monitor_dir/'spec.json'))
-            or state['phase'] != 'monitoring' or state['observations'] != args.observation
-            or record['service_state'] != 'active' or status['phase'] != 'ready'
-            or status['running'] is not True or not 0 <= now-record['epoch'] < 86400):
-        raise ValueError('recent ready monitor observation required')
+    if getattr(args,'production_transition',False) or getattr(args,'production_boot',False):
+        spec,observed,spec_sha,observed_epoch=transition_observation(args)
+    else:
+        spec,observed,spec_sha,observed_epoch=legacy_observation(args)
+    now=int(time.time())
     files = {n: (ROOT/path).read_bytes() for n, path in PATHS.items()}
     purpose = ('client-native-discovery' if args.native_discovery else 'mdns-paired' if args.paired
                else 'mdns-diagnostic' if args.diagnostic else 'client-acceptance')
     target = {'schema': 1, 'purpose': purpose, 'operation_id': args.operation_id,
               'hostname': spec['hostname'], 'endpoints': spec['endpoints'],
-              'monitor_sha256': args.monitor_sha256, 'monitor_spec_sha256': observation['spec_sha256'],
+              'monitor_sha256': args.monitor_sha256, 'monitor_spec_sha256': spec_sha,
               'observation_sha256': sha(observed), 'observation_number': args.observation,
-              'prepared_epoch': now, 'expires_epoch': min(now+86400, record['epoch']+86400),
+              'prepared_epoch': now, 'expires_epoch': min(now+86400, observed_epoch+86400,spec['expires_epoch']),
               'members': {n: sha(v) for n, v in files.items()}}
     if args.paired or args.native_discovery:
         if not args.source_ipv4: raise ValueError('native capture requires observed source IPv4')
@@ -250,6 +281,23 @@ def seal(args):
               'expires_epoch': target['expires_epoch'], 'execution_authorized': False}
     write_new(args.output/'sealing.json', result)
     return result
+
+
+def legacy_observation(args):
+    path = ROOT/'scripts/run-service-monitor.py'
+    loader = importlib.util.spec_from_file_location('monitor_sealer', path)
+    monitor = importlib.util.module_from_spec(loader); loader.loader.exec_module(monitor)
+    spec, _ = monitor.prepare(args.monitor_dir/'service-monitor.tar', args.monitor_sha256, require_current=False)
+    observed = private(args.monitor_dir/f'observe-{args.observation}-0-result.json')
+    observation = json.loads(observed)
+    state = observation['result']; record = state['observation']; status = record['monitor']
+    now = int(time.time())
+    if (observation['spec_sha256'] != sha(private(args.monitor_dir/'spec.json'))
+            or state['phase'] != 'monitoring' or state['observations'] != args.observation
+            or record['service_state'] != 'active' or status['phase'] != 'ready'
+            or status['running'] is not True or not 0 <= now-record['epoch'] < 86400):
+        raise ValueError('recent ready monitor observation required')
+    return spec,observed,observation['spec_sha256'],record['epoch']
 
 
 def execute(args):
@@ -299,6 +347,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__); sub = parser.add_subparsers(dest='action', required=True)
     p = sub.add_parser('seal'); p.add_argument('--monitor-dir', type=Path, required=True)
     p.add_argument('--monitor-sha256', required=True); p.add_argument('--observation', type=int, required=True)
+    origin=p.add_mutually_exclusive_group()
+    origin.add_argument('--production-transition', action='store_true', help='Use a ready production-transition observation')
+    origin.add_argument('--production-boot', action='store_true', help='Use a ready production-boot observation')
     p.add_argument('--operation-id', required=True); p.add_argument('--output', type=Path, required=True)
     mode = p.add_mutually_exclusive_group()
     mode.add_argument('--diagnostic', action='store_true'); mode.add_argument('--paired', action='store_true')

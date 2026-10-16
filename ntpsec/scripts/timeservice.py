@@ -51,7 +51,9 @@ def stop(children):
 def supervise(config):
     validate(config)
     gate=config.get('startup_gate')
-    if (not isinstance(gate,dict) or set(gate)!={'timeout_seconds','matching_samples_per_source','units'}
+    if (not isinstance(gate,dict) or set(gate) not in ({'timeout_seconds','matching_samples_per_source','units'},
+                                                 {'timeout_seconds','matching_samples_per_source','units','acquisition_policy'})
+            or gate.get('acquisition_policy','bounded') not in ('bounded','wait')
             or gate['timeout_seconds']!=30 or gate['matching_samples_per_source']!=5
             or set(gate['units'])!={'TOFF','PPS'} or len(set(gate['units'].values()))!=2
             or any(not isinstance(v,str) or not re.fullmatch(r'NTP[0-9]+',v) for v in gate['units'].values())):
@@ -123,17 +125,26 @@ def check_startup(gpsd, stopping, gate):
     root=Path('/run/ntpsec-startup');info=root.lstat()
     if not stat.S_ISDIR(info.st_mode) or info.st_uid!=0 or stat.S_IMODE(info.st_mode)!=0o700:
         raise ValueError('protected startup directory required')
-    result={'supervisor_pid':os.getpid(),'gpsd_pid':gpsd.pid,'started_epoch':time.time()}
-    try:
-        result.update(state='passed',pairing=helper.startup(gpsd,stopping,gate['units'],root))
-    except BaseException as error:
-        result.update(state='failed',error=str(error)[:500]);raise
-    finally:
+    result={'supervisor_pid':os.getpid(),'gpsd_pid':gpsd.pid,'started_epoch':time.time(),
+            'boot_id':Path('/proc/sys/kernel/random/boot_id').read_text().strip(),
+            'started_monotonic':time.monotonic(),
+            'gpsd_start_ticks':Path(f'/proc/{gpsd.pid}/stat').read_text().rpartition(')')[2].split()[19]}
+    def publish(update=None):
+        result['updated_monotonic']=time.monotonic()
+        if update is not None:
+            result.update(state='acquiring',pairing=update,updated_epoch=time.time())
         tmp=root/'gate.json.new'
         fd=os.open(tmp,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_NOFOLLOW,0o600)
         with os.fdopen(fd,'w') as stream:
             json.dump(result,stream);stream.write('\n');stream.flush();os.fsync(stream.fileno())
         tmp.chmod(0o600);os.replace(tmp,root/'gate.json')
+    try:
+        options={'acquisition_wait':True,'progress':publish} if gate.get('acquisition_policy')=='wait' else {}
+        result.update(state='passed',pairing=helper.startup(gpsd,stopping,gate['units'],root,**options))
+    except BaseException as error:
+        result.update(state='failed',error=str(error)[:500]);raise
+    finally:
+        publish()
 
 
 def main():

@@ -7,17 +7,17 @@ observations and the next deployment gate. Entries do not authorize live action.
 
 ## Current deployment state
 
-Last reconciled: October 14, 2026. These are retained observations, not a new
+Last reconciled: October 15, 2026. These are retained observations, not a new
 live inspection.
 
 | Component | Accepted state | Still pending |
 | --- | --- | --- |
 | Rebuilt node | Former j1-svntp1 renamed j2-svntp1; spare-card first boot accepted | Full hardware/time/network acceptance |
-| OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; fixed Ethernet IPv4/ULA, RA, DNS, routes, dual-stack egress and pinned-key SSH accepted | Reboot persistence; Wi-Fi disablement |
-| Foundation | 686 package records; original foundation, pps-tools, bc and seven mDNS prerequisites accepted; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
+| OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; earlier network acceptance and latest dual-stack boot/client checks passed | Full current-boot RA/resolver/egress reconciliation; Wi-Fi disablement unproven |
+| Foundation | 701 accepted package records, including RTC utility, Webmin and mail dependencies; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; mDNS-enabled build, native installation and runtime prerequisites accepted; 159-entry manifest | Preserve accepted source and installation records |
-| Runtime | Monitor-v5 handoff and PPS-first qualification passed; all five sources reached readiness; retained dual-stack client timing and native Windows mDNS acceptance passed | All-source production transition; saved-drift restart and reboot validation; remaining per-node production gates |
-| Reporting | Needrestart policy installed, microcode checking disabled | Mailrise/msmtp, needrestart.sh and cron installation/delivery |
+| Runtime | All-source startup, saved-drift restart, warm reboot/RTC initialization, convergence, post-reboot clients/discovery and leap-maintenance activation accepted | Remaining per-node production gates and final observation |
+| Reporting and management | Needrestart policy installed, microcode checking disabled; Webmin local HTTP/configuration checks passed and operator confirms ama login over IPv4/IPv6; mail transport, both synthetic delivery routes and daily reporting activation accepted | Webmin temp-storage suitability and controller exposure, first scheduled needrestart run and cron-generated failure-mail acceptance, Munin and hardware-watchdog acceptance |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
 
@@ -25,6 +25,1787 @@ The current accepted source stage is
 `/home/ama/.ntp-source-build-mdns-20261012-v1`; the earlier v5 stage is preserved.
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
+
+## Checkpoint and saved next action — October 15, 2026
+
+Statistics retention installation and its targeted first run are complete; full
+retention and production readiness remain open. The plan and readiness register
+carry delayed/ongoing work under OBS-01 through OBS-12, independently of private
+operation evidence. Executed bundles and receipts remain private and immutable.
+
+Resume with preparation of a scoped read-only monitoring-prerequisites inspection
+for j2-svntp1 (OBS-02/OBS-07): separated statistics growth/capacity samples,
+existing space/failure alerting, Munin endpoint/poller requirements and intended
+access scope. Inspect the monitoring repository before selecting a poller; prepare
+the sealed execution review before any new live access. No monitoring change or
+notification is authorized by this checkpoint.
+
+Keep the October 16 logrotate and needrestart checkpoints queued in the readiness
+register. Their actual scheduled results remain unobserved. Required ntpviz stays
+in Phase 3B after current-node acceptance and before the next installation.
+
+## Deferred monitoring made explicit — October 15, 2026
+
+Added the plan's deferred-observation/ongoing-monitoring register and a linked
+current checklist in PRODUCTION-READINESS, with stable OBS-01 through OBS-12 IDs.
+They carry scheduled statistics and reporting checks, growth/space/failure alerts,
+leap recurrence and physical-host boot checks, Munin, sustained power/thermal
+health, final observation, untested RTC power-loss retention, Phase 3B ntpviz and
+Webmin workload suitability. The governing statistics section retains detailed
+statistics/plotting requirements; the register points to it.
+
+Recorded known checkpoints as retained schedules, marked unknown intervals/owners
+explicitly, and required reconciliation before phase closure and a continuing
+operations owner after initial acceptance. Corrected the stale readiness leap
+row: the timer correction already executed; actual recurrence and physical-host
+boot-trigger observations remain open. No live check, reminder, notification or
+monitoring deployment occurred during this documentation reconciliation.
+
+## Four-stream statistics retention installed — October 15, 2026
+
+Executed `statistics-retention-20261015-v1` once under approved SHA-256
+`98d8af5c532bce91df7519c9e4b88272daf102aebaee2db0f018b25eb71d77af`, starting
+at 21:47:37 CDT. Transport status zero; all six installation checks passed.
+The target's four disposable retention tests and logrotate debug validation
+passed. Installed the root-owned rule/private trigger and completed one targeted
+forced run using private state. The live deletion preview was empty; no statistics
+were deleted. Recovery was unnecessary.
+
+Boot, supervisor and ntpd identity remained unchanged. All four active writable
+associations held, including older root-owned protostats. Equal before/after
+sizes within this short transaction do not prove continued growth. Postflight
+space/inodes exceeded the approved 10 GiB/5 percent floors; ongoing alerts were
+not installed. The existing enabled/waiting logrotate timer reported its next
+trigger as October 16 at 00:52:56 CDT. Its first global-state encounter may only
+initialize this new entry; scheduled rotation remains unobserved.
+
+Next: prepare scoped scheduled-run/growth acceptance and complete the storage
+budget, ongoing space monitoring and maintenance-failure reporting checks.
+Installation is accepted; full retention acceptance and production readiness
+remain open. Preserve the consumed bundle and evidence; do not repeat execution.
+
+## Four-stream retention deployment prepared — October 15, 2026
+
+Extended the candidate and age/link/base-file tests to protostats after the
+completed writer inspection. Added a scoped deployment worker/controller and
+success, drift/preview rejection, early failure, conditional recovery, foreign-edit
+hold and seal/replay tests. The candidate protects old open protostats hardlinks
+and keeps all four streams for at least 30 elapsed days after their last write.
+
+Prepared `statistics-retention-20261015-v1` from the accepted follow-up capture.
+Its initial deletion preview is empty. The review covers target-version fixtures,
+rule/trigger provisioning, one targeted initial run and subsequent daily cleanup
+through the existing scheduler. It proposes 10 GiB/5 percent inode pre/postflight
+floors while leaving ongoing alerts and sustained growth sizing unaccepted.
+No live contact or installation occurred during preparation.
+
+Next: review and authorize the sealed bundle hash for execution. Scheduled-run
+acceptance, continued statistics growth and monitoring/failure reporting remain
+separate evidence requirements after installation. Required ntpviz stays Phase 3B.
+
+## Statistics follow-up inspection completed — October 15, 2026
+
+Executed `statistics-followup-20261015-v1` once under approved SHA-256
+`22c6bf93d33acf80145d99a6b9fff9f4bf7af4f0188ca1b131e2da167a9c08c0`.
+Capture completed at 21:33:24 CDT with transport status zero and unchanged
+boot/service identity. No persistent target changes ran.
+
+Both descriptor snapshots identify ntpd PID 836, UID 999, with the same process
+start identity and writable descriptors for all four streams. MainPID 814 is the
+Python supervisor. Root-owned protostats.20261015 remains open and hardlinked to
+protostats; its older date does not make it inactive. The other three active
+pairs use the 20261016 suffix. Preserve all active identities regardless of age.
+
+Complete logrotate configuration and its eight included rules contain no
+statistics cleanup. The daily cron wrapper skips execution under systemd;
+logrotate.timer remains the observed scheduler. Nested scanning found no further
+relevant statistics rule/local-script reference. Per-user home jobs, unrelated
+script bodies and dynamic jobs remain outside coverage. A disappearing unrelated
+descriptor was recorded; ntpd identity and all four descriptors matched twice.
+
+Next: extend and test the four-stream retention candidate and prepare its sealed
+deployment review. Storage alert threshold, target-version validation, deletion
+preview and successful scheduled cleanup remain deployment acceptance work.
+No retention rule is deployed; required ntpviz remains in Phase 3B.
+
+## Statistics follow-up inspection prepared — October 15, 2026
+
+Prepared `statistics-followup-20261015-v1` from the completed initial inspection.
+The repository collector now supports a separately sealed follow-up: two bounded
+process/descriptor snapshots identify ntpd and any process holding statistics
+files, including writable flags and deleted paths. Protostats is recognized in
+metadata. Complete logrotate rules and the daily wrapper, nested maintenance
+configuration, indirect paths and referenced local-script lines are collected
+without executing cleanup or reading statistics contents. Process races, empty
+snapshots and incomplete reference coverage remain explicit unknowns.
+
+Offline collector tests passed. No follow-up target contact has occurred.
+Next: approve the fresh sealed inspection hash, execute once and review its
+findings. Confirm all four streams' writer/active-file handling before extending
+and testing the cleanup candidate and preparing the retention deployment review.
+The original executed inspection archive and live retention state are unchanged.
+
+## Protostats added to planned retention scope — October 15, 2026
+
+The operator approved including protostats in the same 30-day retention policy
+as loopstats, peerstats and clockstats. The governing statistics section and
+OPERATIONS now require writer/active-file confirmation before extending the
+candidate and tests, followed by a fresh four-stream deployment review.
+The existing candidate, accepted inspection bundle and live configuration remain
+unchanged. Earlier inspection statements describing the three-stream exclusion
+record the scope at that time; this decision supersedes that planned exclusion.
+
+## Statistics read-only inspection completed — October 15, 2026
+
+Executed `statistics-inspection-20261015-v1` under approved SHA-256
+`16a4b7e1337d9dda98721d2fe669033d46f5053d69671560cd8a90fac4e7687e`.
+Capture completed with transport status zero and unchanged boot/NTP identity:
+MainPID 814, the accepted invocation, active/running/enabled and zero restarts.
+No cleanup, compression, plot generation or persistent configuration change ran.
+
+The three configured streams have regular active base files hardlinked to their
+20261016 dated counterparts (two links each). Statistics directory mode is 0750,
+UID 999/GID 985; stream files are 0640 under the same ownership. Older dated files
+have one link. The October 16 suffix is consistent with UTC rollover while local
+Chicago time is still October 15. The three October 15 files total 434,399 bytes;
+this is one retained daily-size sample, not a sustained growth measurement.
+The ext4 root filesystem has about 106.30 GiB available and 7,606,078 free inodes.
+All captured filenames are recent; none is a 30-day deletion candidate.
+
+Logrotate 3.22.0 (package 3.22.0-1+b2) and GNU findutils 4.10.0-3 are installed.
+The enabled/waiting timer uses OnCalendar=daily, RandomizedDelaySec=1h and
+Persistent=true. Its captured next trigger is October 16 at 00:52:56 CDT;
+this is schedule evidence, not proof of that future execution. No statistics
+cleanup rule was found among the scoped relevant maintenance lines. Indirect
+scripts, user timers and unexpanded configuration remain coverage limitations.
+
+The MainPID descriptor snapshot contains no matching statistics files. It does
+not establish the actual writer's open-file state; identify the NTP writer and
+inspect its descriptors before deployment. Root-owned protostats and its dated
+hardlink also exist; the three-stream candidate intentionally does not manage
+them. Decide their retention separately without silently broadening deletion.
+The source-built /usr/local/bin/ntpviz exists; gnuplot is absent on this NTP node.
+That does not block the selected separate-host Phase 3B plotting design.
+
+Next: close writer/open-file and relevant maintenance-rule coverage gaps, then
+prepare the scoped retention deployment with previewed candidates, target-version
+validation, storage/alert thresholds and recovery. The snapshot does not establish
+a storage alert threshold or production acceptance. Required dashboard selection,
+sizing and deployment remain in Phase 3B after current-server completion.
+
+## Operator-confirmed installed reporter test delivery — October 15, 2026
+
+The operator supplied the delivered Apprise notification for the installed
+needrestart reporter's manual test, timestamped October 15, 2026, at 21:16:41 CDT.
+The subject identifies j2-svntp1 and the displayed sender is
+`j2-svntp1@local.theama.co`. This confirms the manual reporter test reached Apprise
+through sendmail, msmtp and Mailrise. The listed kernel, service and session
+items are synthetic examples, not observed faults or restart requirements.
+
+The earlier manual invocation lacked RECIPIENT and sent nothing. The scheduled
+cron already supplies its configured recipient. This operator-run delivery is
+separate from the sealed capture operation; its immutable receipts are unchanged.
+No additional notification was sent by the assistant. The first scheduled run
+on October 16 at 05:30 America/Chicago and cron-generated failure-mail delivery
+remain unobserved; this test does not close those gates.
+
+## Required ntpviz dashboard moved to the between-server stage — October 15, 2026
+
+The operator placed plotting-host selection, dependency/resource assessment and
+private ntpviz dashboard deployment after completion of j2-svntp1 and before the
+next NTPsec server installation. The plan now defines mandatory Phase 3B and
+makes its acceptance an explicit Phase 4 prerequisite. This supersedes the earlier
+placement of viewable plots within current-server Phase 3 acceptance; plotting
+is still required. Statistics retention remains in the current Phase 3 scope.
+Readiness and OPERATIONS now follow that sequence. No live action occurred, and
+the prepared read-only statistics inspection bundle remains unchanged.
+
+## Statistics inspection prepared and ntpviz made mandatory — October 15, 2026
+
+The operator requires viewable ntpviz plots and selected a separate always-on
+host with a private dashboard. The host and private hostname remain undecided
+until requirements are understood. The governing statistics section now owns
+this requirement, analysis-host dependencies, storage/sizing measurements,
+read-only collection, private publication and browser/refresh acceptance.
+Plotting is no longer optional; the previous optional disposition is superseded.
+
+Prepared `statistics-inspection-20261015-v1`, SHA-256
+`16a4b7e1337d9dda98721d2fe669033d46f5053d69671560cd8a90fac4e7687e`,
+from accepted reporting-activation evidence. It inventories statistics metadata,
+active NTP descriptors, relevant maintenance configuration, installed tools,
+schedulers and filesystem capacity on j2-svntp1 only. A single snapshot supports
+historical daily-size estimates, not a live growth measurement. Indirect jobs and
+references may require follow-up; no exhaustive absence claim is made.
+
+Five offline tests passed for metadata/link handling, wrong-target rejection,
+collector success/failure, sealed review binding and single-use transport. No
+live contact, deletion, plot generation, notification or configuration change
+occurred. Next: approve the sealed read-only inspection; use its observations for
+retention deployment preparation and plotting-host sizing. The plotting host's
+credentials/access/publication and actual 30-day render resource usage still need
+separate review before deployment.
+
+## Reporter capture checks and daily schedule accepted — October 15, 2026
+
+Executed `mail-reporting-20261015-v1` under approved SHA-256
+`7f4384d1e2ca1d9e796302ac957e22af3dcd2d38362fe78e25a3c65ad7b782ca`.
+The runner returned zero and all activation conditions passed. The real bounded
+list-only scan through the instrumented reporter produced no notification and
+its cron wrapper remained quiet. The synthetic failed scan returned the expected
+23 with its failure message captured locally; the held private lock returned 1
+with the expected overlap fallback. No immediate test notification was submitted.
+
+The exact staged cron file is now installed at `/etc/cron.d/needrestart_check`,
+root:root 0644. Daily reporting is enabled for 05:30 America/Chicago. The next
+scheduled occurrence recorded by the worker is October 16, 2026, at 5:30 a.m.
+CDT. Cron was already active; no service restart or recovery was needed. The
+accepted package baseline, mail assets, NTP identity and protected configuration
+passed continuity checks. The installed reporter and production scanner/lock
+were not replaced by the capture fixtures.
+
+The first scheduled execution and cron-generated failure-mail delivery remain
+unobserved. Prior operator-confirmed synthetic delivery still covers both recipient
+routes; it is not evidence of a scheduled reporter run. Next: observe the scheduled
+run and its outcome, distinguishing a successful quiet scan from a missed job.
+Overall reporting and host production acceptance remain open. The statistics
+retention candidate remains undeployed and needs its separate live inspection.
+
+## Statistics retention and ntpviz policy consolidated — October 15, 2026
+
+The operator approved a dedicated governing-plan section for statistics,
+30-day retention and all ntpviz analysis requirements. Phase 3 now requires
+retention acceptance before extended observation. Optimization entries and
+OPERATIONS link to that section instead of repeating collection/plotting policy.
+
+The candidate `ntpstats-retention.logrotate` rotates only a private root-owned
+trigger. Its firstaction deletes recognized completed statistics at the first
+daily run after at least 30 days without modification. It preserves active-file
+inodes, multiple-hardlink files, symlinks, unexpected names and recent files;
+missing or indirect active base files block cleanup. Statistics stay uncompressed.
+Two disposable-file tests exercised actual local logrotate parsing/execution,
+age boundaries and protection/failure cases. These are workstation results,
+not evidence of deployed maintenance or target-version compatibility.
+
+Live rule/link/ownership/scheduler inspection, storage budget and alert threshold,
+sealed deployment, first-run acceptance and daily observation remain pending.
+No target contact or live configuration change occurred. The pending mail-reporting
+review is unchanged; this repository work does not execute it.
+
+## Reporter capture and daily cron activation review prepared — October 15, 2026
+
+Prepared `mail-reporting-20261015-v1`, bound to SHA-256
+`7f4384d1e2ca1d9e796302ac957e22af3dcd2d38362fe78e25a3c65ad7b782ca`.
+The baseline is the accepted 701-package mail installation and operator-confirmed
+receipt of both synthetic notifications. No target contact occurred during this
+preparation; the reporting cron remains inactive.
+
+The review runs the pinned reporter through its cron wrapper with mail captured
+in a private operation directory. Only sendmail references are redirected for the
+real list-only scan. A second copy substitutes a synthetic failing scanner to
+exercise failure reporting; a held private lock tests overlap handling. These
+are instrumented captures, not end-to-end delivery or an actual cron invocation.
+The installed reporter, scanner and production lock remain unchanged.
+
+After capture and continuity acceptance, the stage installs the exact staged cron
+bytes for daily 05:30 America/Chicago. Approval includes recurring generated
+reports to `notify@mailrise.xyz` and cron failure output to
+`notify.failure@mailrise.xyz`; it sends no additional immediate test messages.
+The first scheduled run and cron-generated failure-mail delivery remain unobserved.
+Failed postconditions remove only the unchanged authored cron file; foreign drift
+holds for inspection. No NTP restart, package change or cron restart is included.
+
+Eleven offline tests passed, including real shared-reporter fixtures, exclusive
+capture, success/failure/overlap handling, atomic activation, rollback/foreign-file
+hold, near-schedule rejection, archive/review binding and single-use execution.
+Shell syntax, ShellCheck, canonical shfmt and readonly/local collision checks passed.
+Next: obtain execution approval for this sealed review, then retain its outcome
+and observe the first scheduled run separately. Overall reporting acceptance stays open.
+
+## Mail installation and operator-confirmed delivery accepted — October 15, 2026
+
+Executed `mail-install-20261015-v1` under approved SHA-256
+`fd5b63768142e7021cf9b7ea2be7d666678d3691f4f373e9ce18481b580954c4`.
+The runner returned zero and accepted installation. Eight pinned packages were
+installed; the captured inventory now contains 701 records. The outbound-only
+msmtp configuration, root failure alias and shared needrestart reporter passed
+acceptance. The optional msmtpd listener remains masked/inactive. Protected
+NTP identity and configuration remained unchanged; no recovery was needed.
+
+Both exact previewed messages were submitted once and accepted by SMTP. The
+operator subsequently supplied both Apprise notifications at 8:30 p.m., confirming
+downstream receipt for the report and failure routes. This operator confirmation
+is recorded separately from immutable runner receipts, which correctly retain
+`delivery_verified: false` because they cannot observe downstream delivery.
+
+The reporter was not invoked. The cron file remains staged outside `/etc/cron.d`;
+no daily reporting schedule was activated. Next: prepare scoped runtime reporter
+and cron failure-path acceptance with exact notification previews, then schedule
+activation for daily 05:30 America/Chicago. Overall host readiness remains open.
+
+## Mail installation and exact-message review prepared — October 15, 2026
+
+Prepared `mail-install-20261015-v1`, bound to SHA-256
+`fd5b63768142e7021cf9b7ea2be7d666678d3691f4f373e9ce18481b580954c4`.
+The operator selected transport activation and two previewed delivery tests.
+The review installs eight existing hash-verified cached packages, masks the
+optional msmtpd listener, activates reviewed msmtp/root-alias configuration,
+installs the shared reporter and stages its cron outside /etc/cron.d. The exact
+report and failure-type messages, including recipients and bodies, are in the
+sealed review. Each submission is recorded before sending and never retried.
+
+Preflight rejects package/NTP drift, existing mail paths or root-user msmtp
+configuration overrides. Recovery withdraws only unchanged files authored by
+this invocation, retaining package/account/AppArmor state and the listener mask
+for inspection. It cannot undo submitted messages. Cron activation and runtime
+reporter/delivery acceptance remain pending operator-confirmed downstream receipt
+and separate activation approval. System-wide transport activation may also
+allow existing system jobs to send mail; the review states that consequence.
+
+Ten focused tests passed, including install/send failure containment, first-send
+preservation on second-send failure, foreign-file hold, exclusive writes, NTP
+identity rejection, preview binding and single use. A pre-review draft was
+superseded to add the root-user override guard; neither draft nor final bundle
+was executed. No target contact or notification occurred during preparation.
+
+Next: approve the final sealed installation hash and both exact message previews.
+Do not update accepted package inventory until live installation passes.
+
+## Mailrise configuration and recipient semantics verified — October 15, 2026
+
+Executed `mail-route-inspection-20261015-v3` under approved SHA-256
+`ee51f90ba5175582db1a72172bd232ab8056fb9fe2dc93509fcf214678e75e1a`.
+Capture passed with unchanged containers/boot. The mounted configuration has
+notify as its first key with a nonempty destination list. Installed Mailrise
+0.0.post1.dev1+g60d485e2a parser confirms both approved addresses select notify;
+the .failure suffix sets FAILURE notification type, while the unsuffixed address
+uses INFO. No separate notify.failure key is needed.
+
+Configuration mtime predates the current container start. This supports the
+read-only configuration/source review, not an in-memory or delivery acceptance
+claim. Operator-provided destination remains separately attributed: Mailrise
+notify forwards to Apprise config ID apprise. No notification, installation,
+configuration change or lifecycle action occurred; receipts/outcome are private.
+
+Next: prepare scoped mail transport installation and needrestart reporting,
+using the accepted eight-package dependency simulation. msmtpd must remain
+inactive/disabled. Any notification needs exact recipient/content approval and
+downstream receipt; cron activation is an explicit outbound-notification stage.
+
+## Corrected isolated route reader prepared — October 15, 2026
+
+Prepared `mail-route-inspection-20261015-v3` using the observed application
+package directory from accepted environment inspection. The reader keeps
+python3 -I -B and appends only /home/mailrise/.local/lib/python3.14/site-packages.
+It does not process .pth files or enable automatic user-site, current-directory
+or environment-based imports. Missing directory is an explicit classified error.
+Existing secret suppression, container/boot continuity and single-use controls
+remain. Twelve focused tests passed, including a real isolated subprocess import
+and confirmation that a fixture .pth file was not executed.
+
+No target contact occurred. Historical executed bundles and receipts remain
+unchanged. Next: approve the v3 archive hash for read-only route capture; runtime
+routing and downstream delivery remain unaccepted. No installation or send is
+part of the prepared scope.
+
+## Mailrise environment inspection accepted — October 15, 2026
+
+Executed `mail-environment-inspection-20261015-v1` once under approved SHA-256
+`1f42618a46bff731d18ee075d61017834d8fa17be689a71a5fcff4d309b8f680`.
+Capture passed; containers and host boot remained unchanged. The isolated Python
+3.14.0 reader excluded /home/mailrise/.local/lib/python3.14/site-packages, where
+both yaml and mailrise package files exist. The Mailrise launcher shebang and
+PID 1 both resolve to /usr/local/bin/python3.14. The retained evidence identifies
+a diagnostic search-path mismatch, not a missing application installation.
+
+No configuration read, module import, install, notification or lifecycle change
+occurred. Next: prepare a fresh sealed route reader retaining isolation with
+only the observed application package directory explicitly added. Live route
+and downstream delivery acceptance remain open.
+
+## Mailrise Python environment inspection prepared — October 15, 2026
+
+The operator supplied the host mailrise.conf content: Mailrise route notify
+forwards to Apprise configuration ID apprise. Retain this as operator-provided
+configuration evidence, not a live mounted-file or delivery check. The two names
+are distinct; the earlier statement equating notify with the Apprise config ID
+was incorrect. The .failure suffix selects notification type on the Mailrise route.
+
+Prepared `mail-environment-inspection-20261015-v1` for the confirmed relay.
+Its stdlib-only reader reports interpreter/prefix/search paths, yaml/mailrise
+module-spec locations, launcher paths and interpreter shebang token, PID 1
+executable and fixed user-site package existence. It reads no configuration,
+process environment or command-line arguments and invokes no application.
+Container/boot continuity and single-use execution controls remain enforced.
+Eleven focused tests passed. No target contact occurred during preparation.
+
+Next: approve the sealed environment-inspection hash; use observed paths to
+resolve the inspection interpreter mismatch. Recipient runtime verification and
+downstream notification acceptance remain open.
+
+## Relay v2 identified inspection Python dependency failure — October 15, 2026
+
+Executed `mail-route-inspection-20261015-v2` once under approved SHA-256
+`1cdafcfc72e839def1ee63059cd9e163fde767681cb7a70b1d8f5263fd54f606`.
+The capture remained incomplete: inner exit 1, stage yaml_import,
+ModuleNotFoundError under python3 -I -B. The configuration and router source
+were not read. Both containers and host boot remained unchanged. No send,
+installation, lifecycle change or retry occurred; receipts are retained privately.
+
+The specific failure is now established, but the application's interpreter or
+virtual environment is unknown. This is not evidence of a Mailrise service
+fault. Next: prepare scoped read-only discovery of the application's Python
+environment before another route capture. Both live recipient checks remain open.
+
+## Corrected read-only relay diagnostic prepared — October 15, 2026
+
+Prepared `mail-route-inspection-20261015-v2` for the same confirmed relay and
+rootful containers. The reader now classifies the failing stage, and the outer
+collector retains its exit status, command-error flag, output byte counts and
+allowlisted error class. Exception messages and raw stderr remain excluded to
+avoid exporting YAML values or credentials. Unclassified failures remain open.
+Nine focused tests passed, including parser/metadata errors, secret suppression,
+container continuity, archive binding and single-use execution.
+
+The v1 executed archive and receipts remain unchanged. No new target contact
+occurred. Next: approve the fresh v2 archive hash before execution. Both
+recipient semantics and current configuration remain unverified live; no send,
+installation or container lifecycle change is included.
+
+## Mail dependencies accepted; relay route capture incomplete — October 15, 2026
+
+Executed both separately approved inspections once. Dependency inspection
+`mail-dependency-inspection-20261015-v1` passed: cached msmtp/msmtp-mta 1.8.28-3
+hashes match the reviewed packages. No-recommends simulation adds eight packages,
+with zero upgrades/removals. NTP identity/boot and zero restarts were unchanged.
+msmtpd is not installed on this node; future installation must retain its
+intended disabled/inactive state. No packages or mail configuration were changed.
+
+Relay inspection `mail-route-inspection-20261015-v1` was incomplete. Both rootful
+containers and the host boot remained unchanged, but the inner configuration
+reader failed. The collector retained only a generic error and discarded the
+inner status/output, so the cause is unknown. Neither live recipient mapping
+nor installed suffix behavior is accepted. No notification or retry occurred.
+Private outcome.md files retain the exact approved hashes and observations.
+
+Next: prepare a corrected read-only relay diagnostic retaining safe error
+classification and exit status, then obtain approval for its fresh sealed scope.
+Installation and exact-content delivery tests remain separate later stages.
+
+## Mail dependency and recipient review prepared — October 15, 2026
+
+The operator confirmed the Apprise API/Mailrise host at 10.1.3.83 and SSH as
+`pi@svmf.local.theama.co`. The repository documents rootful Podman ownership;
+the new capture checks that deployment and stops if it differs. No relay or
+NTP host contact occurred during preparation.
+
+Local Debian ARM64 msmtp/msmtp-mta 1.8.28-3 contents and maintainer scripts were
+reviewed. msmtpd is packaged with disabled-by-default handling; its service
+helper call is not evidence of a running listener. Target cached candidates,
+dependency resolution and existing service state remain to be captured.
+
+Upstream Mailrise parser review corrects the earlier separate-key assumption:
+`notify.failure@mailrise.xyz` uses the notify route with failure notification type.
+Verify installed parser behavior, current configuration and both recipient
+semantics before sending. Config presence does not prove downstream delivery.
+
+Prepared separate package and relay inspection scopes with the bounded,
+single-use `run-mail-prerequisites.py` runner. Review exact sealed hashes before
+execution. No install, mail configuration, cron activation or send is authorized
+by these read-only captures. Private review evidence: mail-relay-review-20261015-v1.
+
+## Timer-only correction accepted — October 15, 2026
+
+Executed the approved `leap-timer-correction-20261015-v1` bundle, SHA-256
+`ac40fb8c2fc7a8437900ef98d9e54c52bf1f5c16eb8c30b134ed4f113b976d77`.
+All four acceptance checks passed; rollback was not needed. The timer is enabled
+and waiting with OnBootSec=15min, OnUnitActiveSec=4w and RandomizedDelaySec=30min.
+Its successful scheduled run at 7:18:55 p.m. CDT was preserved, and the next
+four-week trigger passed both before and after manager reload. No new fetch
+was requested. NTP retained its PID and invocation with zero restarts.
+
+Retained realtime/monotonic evidence estimates the next trigger at November 12,
+2026, 6:19:41 p.m. CST; this is not a fresh list-timers observation. Physical Pi
+reboot/initial-trigger behavior and four-week soak remain untested. Execution
+receipts and outcome are retained in the private operation directory.
+
+Next: review mail relay routes and package dependencies before preparing
+installation. Verify both approved recipient routes before any send; exact
+recipient/content approval and downstream receipt remain required.
+
+## Timer-only correction deployment review sealed — October 15, 2026
+
+Prepared `leap-timer-correction-20261015-v1`, bound to SHA-256
+`ac40fb8c2fc7a8437900ef98d9e54c52bf1f5c16eb8c30b134ed4f113b976d77`.
+The transaction guards accepted files and NTP identity, stops the leap timer,
+changes only OnActiveSec=15min to OnBootSec=15min, reloads and starts the
+still-enabled timer. It preserves the prior successful scheduled run and
+requires a four-week next trigger before and after another manager reload.
+There is no manual fetch, leap-service start, reboot or mail. Conditional
+recovery restores the old enabled timer and therefore its known recurrence
+defect; unrelated drift holds recovery rather than overwriting foreign changes.
+
+Thirteen focused transaction/sealing tests passed. Same-version systemd
+integration tested the same-unit upgrade and actual transaction worker. The
+upgrade preserved prior trigger history; the worker's production four-week
+schedule passed both checks. A fixture that left the boot-relative initial
+deadline in the future exercised real rollback; shortening only its initial
+delay allowed validation of the intended late-boot deployment. Both receipts
+are retained. An unexecuted draft that waited for a new initial run was
+superseded before review: same-boot systemd retains the prior trigger history.
+
+Validation evidence is in `leap-timer-deployment-validation-20261015-v1`;
+the isolated test container is stopped. No production contact occurred.
+Next: approve execution of the final sealed timer-only review. Actual Pi
+reboot/initial-trigger behavior remains a later live acceptance check.
+
+## Planned boot-relative leap timer restored and tested offline — October 15, 2026
+
+Changed the candidate ntpleapfetch.timer from OnActiveSec=15min to the governing
+plan's OnBootSec=15min, retaining OnUnitActiveSec=4w and RandomizedDelaySec=30min.
+The live timer remains unchanged. This restores the existing plan rather than
+adopting a new calendar cadence.
+
+An isolated, network-disabled Podman container ran systemd
+257.13-1~deb13u1, matching the observed target version. The actual production
+timer parsed with the 15-minute boot and four-week recurrence values. An
+accelerated fixture using harmless oneshot services passed late enablement,
+recurrence, reload after initial firing, reload after recurrence, and enabled
+startup after container restart. Its OnActiveSec control reproduced the early
+reload-triggered run while the corrected OnBootSec timer did not. The accelerated
+recurrence measured 20.295899 seconds for a 20-second interval plus jitter.
+
+Tests use 3-second initial, 20-second recurrence and 1-second random delay;
+they do not represent a four-week soak or a physical Pi reboot. Sources are
+tests/Containerfile.leap-timer and tests/test_leap_timer_systemd.py. Logs and
+image/input identities are retained in `leap-timer-validation-20261015-v1`.
+The test container is stopped and retained. Next: prepare a scoped timer-only
+deployment review, including existing timer-state checks, recovery, and target
+acceptance of the initial run and next four-week trigger. No live reload,
+restart, fetch, mail or NTP change occurred.
+
+## Timer recurrence diagnostic passed; reload rearming corroborated — October 15, 2026
+
+Executed `leap-recurrence-inspection-20261015-v1` once under SHA-256
+`ebe26349c08a4d15f21dd8cf33e5e9bd9a0af7c081b1286769a59be3e588a66e`.
+Capture passed at 7:12:55 p.m. CDT. Installed systemd is 257.13-1~deb13u1;
+boot and NTP continuity passed. No timer/service change or mail occurred.
+
+The timer retained its original 5:22:04 p.m. activation timestamp, but the
+OnActiveSec expiration implies a new base inside the manager reload that
+finished at 6:37:51.775876 p.m. CDT: only 2,561 microseconds before reload
+completion. This strongly corroborates initial-delay rearming during reload,
+matching the reviewed upstream 257.13 coldplug path. The four-week expiration
+also remains present; the earlier initial-delay expression wins. The capture
+does not prove the cause of every earlier repeat or instrument manager code.
+
+Last trigger remained 6:33:59 p.m.; next captured trigger was 7:18:44 p.m. CDT
+on October 15, 2026. Its subsequent completion is not established. Next:
+prepare/test a correction preserving initial maintenance and four-week
+recurrence across reload/reboot, then obtain separate deployment approval.
+Boot-relative initial scheduling is a candidate, not an adopted change.
+Mail relay requirements remain selected; both routes require verification
+before sending. Evidence and outcome are retained in the diagnostic directory.
+
+## Timer recurrence diagnostic prepared; relay requirements selected — October 15, 2026
+
+Reviewed upstream timer.c for systemd v257.13 against the retained inventory
+257.13-1~deb13u1 and the timer observations. Its reload/coldplug path can rebase
+OnActiveSec from current monotonic time; the retained initial-delay base maps
+near the Webmin continuation. This supports reload rearming as a hypothesis,
+not a proven live cause. Prepared `leap-recurrence-inspection-20261015-v1`,
+bound to SHA-256
+`ebe26349c08a4d15f21dd8cf33e5e9bd9a0af7c081b1286769a59be3e588a66e`.
+The read-only stage collects installed documentation, timer timestamps and
+bounded manager reload records. Twenty-five focused tests passed. Execution
+awaits exact hash approval; no live access or timer change occurred.
+
+The operator selected the shared Mailrise settings: mailrise.local.theama.co
+port 8025, sender domain local.theama.co, `notify@mailrise.xyz` for reporting,
+`notify.failure@mailrise.xyz` for cron failures, daily 05:30 America/Chicago.
+Both routes must be verified before sending. The repository Mailrise example
+only establishes notify as an example; live route configuration and restricted
+LAN access remain unverified. Review package/dependency and aliases requirements
+before installation, and approve exact test content before delivery. Running
+the reporter or enabling cron may send mail and is not a read-only check.
+Private source provenance and findings are retained in
+`timer-relay-review-20261015-v1`. Next: execute the sealed recurrence diagnostic;
+verify relay route requirements under the owning component's scoped process.
+
+## Mail/needrestart inspection passed; leap recurrence unresolved — October 15, 2026
+
+Executed `mail-inspection-20261015-v1` once under SHA-256
+`a1f3b85e5d711d3eeddc214c7ec46ae149f0afabcbeaf68876791b45d072bf0b`.
+Capture passed at approximately 7:04 p.m. CDT. Boot and NTP continuity were
+preserved. Cron and needrestart are installed; msmtp/msmtp-mta, msmtprc,
+aliases, reporting script and cron entry are absent. Needrestart policy files
+are present. No relay settings were available from the absent msmtprc.
+Resolving the sendmail path did not establish final-file existence/executability.
+
+Leap-maintenance journal completions at 5:55:25 p.m. and 6:33:59 p.m. CDT
+were successful. Timer LastTriggerUSec matches the latter service invocation,
+which returned success without replacing the not-yet-due leapfile. The next
+captured trigger was 7:18:44 p.m. CDT on October 15, 2026. This closes the
+unobserved scheduled-run gap but leaves the short recurrence unexplained:
+the effective timer still specifies 15-minute initial delay, four-week service
+recurrence and up to 30 minutes random delay. Do not accept the four-week
+cadence from configuration alone. Next: inspect timer rearming/reload history
+and installed behavior; continue relay/dependency review before mail deployment.
+No mail, needrestart invocation, timer/service change or forced fetch occurred.
+Receipts and outcome remain in the operation's private evidence directory.
+
+## Mail/needrestart and leap-timer inspection prepared — October 15, 2026
+
+The operator approved preparing the next baseline-app inspection and requested
+the leap-maintenance schedule. Prepared `mail-inspection-20261015-v1`, bound to
+SHA-256 `a1f3b85e5d711d3eeddc214c7ec46ae149f0afabcbeaf68876791b45d072bf0b`.
+The existing runner now has a scoped mail/reporting mode: package inventory,
+selected non-secret relay directives, sendmail path, needrestart file metadata,
+and leap timer/service timestamps and recent journal records. It sends no mail,
+invokes no needrestart check and changes no files, services or timers.
+Twenty-three focused tests passed. No target contact occurred; next is approval
+of this exact sealed execution bundle.
+
+The timer template specifies OnActiveSec=15min, OnUnitActiveSec=4w and
+RandomizedDelaySec=30min. The retained Webmin prerequisite capture reported no
+LastTriggerUSec and a next monotonic trigger of 1h 46min 46.675892s.
+Mapping that to its retained timer-start journal clock pair gives approximately
+5:55:18 p.m. CDT on October 15, 2026. That scheduled instant is in the past;
+it does not prove the run occurred. The new inspection will establish the
+current next trigger and whether a scheduled run completed.
+
+## Webmin temporary-storage inspection completed — October 15, 2026
+
+Executed `webmin-temp-inspection-20261015-v1` once under the approved archive
+SHA-256 `1def076c868841443bf60713a4e674cbfdf6e228aa40d80215e715308e9b7296`.
+Transport and capture passed. `/tmp` is tmpfs with 1,990,053,888 bytes available;
+the default Webmin temp directory uses 4,096 bytes. `/var/tmp` is on the ext4
+root filesystem with 114,147,065,856 bytes available. Both parent temp
+directories are root:root mode 1777, without symlinks. `/tmp/.webmin` is
+root:root mode 0755; `/var/tmp/.webmin` is absent. No global tempdir or
+tempdir_* settings were present. User overrides/environment were not collected.
+
+There is no current byte or inode shortage. The tmpfs limit does not establish
+physical RAM headroom under load, and upload/backup workload suitability remains
+unassessed. Leave the current setting unchanged unless the intended workload
+requires disk-backed storage; any move needs its own review. Boot, NTP and
+Webmin identities remained unchanged. Raw receipts and outcome are retained in
+the operation directory; no write probe, configuration or service change occurred.
+
+## Webmin temporary-storage inspection prepared — October 15, 2026
+
+The operator approved investigating the reported tmpfs notice. Prepared
+`webmin-temp-inspection-20261015-v1` using the existing read-only runner,
+bound to SHA-256
+`1def076c868841443bf60713a4e674cbfdf6e228aa40d80215e715308e9b7296`.
+The bundle pins the accepted Webmin continuation and both service identities.
+It collects selected temp settings, directory metadata, mount backing, byte/inode
+capacity and aggregate default Webmin temp usage. It excludes temp contents,
+write probes and changes. Twenty focused tests passed, including scope, secret
+exclusion, failed commands, boot changes, symlink rejection and bundle binding.
+
+No target contact occurred. Next: exact sealed execution approval, then assess
+the captured storage facts before proposing any temp-directory change. Existing
+dual-stack operator login acceptance stands; storage suitability remains open.
+
+## Webmin operator login accepted; temp-storage notice recorded — October 15, 2026
+
+The operator confirmed successful authenticated `ama` login over IPv4 and IPv6
+in response to the approved-management-client acceptance request. This closes
+the operator login check; no passwords or cookies were collected. The original
+automated receipt remains unchanged and correctly excludes authenticated login.
+Client source addresses and controller policy were not independently measured.
+
+The operator also reported Webmin's informational warning that `/tmp/.webmin`
+resides on tmpfs. Local inspection of the pinned 2.670 package's
+mount/system_info.pl shows this notice is triggered by the default temp directory
+being on tmpfs. It is separate from the small-filesystem warning and does not
+establish actual space exhaustion, a failed write or an NTP problem. No live
+filesystem capacity or current temp-directory settings were collected here.
+
+Next: scoped read-only inspection of temp settings, filesystem backing, capacity
+and permissions before deciding whether a dedicated disk-backed location is
+needed for expected uploads/backups. `/var/tmp/.webmin` is a candidate only;
+its actual backing and available space must be observed. No directory, mount,
+Webmin configuration or service change occurred. Overall production gates remain
+open; Caddy integration remains a separate future project.
+
+## Webmin continuation and local HTTP acceptance passed — October 15, 2026
+
+Executed `webmin-continuation-20261015-v2` once, bound to SHA-256
+`433a8dc440275c118d53aadb7e33ffe01f0202218190425924fedcb9ec30893a`.
+The controller completed successfully at 6:37:56 p.m. CDT. Exact installed-file,
+inventory and prior failed-state checks passed. The scoped failure reset
+succeeded; Webmin started once and passed bounded readiness, both exact TCP
+listeners, absent UDP discovery and local IPv4/IPv6 HTTP 200 checks.
+
+The complete confirmed miniserv.conf hash remained unchanged after HTTP probes.
+Final Webmin identity was active/running/enabled, PID 4534, invocation
+`181ba32f1b984367a8fc07e6a8cdda5a`, zero restarts. Its guard and permit remain
+installed. Recovery was not needed. NTP remained active/running/enabled, PID 814,
+invocation `a87e92a403eb4f37bac65c4324157f9c`, zero restarts. No package install,
+configuration rewrite, NTP/GPSD restart, clock action or reboot occurred.
+
+Reconciled accepted-packages.tsv to the captured 693-record inventory: the six
+reviewed Webmin/dependency additions are the only changes from its previous
+687-record reference. Package provenance remains in the reviewed assets manifest.
+Next: operator `ama` login using existing system authentication from an approved
+management client over IPv4 and IPv6. Record success and address family only;
+do not collect credentials or cookies. Local endpoint acceptance does not close
+authenticated/client access, controller exposure or overall production gates.
+
+## Webmin confirmed-configuration continuation prepared — October 15, 2026
+
+Prepared `webmin-continuation-20261015-v2` from the completed field inspection.
+It pins the complete confirmed miniserv.conf, including the three default theme
+handlers, and retains the full-file post-start hash check. It also pins the
+observed failed/failed state, prior invocation and exit result. After all
+installed-file, inventory, guard, socket and NTP checks pass, it resets failure
+only for webmin.service and requires inactive/dead, disabled, PID/restarts zero
+before creating its permit and starting the service.
+
+The existing bounded readiness, exact listener/HTTP checks and non-serving
+recovery remain in force. No package installation or configuration rewrite is
+included. Offline tests cover the ordered failure reset, rejection of changed
+prior identity and unsuccessful reset containment, alongside existing readiness
+and recovery cases. The fresh sibling bundle is sealed; no new target contact
+occurred. Next: exact-hash execution approval, then operator login acceptance
+only if automated endpoint/configuration acceptance succeeds.
+
+## Webmin configuration additions confirmed exactly — October 15, 2026
+
+Executed `webmin-field-inspection-20261015-v1` once, bound to SHA-256
+`59938380b256345988ed439c3b53c91de64da7380af5d6814e2402d7a0a17462`.
+The read-only capture completed at 6:32:31 p.m. CDT. All three default error
+handlers are present. Removing only their exact lines in memory produces the
+original 1063-byte file's SHA-256, matching the retained pre-start hash exactly.
+The installed authentic-init.pl and login-lib.pl also match the reviewed package.
+The complete byte change is therefore explained by those three additions;
+there are no other configuration byte differences from that baseline.
+
+Webmin remains disabled, failed/failed, PID 0, with no permit or port-10000
+listeners. NTP remains active/running/enabled with PID 814, the same invocation
+and zero restarts. The package audit is clean. No target files, service state,
+packages or clocks were changed by the capture.
+
+Next: prepare a continuation pinned to the confirmed complete configuration,
+including the three handlers, and explicitly handle the observed failed unit
+state. Preserve the full-file hash check and bounded readiness/HTTP/recovery
+checks; no broad exception for application-written configuration is needed.
+Serving and authenticated-client acceptance remain pending.
+
+## Webmin theme write path identified; confirmation prepared — October 15, 2026
+
+Inspected the checksum-verified Webmin 2.670 package locally. Authentic Theme's
+login-lib.pl calls error_40x_handler(), whose implementation adds defaults
+`error_handler_401=401.cgi`, `error_handler_403=403.cgi` and
+`error_handler_404=404.cgi`, writes miniserv.conf and reloads Webmin when the
+403 handler is unset. The three newline-terminated settings total exactly 78
+bytes, matching the observed growth and reload. The operator subsequently
+reported those exact three values in the current miniserv.conf. This strongly
+supports the theme-write explanation; it does not yet exclude other byte changes.
+
+Prepared `webmin-field-inspection-20261015-v1` to capture those three additional
+non-secret fields and fingerprints of the two relevant installed theme files.
+When each exact default line occurs once, the collector returns only the hash
+and size of the current file with those lines removed. Matching the retained
+pre-start hash would prove they account for the complete byte change without
+exporting secret values or rewriting the target. A mismatch remains unresolved.
+Offline tests cover exact removal, preserved unrelated bytes, non-default
+handlers and secret exclusion. No new target contact occurred. Next: approve
+the sealed confirmation capture before correcting continuation acceptance.
+
+## Webmin configuration-drift inspection completed — October 15, 2026
+
+Executed `webmin-config-inspection-20261015-v1` once, bound to SHA-256
+`33fe12c3b3874c71b774e0258f0d34157f3e48296eb6cf5f213ec2d65b2c0e10`.
+The read-only capture completed at 6:24:13 p.m. CDT. All 16 retained miniserv
+settings match the pre-start inspection, including HTTP bindings, IPv6, subnet
+allowlist, `ama`, sudo, session and disabled UDP discovery. The file grew from
+1063 to 1141 bytes and its hash changed; ownership and mode remain root:root
+0600. The omitted fields and full pre-start contents were not captured, so the
+specific rewritten fields remain unknown. Unchanged selected policy does not
+establish that every other change is harmless.
+
+The error log records startup, IPv6/PAM availability, a configuration reload at
+6:17:37 p.m. and shutdown at 6:17:39 p.m. The journal records process exit status
+1 during the recovery stop. Webmin is disabled, MainPID 0, failed/failed, with
+no TCP/UDP port-10000 sockets or permit. This refines the earlier non-serving
+recovery result; it is not an active service. The journal's startup PAM failure
+is consistent with the reviewed miniserv startup self-test; no `ama` login was
+submitted by these operations, and authentication acceptance remains pending.
+
+NTP remains active/running/enabled on PID 814 and the same invocation, with zero
+restarts; the package audit is clean. Next: inspect remaining non-secret field
+names/values and the package's configuration-write paths before correcting the
+drift gate. A further continuation must account for the observed failed unit
+state. No service, configuration or package changes occurred in this inspection.
+
+## Webmin configuration-drift inspection prepared — October 15, 2026
+
+Prepared `webmin-config-inspection-20261015-v1` against the continuation's
+completed non-serving recovery, reusing the tested read-only inspection runner.
+It captures selected miniserv settings and the full-file hash, Webmin journal
+and error log, unit/permit/socket state, package inventory and implementation
+fingerprints while checking NTP continuity. No new target contact occurred.
+
+Compare the selected settings with the retained pre-start inspection. The full
+pre-start configuration was not retained, so a complete historical field-level
+diff cannot be reconstructed. Unchanged access fields alone would not explain
+all full-file drift. The sealed review states that limitation and does not
+relax the acceptance gate. Next: exact-hash execution approval for this capture.
+
+## Webmin continuation reached HTTP, then recovered — October 15, 2026
+
+Executed `webmin-continuation-20261015-v1` once, bound to SHA-256
+`36b7a172d6e2da6f87dccf3de5fb767b58b49a24a03180a75d3fab2b5452c29e`.
+The controller completed at 6:17:40 p.m. CDT with acceptance false. Exact
+installed-file/inventory and stopped-state preflight passed. The bounded wait
+observed three empty TCP samples before both approved listeners appeared on
+the fourth; UDP discovery remained absent. Webmin stayed on PID 4034 with zero
+restarts throughout readiness. Both local IPv4 and IPv6 HTTP probes returned 200.
+
+The subsequent full-file miniserv.conf hash check failed with
+`configuration drift after start`. The operation did not retain the changed
+configuration contents or final hash, so it does not establish which settings
+changed or whether the access policy was affected. Do not infer benign startup
+normalization or weaken the gate from these HTTP successes alone.
+
+Approved recovery stopped/disabled Webmin, removed this operation's permit and
+confirmed no port-10000 TCP/UDP sockets. Installed packages and configuration
+were retained. Final NTP identity remained PID 814, invocation
+`a87e92a403eb4f37bac65c4324157f9c`, zero restarts, active/running/enabled.
+No package installation, configuration rewrite by the controller, retry or
+further target contact occurred.
+
+Next: inspect the changed Webmin configuration's non-secret settings and startup
+diagnostics read-only, then determine the required correction from that evidence.
+Readiness is proven for this attempt; overall serving and authenticated-client
+acceptance remain pending. Preserve both executed bundles unchanged.
+
+## Webmin bounded-start continuation prepared — October 15, 2026
+
+Added a 60-second application-readiness wait to the Webmin worker and prepared
+`webmin-continuation-20261015-v1` from the accepted startup inspection. Empty or
+partial approved TCP listener sets may settle until the deadline. Unexpected
+TCP/UDP listeners, service failure, restart count or process/invocation change
+fail immediately. Both local HTTP endpoint checks and final service/configuration
+identity checks remain required; authenticated `ama` acceptance stays separate.
+
+The continuation checks the inspected installed inventory and exact root-owned
+unit, guard, wrappers, configuration and miniserv file identities. It requires
+the recovered stopped/disabled state, absent permit and free port before creating
+its own permit and enabling/starting Webmin. It does not install packages,
+rewrite configuration or change APT repositories. Existing non-serving recovery
+stops/disables Webmin and removes only this operation's permit on failure.
+
+Focused offline tests cover delayed/partial readiness, timeout, service/restart/
+UDP failure, configuration drift, single-use sealing and recovery. The fresh flat
+bundle contains no package payloads or prior archives. No target contact occurred
+during preparation. Next: exact-hash execution approval for the continuation;
+Webmin serving and client-login acceptance remain pending.
+
+## Webmin startup inspected — October 15, 2026
+
+Executed `webmin-startup-inspection-20261015-v1` once, bound to SHA-256
+`77c2e57b06cf05a7016e78976b16053dbb7b097f781d3128a5b27c87a26f387c`.
+The read-only capture completed at 6:08:59 p.m. CDT. Webmin is inactive/disabled,
+with no port-10000 TCP/UDP listeners and no permit marker. Its HTTP configuration
+hash is unchanged, both miniserv implementation fingerprints match the reviewed
+candidate, and dpkg audit is clean. NTP boot/process/invocation identity and
+zero restarts were preserved throughout the capture.
+
+The generated Webmin unit uses `Type=simple`. Its journal records startup at
+6:00:06.423623 p.m. and recovery stopping at 6:00:06.500749 p.m.; monotonic
+timestamps put the interval at 77.126 ms. The captured journal reports no
+application error; miniserv.error and miniserv.pid are absent. The controller
+tested sockets immediately after systemd startup and stopped Webmin before
+application readiness was established. This identifies a missing readiness
+wait, but does not prove that Webmin would subsequently start successfully.
+
+Next: prepare and test a bounded readiness wait and a separately sealed
+continuation from the recovered installation. Retain exact HTTP bindings,
+allowlist, `ama` authentication policy and non-serving recovery; fail promptly
+on unexpected listeners or service failure. No service change or HTTP/login
+probe occurred during this inspection. Serving/client acceptance remains open.
+
+## Webmin startup inspection prepared — October 15, 2026
+
+Prepared `webmin-startup-inspection-20261015-v1` from the completed installation
+recovery, using the existing repository inspection runner. It collects bounded
+current-boot Webmin journal/error records, unit/socket state, selected HTTP
+settings, guard/permit and generated startup files, installed-package state and
+miniserv fingerprints. It verifies the retained NTP identity before and after.
+The review excludes service changes, HTTP/login probes and unrelated leap-timer
+or firewall collection. Missing files remain findings, not invented evidence.
+
+The new flat bundle contains code and selected baseline hashes, with no nested
+installation archive or packages. Inspection and installation regression tests
+passed locally. No new target contact occurred. Next: obtain execution approval
+for the sealed diagnostic hash, then interpret the captured startup evidence
+before preparing any corrected continuation. Webmin remains unaccepted.
+
+## Webmin installation recovered to non-serving state — October 15, 2026
+
+Executed approved `webmin-install-20261015-v1` once, bound to SHA-256
+`529b8dd24fe07347e70f960a4b2a9a0fcf801d69b0049065874f945a37d4502e`.
+The controller completed at 6:00:07 p.m. CDT with acceptance false. Webmin 2.670
+and all five pinned dependencies installed successfully; dpkg audit and exact
+package checks passed. The first-start guard kept Webmin inactive during package
+configuration. HTTP policy and the reviewed repository files were installed.
+
+After the permitted start, systemd reported active/running, but the immediate
+TCP port-10000 query returned no sockets. The exact-listener check therefore
+failed; this was not an observed wildcard bind. HTTP endpoint and authenticated
+login acceptance were not reached. Startup timing is a hypothesis, not a
+confirmed cause; no Webmin startup journal was captured by this operation.
+
+Approved recovery stopped and disabled Webmin, removed the permit marker and
+confirmed no TCP/UDP port-10000 listeners. Packages and configuration remain
+installed. Final timeservice identity was unchanged: PID 814, invocation
+`a87e92a403eb4f37bac65c4324157f9c`, zero restarts, active/running/enabled.
+Private result, command evidence and outcome are retained in the operation's
+own directory. No retry or further target action was performed.
+
+Next: inspect retained Webmin startup diagnostics and current recovered state
+under a scoped read-only review before preparing any corrected continuation.
+Keep the executed bundle immutable. Authenticated client acceptance and the
+first scheduled leap-maintenance observation remain pending.
+
+## Webmin HTTP installation prepared — October 15, 2026
+
+The user revised the approved access protocol from HTTPS to HTTP, retaining the
+Default LAN IPv4/ULA allowlist and `ama` system authentication. Recorded the
+unencrypted interim policy and separate future Caddy reverse-proxy project in
+the governing plan. Earlier HTTPS proposals below are superseded by this choice.
+
+Prepared repository-owned installation and sealing code with pinned Webmin
+2.670 and five Debian dependency packages. A persistent systemd condition blocks
+package-triggered startup until the exact HTTP policy is configured and checked.
+The gate does not depend on an old evidence directory. Offline tests cover
+dependency rejection, first-start ordering, HTTP/listener checks, one-use sealing
+and recovery to a non-serving state with packages retained. The actual package's
+subnet matcher was exercised for allowed/denied IPv4 and IPv6 addresses.
+
+The sealed review separates local installation acceptance from the operator's
+authenticated `ama` browser acceptance. No password submission or TLS acceptance
+is implied. No live package, service, repository, firewall or clock change
+occurred during preparation. Execution awaits the fresh bundle's exact hash
+approval; a full ARM64 package installation remains untested offline.
+
+## Webmin provenance and management scope reviewed — October 15, 2026
+
+Reviewed official Webmin stable metadata and package 2.670 locally. Verified
+the repository signature with developer fingerprint
+`7D1AE915F3DCFADA344A4FCB2D223B918916F2A2`, the ARM64 index checksum and the
+architecture-all package checksum. Reviewed setup and package maintainer scripts
+without running them. The package starts Webmin during configuration; the next
+installation design must constrain the first start, not only later operation.
+
+Signed Debian Trixie metadata and the observed host inventory identify five
+additional candidates: libauthen-pam-perl, libio-pty-perl, libnet-ssleay-perl,
+perl-openssl-defaults and libsocket6-perl. All five downloaded candidates matched
+the signed index; their control archives contain no maintainer scripts.
+Installed Perl's matching metadata provides the Digest SHA/MD5 dependencies.
+This is an offline candidate assessment, not a target APT resolution result.
+
+The user approved direct HTTPS from `10.1.0.0/22` and matching ULA
+`fd36:5aa8:6971:1::/64`, using `ama` with existing system authentication.
+Recorded this scope in the plan. Local review evidence is retained separately
+under `webmin-provenance-20261015-v1`; no target contact, installation or system
+trust-store change occurred. Next: prepare the scoped installation review with
+exact dependency checks, first-start restrictions, TLS/login acceptance and
+rollback. Overall production acceptance and first scheduled leap-run observation
+remain pending.
+
+## Webmin prerequisites inspected — October 15, 2026
+
+Executed approved `webmin-inspection-20261015-v1` once, bound to SHA-256
+`f1875d84f25047da6fcc1c03b6cd4dab17deb60cee4cbcc972531e7353ba9918`.
+Capture completed at 5:28:25 p.m. CDT on the accepted boot with unchanged
+timeservice identity and zero restarts. Webmin package, service and miniserv
+configuration are absent; no TCP listener uses port 10000. The arm64 package
+audit is clean. Perl, OpenSSL, PAM runtime, unzip and shared-mime-info are
+installed; libnet-ssleay-perl, libauthen-pam-perl and libio-pty-perl are absent.
+These are observed package facts, not an accepted dependency closure.
+
+The host nftables command succeeded with an empty ruleset. This does not prove
+controller firewall policy or External reachability. Only Debian/Raspberry Pi
+source filenames were observed; source contents, repository keys and candidate
+Webmin package metadata were not collected. Next, review repository/key/package
+provenance, exact dependencies and intended management-access scope before
+preparing any installation.
+
+The leap timer remains enabled/active/waiting with an empty last-trigger field.
+Its journal shows the successful 5:22:03 p.m. manual check and timer activation,
+not a scheduled run. First scheduled-run acceptance remains pending. No target
+configuration, service, package or clock changes were made by this inspection.
+
+## Webmin prerequisite inspection prepared — October 15, 2026
+
+Prepared `webmin-inspection-20261015-v1` from accepted leap-maintenance
+activation. The read-only scope covers installed packages, OS/architecture,
+Webmin service and selected bind/TLS/access settings, listeners, routes and
+host firewall rules. APT source filenames and hashes are retained without
+source contents or credentials. It also captures leap timer trigger/service
+timestamps and journal evidence to distinguish scheduled from manual runs.
+
+The standalone flat bundle uses repository-owned code and selected baseline
+data. No target contact, package lookup/download, installation, service change
+or forced timer run occurred during preparation. Execute only after approval
+of the sealed archive hash. Webmin provenance and External access remain
+unaccepted; a missing tool or package is a finding, not installation authority.
+
+## Leap-maintenance activation accepted — October 15, 2026
+
+Executed approved `leap-activation-20261015-v1` once, bound to archive SHA-256
+`3af217b73e049c71ea462f58e373fe98ea5841a51d82d2f799290a74a6c6eb29`.
+Target-side unit validation, forced isolated IANA HTTPS fetch and ordinary
+maintenance execution passed. Installed the corrected service with explicit
+prefetch units and zero inter-attempt delay. The unchanged timer is enabled,
+active and waiting with a finite next trigger. The live leapfile and protected
+file identities remained unchanged; timeservice retained its accepted PID and
+invocation with zero restarts. No rollback was needed.
+
+The forced download remains in the private operation directory as evidence.
+The timer's first scheduled run is still unobserved; its initial 15-minute delay
+plus randomized delay differs from the subsequent four-week interval. Overall
+production readiness remains open. Continue the remaining Phase 3 application,
+hardware, network and final-observation gates; scope Webmin inspection next.
+
+## Leap-maintenance activation prepared — October 15, 2026
+
+Prepared the separate activation workflow from the completed leap inspection.
+The candidate corrects both `-e "60 days"` and the retry delay: `-i` is minutes,
+so use zero inter-attempt delay under the existing 120-second service timeout.
+The operation tests a forced HTTPS download in a private directory, installs the
+corrected unit, checks ordinary maintenance and enables the unchanged timer.
+It requires NTP continuity and retains conditional rollback to the original unit
+and disabled timer. The new review is a flat sibling operation; historical
+bundles remain unchanged. Execution awaits approval of its archive SHA-256.
+
+## Leap-maintenance inspection completed — October 15, 2026
+
+Executed approved `leap-inspection-20261015-v1` once. All selected files and
+commands were captured on the accepted boot; timeservice retained identical
+before/after service state and zero automatic restarts. The utility and both
+manuals match the accepted source-release manifest. The leapfile checksum
+validates, its bytes match the repository copy, and both file and NTP report
+expiry June 28, 2027. The timer remains disabled and inactive.
+
+The installed command has a preparation defect: `-e 60` omits required units.
+The installed script/manual require units; GNU date rejects `NOW + 60`.
+Corrected the repository unit to pass `-e "60 days"` and added a regression
+using the actual date parser. The installed unit remains unchanged. The manual
+documents daily leapfile checks without a restart command; preserve that
+behavior. Next is a sealed activation review including the unit correction,
+target-side validation, before-state/rollback, bounded maintenance execution
+and timer acceptance. No download, leapfile update or timer activation occurred.
+
+## Leap-maintenance inspection prepared — October 15, 2026
+
+Prepared `leap-inspection-20261015-v1` from accepted post-reboot client v1 and
+boot observation 6. The standalone repository collector reuses the bounded
+read-only SSH/file helper and pins selected baseline data without nested
+archives. It captures installed leap utility/manuals, service/timer, leapfile,
+metadata, current journal and localhost NTP state. It never invokes the fetch
+utility or changes a timer. No target contact occurred during preparation.
+Next is approval of the sealed inspection, followed by evidence-based activation
+preparation. Timer activation remains separately gated.
+
+## Remaining production gates reconciled — October 15, 2026
+
+The [readiness review](docs/PRODUCTION-READINESS.md) separates accepted runtime,
+RTC and client checks from remaining Phase 3 host gates and later rollout work.
+The immediate next step is a scoped read-only leap-maintenance inspection before
+preparing timer activation: the accepted boot baseline keeps the timer disabled.
+Webmin, msmtp, munin-node and userspace watchdog are absent from the retained
+post-reboot package inventory. Reporting delivery, sustained hardware health,
+complete network persistence, final observation and inventory remain open.
+Fresh-install entry paths still need completion before workflow reuse on the
+primary. DNS SRV deployment is Phase 5; mDNS success does not close it. Optional
+tuning and untested power-loss RTC retention are not silently added as warm-boot
+failures. No new target contact or live change occurred during this review.
+
+## Post-reboot client/discovery accepted — October 15, 2026
+
+Executed approved `client-postboot-20261015-v1` once, completing at 4:43:25 p.m.
+CDT. Both IPv4 and IPv6 passed synchronized stratum-1 PPS client-response checks
+and administrative query denial. Native Windows discovery matched the NTP
+service, hostname, port 123 and both fixed addresses; three reply packets were
+retained. IPv6 address advertisement was proved over IPv4 multicast, not IPv6
+multicast transport. The result is bound to accepted boot observation 6 after
+convergence. No SSH, service changes, clock adjustments or reboot occurred.
+
+Boot/RTC structural persistence, post-reboot convergence and these final client
+checks have passed. Next is reconciliation of the remaining deployment-plan
+acceptance gates before declaring overall production readiness. Battery-backed
+RTC retention through power loss remains untested.
+
+## Post-reboot client/discovery review prepared — October 15, 2026
+
+Prepared `client-postboot-20261015-v1` from accepted boot observation 6 after
+convergence. The client sealer now accepts boot receipts through the repository
+boot validator, binds the new boot and unchanged daemon pair to the resumed
+handoff, and requires accepted drift/RTC persistence and enabled service state.
+The flat package retains the existing dual-stack NTP/query-denial checks and
+native Windows discovery method with the previously observed source address.
+No live probes or service changes occurred during preparation. Next is execution
+approval of this review bound to its sealing.json SHA-256. Final post-reboot
+client acceptance and overall production readiness remain pending.
+
+## Boot/RTC structural persistence accepted — October 15, 2026
+
+Post-reboot convergence passed at 4:34:55 p.m. CDT. Observations 5 and 6 met
+readiness 392 seconds apart with the same boot and daemon pair and zero automatic
+restarts. Latest offset was +0.574 ms and root dispersion 2.342 ms; PPS remained
+selected, leap 0, stratum 1, with reach 255 on all five sources. The private
+convergence result pins both observation hashes. Next is separately reviewed
+final post-reboot client timing/native Windows discovery acceptance. Overall
+production readiness and battery-backed power-loss retention remain pending.
+
+Observation 5 at 4:28:23 p.m. CDT passed all timing-readiness checks: PPS
+selected, leap 0, stratum 1, offset +0.425 ms, root dispersion 2.623 ms, reach
+255 on all five sources and zero automatic restarts. This is the first ready
+post-reboot observation. Next is observation 6, no earlier than 4:33:23 p.m.
+CDT, to establish the required five-minute separation. Convergence and final
+post-reboot client/discovery acceptance remain pending.
+
+Read-only observation 3 at 4:21:27 p.m. CDT remained below timing acceptance.
+Offset improved to -0.457 ms and root dispersion to 4.730 ms; PPS remained
+selected, leap 0, stratum 1, with reach 255 on all five associations and zero
+automatic restarts. Next is observation 4, no earlier than 4:21:57 p.m. CDT.
+Convergence and final post-reboot client/discovery acceptance remain pending.
+
+Read-only observation 2 at 4:19:44 p.m. CDT remained below timing acceptance:
+PPS selected, leap 0, stratum 1, offset -1.248 ms and root dispersion 6.312 ms.
+All five associations had reach 255. Timeservice remained active and enabled
+with zero automatic restarts. Next is observation 3, no earlier than 4:20:14 p.m.
+CDT; convergence and final post-reboot client/discovery acceptance remain pending.
+
+Executed approved `production-boot-20261015-v2` once. Pre-reboot RTC checks
+passed, timeservice was enabled, final learned drift was retained, and one reboot
+was submitted. The initial SSH connection closed during reboot; immediate
+verification/readback found SSH unavailable. Resume attempt 1 completed structural
+handoff on the new boot without repeating reboot or invoking recovery.
+
+The new boot passed RTC identity, UTC policy, fake-clock absence, readback and
+kernel RV3028 system-clock initialization checks. Saved drift reuse was proved
+from the new protocol frequency event. Timeservice is enabled and active with
+zero automatic restarts; daemon/SHM, hardware, configuration and dual-stack
+SSH/client structural checks passed. No RTC write or power-loss test occurred.
+
+Observation 1 at 4:10:42 p.m. CDT remained below timing acceptance: PPS selected,
+leap 0, stratum 1, offset +38.986 ms and root dispersion 3993.120 ms. Keep the
+service running. Next is authorized observation 2, no earlier than 4:11:12 p.m.
+CDT, followed by continued convergence monitoring. Two ready observations at
+least five minutes apart and final post-reboot client/native Windows discovery
+acceptance remain pending. Warm reboot success does not prove battery-backed
+power-loss retention or overall production readiness.
+
+## Boot/RTC persistence review prepared — October 15, 2026
+
+Prepared `production-boot-20261015-v2` from acquisition-upgrade observation 3,
+accepted RTC commissioning v3 and accepted final client/discovery v2. The flat
+bundle pins repository code and selected baseline data without nested archives.
+It permits one console-backed warm reboot, preserves learned drift and uses the
+installed acquisition-aware startup policy. Read-only RTC checks run before
+service changes and after reboot, including the new boot's kernel RV3028
+system-clock initialization record. It includes no RTC write or power-off test;
+battery-backed power-loss retention remains unproven.
+
+All 863 offline tests passed, including RTC rejection before mutation and
+post-reboot failure/recovery paths. Two retained RTC receipt files were tightened
+to owner-only permissions; their contents and historical archives are unchanged.
+Preparation made no target contact or live changes. Next is approval of this
+new review bound to its sealing.json SHA-256, with execution starting before
+10:00:25 a.m. CDT on October 16. Console/media recovery must be available.
+Convergence and final client/discovery acceptance follow the reboot separately;
+overall production readiness remains pending.
+
+## Post-upgrade final client checks accepted — October 15, 2026
+
+Executed the approved `client-native-discovery-20261015-v2` capture once at
+3:54:49 p.m. CDT. IPv4 and IPv6 returned synchronized leap-0, stratum-1 PPS
+responses and denied administrative queries. Native Windows discovery matched
+the NTP service, hostname, port 123 and both fixed addresses; three reply packets
+were retained. Both address advertisements were observed over IPv4 multicast;
+IPv6 multicast transport is not claimed.
+
+The client result is bound to acquisition-upgrade observation 3 after convergence
+acceptance. No service changes, SSH, clock adjustments, restart or reboot occurred.
+Next is the separately reviewed boot/RTC persistence stage using the installed
+acquisition-aware policy. Overall production readiness remains pending.
+
+## Post-upgrade final client review prepared — October 15, 2026
+
+Prepared `client-native-discovery-20261015-v2` against acquisition-upgrade
+observation 3, after convergence acceptance. The flat package pins the existing
+dual-stack NTP/query-denial checker and native Windows discovery capture, using
+the previously observed workstation source address. It verifies both advertised
+addresses through native IPv4 multicast; IPv6 multicast transport is not claimed.
+Sealing verified the current code, accepted observation and resumed handoff.
+No packets, SSH commands or live changes were made during preparation. Execute
+only after approval of the new review bound to its sealing.json SHA-256.
+
+## Acquisition upgrade structural handoff accepted — October 15, 2026
+
+Convergence passed at 3:51:06 p.m. CDT: observations 2 and 3 met readiness
+374 seconds apart, with unchanged daemon identities and zero automatic restarts.
+Latest offset was +0.037 ms and PPS jitter 0.006 ms; PPS remained selected,
+leap 0, stratum 1, with reach 255 on all five sources and eight cookies per
+NTS upstream. The operation's convergence result retains both observation hashes.
+Next is final client timing/native Windows discovery for this invocation, then
+separately approved reboot/RTC persistence validation. Boot enablement is still
+disabled; these read-only checks made no service changes.
+
+Observation 2 at 3:44:52 p.m. CDT passed readiness: PPS selected, leap 0,
+stratum 1, offset +0.041 ms and PPS jitter 0.051 ms. All five sources retained
+reach 255, each NTS upstream had eight cookies, and service PID/restart count
+were unchanged. Require another ready observation at least 300 seconds later
+before convergence acceptance; final client/discovery acceptance remains pending.
+
+Read-only convergence observation 1 at 3:36:21 p.m. CDT retained PPS selection,
+leap 0, stratum 1 and the same service PID with zero restarts. All sources had
+reach 255 and all three NTS upstreams had eight cookies. Offset was -0.103 ms;
+PPS jitter was 1.489 ms, above the 1 ms readiness limit. Convergence remains
+pending; continue at the degraded 30-second observation cadence. No service
+change or recovery occurred.
+
+Executed the approved `production-acquisition-20261015-v1` apply once. It returned
+pending startup; resume attempt 1 completed pairing, saved-drift protocol proof,
+all five associations, dual-stack readbacks and structural client/query-denial
+checks. The independent watchdog was cancelled after handoff. Bootstrap recovery
+was not needed. Timeservice remains active with zero automatic restarts and boot
+enablement disabled; the new runtime and wait recipe passed installed-file checks.
+
+The first handoff measurement selected PPS, leap 0, stratum 1 and passed the
+existing readiness predicate. This single sample is not convergence acceptance.
+Next: convergence observations at the sealed cadence, followed by final client
+timing/native discovery acceptance. Cold-acquisition and reboot/RTC persistence
+acceptance remain pending. No reboot, boot enablement, package change or RTC write
+occurred during the upgrade. The independent operation directory retains the
+apply/resume outcomes and command/transport evidence.
+
+## Acquisition upgrade review sealed — October 15, 2026
+
+Prepared `production-acquisition-20261015-v1` as a new flat sibling package,
+using the accepted all-source start, observation 18 and that invocation's
+structural dual-stack client proof. The inherited observation window remains
+unchanged. The review explicitly leaves final timing/native-discovery acceptance
+after the upgrade; it does not reuse an earlier daemon's final client receipt.
+
+The candidate installs the pinned wait recipe, supervisor and pairing helper
+through a controlled restart with saved drift and acquisition-aware recovery.
+It preserves the NTP configuration and unit contents and does not enable boot
+startup, reboot, write the RTC or modify packages. Full offline tests and focused
+sealer rejection tests passed. Execution is not authorized by preparation:
+approve the new review bound to its sealing.json SHA-256 before target contact.
+
+## Acquisition-aware activation and recovery prepared offline — October 15, 2026
+
+Updated transition and boot controllers to return pending acquisition and resume
+the existing startup. Protected progress binds the boot, supervisor and GPSD
+invocation. The transition watchdog preserves fresh acquisition beyond its old
+600-second cutoff; stale progress and actual faults retain bootstrap recovery.
+The 120-second structural and 600-second handoff limits now begin at pairing
+success. Boot keeps its console-backed recovery model. Initial apply/reboot still
+expires, while initiated acquisition remains resumable afterward.
+
+The controlled-restart sealer can pin/install the wait recipe and both repository
+runtime scripts, backing up replacements and preserving drift. Client and later
+restart/boot prerequisites can consume a handoff completed during resume. Tests
+cover delayed acquisition, stale/foreign records, post-pairing failure, rollback,
+handoff and expiry. No target contact or live changes occurred. Next: prepare a
+fresh sealed acquisition-upgrade review from accepted prerequisites, then obtain
+execution approval before the controlled restart. Reboot acceptance remains later.
+
+## Production PPS acquisition policy prepared offline — October 15, 2026
+
+The operator approved reconciling startup with the documented PPS acquisition
+delay. Repository code now supports an explicit production wait policy, retaining
+30-second bounded observation windows and the five-match leap-0 pairing test
+without a total acquisition deadline. GPSD remains running during acquisition;
+ntpd launches with all sources after pairing passes. Protected progress records
+distinguish acquisition from failure. Legacy recipes retain bounded behavior.
+Offline tests exercise actual matching after 13 minutes and after 30 minutes,
+stop/reaping, invalid leap samples, malformed streams, wrong mapping and monitor
+failure. No live configuration, service or boot changes were made.
+
+The controller follow-up is recorded above. Neither offline implementation nor
+its tests establishes cold-start/reboot acceptance.
+
+## RTC UTC set/readback accepted — October 15, 2026
+
+The approved `rtc-set-readback-20261015-v3` executed once at approximately
+2:39:40 p.m. CDT and passed. Installed utility/manual integrity, RV3028 identity,
+UTC policy and fresh PPS synchronization were verified. The RTC was set from
+system time once using explicit UTC and no adjtime file; readback passed the
+reviewed two-second tolerance. NTP remained PPS-selected, leap 00, stratum 1,
+with the same timeservice process/invocation and zero automatic restarts.
+Boot and protected clock configuration were unchanged; no system-clock step,
+service restart or reboot occurred. The private outcome retains timing brackets
+and command results. The write/readback gate is accepted, but battery retention
+and final reboot persistence remain pending. Reconcile the 30-second pairing
+gate with cold-receiver PPS acquisition before cold-start/boot acceptance.
+
+## RTC write held at clock-property preflight — October 15, 2026
+
+The approved `rtc-set-readback-20261015-v2` executed once and held before any
+hwclock invocation. The comma-separated timedatectl property filter returned
+empty output with exit 0; UTC/synchronization acceptance could not pass.
+Utility integrity and RTC identity checks passed, and timeservice was running
+with the same process/invocation and zero restarts. No RTC write, service change
+or reboot occurred. No ntpq readiness query was reached, so this is not evidence
+of synchronization loss. The utility installation remains accepted.
+
+The repository now reuses the unfiltered timedatectl show query already proven
+in the RTC inspection. Fourteen focused tests pass, including exact query shape
+and rejection of empty output before device access. The executed bundle remains
+immutable; a fresh RTC-write review replaces it for separate execution approval.
+
+## RTC utility installation accepted — October 15, 2026
+
+The approved `rtc-utility-install-20261015-v2` executed once and passed.
+util-linux-extra 2.41.5-0+deb13u1 is the only package addition; all dependencies
+were already satisfied. Package verification, exact hwclock/manual hashes and
+dpkg audit passed. Timeservice remained active/running with the same MainPID
+and invocation, zero automatic restarts, unchanged boot and protected clock
+configuration. No recovery, RTC write, service restart or reboot occurred.
+
+The prior 686-record accepted-packages.tsv exactly matched the captured
+pre-install inventory; its mirror now contains the accepted 687 records.
+The durable asset table includes the separately pinned RTC package manifest.
+Next is separate approval of `rtc-set-readback-20261015-v2`; it rechecks the
+installed utility, RV3028 identity and fresh PPS synchronization before writing.
+Battery retention and reboot/cold-start acceptance remain pending.
+
+## RTC package and set/readback preparation — October 15, 2026
+
+The approved `rtc-utility-install-20261015-v1` was executed once and failed:
+the reused helper's PATH omitted administrative directories, so dpkg could not
+find ldconfig/start-stop-daemon. The conditional removal hit the same defect.
+Captured package inventories before installation and after failure are identical;
+util-linux-extra remains absent. Dependency checks passed. No RTC write,
+service-change command or reboot was submitted; no final service readback was
+reached. The private stage/evidence remain intact and were not replayed.
+The worker now sets an explicit administrative PATH for installation and recovery;
+13 focused tests pass, including required-tool resolution. Successor installation
+and RTC-write bundles require fresh hashes and separate execution approval.
+The plan now explicitly lists util-linux-extra and its versioned dependencies.
+
+The operator authorized verifying package contents/dependencies and preparing
+installation followed by RTC set/readback. The exact util-linux-extra ARM64
+payload, version 2.41.5-0+deb13u1, was fetched locally and matched the SHA-256 in
+the authenticated Debian security index. Both security release signatures were
+verified; no target contact or package installation occurred during preparation.
+The package contains hwclock and its manual, other util-linux tools, and six
+no-rename compatibility diversions in preinst, removed by postrm. No postinst
+or service units are supplied. Its dependency constraints were verified from
+package control data; current target satisfaction remains a live preflight gate.
+
+The repository now pins the payload and owns separate install and RTC-write
+operations, reusing bounded inspection transport. Installation permits no
+dependency upgrades and checks other package states and service continuity.
+RTC writing requires the verified utility and fresh synchronized PPS, uses
+explicit UTC without adjtime changes, and retains readback. Reviews remain
+separately approved: accept installation before executing the RTC operation.
+
+## RTC commissioning added to acceptance — October 15, 2026
+
+The approved `rtc-utility-inspection-20261015-v1` executed once. All inspected
+hwclock/fake-hwclock executable paths and manual paths were absent, including
+resolved `/sbin` aliases. util-linux 2.41.5-0+deb13u1 is installed;
+util-linux-extra and fake-hwclock are not. Cached APT policy offers
+util-linux-extra 2.41.5-0+deb13u1; payload contents/dependencies still require
+verification before a package stage. The util-linux file list identifies
+`/usr/share/doc/util-linux/hwclock.txt`, whose contents were not in the approved
+capture scope. No packages, clocks or services were changed. Next prepare the
+scoped utility provisioning stage, then RTC commissioning; no fake-clock removal
+or legacy udev edit is justified. The private outcome preserves missing-component
+statuses separately from successful transport/capture completion.
+
+The operator approved resolving hwclock utility/documentation availability.
+A separate `rtc-utility-inspection-20261015-v1` review is prepared using the
+existing bounded inspection runner's utility-only scope. Offline tests cover
+merged `/sbin` aliases, missing files, unexpected destinations and a command set
+limited to package queries. Preparation made no target contact; package changes
+and RTC writes are outside this review.
+
+The separately approved `rtc-inspection-20261015-v1` executed once at about
+1:42:16 p.m. CDT. RV3028 at I2C 0x52 was identified as rtc0; the current-boot
+kernel journal records initializing system time from it. RTC and system time
+agreed to the displayed second with UTC RTC policy. NTP remained PPS-selected,
+leap 0, stratum 1. No target configuration, service or RTC time was changed.
+fake-hwclock was not installed and its inspected units were absent; no removal
+is justified. hwclock.service was masked, independently of the proven kernel
+RTC boot path. The hwclock manual was missing, util-linux-extra was uninstalled,
+and a `/sbin/fake-hwclock` read rejected a symlink ancestor. Resolve utility and
+documentation availability before preparing an explicit RTC write. Readback
+does not establish battery retention, and final commissioning/reboot acceptance
+remains pending. The private inspection outcome retains these limitations.
+
+Retained convergence observations 17 and 18 passed readiness 301 seconds apart;
+the local observer recorded `convergence_accepted: true`. No additional observer
+or target contact was started for RTC preparation. The next gate is the scoped
+read-only RTC inspection, followed by separately reviewed commissioning and
+boot/persistence validation. The inspection runner now has a tested `seal-rtc`
+scope using current repository code and flat accepted start/convergence data.
+
+The operator approved closing the plan gap for setting the onboard RTC and
+disabling confirmed fake-hwclock mechanisms, and supplied the Uputronics
+Raspbian instructions as reference. Phase 3 now requires target-specific RTC
+inspection and commissioning before final boot/persistence acceptance; Phase 8
+explicitly includes this evidence in the reproducibility audit. OPERATIONS owns
+the inspection, synchronized-time write/readback, fake-clock handling and reboot
+sequence. Historical udev edits and package commands are not approved Trixie
+changes. No RTC write, fake-clock change or reboot was performed for this update.
+Prepare the scoped RTC inspection while leaving the running service unchanged.
+
+## Unchanged all-source start accepted; convergence monitoring — October 15, 2026
+
+Executed the approved `production-start-20261015-v1` once. Structural handoff
+completed at 1:13:24 p.m. CDT. The first fresh protocol frequency event matched
+the preserved saved drift. Both SHM attachments, all five associations, dual-stack
+readbacks and structural client checks passed. The watchdog was cancelled;
+bootstrap fallback was not needed. No configuration replacement, daemon-reload,
+boot enablement or reboot occurred.
+
+Timeservice is running, with boot enablement still disabled. Subsequent approved
+observations selected PPS with zero automatic restarts, but timing readiness was
+not yet accepted when this entry was written. A bounded local observer remains
+active at the sealed 30/300-second cadence. It stops on error, window expiry,
+attempt 60, or two ready observations at least five minutes apart. Settling does
+not shut down the service. Its invocation/session and incremental log offsets
+are recorded with the independent start bundle. Read its `convergence-result.json`
+and retained observations before starting another observer or proposing the next
+boot/persistence review. Production acceptance remains pending.
+
+## Unchanged all-source start continuation prepared — October 15, 2026
+
+The operator approved preparing a corrected continuation and explicitly requested
+reuse of tested artifact validation. The existing production transition worker
+now accepts a start action for the recovered stopped service. It uses the same
+preflight, executable reader, drift/protocol proof, transaction watchdog,
+structural handoff, observation cadence and bootstrap fallback already exercised
+by the transition/restart lifecycle. Only configuration replacement and
+systemd daemon-reload are skipped, as they are for controlled restart.
+
+The sealer consumes the successful boot-recovery receipt and selected baseline
+and configuration data, using the existing archive/checksum helpers. It does not
+import historical code or nest packages. A new sibling start bundle preserves
+the installed all-source configuration and drift; it does not change boot
+settings, submit a reboot or claim production acceptance. Regression coverage
+includes a 2 MiB native binary, changed binary/drift rejection before mutation,
+unchanged configuration through startup failure/watchdog recovery, and a sealed
+start built from recovered-state data. No target contact occurred during this
+preparation. Next execute only the separately approved start bundle, then monitor
+convergence before resuming boot/persistence work.
+
+## Bootstrap-only recovery completed — October 15, 2026
+
+Executed the separately approved `production-boot-recovery-20261015-v1` once.
+The corrected executable reader accepted the pinned native binaries. Failed-stage
+state/specification continuity and installed configuration checks passed before
+recovery. The worker confirmed timeservice stopped and disabled, then enabled
+and started systemd-timesyncd. Recovery completed on the same boot; no reboot
+was submitted. The retained drift checksum matches the stopped-state value.
+Configuration, boot files and original failed-stage evidence were preserved.
+
+NTP serving remains stopped. Active timesyncd is a bootstrap recovery result,
+not proof that synchronization has completed. Production/boot acceptance remains
+pending. Next prepare a separately approved continuation from this recovered,
+stopped all-source state. The consumed boot stage requires a running prerequisite
+and must not be replayed; neither the old PPS-first wrapper nor an earlier
+activation archive is the continuation. No NTP restart, reboot, cleanup or
+repository publication occurred in this recovery-only action.
+
+## Boot preparation blocked; recovery-only continuation prepared — October 15, 2026
+
+The operator approved the sealed boot stage and confirmed independent console
+recovery. Execution passed same-boot running-state and hardware preflight,
+disabled timesyncd, enabled timeservice and stopped the daemons cleanly. No reboot
+was submitted. The subsequent native binary guard incorrectly used the 1 MiB
+configuration snapshot reader for ntpd. That same mistake blocked the automatic
+bootstrap recovery before it could change service state.
+
+Last confirmed state: timeservice stopped and enabled, timesyncd inactive and
+disabled; NTP serving stopped. Configuration and learned drift were preserved.
+The original sealed stage and all failed execution records remain immutable.
+This was an implementation defect, not a hardware or timing failure. Earlier
+fixtures omitted native binary entries and therefore missed the reader mismatch.
+
+The correction uses the existing protected 16 MiB executable reader and runs
+that guard before any service mutation. A 2 MiB binary regression now traverses
+preparation, reboot verification and recovery. The new recovery-only continuation
+pins the original failed-state/specification hashes, uses current repository code
+and copies selected data into an independent stage. It refuses activation/reboot,
+restores timeservice disabled and timesyncd enabled/active, and preserves drift.
+It does not claim bootstrap synchronization or restore NTP serving. Execution of
+this replacement requires its own approval; no second target action was taken
+while preparing the correction.
+
+## Boot persistence preparation — October 15, 2026
+
+The operator approved preparing the separate boot/persistence review after
+controlled restart and reconvergence. The new repository worker pins the accepted
+restart observation and selected hardware/inspection data in one flat sibling
+bundle. Prior archives remain unchanged; no executable is loaded from evidence.
+
+The proposed stage revalidates running identities and boot prerequisites, enables
+timeservice, disables bootstrap timesyncd, stops the accepted service cleanly,
+retains final drift and protocol cursors, and submits one reboot. Acceptance
+requires a new boot, unchanged configuration/kernel/boot files, ordinary daemon
+identities, fresh SHM creators and attachments, accepted UART/GPIO PPS/RTC mapping,
+saved-drift protocol proof, dual-stack SSH and structural client checks.
+
+Recovery is explicitly console-backed; there is no automatic watchdog across
+reboot. Before execution the operator must confirm console/media access that
+preserves the primary server and antenna power. Inspected recovery works across
+boot IDs and after expiry, restores original service enablement, preserves drift
+and configurations, and starts bootstrap timesyncd. This fallback stops serving
+NTP and does not itself prove bootstrap synchronization. An uncertain reboot
+reply never authorizes a second submission. Timing convergence has no shutdown
+deadline; synchronized client/native Windows discovery remains a later gate.
+
+Preparation and offline tests do not authorize target contact. Next execute only
+a separately approved boot bundle after console/media recovery confirmation.
+The accepted running service remains unchanged during this work.
+
+Sealed `production-boot-20261015-v1` as a 250 KiB flat archive. Eighteen focused
+boot tests and repository-wide pre-commit passed, including the existing
+transition/hardware lifecycle tests; working-tree secret scanning passed. Begin
+the approved reboot before October 16, 2026, 10:00:25 a.m. CDT. The inherited
+window closes at 10:15:25 a.m.; recovery remains available afterward. The
+30-second receiver-pairing gate remains unchanged, so cold receiver acquisition
+is not certified by this review. Execution is still awaiting separate approval
+and console/media recovery confirmation.
+
+## Controlled restart and reconvergence passed — October 15, 2026
+
+Executed the approved `production-restart-20261015-v1` once. Same-boot preflight
+passed, both daemons acquired new invocations, and the first new protocol record
+matched the preserved saved drift. Configuration was unchanged. Both SHM
+attachments, all five associations, dual-stack readbacks and structural client
+checks passed. Handoff completed at 11:57:29 a.m. CDT and cancelled the transaction
+watchdog; bootstrap recovery was not needed.
+
+Continued authorized observations through attempt 18. Readiness passed at
+12:06:38 and 12:11:38 p.m. CDT, five minutes apart. The final sample showed PPS
+selected, stratum 1, leap 0, +0.019218 ms offset and 0.095188 ms PPS jitter.
+All five sources had full reach (377 octal), with eight cookies per NTS source.
+Daemon identities matched restart handoff and automatic restarts remained zero.
+
+The local observer completed; the ordinary service remains running with boot
+enablement disabled. These results establish controlled restart, saved-drift
+reuse and reconvergence, not boot persistence or final production acceptance.
+Next prepare the separate boot/persistence review and its recovery path, using
+these current running-state records. No reboot, boot enablement, configuration
+replacement or cleanup occurred. Further observations can resume at attempt 19
+within this restart bundle's window and five-minute cadence. Evidence is in the
+independent `production-restart-20261015-v1` directory.
+
+## Controlled restart preparation — October 15, 2026
+
+The operator approved controlled restart followed by boot/persistence validation.
+Prepare restart first from the accepted v2 running observation and post-transition
+client acceptance. The repository worker now supports a restart action that pins
+running identities, stops/starts the unchanged service, preserves the latest
+learned drift and checks new daemon invocations plus fresh protocol-frequency
+proof. Configuration is never rewritten, including during bootstrap-only recovery.
+
+The flat restart bundle contains current repository implementations and selected
+accepted data, not earlier archives or executable evidence. Local tests exercise
+successful handoff, changed-identity refusal, new-invocation enforcement, saved
+drift preservation and bootstrap-only failure recovery. No target contact occurred
+during preparation. Boot enablement/reboot and leap maintenance remain a separate
+stage after restart acceptance; keep the current service running meanwhile.
+
+Sealed `production-restart-20261015-v1` for separate execution approval. All 26
+focused transition tests, repository pre-commit checks and working-tree secret
+scanning passed. Start before October 16, 2026, at 10:05:25 a.m. CDT. The running
+service was not contacted or restarted during preparation.
+
+## Post-transition client timing/discovery accepted — October 15, 2026
+
+Executed the approved `client-native-discovery-20261015-v1` capture once,
+completing at 11:40:54 a.m. CDT. Both fixed address families returned synchronized
+stratum-1 PPS responses and denied external administrative queries. Native
+Windows discovery matched the NTP PTR/SRV mapping, port 123, hostname and both
+fixed addresses; three response packets were retained. Discovery transported
+IPv4 and IPv6 address advertisements over IPv4 multicast, not IPv6 multicast.
+
+All four client checks passed. This accepts post-transition client protocol and
+discovery behavior; it does not establish calibrated UTC accuracy, restart/boot
+persistence or overall production readiness. No service/configuration changes,
+SSH, restart, reboot or cleanup occurred. The private result and outcome are in
+the independent client acceptance directory. Next prepare controlled restart and
+subsequent boot/persistence validation with recovery defined; preserve the running
+all-source service and learned drift meanwhile.
+
+## Post-transition client acceptance preparation — October 15, 2026
+
+The operator approved final client/discovery work after convergence. Extended
+the existing client sealer to consume the production transition's confirmed ready
+observation, including archive/receipt binding and daemon continuity. Native
+Windows discovery and dual-stack NTP/admin-denial checks keep their existing
+acceptance contract. The candidate uses v2 observation 10 and a local native
+Windows interface readback; it does not reuse the old PPS-first monitor baseline.
+The client archive is flat, contains repository-owned code and needs separate
+hash-bound execution approval. No target packets or service changes occurred
+during preparation; only the workstation interface was read locally.
+
+Prepared the independent `client-native-discovery-20261015-v1` sealed review.
+The observed native source is the preferred IPv4 address on Ethernet 3. Focused
+acceptance tests, full repository pre-commit checks and working-tree secret
+scanning passed. Execution remains unapproved until the operator approves this
+new sealed hash; it must start before October 16, 2026, at 10:14:25 a.m. CDT.
+
+## All-source convergence readiness confirmed — October 15, 2026
+
+Continued approved v2 observations through attempt 10. The readiness predicate
+passed at 11:24:04 and again at 11:29:04 a.m. CDT, five minutes apart. The latter
+sample showed PPS selected, stratum 1, leap 0, -0.006730 ms system offset,
+0.061754 ms PPS jitter and 1.0 ms root dispersion. All five sources had full
+reach (377 octal); each NTS source retained eight cookies. Daemon identities
+matched the original handoff and no service restarts occurred.
+
+The monitoring controller stopped after confirming two ready samples. The NTP
+service remains running with boot enablement disabled; stopping this local
+observer does not stop the service. Further approved observations resume at
+attempt 11, no earlier than 11:34:03 a.m. CDT, within the sealed window. Preserve
+the recorded samples and convergence outcome. Readiness is not final production
+acceptance: post-transition client timing/native Windows discovery, controlled
+restart and boot/persistence requirements still need their applicable evidence.
+No configuration, service or timer changes occurred during these observations.
+
+## All-source continuation running — October 15, 2026
+
+Executed the approved `production-transition-20261015-v2` once. The transition
+passed same-boot bootstrap preflight, all-source startup, both SHM attachments,
+new protocol-frequency proof, dual-stack readbacks and structural client checks.
+The initial kernel frequency matched the saved drift exactly. Handoff completed
+and cancelled the installation watchdog; bootstrap recovery was not needed.
+
+The first approved observation at 11:14:47 a.m. CDT showed PPS selected, stratum 1,
+leap 0, all five sources reachable and eight cookies for each NTS source. The
+system offset was -5.634488 ms; the monitoring readiness predicate remained false.
+The service was active with no restarts and boot enablement still disabled.
+This establishes controlled startup and saved-drift reuse, not final timing,
+reboot or production acceptance. The running candidate adds daily protocol
+statistics; the prior accepted config mirror remains pending candidate acceptance.
+
+Retain the independent v2 archive, protocol records and observation results.
+Next is observation attempt 2 within the existing approved window, no earlier
+than 11:15:16 a.m. CDT on October 15. Continue at 30 seconds while degraded and
+300 seconds when ready. Do not replay apply or restart the old PPS-first profile.
+Boot enablement/reboot testing remains a separately prepared stage after timing
+acceptance. Private evidence is in `production-transition-20261015-v2`.
+
+## Protocol-frequency continuation preparation — October 15, 2026
+
+The operator approved correcting the frequency proof and preparing a continuation
+from bootstrap recovery. Protocol statistics were not enabled in the accepted
+configuration, so the candidate explicitly enables daily protostats while leaving
+source/restriction policy unchanged. Keep the accepted config mirror unchanged
+until live acceptance. Journal records are diagnostic, not the acceptance source.
+
+The continuation requires stopped NTP/GPSD, active bootstrap, the recovered boot,
+restored file hashes and unchanged saved drift. Its frequency check uses only
+new protocol bytes after a prestart identity/length/hash capture, verifies the
+first system frequency event and startup time, and rejects old/replaced/truncated
+or rewritten evidence. The transaction restores three files on bootstrap-only
+recovery, preserving learned drift and statistics. All-source initialization,
+saved-drift acceptance, reboot behavior and production readiness still require
+live evidence. No target contact occurred during this preparation.
+
+Sealed the independent `production-transition-20261015-v2` continuation for
+separate execution approval. Focused lifecycle tests, full repository pre-commit
+checks and working-tree secret scanning passed. The start window ends October 16,
+2026, at 10:05:25 a.m. CDT. The confirmed recovery state remains the latest live
+observation; the continuation has not run.
+
+## All-source transition recovered to bootstrap — October 15, 2026
+
+Executed the approved `production-transition-20261015-v1` once. Preflight passed
+and the ordinary all-source service reached the structural health gate, but the
+saved-frequency journal proof failed. The worker completed bootstrap-only
+recovery; the controller's single failure readback confirmed `bootstrap_recovered`.
+The original recipe and unit were restored, ntpd/GPSD were stopped, and
+systemd-timesyncd was active. The saved drift bytes were unchanged. NTP serving
+is stopped; actual bootstrap synchronization and production acceptance are unproven.
+
+Retained journal analysis exposed a verifier assumption: the accepted NTPsec
+configuration does not enable system-event logging, yet the checker required a
+`freq_set` journal event. Pinned source uses `NLOG_SYSEVENT` for that message,
+while daemon defaults enable `NLOG_SYNCMASK`; protocol statistics receive the
+event separately. Missing journal evidence does not establish failure to reuse
+drift. Do not replay this consumed bundle. Next preparation must correct and test
+the proof against the configured evidence destination, using retained evidence
+first, then seal a continuation from the bootstrap recovery state. No reboot or
+boot enablement occurred. The private outcome and startup journal remain beside
+the approved bundle.
+
+## All-source transition preparation — October 15, 2026
+
+The operator approved preparing the reversible all-source transition and selected
+bootstrap-only fallback: preserve drift, restore prior files, leave node NTP
+serving stopped and start systemd-timesyncd if the new service cannot be accepted.
+Added repository-owned transaction/controller code and offline lifecycle tests.
+The candidate uses the retained inspection as data, resolves actual GPSD process
+identity during preflight and changes only the service recipe and unit.
+
+Pinned source review confirms ordinary NTPsec configuration precedes its normal
+privilege drop; early-droproot is not enabled in the accepted build recipe.
+Keep the retained NMEA grant unchanged. A later boot gate must prove initial
+root-owned segment attachment; no permanent SHM grant helper is introduced.
+Tests cover all-source structural startup, saved-frequency proof matching,
+missing/foreign observations, interrupted handoff, independent-watchdog recovery,
+bootstrap fallback, operator drift rejection and preservation of updated drift.
+They simulate host I/O and do not establish live restart or reboot acceptance.
+
+Prepared the independent `production-transition-20261015-v1` sealed review for
+separate execution approval. All repository pre-commit checks and the working-tree
+secret scan passed. No target contact or mutation occurred during this
+preparation. The existing PPS-first trial remains the last observed running
+service. Boot enablement, real reboot validation and production acceptance remain
+pending after the controlled restart stage.
+
+## Production-transition inspection captured — October 15, 2026
+
+Executed the approved read-only inspection once. SSH and collector exited 0;
+the controller exited 1 solely because `id gpsd` found no account with that
+name. The collector assumed a name rather than discovering the running process
+identity. Preserve `capture_complete: false`; no repeat capture occurred. All
+other command results and all 14 file observations are retained privately.
+
+All nine pinned installed hashes matched. The same boot was observed before and
+after capture. The service remained running with PPS selected, stratum 1, leap 0
+and full reach on all five sources. Learned drift was present. NMEA's existing
+segment was root:ntp 0660; its access after boot remains unproven. Service boot
+enablement and leap maintenance were disabled; the inactive fault-recovery unit
+still referenced monitor-v5. No target mutation, restart, reboot or cleanup occurred.
+
+Use the retained observations for offline production transition/recovery work.
+Resolve actual GPSD process UID/GID before configuring access; an absent account
+named gpsd does not establish daemon failure. Production/restart acceptance stays
+pending. Evidence and the unchanged execution result are in the sibling
+`production-inspection-20261015-v1` directory.
+
+## Production-transition inspection prepared — October 15, 2026
+
+Added a repository-owned read-only collector and flat sealer for the next
+production transition prerequisite. The baseline is selected data and hashes from
+monitor-v5, never executable code imported from historical evidence. The scope
+covers configuration/drift identities, SHM access metadata, service/timer and
+process state, retained monitor/recovery records and bounded localhost status.
+
+The collector uses SSH stdin without target staging or mutation. Register one
+capture locally before connection and retain partial results on failure; no
+automatic retry, recovery or cleanup is included. Prepare the sibling
+`production-inspection-20261015-v1` review for separate hash-bound execution
+approval. The running host has not been contacted during preparation. Review
+fresh results before implementing the production transition or assuming that
+monitor-v5's NMEA permission grant persists across boot.
 
 ## Repository checkpoint: client acceptance and production startup
 

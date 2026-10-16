@@ -565,12 +565,154 @@ Seal the exact replacement, recovery commands, target identities and checks only
 after that recovery path is implemented and tested. No restart, reboot or boot
 enablement is authorized by this runbook alone.
 
+For the stopped all-source service after accepted bootstrap recovery, use the
+existing `run-production-transition.py seal --boot-recovery-dir DIRECTORY
+--recovery-sha256 SHA256 --operation-id ID --output NEW_SIBLING` entry. This selects
+its `start` action: the same tested lifecycle checks and fallback, with no
+configuration replacement or daemon-reload. The package uses the successful
+recovery receipt and selected pinned data; it does not execute archived code.
+Keep timeservice boot enablement disabled until a later approved boot stage.
+
+The separate boot controller is `scripts/run-production-boot.py`. Seal it with
+explicit `--restart-dir`, `--restart-sha256`, `--observation`, `--hardware-dir`,
+`--inspection-dir`, `--operation-id` and a new sibling `--output`. It reads only
+selected accepted data from earlier evidence, and pins current repository workers,
+checkers and tests in a flat archive. The original inspection expiry is inherited.
+No target contact occurs during sealing.
+
+For RTC persistence acceptance, also supply `--rtc-dir`, `--rtc-sha256`,
+`--client-dir` and `--client-sha256`. These bind accepted same-boot RTC commissioning
+and final client/discovery results to the ready restart observation. The boot
+worker reuses the commissioned utility, RV3028 identity and readback checks.
+Before stopping services, require fresh PPS synchronization, UTC RTC policy,
+fake-clock absence and RTC/system-time agreement within two seconds. After reboot,
+repeat the read-only checks and retain the current boot's kernel RV3028
+system-clock initialization record within the pre/post reboot time bracket.
+This stage performs no RTC write. Warm reboot acceptance does not establish
+battery-backed retention through power loss; that requires a separate test.
+
+After hash-bound approval, `execute --mode apply --console-ready` performs one
+boot enablement/reboot stage. The console flag attests that independent recovery
+access is actually available; it is not inferred from SSH reachability. No boot
+files or accepted configurations are replaced. Preserve the final stopped drift
+and verify its first new protocol frequency event after the reboot. Check known
+competing services/socket state and Avahi/leap-timer prerequisites before and
+after reboot, along with hardware, SHM and dual-stack client structure.
+
+The installed acquisition-aware supervisor requires five matching receiver
+TOFF/PPS samples, observed in 30-second windows without a total acquisition
+deadline. The Uputronics receiver may need up to 12.5 minutes to obtain the time
+parameters needed for PPS. A fresh gate belonging to the current boot and daemon
+invocation remains pending; resume the same operation without repeating reboot.
+After pairing passes, structural readiness has 120 seconds and handoff has
+600 seconds, including a 60-second reserve. A stale gate, changed identity, failed
+service or automatic restart is a fault; preserve diagnostics before recovery.
+These structural limits are not deadlines for ntpd convergence.
+
+There is no reboot-persistent automatic recovery timer. On controller/network
+loss, inspect the staged worker's `readback` from the console and invoke `recover`
+using the sealed specification digest. Recovery remains available after expiry
+and on the new boot. It disables timeservice, enables/starts timesyncd and
+preserves files/drift; NTP serving stops. Unrecognized file or unit drift holds
+recovery. OS/media failure requires independent console/media repair.
+
+Never repeat an uncertain reboot. `execute --mode resume --attempt N` performs
+verification and handoff only; `--mode readback` and `--mode recover` also use
+unique attempt numbers. After accepted structural handoff, observe at the normal
+30/300-second cadence. Recovery guards and structural checks are distinct from
+timing readiness; settling alone does not shut down the service. Final timing
+and native Windows discovery checks follow convergence.
+
 Offline coverage in `test_service_cutover.py` exercises the real ordinary
 supervisor through start, stop, repeat start and child failure, with daemon I/O
 and receiver readiness simulated. It verifies direct daemon arguments, absence
 of trial-helper loading, saved-state preservation and child cleanup. It cannot
 prove the installed daemon reads drift, SHM access after reboot, systemd ordering
 or target convergence; those remain live acceptance gates.
+
+### All-source transition and bootstrap-only fallback
+
+For controlled restart after post-transition client acceptance, use the same
+sealer with `--restart-dir`, the service archive digest in `--recovery-sha256`,
+the ready `--observation`, and `--client-dir`/`--client-sha256`. This binds the
+running boot, supervisor/daemon identities, installed configuration and accepted
+client result. Archive contents supply pinned data only, never executable code.
+
+The restart stage stops/starts the unchanged all-source service and requires new
+daemon invocations, fresh protocol frequency proof against the latest stopped
+drift, both SHM consumers, all five associations, dual-stack readback and
+structural client checks. It never replaces configuration or resets drift.
+The transaction watchdog protects handoff; failure stops NTP and starts bootstrap
+time without rewriting configuration. Boot enablement, reboot and leap timer
+activation remain excluded. Prepare their separate persistence stage only after
+restart acceptance. New repository bytes are pinned into the new review;
+historical bundles remain immutable and cannot be replayed through changed code.
+
+`run-production-transition.py` seals a flat continuation from the explicitly
+hashed prior transition archive and its confirmed bootstrap recovery readback.
+Historical archive members supply data only; all executable code comes from the
+repository. Preflight requires the same boot, restored pinned files, unchanged
+saved drift, stopped ntpd/GPSD, inactive old workers and active systemd-timesyncd.
+It discovers GPSD credentials from the new process after startup, without assuming
+an account named gpsd. Service boot enablement remains disabled.
+
+Arm an independent 600-second installation watchdog before stopping bootstrap.
+Install the ordinary supervisor recipe/unit and a candidate ntp.conf that only
+adds daily protocol statistics. Preserve all five sources, source restrictions,
+drift, statistics, device configuration and SHM permissions. The accepted config
+mirror remains unchanged until the candidate is accepted live.
+
+Before starting NTP, record daily protocol-file identities, lengths and prefix
+hashes. Require both daemons, both SHM consumers and all five associations within
+120 seconds. Check the first newly appended system frequency-set record against
+the preserved drift and startup time window. Reject replaced/truncated files,
+changed prefixes and mismatched initial frequency; old records cannot satisfy
+this proof. Protocol statistics have no PID field: attribution depends on the
+prestart byte boundary, stopped old daemons and the current same-boot supervised
+pair. Retain journals for diagnosis without requiring system-event journal logging.
+
+Obtain matching readbacks through both fixed endpoints and structural dual-stack
+client proof before cancelling the installation watchdog. Startup structure is
+bounded; timing quality has no shutdown deadline. Subsequent observations use
+30 seconds while converging/degraded and 300 seconds when ready, with at most
+60 sequential captures in the sealed window. They do not declare production
+acceptance. Native NTP statistics remain active independently.
+
+Approved bootstrap-only recovery stops the candidate, requires its processes to
+be gone, preserves drift and statistics, restores all three original files and
+starts systemd-timesyncd. Never restart the old PPS-first wrapper. Clear failed
+service state only when stopped and PID-zero. This restores system clock
+synchronization service, **not NTP serving**; actual bootstrap synchronization
+must still be observed. Unexpected files or a new boot hold recovery for review.
+
+Pinned NTPsec source initializes SHM during configuration before its normal
+privilege drop; the accepted recipe does not enable early privilege dropping.
+Keep the retained NMEA grant unchanged. The checker accepts root:root 0600 NMEA
+created at boot or the retained root:ntp 0660 grant, requiring both consumers.
+Actual reboot-time segment creation/access remains a later live gate. Do not
+modify or replay the old operation-bound SHM grant.
+
+### Read-only production-transition inspection
+
+`run-production-inspection.py` prepares a flat, owner-private review bundle from
+repository code/tests and a minimal data baseline selected from an explicitly
+hashed monitor archive. It never imports code from that archive. The review
+pins target endpoints, host-key alias, file paths, units, command limits and a
+24-hour execution window; execution reserves five minutes before expiry.
+
+After separate hash approval, one SSH capture sends the sealed collector through
+stdin with pinned host-key checking. It reads installed identities/configuration,
+learned drift, monitor/recovery records, shared-memory metadata, process/account
+identities, localhost NTP status and bounded current-boot journals. It creates no
+target staging directory and makes no service, timer or shared-memory changes.
+SSH/sudo and query logging remain normal observation side effects.
+
+Execution is registered locally before connection. A failed or uncertain capture
+is never retried automatically, including through the alternate endpoint. Partial
+output remains private beside the bundle. Baseline differences, missing files,
+command failures and changed-during-read metadata are observations for review;
+collection does not establish production or restart acceptance. No cleanup or
+restoration is needed for this inspection.
 
 ### Continuous PPS-first monitor candidate
 
@@ -619,6 +761,22 @@ separate workstation-only review from an explicit monitor archive hash and ready
 observation number. The small bundle pins repository code, target identity and
 provenance digests; it includes no previous operation archives. Use a new sibling
 operation directory. Approve its hash separately before execution.
+
+For post-reboot acceptance, use `--production-boot` with the accepted boot
+directory, archive SHA-256 and ready observation number. The sealer checks the
+new boot and daemon continuity against the accepted handoff, including saved-drift
+reuse, RTC persistence when in scope, and enabled service state. Combine this
+with `--native-discovery --source-ipv4 OBSERVED_ADDRESS` after convergence.
+Prepare a fresh sibling bundle and obtain its hash-bound execution approval.
+
+For the ordinary all-source service, add `--production-transition` and supply
+its directory/hash through `--monitor-dir` and `--monitor-sha256`. Select the
+latest ready observation. Preparation verifies the pinned archive, transport,
+execution receipt, current readiness measurements and daemon continuity against
+handoff. The client review cannot outlive that service operation's window.
+Only identity and provenance data enter the client bundle; it embeds no earlier
+archive or executable evidence. Local native-interface readback selects the
+source IPv4 before sealing.
 
 One bounded capture checks synchronized stratum-1 PPS responses over IPv4 and
 IPv6, administrative-query denial, and the `_ntp._udp` PTR/SRV mapping to port 123
@@ -1331,9 +1489,10 @@ records the bundle/report hashes and receipts. The
 [seven-package installation review](/home/aaron/code/.local-evidence/homelab-ntp/current/foundation-mdns-install-20261012-v1/review.md)
 was approved and executed once. Exact package, dpkg, protected-input, hook,
 needrestart and boot/access/network acceptance passed. Controls and the original
-automatic-update disposition were restored. The accepted inventory is now
-686 records and is mirrored in accepted-packages.tsv from hash-verified terminal
-evidence. The old 679-record snapshot/resolution remain executed preparation
+automatic-update disposition were restored. That stage accepted 686 package
+records. The October 15 RTC utility installation added only util-linux-extra;
+accepted-packages.tsv now mirrors its accepted 687-record terminal inventory.
+The old 679-record snapshot/resolution remain executed preparation
 records; their baseline no longer describes the target after installation.
 
 The installation review includes the Avahi libraries' ldconfig triggers and
@@ -1373,6 +1532,7 @@ hardware/network acceptance remain pending.
 | [foundation-recipe.json](../configs/foundation-recipe.json) | Fresh foundation requirements, observation coverage, package effects, acceptance and recovery |
 | [runtime-discovery-recipe.json](../configs/runtime-discovery-recipe.json) | Fixed read-only runtime queries, bounded configuration/device inputs and configuration requirements |
 | [installation-assets.json](../configs/installation-assets.json) | Exact image/source/package download URLs, sizes, hashes and source signing keys |
+| [rtc-installation-assets.json](../configs/rtc-installation-assets.json) | Pinned RTC utility package, download integrity and signed-index provenance |
 | [public-keys](../configs/public-keys) | Public source verification keyrings; no private keys |
 | [accepted-source-release.json](../configs/accepted-source-release.json) | Byte-exact accepted target candidate file/link manifest |
 | [accepted-packages.tsv](../configs/accepted-packages.tsv) | Accepted target package/version/status reference, not a future observation |
@@ -1985,6 +2145,164 @@ python3 -I -B ntpsec/scripts/run-host-configuration.py seal \
     --operation-id "$unique_runtime_operation_id" --output "$new_runtime_output"
 ```
 
+### RTC commissioning and fake-clock handling
+
+Complete this gate after accepted NTP convergence and before final production
+boot/persistence acceptance. Keep the running service unchanged while preparing
+the inspection. Hardware metadata acceptance does not establish RTC accuracy.
+
+Prepare the read-only capture with the existing inspection runner:
+
+```bash
+python3 -I -B ntpsec/scripts/run-production-inspection.py seal-rtc \
+  --start-dir "$accepted_start_directory" --start-sha256 "$accepted_start_sha256" \
+  --operation-id "$unique_rtc_inspection_id" --output "$new_inspection_directory"
+```
+
+The flat bundle pins current repository code/tests, the SSH host key and selected
+start/convergence data. Its RTC scope uses sysfs time readback without opening the
+RTC character device. Command failures and missing files remain evidence, not
+proof of absence or RTC acceptance. Review the generated scope and obtain its
+hash-bound execution approval before using the documented `execute` command.
+
+If that capture leaves hwclock availability unresolved, use the same `seal-rtc`
+command with `--utility-only` and a new operation/output directory. This narrower
+scope resolves fixed executable paths through `/sbin` aliases, records regular-file
+metadata, captures local manuals, and reads package status, ownership, file lists
+and cached candidate policy. It does not invoke either clock utility, open the RTC,
+refresh package metadata or install packages. Missing utilities and failed queries
+must remain distinct in the outcome.
+
+1. Prepare a scoped read-only inspection of the actual RTC node, RV3028 driver
+   and I2C mapping, RTC/system time, UTC convention, and boot-time clock handling.
+   Inspect installed package versions and relevant kernel, systemd, udev, init,
+   timer and cron mechanisms, including fake-hwclock. Record absence explicitly.
+2. Use the supplied Uputronics RTC instructions as historical board guidance:
+   RV3028 at address 0x52 and `dtoverlay=i2c-rtc,rv3028`. Check existing hardware
+   configuration before proposing changes. Do not automatically repeat I2C scans,
+   package installation, overlay changes or reboot. The Raspbian instructions
+   for removing fake-hwclock and editing `/lib/udev/hwclock-set` require review
+   against the installed Trixie implementation and manuals; do not copy them
+   into the target unchanged.
+3. Prepare the minimal commissioning change from those observations. Pin the
+   target RTC identity, repository implementation and versioned inputs. Record
+   affected files/package/hook before-states and a recovery procedure. Obtain
+   separate execution approval for the exact changes and acceptance checks.
+4. With synchronized system time freshly accepted, write that time to the
+   identified hardware RTC using the reviewed UTC policy, then read it back.
+   Record reference timestamps and error against a tolerance specified before
+   execution. Do not set the running system clock from an unvalidated RTC.
+   Disable or remove confirmed fake-clock mechanisms as justified by inspection;
+   verified absence requires no mutation. Preserve the intended real-RTC boot
+   path and verify that competing fake-clock hooks no longer run.
+5. Under separate reboot approval, verify RTC-based boot initialization, retained
+   RTC time, UTC policy, service startup and renewed NTP/client acceptance.
+   Record reboot results separately from battery retention across power loss.
+   Any power-loss test needs its own approved scope preserving the primary and
+   shared antenna power. Mark untested retention explicitly pending.
+
+The reproducibility audit must retain the selected package/hook decisions,
+exact changes, RTC identity, set/readback evidence, fake-clock before/after state,
+reboot results and recovery records. Keep the procedure and executable code in
+the repository; historical operation archives are evidence, not installation
+dependencies. RTC commissioning remains incomplete until these live checks pass.
+
+### Production PPS acquisition policy
+
+The policy fragment `configs/production-startup-gate.json` enables `acquisition_policy:
+wait`. Install it as the supervisor recipe's `startup_gate` together with the
+matching repository versions of `timeservice.py` and `gpsd-pairing.py`, only through
+a separately reviewed activation stage. The approved acquisition upgrade installed
+this policy on j2-svntp1 and passed structural handoff on October 15, 2026; see
+HISTORY for acceptance status. Omitting the policy retains the old bounded trial
+behavior. Cold-acquisition and reboot acceptance remain separate.
+
+Wait mode keeps GPSD running while each 30-second sampling window has bounded
+storage and two reaped observers. It records `state: acquiring`, elapsed time,
+window count and the latest pairing result in the protected runtime gate record.
+PPS absence or invalid-time samples do not cause an elapsed-time shutdown. Five
+distinct leap-0 timestamp matches on each accepted serial/PPS SHM unit are still
+required; both observers stop before ntpd starts with the complete configuration.
+Malformed data, rejected watch requests, wrong device/unit identities and exited
+children remain failures. A stop request terminates acquisition and reaps readers.
+
+The repository controllers support this policy through a separately sealed
+controlled restart. Add `--acquisition-wait` when sealing against accepted restart
+prerequisites. An acquisition upgrade may use the current invocation's accepted
+structural dual-stack client proof and ready convergence observation when final
+native discovery has not been repeated; the review identifies that prerequisite
+and leaves final client/discovery acceptance after the upgrade. Other controlled
+restart reviews retain their final native-client prerequisite.
+The bundle pins and installs both runtime scripts and the wait
+recipe, preserves ntp.conf, the systemd unit and drift, and backs up the replaced
+files for bootstrap-only recovery. Earlier executed packages remain immutable.
+
+Apply once. A `starting` or `acquiring` result is pending; use `--mode resume
+--attempt N` with a new positive attempt number to continue. Resume does not
+restart services or submit another reboot. During acquisition the controller
+checks boot, supervisor PID, GPSD PID/start ticks, installed inputs and fresh
+protected progress. A progress record older than 75 seconds is a fault. The
+transition watchdog first checks at 600 seconds, then 30 seconds after each check
+finishes; valid acquisition may continue beyond both 12.5 and 30 minutes.
+
+Pairing success starts the 120-second structural-readiness and 600-second handoff
+limits, including the existing 60-second handoff reserve. Check pending operations
+every 30 seconds so structural/client handoff can finish within that window.
+Missing initial gate, stopped/restarted children, failed pairing, identity drift
+and structural/handoff failure remain recovery conditions. Preserve each resume
+receipt; later client/restart/boot preparation uses the successful handoff receipt
+even when apply originally returned pending. Initial apply/reboot remains bounded
+by approval expiry; acquisition resume, readback and recovery remain available
+afterward. Expired timing-observation windows still require fresh review.
+
+Boot validation uses the installed policy and returns pending without consuming
+its old transport-retry budget as an acquisition timeout. It still requires
+console recovery; no reboot-persistent watchdog is added. Local delayed-PPS tests
+are not live cold-start, restart or reboot acceptance. Prepare a fresh sealed
+upgrade review against accepted prerequisites before installing this candidate.
+
+### RTC utility installation and synchronized write
+
+The pinned ARM64 utility payload is recorded in `configs/rtc-installation-assets.json`.
+Fetch or verify it through `scripts/fetch-installation-assets.py` with that
+manifest and group `rtc`. Debian signed-index verification, package contents and
+maintainer-script review precede sealing. util-linux-extra includes tools beyond
+hwclock and adds six compatibility diversions; its entire package footprint is
+part of installation approval. The current worker requires existing dependencies
+and rejects extra package changes rather than resolving them during installation.
+
+Prepare two independent reviews using the accepted utility inspection:
+
+```bash
+python3 -I -B ntpsec/scripts/run-rtc-commissioning.py seal \
+  --action-name install --inspection-dir "$accepted_utility_inspection" \
+  --inspection-sha256 "$utility_inspection_sha256" \
+  --package "$verified_util_linux_extra_deb" \
+  --operation-id "$unique_install_id" --output "$new_install_directory"
+python3 -I -B ntpsec/scripts/run-rtc-commissioning.py seal \
+  --action-name set-readback --inspection-dir "$accepted_utility_inspection" \
+  --inspection-sha256 "$utility_inspection_sha256" \
+  --operation-id "$unique_rtc_write_id" --output "$new_rtc_write_directory"
+```
+
+Execute only the approved bundle using the command in its generated review.
+Accept installation before approving the RTC write. Installation uses the
+verified local package without APT downloads, verifies package/native/manual
+integrity, and checks service/configuration continuity. On failure it attempts
+removal of only the newly introduced package if other package states remain
+unchanged; failed removal or transport interruption holds for inspection.
+
+The RTC operation independently verifies the installed utility, accepted RV3028
+identity and fresh PPS synchronization. It sets hardware time once using
+`--systohc --utc --noadjfile --rtc=/dev/rtc0`, retains before/after reads, and
+requires readback within the system-time bracket plus/minus two seconds. It
+does not step system time or create `/etc/adjtime`. Failed acceptance retains
+evidence without restoring a stale RTC timestamp or repeating the write.
+Neither operation changes boot enablement or proves battery retention; reboot
+and cold-start PPS acceptance remain subsequent gates.
+
+### Hardware preparation and recovery
+
 Hardware preparation preserves unrelated boot settings and the storage/root
 command line. The candidate adds `enable_uart=1`, `dtparam=i2c_arm=on`,
 `dtoverlay=disable-bt`, `dtoverlay=pps-gpio,gpiopin=18` and
@@ -2261,6 +2579,139 @@ restricted LAN path. Credentials, if needed for another provider, remain in
 protected secret files and are never committed. Protect `/etc/msmtprc` as
 root:root 0600 and verify the selected sendmail account/path.
 
+The operator selected the shared relay values on October 15, 2026:
+mailrise.local.theama.co:8025, sender domain local.theama.co, reporting recipient
+`notify@mailrise.xyz` and cron-failure recipient `notify.failure@mailrise.xyz`,
+daily 05:30 America/Chicago. Verify both live recipient routes before sending;
+upstream Mailrise treats the .failure suffix as a notification type on the
+notify route, not a separate configuration key. Verify that behavior in the
+installed container parser and its current configuration before acceptance.
+Keep Apprise keys and destination credentials out of inspection output. Review
+aliases and package dependencies before installation. Running the reporter or
+enabling its cron entry can send notifications and requires the corresponding
+explicit scope; it is not part of read-only prerequisite inspection.
+
+Prepare the read-only baseline with `run-webmin-inspection.py seal
+--mail-reporting`, using the accepted installation directory and hash. This
+mode retains selected relay settings and file metadata without exporting
+credentials, aliases or cron/script contents. It also captures leap-timer
+configuration, next/last trigger, service results and recent journal evidence.
+Missing sendmail/configuration files are findings, not installation approval.
+Approve the generated archive hash before execution. Relay connectivity,
+remote Mailrise policy, recipient selection and delivery remain separate checks.
+
+Use `run-mail-prerequisites.py seal --mode packages` for the separate NTP-node
+cached APT/dependency simulation, bound to the accepted timer-correction receipt.
+Use `--mode relay` for the operator-confirmed pi@10.1.3.83 rootful Podman host,
+with its existing svmf.local.theama.co Ed25519 host key. Each produces its own
+review/archive hash; approve that exact single-target capture before execution.
+The relay capture reads only container identities, selected configuration
+booleans/hash/mtime and installed Mailrise router source/version. It does not
+export destination URLs, credentials or environment, load custom routing code,
+or send SMTP/HTTP requests. Configured routes and source behavior are separate
+from downstream delivery; assess file freshness against container start time.
+
+Local inspection of Debian ARM64 msmtp/msmtp-mta 1.8.28-3 found sendmail symlinks,
+a no-op newaliases command and the optional msmtpd service. Its packaging uses
+disabled-by-default handling; a post-install service-helper invocation alone
+does not establish that it starts. Verify disabled/inactive state during install
+acceptance. Review no-recommends dependency simulation before choosing packages;
+these downloaded artifacts do not establish the target's current candidates or
+authenticated APT selection. No daemon or extra desktop keyring is required by
+the planned root-run reporting path merely because it is in package metadata.
+
+The October 15, 2026 dependency capture passed: cached candidates are
+msmtp/msmtp-mta 1.8.28-3, matching the reviewed archive hashes. The no-recommends
+simulation adds eight packages and performs no upgrades/removals. NTP remained
+unchanged; msmtpd is not installed. The paired relay capture was incomplete:
+container/boot continuity passed, but its inner reader failed without retaining
+specific diagnostic output. The corrected v2 diagnostic retains the inner exit
+status, output byte counts and allowlisted failure stage/error class, including
+imports, configuration read/parse and installed router lookup. It omits exception
+messages and raw stderr, rejects malformed result shapes, and still checks
+container/boot continuity after reader failure. Do not infer missing routes or
+relay failure from the v1 generic error. Preserve the consumed receipts and use a freshly reviewed
+scope retaining safe error classification before another relay capture.
+
+Relay diagnostic v2 subsequently identified ModuleNotFoundError at yaml_import
+under the selected python3 -I -B interpreter, before configuration/source reads.
+Containers and boot were unchanged. Discover the application's actual Python
+interpreter/virtual environment through a separately reviewed read-only scope;
+do not infer a live Mailrise fault or a missing route from this reader failure.
+Preserve v2 receipts and use observed interpreter details for a later capture.
+
+The operator subsequently supplied a notify Mailrise mapping to Apprise
+configuration ID apprise. Preserve the distinction between the Mailrise route
+name and the downstream Apprise config ID; .failure is the notification type.
+This supplied file content does not establish the running container's mounted
+configuration or successful delivery.
+
+Use `run-mail-prerequisites.py seal --mode relay-environment` for the prepared
+stdlib-only interpreter inspection. It reads launcher interpreter tokens and
+Python/package paths without importing the application, reading process arguments
+or environment values, parsing configuration, or installing modules. A fresh
+sealed approval precedes execution. Treat missing modules/launchers as findings;
+PID 1 may be a wrapper, so its executable alone need not identify the application.
+
+The environment inspection passed on October 15, 2026. The launcher and PID 1
+use /usr/local/bin/python3.14; the diagnostic used Python 3.14.0 with user-site
+disabled by isolation. Both yaml and mailrise package files exist under
+/home/mailrise/.local/lib/python3.14/site-packages, absent from that reader's
+search path. Prepare a new sealed route reader with this single observed
+application package directory explicitly added while retaining isolation.
+Do not install modules or infer a different virtual environment from the earlier
+ModuleNotFoundError. Environment capture did not read or accept runtime routing.
+
+Route inspection v3 implements that correction: it appends only the observed
+application directory while retaining -I -B, without processing .pth files or
+using PYTHONPATH. A missing directory is reported at application_path before
+imports. Twelve offline tests passed, including isolated import behavior and
+.pth non-execution. Approve the new sealed review/hash before using this reader;
+previous execution approvals do not cover the changed payload.
+
+Route inspection v3 executed successfully on October 15, 2026. The mounted
+configuration has notify first with nonempty destinations; the installed parser
+maps both approved recipient addresses to that key, with INFO for the base
+address and FAILURE for the .failure suffix. Container/boot continuity passed.
+Configuration mtime predates the container start. Accept this as configuration
+presence and installed parser semantics; downstream availability, in-memory
+configuration identity and actual delivery were not tested. Proceed to prepare
+the scoped installation/reporting review, preserving the exact-message delivery
+approval and separate cron activation boundary.
+
+The `mail-install-20261015-v1` execution passed on October 15, 2026. Its
+post-install inventory contains 701 records. Both previewed submissions succeeded,
+and the operator confirmed downstream receipt of both Apprise notifications.
+Retain that confirmation separately from the runner's submission-only receipt.
+The reporter remains uninvoked and the cron staged/inactive. Prepare runtime
+reporter and cron failure-path acceptance before a separately approved daily
+05:30 America/Chicago schedule activation.
+
+The installation workflow is `run-mail-install.py seal`, using the
+accepted dependency capture and existing private package cache. Its eight-package
+selection is recorded in configs/mail-installation-assets.json and must match
+captured simulation names/versions. Configs/j2-svntp1-mail.json records the
+reviewed transport/recipient policy. The shared Needrestart script is included
+byte-for-byte from the sibling server-configs repository and hash-bound in the
+flat bundle; it is not imported from historical evidence.
+
+The review includes transport activation and two exact message previews.
+Preflight rejects existing root-user msmtp overrides by metadata only, existing
+mail assets, inventory/NTP drift and dpkg invocation hooks. It masks msmtpd before
+dpkg installation, retains AppArmor protection, checks the sendmail target and
+binary, validates authored files, and submits each preview once with intent
+recorded first. Successful submission is not downstream delivery. Activating the
+default transport also enables existing system jobs to use it; disclose that in
+the approval review. An interrupted or failed send must not be automatically retried.
+
+The reporter is installed but not invoked; cron remains at
+/usr/local/sbin/needrestart_check.pending, outside cron's active directory.
+Its daily 05:30 schedule needs later activation after downstream receipt and
+runtime reporting/failure-path acceptance. On failure, withdraw only this
+invocation's unchanged authored files. Retain packages/account/debconf/AppArmor
+state, listener mask and operation receipts for inspection; hold on foreign drift.
+This containment is not a package rollback and cannot recall submitted messages.
+
 Syntax/pretend-mode checks do not prove delivery. Sending a synthetic or real
 notification requires approval for the exact destination/content. Accept the
 script, cron failure path and actual Mailrise delivery without unattended
@@ -2268,44 +2719,94 @@ restarts of the combined time service. No notification test was sent during
 repository consolidation. Final user-managed passwordless sudo removal is a
 separate end-of-project action, not an installer side effect.
 
-## Optimization evaluation and measurement
+### Reporter capture and schedule activation
 
-[Phase 3A and the proposal register](ntp-architecture-deployment-plan-v1.0.md#phase-3a-evaluate-and-accept-measured-optimizations)
-own optimization decisions. Add each future proposal there with a stable ID,
-evidence, disposition and owning phase. Keep operational outcomes in HISTORY;
-do not create a separate tuning runbook for each experiment.
+The October 15, 2026 execution of `mail-reporting-20261015-v1` passed. The
+05:30 America/Chicago cron is installed; its first scheduled occurrence is
+October 16, 2026, at 5:30 a.m. CDT. The instrumented live scan was quiet and
+failure/overlap fixtures passed. First scheduled execution and cron-generated
+failure-mail delivery remain pending observation. See HISTORY for the accepted
+bundle hash and boundaries; do not repeat the consumed operation.
 
-OPT-001 does not change the current package/build recipe. pps-tools, source-built
-GPSD/NTPsec, static network settings, verified UART/PPS overlays and exclusion
-of competing time daemons are baseline work in their existing phases. CPU
-isolation, performance-governor policy, arm_freq and GPU allocation remain
-unadopted candidates until measured on an accepted node. Do not paste the
-proposal's APT command or boot/config.txt block onto a target.
+After accepted installation and operator-confirmed downstream receipt, use
+`run-mail-reporting.py seal` with that installation evidence as `--baseline` and
+a fresh private `--output` directory. Review the resulting bundle before execution.
+The runner uses current repository worker/helper/test sources and the pinned shared
+reporter; prior installation evidence supplies data and accepted identities only.
 
-For an experiment, prepare a fresh scoped collection and a hash-bound bundle
-with exact settings, comparison metrics/window, baseline backups, acceptance,
-restoration and any reboot/console recovery. Verify active clocksource, kernel
-options, CPU policies, task/IRQ placement and hardware mapping before choosing
-controls. Keep the peer and shared antenna power available. Run one change at
-a time; allow clock convergence and representative load/thermal cycles. Use
-identical logging/sampling for baseline and candidate so instrumentation does
-not become the apparent optimization. Preserve GPS/PPS sequence, SHM, source
-and client timing evidence separately; they measure different parts of the
-path. A kernel PPS pulse report alone is not end-to-end acceptance.
+The worker executes instrumented reporter copies in a root-private directory:
+seven literal sendmail references become an exclusive message-capture helper;
+the real bounded list-only scan otherwise follows the shared reporter path. A
+failure fixture additionally replaces four scanner references with a synthetic
+exit-23 scanner. Both use the rendered cron wrapper with its escaped percent
+signs decoded as cron would. A held private fixture lock must skip execution and
+expose the overlap fallback. No test message leaves the target in this stage.
+These captures do not prove delivery by the cron daemon itself.
 
-The accepted staged manifest already includes pinned-source ntpviz and its
-manual. Plotting is optional and does not authorize deploying that candidate.
-Prefer collecting bounded NTP statistics on the node and generating graphs on
-the operator workstation. Review statistics paths, permissions, rotation,
-retention and transfer; review compatible Python modules and pinned gnuplot
-dependencies on the analysis host. Do not install distro ntpsec-ntpviz or copy
-ARM binaries/extensions onto a workstation of another architecture. Plot
-generation must not add an unreviewed public web service or unbounded log load.
+Require unchanged mail assets, package inventory, NTP/protected-file continuity,
+masked/inactive msmtpd, the approved timezone and an already-running/enabled cron.
+After tests pass, publish the staged cron bytes root:root 0644 by an exclusive
+atomic link from a hidden staging file. Reject activation within 15 minutes of
+the next scheduled run. Retain the pending source and record the next local 05:30
+occurrence. No service restart or manual production-reporter invocation is needed.
 
-After accepted tuning, mirror the actual persistent settings and metadata into
-the maintained repo assets, update HISTORY and repeat affected service/network,
-thermal/power and reboot checks. Restore ineffective or inconclusive changes;
-record deferred candidates without treating them as incomplete mandatory work.
+The sealed approval must explicitly include ongoing reports to the approved
+report recipient and cron failure output to the failure recipient. Content is
+generated from the scan; the reporter's From header uses root@observed-hostname.
+Do not confuse this recurring-report authorization with approval for extra tests.
+On failed acceptance, remove only the byte-identical root-owned cron file authored
+by this stage; hold on foreign drift. Retain captures/receipts and inspect any
+interruption before retry. First scheduled execution and resulting delivery need
+separate observation; capture tests alone do not close reporting acceptance.
+
+### Statistics retention inspection handoff
+
+Use `run-statistics-inspection.py seal --followup --baseline ACCEPTED_INSPECTION
+--output NEW_DIRECTORY` to prepare the successor from the completed inspection.
+Review the generated scope and approve its archive SHA-256 before execution.
+The follow-up snapshots process identity and statistics descriptors twice, reads
+complete logrotate rules and the daily wrapper, and inventories nested maintenance
+references. Empty descriptor snapshots, process races and uncaptured references
+remain gaps; they do not establish that files are inactive or cleanup is absent.
+Preserve the executed initial bundle and receipts.
+
+The completed `statistics-followup-20261015-v1` identifies ntpd as the writer
+holding all four streams open. The older root-owned protostats daily file remains
+hardlinked to its base and writable; protect active identities regardless of date
+or ownership. Complete logrotate rules and the cron wrapper establish the observed
+systemd maintenance path. Per-user home jobs and unrelated script bodies remain
+outside the bounded scan.
+
+The four-stream candidate and deployment worker have local fixtures. Prepare the
+sealed deployment with `run-statistics-retention.py seal`, supplying the completed
+follow-up inspection directory, its exact archive SHA-256 and a fresh output
+directory. Execution requires approval of the new review and bundle hash.
+
+The worker validates current boot/service/writer identity, guarded configuration,
+logrotate include membership, active writable files and storage. It repeats the
+retention fixture with target tools, debug-validates and installs the rule, then
+forces only that rule with private initial-run state. This first deployment
+requires an empty deletion preview; new eligible files stop it for review.
+The existing systemd logrotate schedule handles subsequent runs. Its first
+encounter may initialize the new entry before a later daily run rotates it.
+
+The approved review uses 10 GiB free and 5 percent free inodes as pre/postflight floors;
+these are not measured capacity requirements or installed alerts. The deployment
+records installation separately from retention acceptance. Subsequent scheduled
+execution, continued log growth, maintenance failure reporting, sustained growth
+budget and ongoing alert integration remain required acceptance work. Recovery
+removes only the unchanged installed rule and private trigger, restoring their
+prior absence; it cannot restore statistics deleted by later scheduled cleanup.
+
+The [governing statistics section](ntp-architecture-deployment-plan-v1.0.md#statistics-30-day-retention-and-ntpviz)
+retains policy ownership. The four-stream rule is now installed under
+`statistics-retention-20261015-v1`; its targeted first run passed with an empty
+live deletion preview. Preserve the consumed operation; never repeat it to obtain
+scheduled-run evidence. Next prepare scoped read-only acceptance of the scheduled
+service result, rule state/trigger and continued statistics growth. The initial
+global-state encounter may defer rotation, so a successful timer invocation alone
+does not prove this rule executed. Ongoing alert/failure reporting and sustained
+storage budgeting remain pending; installation is not full retention acceptance.
 
 ### Antenna quality, serial calibration and fallback
 
@@ -2324,9 +2825,9 @@ geometry/fix status, time validity and receiver time accuracy where exposed.
 Correlate those records with PPS sequence gaps, SHM timestamps/freshness,
 ntpq source state, loopstats/peerstats/clockstats and client timing. Record load,
 temperature, capture timing and placement so later comparisons are meaningful.
-Protect location/raw receiver records as bounded private evidence. Review
-statistics ownership, retention/rotation and compatible off-host plotting
-before deploying logging; no logging or receiver access is authorized here.
+Protect location/raw receiver records as bounded private evidence. Follow the governing
+[statistics, retention and ntpviz section](ntp-architecture-deployment-plan-v1.0.md#statistics-30-day-retention-and-ntpviz);
+no logging or receiver access is authorized here.
 
 For calibration, establish a repeatable bias and a reference of known quality.
 Document any time1 correction in seconds using sustained measurements.
@@ -2375,33 +2876,14 @@ hardware baseline are accepted. Verify continuous GPSD acquisition and actual
 kernel PPS capture, not just the presence of pps-tools. Preserve the existing
 UART/PPS ownership and SHM mapping.
 
-For an approved ntpviz comparison:
+For approved comparisons, follow the governing [statistics, retention and ntpviz section](ntp-architecture-deployment-plan-v1.0.md#statistics-30-day-retention-and-ntpviz).
+It owns the capture/retention and plot-selection procedure.
 
-1. Render `statistics loopstats peerstats`, the observed `statsdir`, and daily
-   `filegen` settings into the candidate `/etc/ntp.conf`. Resolve writable
-   ownership under the daemon account and service sandbox, rotation/retention,
-   storage budget and backup/restoration before enabling capture. Add clockstats
-   or receiver/temperature collection only where needed and supported.
-2. Keep separate baseline and candidate directories, configuration hashes,
-   exact UTC windows, source identities and load/thermal records. Capture
-   convergence separately from the comparison window. Use several hours after
-   a poll change and comparable daily cycles where temperature is relevant.
-3. Transfer bounded logs privately and generate plots on the workstation using
-   the matching NTPsec Python modules, ntpviz and reviewed gnuplot installation.
-   Use the same `--datadir`, `--starttime` and `--endtime` window for
-   `--local-offset`, `--local-jitter`, `--local-stability`, `--peer-offsets`
-   and `--peer-jitters` views. Read actual peer identifiers from peerstats.
-   Temperature/GPS plots require the documented `temps`/`gpsd` input formats;
-   ordinary journal output is not a substitute.
-4. Compare serial and PPS peers separately, local frequency/wander and
-   independent client timing. Record gaps, loss/fallback and outliers alongside
-   distributions. A plot against the disciplined system clock characterises
-   that path; absolute UTC claims still require an independent reference.
-5. Trial the PPS SHM association's poll interval as one change, preserving its
-   unit, calibration and selection settings. Review the accepted interval
-   against shorter supported intervals, then restore or retain from measured
-   offset/jitter, frequency stability and client results. Persist an adopted
-   value in the rendered host configuration and installation manifest.
+Trial the PPS SHM association's poll interval as one change, preserving its
+unit, calibration and selection settings. Review the accepted interval
+against shorter supported intervals, then restore or retain from measured
+offset/jitter, frequency stability and client results. Persist an adopted
+value in the rendered host configuration and installation manifest.
 
 For network-path trials, bind the observed interface/driver, switch port,
 addresses/routes and actual next-hop MAC. Collect IPv4 ARP/IPv6 neighbour
@@ -2570,6 +3052,127 @@ configuration or restart is authorised by this documentation.
 
 ## Leapfile, monitoring and routine maintenance
 
+Use `scripts/run-leap-inspection.py seal --boot-dir DIRECTORY --client-dir
+DIRECTORY --client-sha256 SHA256 --operation-id ID --output NEW_SIBLING` to
+prepare the read-only leap-maintenance inspection after accepted post-reboot
+client checks. It pins the current boot, repository collector and selected
+receipt data in a flat archive. After hash-bound approval, `execute --bundle
+ARCHIVE --sha256 SHA256` performs one bounded SSH capture. It reads installed
+utility/manual bytes, effective units, leapfile and directory metadata, current
+unit journal and localhost NTP state. It does not invoke ntpleapfetch or change
+the timer. Missing files are findings, not activation acceptance. Review the
+capture before preparing timer activation and fetch/readback under a new hash.
+
+The October 15 inspection found the installed j2 unit passed `-e 60`; the
+installed utility requires time units. The corrected repository candidate uses
+`-e "60 days"` as one argument. Include this replacement in the activation review
+and validate it on the target before installation. The installed manual says
+ntpd checks the leapfile daily when no restart command is supplied; keep `-c`
+absent. A valid, unexpired file can make maintenance exit without downloading,
+so that outcome alone does not prove the HTTPS download/update path. The captured
+leapfile validates and expires June 28, 2027; the live timer remains disabled.
+
+The subsequent approved `leap-activation-20261015-v1` installed the corrected
+unit and accepted target-side validation, isolated HTTPS fetch, ordinary
+maintenance and enabled/active/waiting timer state. The live leapfile and NTP
+service identity remained unchanged. The disabled state above describes the
+earlier inspection. The later `mail-inspection-20261015-v1` observed successful
+maintenance completions at 5:55:25 p.m. and 6:33:59 p.m. CDT on October 15,
+2026; timer LastTriggerUSec matches the latter invocation. The fetcher reported
+no replacement was due. At 7:04 p.m., the next trigger was 7:18:44 p.m. that
+day. This establishes scheduled execution, but the short repeat interval needs
+investigation against the intended four-week cadence. Preserve timer state;
+inspect rearming/reload history and installed systemd behavior before correction.
+
+Use the existing inspection runner's `--timer-recurrence` sealing mode for
+this bounded follow-up: installed timer manual/version, timer timestamps,
+effective unit and four hours of PID-1 reload/leap messages (maximum 120 records).
+The upstream 257.13 coldplug path can rebase OnActiveSec; treat this as a
+hypothesis until correlated with live reload records. This mode performs no
+daemon-reload, restart, forced fetch or relay contact.
+
+The subsequent `leap-recurrence-inspection-20261015-v1` correlates the rebased
+initial-delay timestamp with a manager reload: its base lies inside the reload,
+2,561 microseconds before completion at 6:37:51.775876 p.m. CDT on October 15,
+2026, while the original timer activation timestamp remained unchanged. This
+strongly corroborates reload rearming. The correction passed isolated initial
+activation, reload and fresh-manager boot tests before its separately approved
+deployment. Live timer-only correction passed on October 15, 2026 under
+`leap-timer-correction-20261015-v1`.
+
+The accepted template restores the architecture's OnBootSec=15min with
+OnUnitActiveSec=4w and RandomizedDelaySec=30min. Initial maintenance is relative
+to boot; enabling after the initial deadline can trigger maintenance promptly.
+The schedule provides an initial run after each boot and subsequent four-week
+intervals during that boot, not a persisted four-week calendar across reboots.
+Do not adopt OnActiveSec as an equivalent substitution: the target's systemd
+257.13 reload path rearmed it in the retained diagnostic.
+
+For isolated integration validation, build tests/Containerfile.leap-timer with
+Podman and run systemd as PID 1 with network disabled and ntpsec mounted read-only
+at /work. Run tests/test_leap_timer_systemd.py inside that container with
+`initial`, restart only that container, then run the `reboot` phase. Retain the
+image/package identities, template hash, test logs and container journal. Stop
+the container when complete. The fixture refuses execution outside a Podman
+systemd container and uses only harmless /bin/true services. It checks the
+production-duration unit with systemd-analyze, then accelerates intervals for
+behavioral tests and compares against the old OnActiveSec profile.
+
+This test passed with the target's systemd package version on October 15, 2026.
+Container restart is a fresh-manager test, not physical Pi boot acceptance.
+The live transaction preserved the successful 7:18:55 p.m. CDT scheduled run
+and verified the next four-week trigger before and after manager reload. NTP
+retained its PID and invocation with zero restarts; rollback was not needed.
+The retained clock mapping estimates the next trigger at November 12, 2026,
+6:19:41 p.m. CST. This is scheduled-state acceptance, not a four-week soak or
+a physical Pi reboot/initial-trigger result.
+
+Seal the timer-only transaction with `scripts/run-leap-timer-correction.py seal`,
+providing recurrence-inspection and accepted-activation directories/hashes,
+operation ID and a fresh output directory. The flat bundle contains current
+worker/helper/tests, candidate and selected baseline data. Its runner enforces
+the exact initial-trigger line replacement; execute only the approved archive.
+The transaction preserves the already successful scheduled run and timer history
+during this same-boot upgrade. Do not wait for or claim a new initial run.
+Require enabled/waiting state, unchanged prior invocation/trigger, and a next
+trigger four weeks after the prior service activation plus jitter, both before
+and after manager reload. This is scheduled-state acceptance, not a four-week
+soak or physical reboot test. Manager reload is global and may rearm other timers.
+
+Before mutation, drift/verification failures leave live configuration unchanged.
+After mutation, guarded recovery stops the leap timer/fetch service, restores
+original timer bytes, reloads and starts the old enabled timer. Recovery restores
+the prior recurrence defect; it is not correction acceptance. Hold on foreign
+file/unit or NTP continuity changes. No NTP restart, manual service start, forced
+fetch, clock action, package action or mail is included. Retain uncertain
+transport and target state; never blindly replay an operation.
+
+Prepare activation with `scripts/run-leap-activation.py seal --inspection-dir
+DIRECTORY --inspection-sha256 SHA256 --operation-id ID --output NEW_SIBLING`.
+After exact archive approval, use `execute --bundle ARCHIVE --sha256 SHA256`.
+The flat bundle pins the inspected files and service identity, current worker,
+transport, tests and corrected unit. No target contact occurs during sealing.
+
+The corrected unit also uses `-i 0`: this utility measures retry intervals in
+minutes, and the former ten-minute wait exceeded its 120-second service timeout.
+Keep three possible attempts with no inter-attempt sleep and the existing total
+timeout; wget's internal retries can consume that budget before all three run.
+Validate the unit on the target, then force a bounded download into the private
+operation directory using the installed utility's checksum/expiry checks.
+Retain that file without replacing the live leapfile in this acceptance stage.
+Install the corrected service, run its ordinary maintenance check, and require
+the current leapfile to remain unchanged before enabling the timer. Accept only
+enabled/active/waiting with a finite next trigger and unchanged NTP invocation.
+The initial trigger is 15 minutes plus up to 30 minutes random delay; subsequent
+runs use the four-week interval plus jitter. Scheduled maintenance can later
+update the live leapfile within its prefetch window without restarting ntpd.
+
+On a failure after installation, restore the original unit and disabled/inactive
+timer only while the protected file and service identities still match. Retain
+the private operation directory. Catchable interruptions attempt this recovery;
+an uncertain transport or power loss requires inspection before another action.
+Do not infer successful rollback or rerun the consumed operation blindly.
+
 ntpleapfetch.service.in is intentionally unresolved until the installed command,
 options, source URL, leapfile path/metadata, retry and reload behavior are
 verified. The timer implements the architecture's four-week schedule. Render
@@ -2578,7 +3181,196 @@ activation. Do not add an ntpd restart without selected-build evidence.
 
 Webmin needs explicit repository/key/package provenance, scope and authenticated
 management acceptance. It is not fetched as an unreviewed extra repository by
-the current assets tool. Munin endpoint/plugin configuration is owned by
+the current assets tool. Prepare its read-only prerequisite capture with
+`scripts/run-webmin-inspection.py seal --activation-dir DIRECTORY
+--activation-sha256 SHA256 --operation-id ID --output NEW_SIBLING`, then obtain
+execution approval for the resulting archive. Use `execute --bundle ARCHIVE
+--sha256 SHA256` once. The collector excludes Webmin credentials/private keys
+and APT source contents; retain package/source provenance as a separate review
+requirement. It also observes leap timer/service timestamps and recent journal
+records without forcing a run. Absence of a trigger is pending observation,
+not a scheduled-maintenance failure. Host firewall evidence alone does not
+establish controller policy or External exposure.
+
+The October 15 Webmin inspection completed without changes. Webmin and its
+configuration/service were absent, the package audit was clean, and no TCP
+listener used port 10000. The host nftables ruleset was empty; controller
+firewall and External reachability were not tested. Review the selected Webmin
+repository/key/package and dependency closure against the captured inventory,
+then define intended management access before preparing installation. The same
+capture found no leap timer trigger yet; journal evidence confirmed only the
+earlier successful manual maintenance run.
+
+The subsequent offline provenance review selected Webmin 2.670 from its signed
+stable index. Candidate additions are libauthen-pam-perl, libio-pty-perl,
+libnet-ssleay-perl, perl-openssl-defaults and explicit libsocket6-perl for IPv6.
+Matching installed Perl metadata provides the Digest SHA/MD5 dependencies.
+Do not treat this assessment as a target APT resolution or installed acceptance.
+The approved management networks/account are recorded in the governing plan.
+The package postinst starts Webmin directly through generated systemd wrappers;
+test restriction of that first start before sealing installation. Review exact
+bindings, allowlist, certificate trust, `ama` login and rollback. Preserve the
+current NTP, receiver, drift, leap timer and SSH state.
+
+The operator subsequently selected HTTP for this stage, with Caddy integration
+deferred. Use the approved HTTP policy in `configs/webmin-http-policy.json` and
+candidate package identities in `configs/webmin-installation-assets.json`.
+Prepare `scripts/run-webmin-install.py seal --inspection-dir DIRECTORY
+--inspection-sha256 SHA256 --assets DIRECTORY --operation-id ID --output
+NEW_SIBLING`. After exact archive approval, `execute --bundle ARCHIVE --sha256
+SHA256` checks the retained package baseline and dpkg dry-run before installation.
+It installs a persistent first-start condition before package configuration,
+checks that no Webmin listener appeared, then writes the HTTP bindings, subnet
+allowlist and `ama` login policy before allowing the first start.
+
+Acceptance distinguishes dual-stack local HTTP endpoints from authenticated
+client login and controller exposure. Record an operator's successful `ama`
+login without collecting passwords or cookies. Recovery stops/disables Webmin
+and removes its permit marker while retaining packages and evidence. This
+restores a non-serving state, not the original package footprint; do not invoke
+uninstall hooks or autoremove as an unreviewed extension. The first-start guard
+and permit are durable configuration, independent of operation evidence paths.
+
+The October 15 `webmin-install-20261015-v1` execution installed the six pinned
+packages and passed the package audit and first-start guard checks. Its first
+post-start socket query was empty despite systemd reporting active/running, so
+listener acceptance failed before HTTP probes. Recovery stopped/disabled Webmin,
+removed the permit and confirmed no TCP/UDP port-10000 listener. NTP identity
+and restart count were preserved. Packages, HTTP configuration and repository
+files remain installed; this is not an accepted serving installation.
+
+Do not rerun the one-use installer against that changed baseline. Inspect the
+startup diagnostics and recovered state before preparing a separate continuation.
+An empty immediate socket query alone does not distinguish slow startup from a
+startup fault. Retain the original bundle and failure evidence unchanged.
+
+For that recovered state, prepare a read-only diagnostic with the same runner:
+`scripts/run-webmin-inspection.py seal --installation-dir DIRECTORY
+--installation-sha256 SHA256 --operation-id ID --output NEW_SIBLING`.
+The installation receipt must show completed non-serving recovery. The capture
+adds bounded Webmin journal/error records, generated startup files, guard/permit
+state and miniserv fingerprints; it omits prerequisite-stage leap/firewall data.
+Approve the resulting archive hash before `execute`. It performs no restart or
+HTTP probe and cannot establish serving or authenticated-client acceptance.
+
+The diagnostic completed at 6:08:59 p.m. CDT on October 15. Webmin remained
+inactive/disabled, with no permit or port-10000 sockets; the HTTP configuration
+and reviewed miniserv fingerprints were unchanged. Its generated unit uses
+`Type=simple`, which does not signal application readiness. The journal shows
+only 77.126 ms between systemd's started message and the recovery stop request.
+No application error was captured, and the error log/PID files were absent.
+The existing immediate socket check therefore needs a bounded readiness wait;
+successful later startup remains unproven. Test delayed readiness, deadline,
+unexpected listeners and service failure before sealing a continuation from
+the installed, stopped baseline. Preserve the original acceptance restrictions.
+
+The Webmin worker now waits up to 60 seconds for both exact TCP listeners. It
+checks service identity and UDP discovery during the wait; unexpected listeners,
+failure or restart cause immediate recovery. Missing approved listeners alone
+may settle until the deadline. HTTP checks follow readiness and service identity
+is checked again afterwards. Timeout does not trigger an automatic second start.
+
+Prepare a continuation with `scripts/run-webmin-install.py seal --continuation
+--inspection-dir DIRECTORY --inspection-sha256 SHA256 --operation-id ID
+--output NEW_SIBLING`. It pins the completed startup inspection's package inventory
+and stable installed file hashes/owners/modes. Before creating its permit, it
+requires unchanged recovered state, no overriding unit or permit, no sockets,
+clean package audit and NTP continuity. It installs no packages and rewrites no
+configuration. After exact-hash approval, use the runner's ordinary `execute`
+command once. Keep endpoint acceptance separate from operator login acceptance.
+
+The October 15 continuation reached both exact listeners on its fourth readiness
+sample and returned HTTP 200 over IPv4 and IPv6. It then failed the complete
+miniserv.conf hash check. Recovery stopped/disabled Webmin, removed the permit
+and confirmed no listeners; NTP identity was unchanged. Changed configuration
+contents and the final hash were not captured. Before another continuation,
+inspect current non-secret settings and startup diagnostics; distinguish an
+access-policy change from other application-written settings using evidence.
+Do not treat successful HTTP responses as acceptance of an unexplained change.
+
+Reuse the read-only inspection runner with `--installation-dir` pointing to the
+recovered continuation and its approved archive hash. Compare captured selected
+settings against the earlier startup inspection; retain the new full-file hash
+and startup diagnostics. Since the complete pre-start configuration was not
+retained, an exact historical diff outside those selected fields is unavailable.
+State that limit explicitly instead of attributing unknown changes to Webmin.
+
+The 6:24:13 p.m. CDT October 15 capture found all 16 selected settings unchanged,
+including the approved access policy, but miniserv.conf grew by 78 bytes and
+its full-file hash differs. Ownership/mode remain root:root 0600. The log records
+a configuration reload before recovery. The changed fields outside the selected
+capture remain unidentified; do not simply replace full-file validation with
+the current small allowlist. Inspect remaining non-secret field names/values
+and package write paths before defining a justified comparison policy.
+
+Webmin is disabled with no PID, permit or listeners, but the unit retains
+failed/failed and exit status 1 from the recovery stop. A future continuation
+must explicitly handle that observed state rather than assuming inactive/dead.
+NTP identity and zero restarts were preserved by the read-only capture.
+
+Local review of the pinned 2.670 package identified Authentic Theme's
+login-lib.pl calling error_40x_handler() in authentic-init.pl. With no 403 handler,
+it writes default 401/403/404 CGI handlers and reloads miniserv. The three lines
+total 78 bytes, and the operator reported those values in the current config.
+The extended read-only collector captures those fields and theme fingerprints.
+It can hash the current bytes after removing only the three exact default lines;
+a match to the retained pre-start hash proves the complete additive change.
+It returns no unselected values and never writes the derived bytes to the host.
+If the hash does not match, other changes remain unexplained. This diagnostic
+does not itself relax validation or authorize another start.
+
+The 6:32:31 p.m. CDT October 15 field inspection confirmed all three defaults
+and matching installed theme fingerprints. The derived 1063-byte content hashes
+exactly to the retained pre-start hash: the three handler lines account for the
+entire byte change. Pin the now-confirmed complete configuration for the next
+continuation and retain full-file integrity checking. No generic allowance for
+runtime configuration drift is justified or needed. Account explicitly for the
+disabled, failed unit state; Webmin was not started by this confirmation capture.
+
+The continuation runner now pins the inspected Webmin active/substate, prior
+invocation and exit result in addition to the installed-file identities. For a
+pinned failed state, after preflight it issues reset-failed only for Webmin and
+verifies inactive/dead, disabled and zero PID/restarts before allowing startup.
+A changed prior identity or unsuccessful reset prevents startup. The v2 review
+uses the confirmed full miniserv.conf hash, including the three handlers; it
+neither rewrites configuration nor exempts those fields from subsequent checks.
+
+Continuation v2 passed at 6:37:56 p.m. CDT on October 15. Webmin is active/enabled
+with both exact listeners, no UDP discovery, IPv4/IPv6 HTTP 200 and unchanged
+full configuration hash after the probes. The scoped failure reset succeeded;
+Webmin and NTP each had zero restarts, and NTP identity was preserved. The guard
+and permit remain installed. The captured inventory is reconciled to the accepted
+693-package reference. Next record operator `ama` login from the approved
+management networks over both families, without retaining credentials/cookies.
+These local HTTP checks do not establish authenticated or controller acceptance.
+
+The operator subsequently confirmed authenticated `ama` login over both IPv4
+and IPv6. Retain this as operator-attested client acceptance, separate from the
+immutable automated endpoint receipt. Controller exposure is still unverified.
+
+For scoped storage inspection, `run-webmin-inspection.py seal --temp-storage`
+uses an accepted `--installation-dir` and its `--installation-sha256`. The
+review binds selected temp settings, fixed directory metadata, mount backing,
+byte/inode capacity and aggregate default temp usage. Custom temp paths are
+reported without traversal; user overrides and process environment are outside
+this capture. Approve the generated archive hash before execution. No write
+probe or directory change is included. A completed capture is evidence for a
+storage decision, not acceptance of capacity for an unspecified workload.
+
+The reported `/tmp/.webmin` tmpfs notice is informational. In the reviewed 2.670
+mount/system_info.pl, the RAM-disk warning is selected by filesystem type when
+the default temp directory is used; it is not a measured free-space failure.
+Inspection `webmin-temp-inspection-20261015-v1` found about 1.85 GiB free on
+`/tmp`, 4 KiB of Webmin temp usage, and about 106.3 GiB free on the ext4
+filesystem backing `/var/tmp`. Both temp parents are root:root mode 1777;
+`/tmp/.webmin` is root:root mode 0755 and `/var/tmp/.webmin` does not exist.
+No global tempdir settings were present; user overrides and environment were
+outside this capture. No current byte/inode shortage was found. Leave settings
+unchanged unless intended uploads/backups warrant a separately reviewed move;
+tmpfs capacity alone does not establish physical RAM headroom under load.
+Keep any eventual Webmin-specific change separate from a system-wide mount change.
+
+Munin endpoint/plugin configuration is owned by
 homelab-monitoring-observability; approve intended poller/allowlist and prove
 polling. Watchdog requires observed device/driver, independent recovery and a
 separately authorized failure/reboot test. Hardware tools being installed do

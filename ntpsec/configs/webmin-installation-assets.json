@@ -1,0 +1,56 @@
+{
+  "schema": 1,
+  "purpose": "candidate-not-installed",
+  "packages": [
+    {
+      "Package": "perl-openssl-defaults",
+      "Version": "7+b2",
+      "Architecture": "arm64",
+      "Filename": "pool/main/p/perl-openssl-defaults/perl-openssl-defaults_7+b2_arm64.deb",
+      "SHA256": "1fa2d99f1f7d32147cd5935eb2700ac49b366c086fea21c963c73e6dc62d62b1",
+      "Size": "6712"
+    },
+    {
+      "Package": "libnet-ssleay-perl",
+      "Version": "1.94-3",
+      "Architecture": "arm64",
+      "Filename": "pool/main/libn/libnet-ssleay-perl/libnet-ssleay-perl_1.94-3_arm64.deb",
+      "SHA256": "50622582eec91dac26bf34e19a255b4e1bfaaf9cf44431fb437f3ade9bcbb7bc",
+      "Size": "322916"
+    },
+    {
+      "Package": "libauthen-pam-perl",
+      "Version": "0.16-6+b4",
+      "Architecture": "arm64",
+      "Filename": "pool/main/liba/libauthen-pam-perl/libauthen-pam-perl_0.16-6+b4_arm64.deb",
+      "SHA256": "89c1bcf6ac49563ee9d7b2f03e43f5a9a06766ceb88562d01338802fec15396a",
+      "Size": "24860"
+    },
+    {
+      "Package": "libio-pty-perl",
+      "Version": "1:1.20-1+b3",
+      "Architecture": "arm64",
+      "Filename": "pool/main/libi/libio-pty-perl/libio-pty-perl_1.20-1+b3_arm64.deb",
+      "SHA256": "cbee5c41ee44b758cbb91f9b771f4e2f73db7247f601ca4187a1730ffb199376",
+      "Size": "34004"
+    },
+    {
+      "Package": "libsocket6-perl",
+      "Version": "0.29-3+b4",
+      "Architecture": "arm64",
+      "Filename": "pool/main/libs/libsocket6-perl/libsocket6-perl_0.29-3+b4_arm64.deb",
+      "SHA256": "583b59a3336a5dec98322a06155d95fa5a4a0e981ac933e7e09e366ebf406d3a",
+      "Size": "21220"
+    },
+    {
+      "Package": "webmin",
+      "Version": "2.670",
+      "Architecture": "all",
+      "Filename": "pool/contrib/w/webmin/webmin_2.670_all.deb",
+      "SHA256": "67ddbbeb415daa44643b91c2b4c7ce65c29f3170bd88cf37c6b2b516542c9839",
+      "Size": "28094890"
+    }
+  ],
+  "keyring_sha256": "5f9124881530f977e9b7c474df44a87fe9ea26bdba32a097886f84009d4ecd1c",
+  "signing_fingerprint": "7D1AE915F3DCFADA344A4FCB2D223B918916F2A2"
+}

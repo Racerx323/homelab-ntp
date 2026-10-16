@@ -151,6 +151,7 @@ libatopology2t64:arm64	1.2.14-1+rpt1+deb13u1	ii
 libattr1:arm64	1:2.5.2-3	ii 
 libaudit-common	1:4.0.2-2+deb13u1	ii 
 libaudit1:arm64	1:4.0.2-2+deb13u1	ii 
+libauthen-pam-perl	0.16-6+b4	ii 
 libavahi-client-dev:arm64	0.8-16	ii 
 libavahi-client3:arm64	0.8-16	ii 
 libavahi-common-data:arm64	0.8-16	ii 
@@ -261,16 +262,20 @@ libgpiod3:arm64	2.2.1-2+deb13u1	ii
 libgpiolib0:arm64	20260626-1	ii 
 libgpm2:arm64	1.20.7-11+b2	ii 
 libgprofng0:arm64	2.44-3	ii 
+libgsasl18:arm64	2.2.2-1.1+deb13u2	ii 
 libgssapi-krb5-2:arm64	1.21.3-5+deb13u1	ii 
+libgssglue1:arm64	0.9-1.1	ii 
 libgudev-1.0-0:arm64	238-6	ii 
 libhidapi-hidraw0:arm64	0.14.0-1+b2	ii 
 libhogweed6t64:arm64	3.10.1-1	ii 
 libhwasan0:arm64	14.2.0-19	ii 
 libicu76:arm64	76.1-4	ii 
+libidn12:arm64	1.43-1	ii 
 libidn2-0:arm64	2.3.8-2	ii 
 libinotifytools0:arm64	4.23.9.0-2+b1	ii 
 libintl-perl	1.35-1	ii 
 libintl-xs-perl	1.35-1	ii 
+libio-pty-perl	1:1.20-1+b3	ii 
 libisl23:arm64	0.27-1	ii 
 libitm1:arm64	14.2.0-19	ii 
 libiw30t64:arm64	30~pre9-18+b1	ii 
@@ -322,6 +327,7 @@ libncurses-dev:arm64	6.5+20250216-2	ii
 libncurses6:arm64	6.5+20250216-2	ii 
 libncursesw6:arm64	6.5+20250216-2	ii 
 libndp0:arm64	1.9-1+b1	ii 
+libnet-ssleay-perl:arm64	1.94-3	ii 
 libnetfilter-conntrack3:arm64	1.1.0-1	ii 
 libnetplan1:arm64	1.1.2-7+rpt1	ii 
 libnettle8t64:arm64	3.10.1-1	ii 
@@ -342,6 +348,7 @@ libnspr4:arm64	2:4.36-1	ii
 libnss-mdns:arm64	0.15.1-4+b1	ii 
 libnss3:arm64	2:3.110-1+deb13u4	ii 
 libntfs-3g89t64:arm64	1:2022.10.3-5+deb13u2	ii 
+libntlm0:arm64	1.8-4	ii 
 libnuma1:arm64	2.0.19-1	ii 
 libnvme1t64	1.13-2	ii 
 libogg0:arm64	1.3.5-3+b2	ii 
@@ -392,6 +399,8 @@ libsasl2-modules:arm64	2.1.28+dfsg1-9	ii
 libsasl2-modules-db:arm64	2.1.28+dfsg1-9	ii 
 libseccomp-dev:arm64	2.6.0-2	ii 
 libseccomp2:arm64	2.6.0-2	ii 
+libsecret-1-0:arm64	0.21.7-1	ii 
+libsecret-common	0.21.7-1	ii 
 libselinux1:arm64	3.8.1-1	ii 
 libsemanage-common	3.8.1-1	ii 
 libsemanage2:arm64	3.8.1-1	ii 
@@ -400,6 +409,7 @@ libsframe1:arm64	2.44-3	ii
 libsharpyuv0:arm64	1.5.0-0.1	ii 
 libslang2:arm64	2.3.3-5+b2	ii 
 libsmartcols1:arm64	2.41.5-0+deb13u1	ii 
+libsocket6-perl	0.29-3+b4	ii 
 libsort-naturally-perl	1.03-4	ii 
 libsource-highlight-common	3.1.9-4.3	ii 
 libsource-highlight4t64:arm64	3.1.9-4.3+b1	ii 
@@ -488,6 +498,8 @@ mawk	1.3.4.20250131-1	ii
 media-types	13.0.0	ii 
 mkvtoolnix	92.0-1+deb13u1	ii 
 mount	2.41.5-0+deb13u1	ii 
+msmtp	1.8.28-3	ii 
+msmtp-mta	1.8.28-3	ii 
 nano	8.4-1+deb13u1	ii 
 ncdu	1.22-1	ii 
 ncurses-base	6.5+20250216-2	ii 
@@ -519,6 +531,7 @@ pciutils	1:3.13.0-2	ii
 perl	5.40.1-6+deb13u1	ii 
 perl-base	5.40.1-6+deb13u1	ii 
 perl-modules-5.40	5.40.1-6+deb13u1	ii 
+perl-openssl-defaults:arm64	7+b2	ii 
 pinentry-curses	1.3.1-2	ii 
 pkg-config:arm64	1.8.1-4	ii 
 pkgconf:arm64	1.8.1-4	ii 
@@ -666,10 +679,12 @@ usb-modeswitch-data	20191128-7	ii
 usbutils	1:018-2	ii 
 userconf-pi	0.19	ii 
 util-linux	2.41.5-0+deb13u1	ii 
+util-linux-extra	2.41.5-0+deb13u1	ii 
 uuid	1.6.4-1	ii 
 v4l-utils	1.30.1-1	ii 
 vim-common	2:9.1.1230-2	ii 
 vim-tiny	2:9.1.1230-2	ii 
+webmin	2.670	ii 
 wget	1.25.0-2	ii 
 whiptail	0.52.25-1	ii 
 wireless-regdb	2026.05.30-1~deb13u1	ii 

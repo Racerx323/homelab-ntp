@@ -1,0 +1,6 @@
+{
+  "timeout_seconds": 30,
+  "matching_samples_per_source": 5,
+  "units": {"TOFF": "NTP0", "PPS": "NTP2"},
+  "acquisition_policy": "wait"
+}

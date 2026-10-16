@@ -1,0 +1,28 @@
+# NTPsec owns daily file generation. Rotate only this root-owned trigger.
+# Provision its parent root:root 0700 and the trigger root:root 0600.
+/var/lib/ntpstats-retention/trigger {
+    daily
+    rotate 0
+    ifempty
+    nocompress
+    nocopytruncate
+    create 0600 root root
+    su root root
+    firstaction
+        for stream in loopstats peerstats clockstats protostats; do
+            active="/var/log/ntpstats/$stream"
+            if [ ! -f "$active" ] || [ -L "$active" ]; then
+                echo "NTP statistics active file missing or indirect: $active" >&2
+                exit 1
+            fi
+        done
+        /usr/bin/find /var/log/ntpstats -regextype posix-extended -maxdepth 1 \
+            -type f -links 1 \
+            -regex '/var/log/ntpstats/(loopstats|peerstats|clockstats|protostats)\.[0-9]{8}(\.gz)?' \
+            ! -samefile /var/log/ntpstats/loopstats \
+            ! -samefile /var/log/ntpstats/peerstats \
+            ! -samefile /var/log/ntpstats/clockstats \
+            ! -samefile /var/log/ntpstats/protostats \
+            -mtime +29 -delete
+    endscript
+}

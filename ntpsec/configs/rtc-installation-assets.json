@@ -1,0 +1,30 @@
+{
+  "schema": 1,
+  "observed_date": "2026-10-15",
+  "scope": "RTC utility payload; fetch is not installation approval",
+  "public_keys": {},
+  "provenance": {
+    "source": "Debian trixie-security arm64 signed Packages index",
+    "inrelease_sha256": "5ea6ac277663e9667babd6a9dc9d60d15ca8a1a1d516b9a9330e2e14316bae85",
+    "packages_xz_sha256": "05ea6c3d27a37f8ba45d3a53ff6c93331b408118f3649a707dca685814ad8a52",
+    "signing_primary_fingerprints": [
+      "05AB90340C0C5E797F44A8C8254CF3B5AEC0A8F0",
+      "5E04A1E3223A19A20706E20F9904613D4CCE68C6"
+    ]
+  },
+  "assets": [
+    {
+      "id": "package-util-linux-extra-arm64",
+      "groups": [
+        "rtc"
+      ],
+      "package": "util-linux-extra",
+      "version": "2.41.5-0+deb13u1",
+      "architecture": "arm64",
+      "filename": "util-linux-extra_2.41.5-0+deb13u1_arm64.deb",
+      "url": "https://security.debian.org/debian-security/pool/updates/main/u/util-linux/util-linux-extra_2.41.5-0+deb13u1_arm64.deb",
+      "size": 290088,
+      "sha256": "541f8442351445839b73f4c2dad86403a68910a7acd0dfc9c24aab6e90ff7912"
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "port": "10000",
+  "bind": "10.1.0.51",
+  "sockets": "fd36:5aa8:6971:1::51:10000",
+  "ipv6": "1",
+  "ssl": "0",
+  "ssl_redirect": "0",
+  "allow": "10.1.0.0/22 fd36:5aa8:6971:1::/64",
+  "deny": "",
+  "allowusers": "ama",
+  "sudo": "1",
+  "listen": "",
+  "session": "1",
+  "atboot": "1"
+}

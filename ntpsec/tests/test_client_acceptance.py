@@ -13,6 +13,7 @@ import tarfile
 import tempfile
 import time
 import types
+import copy
 import unittest
 from unittest.mock import Mock, patch
 from contextlib import ExitStack
@@ -23,6 +24,113 @@ c = importlib.util.module_from_spec(spec); spec.loader.exec_module(c)
 
 
 class ClientAcceptanceTests(unittest.TestCase):
+    def test_boot_observation_seals_flat_client_bundle_and_rejects_invalid_persistence(self):
+        def load(path):
+            spec=importlib.util.spec_from_file_location(path.stem.replace('-','_'),path)
+            value=importlib.util.module_from_spec(spec);spec.loader.exec_module(value);return value
+        fixtures=load(ROOT/'tests/test_production_transition.py')
+        boot=load(ROOT/'scripts/run-production-boot.py')
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);folder,bundle,digest=fixtures.Controller().fixture(root)
+            old,prior=fixtures.controller.prepare(bundle,digest)
+            baseline=json.loads(prior['baseline.json'])
+            for name,member in fixtures.stage.CHANGES.items():
+                baseline['files'][name].update(sha256=c.sha(prior[member]),base64=base64.b64encode(prior[member]).decode())
+            baseline['boot_units']=dict.fromkeys(('gpsd.service','gpsd.socket','ntpsec.service','avahi-daemon.service','ntpleapfetch.timer'),{})
+            baseline['rtc_commissioning']={'bundle_sha256':'a'*64,'result_sha256':'b'*64,'readback':{}}
+            baseline['final_client_sha256']='c'*64
+            files={n:(ROOT/path).read_bytes() for n,path in boot.PATHS.items()}
+            files.update({n:prior[n] for n in boot.EXTRA});files['baseline.json']=c.encoded(baseline)
+            old.update(purpose='production-boot',action='restart',operation_id='boot-fixture',stage='/var/lib/ntp-boot-boot-fixture',
+                       rtc_persistence=True,start_before_epoch=old['expires_epoch']-900,
+                       restart_sha256=digest,observation_sha256='d'*64,hardware_receipt_sha256='e'*64)
+            old['members']={n:c.sha(raw) for n,raw in files.items()}
+            files.update({'spec.json':c.encoded(old),'review.md':boot.review(old).encode()})
+            bundle=folder/'production-boot.tar'
+            with tarfile.open(bundle,'w') as archive:
+                for name,raw in files.items():
+                    item=tarfile.TarInfo(name);item.size=len(raw);archive.addfile(item,io.BytesIO(raw))
+            bundle.chmod(0o600);digest=c.sha(bundle.read_bytes())
+            for n in ('spec.json','review.md'):(folder/n).write_bytes(files[n])
+            measurement=fixtures.peers(['a','b','c'])
+            measurement['system']={'leap':0,'stratum':1,'refid':'PPS','offset':0.01}
+            for row in measurement['peers']:row['variables'].update(reach=255,jitter=0.01,ntscookies=8)
+            epoch=int(time.time());state={'phase':'monitoring','boot_id':'old','new_boot_id':'new','drift_seed_observed':True,
+                'rtc_after':{'accepted':True},'health':{'epoch':epoch,'pair':{'fixture':'same'},'measurement':measurement,
+                'unit':{'ActiveState':'active','NRestarts':'0','UnitFileState':'enabled'}}}
+            observation={k:copy.deepcopy(state[k]) for k in ('phase','new_boot_id','health')}
+            def receipts(observation,persistence=None):
+                values={'observe-6-outcome.json':{'bundle_sha256':digest,'state':observation,'timing_ready':True},
+                    'observe-6-observe-result.json':observation,'observe-6-observe-transport.json':{'returncode':0},
+                    'observe-6-execution.json':{'sha256':digest,'mode':'observe','epoch':epoch},
+                    'apply-outcome.json':{'bundle_sha256':digest,'error':'SSH unavailable during reboot'},
+                    'resume-1-outcome.json':{'bundle_sha256':digest,'state':state if persistence is None else persistence}}
+                for name,value in values.items():
+                    (folder/name).write_bytes(c.encoded(value));(folder/name).chmod(0o600)
+            receipts(observation)
+            args=types.SimpleNamespace(monitor_dir=folder,monitor_sha256=digest,observation=6,production_boot=True,
+                native_discovery=True,paired=False,diagnostic=False,operation_id='postboot-client',
+                source_ipv4='192.0.2.10',output=root/'client')
+            sealed=c.seal(args);spec,parts=c.prepare(Path(sealed['bundle']),sealed['sha256'])
+            self.assertEqual(spec['monitor_sha256'],digest)
+            self.assertEqual(spec['observation_number'],6)
+            self.assertFalse(any(name.endswith('.tar') for name in parts))
+            for fault in ('old_boot','other_boot','drift','rtc','disabled'):
+                changed=copy.deepcopy(observation);persistence=copy.deepcopy(state)
+                if fault=='old_boot':changed['new_boot_id']='old'
+                if fault=='other_boot':changed['new_boot_id']='other'
+                if fault=='drift':persistence['drift_seed_observed']=False
+                if fault=='rtc':persistence['rtc_after']['accepted']=False
+                if fault=='disabled':changed['health']['unit']['UnitFileState']='disabled'
+                receipts(changed,persistence)
+                with self.subTest(fault=fault),self.assertRaisesRegex(ValueError,'new-boot persistence'):
+                    c.transition_observation(args)
+
+    def test_seal_from_real_transition_archive_and_reject_invalid_observations(self):
+        loader=importlib.util.spec_from_file_location('transition_fixtures',ROOT/'tests/test_production_transition.py')
+        fixtures=importlib.util.module_from_spec(loader);loader.loader.exec_module(fixtures)
+        with tempfile.TemporaryDirectory() as d:
+            root=Path(d);folder,bundle,digest=fixtures.Controller().fixture(root)
+            measurement=fixtures.peers(['a','b','c'])
+            measurement['system']={'leap':0,'stratum':1,'refid':'PPS','offset':0.01}
+            for row in measurement['peers']:row['variables'].update(reach=255,jitter=0.01,ntscookies=8)
+            epoch=int(time.time())
+            health={'epoch':epoch,'pair':{'fixture':'same'},'unit':{'ActiveState':'active','NRestarts':'0'},'measurement':measurement}
+            state={'phase':'monitoring','health':health}
+            values={'observe-10-outcome.json':{'bundle_sha256':digest,'state':state,'timing_ready':True},
+                    'observe-10-result.json':state,'observe-10-transport.json':{'returncode':0},
+                    'observe-10-execution.json':{'sha256':digest,'mode':'observe','epoch':epoch},
+                    'apply-outcome.json':{'bundle_sha256':digest,'state':state}}
+            def write(rows):
+                for name,value in rows.items():
+                    (folder/name).write_bytes(c.encoded(value));(folder/name).chmod(0o600)
+            write(values)
+            args=types.SimpleNamespace(monitor_dir=folder,monitor_sha256=digest,observation=10,
+                production_transition=True,native_discovery=True,paired=False,diagnostic=False,
+                operation_id='native-transition-fixture',source_ipv4='192.0.2.10',output=root/'client')
+            sealed=c.seal(args)
+            accepted,files=c.prepare(Path(sealed['bundle']),sealed['sha256'])
+            self.assertEqual(accepted['monitor_sha256'],digest)
+            self.assertEqual(accepted['observation_sha256'],c.sha(c.encoded(values['observe-10-outcome.json'])))
+            self.assertEqual(set(files),set(c.PATHS)|{'spec.json','review.md'})
+            pending=copy.deepcopy(values['apply-outcome.json'])
+            pending['state']={'phase':'acquiring'}
+            write({'apply-outcome.json':pending,'resume-1-outcome.json':values['apply-outcome.json']})
+            self.assertEqual(c.transition_observation(args)[0]['hostname'],accepted['hostname'])
+            (folder/'resume-1-outcome.json').unlink();write(values)
+            for fault in ('transport','receipt','handoff','quality','future','stale','restart'):
+                rows=copy.deepcopy(values)
+                if fault=='transport':rows['observe-10-transport.json']['returncode']=1
+                if fault=='receipt':rows['observe-10-outcome.json']['bundle_sha256']='0'*64
+                if fault=='handoff':rows['apply-outcome.json']=copy.deepcopy(rows['apply-outcome.json']);rows['apply-outcome.json']['state']['health']['pair']={'fixture':'other'}
+                if fault=='quality':rows['observe-10-result.json']['health']['measurement']['system']['offset']=10
+                if fault=='future':rows['observe-10-execution.json']['epoch']=epoch+60
+                if fault=='stale':rows['observe-10-result.json']['health']['epoch']=epoch-86401
+                if fault=='restart':rows['observe-10-result.json']['health']['unit']['NRestarts']='1'
+                write(rows)
+                with self.subTest(fault=fault),self.assertRaisesRegex(ValueError,'fresh ready'):
+                    c.transition_observation(args)
+
     def test_real_native_acceptance_and_rejections(self):
         loader = importlib.util.spec_from_file_location('dns_fixtures', ROOT/'tests/test_mdns_diagnostic.py')
         fixtures = importlib.util.module_from_spec(loader); loader.loader.exec_module(fixtures)

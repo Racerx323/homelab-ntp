@@ -1,0 +1,7 @@
+Package: webmin
+Pin: origin download.webmin.com
+Pin-Priority: 500
+
+Package: *
+Pin: origin download.webmin.com
+Pin-Priority: -1

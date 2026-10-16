@@ -7,6 +7,7 @@ import importlib.util
 import io
 import json
 import os
+import shlex
 from pathlib import Path
 import socket
 import struct
@@ -144,6 +145,17 @@ class BindingTests(unittest.TestCase):
             'restrict fd36:5aa8:6971:1::/64 nomodify noquery limited kod'])
         maintenance=(ROOT/'templates/ntpleapfetch-j2.service').read_text();self.assertNotIn(' -c ',maintenance)
         self.assertIn('-t /var/lib/ntpsec/leap-seconds.tmp',maintenance)
+
+    def test_leap_prefetch_interval_is_one_argument_with_parseable_units(self):
+        unit=(ROOT/'templates/ntpleapfetch-j2.service').read_text()
+        command=next(line.split('=',1)[1] for line in unit.splitlines() if line.startswith('ExecStart='))
+        argv=shlex.split(command);interval=argv[argv.index('-e')+1]
+        before=time.time()
+        result=subprocess.run(['date','-d','NOW + '+interval,'+%s'],capture_output=True,text=True)
+        self.assertEqual(result.returncode,0,result.stderr)
+        self.assertAlmostEqual(int(result.stdout)-before,60*86400,delta=3605)
+        bad=subprocess.run(['date','-d','NOW + 60','+%s'],capture_output=True,text=True)
+        self.assertNotEqual(bad.returncode,0)
 
 
 class StartupTests(unittest.TestCase):

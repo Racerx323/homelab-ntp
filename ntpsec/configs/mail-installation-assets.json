@@ -1,0 +1,113 @@
+{
+  "schema": 1,
+  "provenance": {
+    "source_manifest_sha256": "425c4af4be17d52f9110542006867ec2aff75c1bde9c77dc1ac8126925f01ec6",
+    "selection": "accepted mail-dependency-inspection-20261015-v1 no-recommends simulation; retained authenticated package hashes"
+  },
+  "assets": [
+    {
+      "id": "package-libgsasl18-arm64",
+      "groups": [
+        "mail"
+      ],
+      "package": "libgsasl18",
+      "version": "2.2.2-1.1+deb13u2",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/g/gsasl/libgsasl18_2.2.2-1.1%2bdeb13u2_arm64.deb",
+      "filename": "libgsasl18_2.2.2-1.1+deb13u2_arm64.deb",
+      "sha256": "35daf60ca754feb3d55ebbdf41976883e31e912ab1ba50a6bd0fda94e59751c6",
+      "size": 76280
+    },
+    {
+      "id": "package-libgssglue1-arm64",
+      "groups": [
+        "mail"
+      ],
+      "package": "libgssglue1",
+      "version": "0.9-1.1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libg/libgssglue/libgssglue1_0.9-1.1_arm64.deb",
+      "filename": "libgssglue1_0.9-1.1_arm64.deb",
+      "sha256": "4103ef939c000fe691db18166ebb79e126283716fb27f3acb833921098a94b83",
+      "size": 19708
+    },
+    {
+      "id": "package-libidn12-arm64",
+      "groups": [
+        "mail"
+      ],
+      "package": "libidn12",
+      "version": "1.43-1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libi/libidn/libidn12_1.43-1_arm64.deb",
+      "filename": "libidn12_1.43-1_arm64.deb",
+      "sha256": "064baf9620ae19823c1fec373dddde0b68f70754e434a2ad367f50b3649dcc48",
+      "size": 47180
+    },
+    {
+      "id": "package-libntlm0-arm64",
+      "groups": [
+        "mail"
+      ],
+      "package": "libntlm0",
+      "version": "1.8-4",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libn/libntlm/libntlm0_1.8-4_arm64.deb",
+      "filename": "libntlm0_1.8-4_arm64.deb",
+      "sha256": "335d3fa0dae62e2d754bdd2974bed4e162fe70a22ff508c4daf40c824bf91ac4",
+      "size": 22812
+    },
+    {
+      "id": "package-libsecret-1-0-arm64",
+      "groups": [
+        "mail"
+      ],
+      "package": "libsecret-1-0",
+      "version": "0.21.7-1",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/libs/libsecret/libsecret-1-0_0.21.7-1_arm64.deb",
+      "filename": "libsecret-1-0_0.21.7-1_arm64.deb",
+      "sha256": "48b439ab6dcaac0ea18ad31143fc673d2c5fbdc3e4c584c96429f24a7792d829",
+      "size": 102236
+    },
+    {
+      "id": "package-libsecret-common-all",
+      "groups": [
+        "mail"
+      ],
+      "package": "libsecret-common",
+      "version": "0.21.7-1",
+      "architecture": "all",
+      "url": "https://deb.debian.org/debian/pool/main/libs/libsecret/libsecret-common_0.21.7-1_all.deb",
+      "filename": "libsecret-common_0.21.7-1_all.deb",
+      "sha256": "ce336a4ea6d27bfe85c195b88ab9a8eb95ce197228648634b8ace35ddb9bd808",
+      "size": 27936
+    },
+    {
+      "id": "package-msmtp-arm64",
+      "groups": [
+        "mail"
+      ],
+      "package": "msmtp",
+      "version": "1.8.28-3",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/m/msmtp/msmtp_1.8.28-3_arm64.deb",
+      "filename": "msmtp_1.8.28-3_arm64.deb",
+      "sha256": "da7fbc7704edf3772e584d0eae7d0f7da37156f194721c8be34ade9f05ab7236",
+      "size": 221128
+    },
+    {
+      "id": "package-msmtp-mta-arm64",
+      "groups": [
+        "mail"
+      ],
+      "package": "msmtp-mta",
+      "version": "1.8.28-3",
+      "architecture": "arm64",
+      "url": "https://deb.debian.org/debian/pool/main/m/msmtp/msmtp-mta_1.8.28-3_arm64.deb",
+      "filename": "msmtp-mta_1.8.28-3_arm64.deb",
+      "sha256": "a885da6c8993124b32ac9f1dc250be85daae285c63628e419628edffb71ff7ce",
+      "size": 71504
+    }
+  ]
+}

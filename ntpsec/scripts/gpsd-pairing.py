@@ -45,8 +45,8 @@ def pairing_evidence(gps_json, shm_text, minimum_samples=60):
             'timing_accuracy_accepted':False}
 
 
-def startup(gpsd, stopping, expected, directory):
-    """One short startup check; stop both monitors before ntpd can consume SHM."""
+def startup(gpsd, stopping, expected, directory, acquisition_wait=False, progress=None):
+    """Wait for acquisition when requested; keep each observer window bounded."""
     deadline=time.monotonic()+15
     while True:
         if stopping() or gpsd.poll() is not None: raise ValueError('GPSD stopped during readiness')
@@ -55,12 +55,32 @@ def startup(gpsd, stopping, expected, directory):
         except OSError:
             if time.monotonic()>=deadline: raise ValueError('GPSD readiness timeout')
             time.sleep(.25)
+    started=time.monotonic(); windows=0
+    if acquisition_wait and progress:
+        progress({'observed':False,'state':'acquiring','elapsed_seconds':0,
+                  'windows':0,'reason':'waiting for valid serial/PPS pairing'})
+    while True:
+        if stopping() or gpsd.poll() is not None:raise ValueError('GPSD stopped during acquisition')
+        result=startup_window(gpsd,stopping,expected,directory)
+        windows+=1
+        result.update(elapsed_seconds=time.monotonic()-started,windows=windows)
+        if result['observed']:return result
+        if not acquisition_wait:raise ValueError('30-second serial/PPS functionality timeout')
+        if result['reason']=='PPS watch acknowledgement missing':
+            raise ValueError('startup monitor did not acknowledge PPS watch')
+        if progress:progress(dict(result,state='acquiring'))
+
+
+def startup_window(gpsd, stopping, expected, directory):
+    """Observe at most 30 seconds; reap both readers before returning any result."""
     with tempfile.TemporaryDirectory(prefix='gate-',dir=directory) as temporary:
         root=Path(temporary); children=[];streams=[]
+        result={'observed':False,'reason':'PPS watch acknowledgement missing'}
         try:
+            # Readers outlive the sampling window slightly; normal expiry is not a crash.
             for name,argv in (
-                ('json',['/usr/local/bin/gpspipe','-B','-w','-P','-x','30','127.0.0.1:2947']),
-                ('shm',['/usr/local/bin/ntpshmmon','-t','30'])):
+                ('json',['/usr/local/bin/gpspipe','-B','-w','-P','-x','35','127.0.0.1:2947']),
+                ('shm',['/usr/local/bin/ntpshmmon','-t','35'])):
                 stream=(root/name).open('xb');streams.append(stream)
                 children.append(subprocess.Popen(argv,stdout=stream,stderr=subprocess.DEVNULL,
                     env={'PATH':'/usr/local/bin:/usr/bin:/bin','LC_ALL':'C'}))
@@ -73,13 +93,21 @@ def startup(gpsd, stopping, expected, directory):
                     with (root/name).open('rb') as source:data=source.read(131073)
                     if len(data)>131072:raise ValueError('startup sample bound exceeded')
                     raw.append(data[:data.rfind(b'\n')+1].decode())
+                for row in (json.loads(line) for line in raw[0].splitlines() if line.strip()):
+                    kind=row.get('class')
+                    if kind in ('TOFF','PPS'):
+                        device='/dev/serial0' if kind=='TOFF' else '/dev/pps0'
+                        if row.get('device')!=device or row.get('shm')!=expected[kind]:
+                            raise ValueError('observed device/SHM assignments differ from configuration')
+                    if kind=='WATCH' and row.get('pps') is not True:
+                        raise ValueError('PPS watch rejected')
                 result=pairing_evidence(*raw,minimum_samples=5)
                 if result['observed']:
                     if {k:v['unit'] for k,v in result['sources'].items()}!=expected:
                         raise ValueError('observed SHM assignments differ from configuration')
                     return result
                 time.sleep(.25)
-            raise ValueError('30-second serial/PPS functionality timeout')
+            return result
         finally:
             for p in children:
                 if p.poll() is None:p.terminate()
