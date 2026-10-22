@@ -1,21 +1,207 @@
 # j2-svntp1 production readiness
 
-Reconciled October 21, 2026, after accepted svmf static networking and Munin/svmf DNS.
+Reconciled October 22, 2026, after accepted canonical source and producer follow-ups.
 This checklist summarizes approved captures and repository documents;
 updating it performs no additional live inspection. The [plan](ntp-architecture-deployment-plan-v1.0.md)
 defines requirements; [HISTORY](../HISTORY.md) records operation outcomes.
 
 ## Decision and next action
 
-**Resume here:** prepare scoped read-only qualification of actual canonical
-collector TCP source attribution, then qualify native limits/contact transitions
-before separate exact-message problem/recovery delivery reviews. Keep contacts
-disabled. Independently prepare a new producer follow-up after the October 22,
-2026 scheduled retention/reporting runs have had time to complete: observed
-retention timer 00:45:39 CDT, configured reporting 05:30 America/Chicago.
-Inspect actual rule-specific records and scheduler provenance; do not infer
-success from those times or invoke a job. Both current observation receipts
-are consumed and cannot replay.
+**Resume here:** obtain separate exact-hash execution approvals for the sealed,
+unexecuted +6h reviews, then execute node first at or after **October 22, 2026,
+22:08:28.166 CDT**. Review the node capture before master execution:
+
+1. [Node +6h review](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-growth-6h-node-20261022-v1/review.md)
+   / [SHA-256](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-growth-6h-node-20261022-v1/sealing.json:1).
+2. [Master +6h review](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-growth-6h-master-20261022-v1/review.md)
+   / [SHA-256](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-growth-6h-master-20261022-v1/sealing.json:1).
+
+Both scopes pin the accepted t0 pair and enforce the due time before receipt or
+SSH; the remote collector checks it again before observations. Master also
+requires reviewed acceptance of that exact +6h node capture. No target access,
+sampling, receipt, reminder or waiting process was created during preparation.
+Archive expiry is capped by the pinned t0 proofs; the controller's last permitted
+start is before **October 23, 2026, 15:47:08.376 CDT**, reserving 15 minutes before
+expiry. This upper bound permits execution, not acceptance of an arbitrarily
+late checkpoint: record actual elapsed time and assess any lateness explicitly.
+No later checkpoint is authorized by either review.
+
+Approved t0 v2 node and master inspections completed once and their reviewed
+baselines are accepted:
+
+1. [Node outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-growth-t0-node-20261022-v2/outcome.md):
+   t0 is **October 22, 2026, at 16:08:28.166 CDT** (21:08:28.166 UTC), epoch
+   1792703308.1661916. All four active streams have matching writable ntpd
+   descriptors; exact 33-plugin selection, storage floors and protected
+   continuity pass. A transient process descriptor race is retained; relevant
+   writer identities match across both scans. Event-driven protostats remains
+   quiet with its active inode held writable.
+2. [Master outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-growth-t0-master-20261022-v2/outcome.md):
+   exact node context and protected continuity pass. All selected RRD files are
+   present; nine selected graph configurations decode and thresholded native
+   states are `ok`. Three completed scheduled cycles predate t0 and count only
+   as baseline context. Committed contacts and successful submission status
+   remain unchanged; this observation establishes no new delivery.
+
+The selected [contract](PRODUCTION-OBSERVATION-CONTRACT.md) remains 48 hours at
+t0/+6h/+24h/+48h, with 31 days at twice peak daily-equivalent gross growth plus
+active-file allowance and unchanged 10 GiB/5% floors. Remaining checkpoints:
+
+| Checkpoint | Due in America/Chicago |
+| --- | --- |
+| +6h | October 22, 2026, 22:08:28 CDT |
+| +24h | October 23, 2026, 16:08:28 CDT |
+| +48h | October 24, 2026, 16:08:28 CDT |
+
+Only t0 is accepted; sustained growth and storage budget remain open. Later
+samples require fresh due-time reviews. No target mutation, forced collection,
+plugin/job/limits invocation, send or retry occurred. Both v2 receipts are
+consumed; do not replay them. Failed node v1 and unexecuted master v1 remain
+preserved as historical evidence. Final Phase 3 duration/tolerances remain pending.
+
+Coverage reconciliation preserves accepted expanded metrics, canonical IPv4
+source attribution, dual-family transport/dashboard evidence and delivered
+contacts. Current-boot node RA/resolver policy, representative client/access
+coverage, and master source behavior after a separately approved maintenance
+event remain open. The contract distinguishes those obligations from a saved
+profile or a quiet interval. Final Phase 3 duration, cadence, tolerances and
+reset rules remain pending; the selected 48 hours applies only to OBS-02.
+Watchdog/recovery, hardware health, recurring/boot maintenance dispositions and
+final inventory still need their owning gates. Phase 3B ntpviz and Phase 8
+remain separate. The bounded mail follow-up below stays accepted.
+
+The approved [mail observation](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-contact-mail-observation-20261022-v1/outcome.md)
+completed once at 15:07:04 CDT on October 22. Protected boot/services/files and
+committed config/helper/gate/marker continuity passed; effective includes are
+empty. Status is valid, unchanged during capture and successful, with last
+attempt at 14:50:15. The status schema has no message identity, so exact writer
+attribution is not accepted from timestamp correlation alone. No suppression
+record exists; this optional-file absence is not a failure.
+
+Native transport mail sample is 1 at 15:05:13, matching RRD lastupdate; native
+limits state is `ok`. Genuine completed cycles began at 14:50:02, 14:55:01 and
+15:00:01. The RRD retains the earlier zero, fractional recovery interval and
+later one-valued intervals. These five-minute AVERAGE values are consolidated,
+not individual raw fetches. Native current-state/collection acceptance is
+bounded to this capture and does not establish long-term reliability.
+
+Operator Mailrise/Apprise excerpts establish partial delivery during the initial
+failure: Discord and Mailgun reported success while Pushover ALL_DEVICES had a
+connection error, yielding API 424 and the retained SMTP 450 result. Later
+requests reported all three services successful with HTTP 200. The underlying
+Pushover connection cause and exact later per-message mapping remain unproven.
+No notification retry, forced collection/evaluation, status reset, HTTP request,
+container/provider inspection or mutation occurred. Contacts remain enabled;
+the observation receipt is consumed and must not be replayed.
+
+[Activation v3](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-contacts-activate-20261022-v3/outcome.md)
+executed once, committed and reconciled the repository. All twelve verified
+pre/post HTTPS checks passed. Gated notifications are now enabled for the eight
+explicit j2 NTP graphs and J1-SVMF transport; global/j2 defaults remain none.
+The proof-preserving successor passed sixteen native contact cases and 28 limits
+cases with all seven pinned native module hashes. The diagnostic and rejected
+activation v2 remain consumed; do not replay them or the accepted successor.
+
+The approved [problem v2](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-contacts-problem-20261022-v2/outcome.md)
+was attempted once. SMTP returned `450 failed to send notification` and genuine
+failure status was recorded. Aaron supplied the exact downstream Apprise problem
+notification, confirming delivery despite submission failure. Both facts remain
+recorded; the failed result was not rewritten or retried.
+
+After that exact operator confirmation, the approved
+[recovery v2](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-contacts-recovery-20261022-v2/outcome.md)
+was submitted once successfully and recorded genuine success status. Aaron also
+supplied its exact downstream notification. Both confirmations bind the sealed
+message, archive and consumed receipt. All three execution stages are consumed.
+
+Aaron additionally supplied an automatic `Munin CRITICAL: J1-SVMF/ntp_transport_j2`
+notification identifying critical field `mail`, followed by the automatic
+`Munin OK: J1-SVMF/ntp_transport_j2` notification with no warning, critical or
+unknown fields. Both downstream receipts are operator-confirmed. This establishes
+an observed automatic CRITICAL-to-OK notification sequence. The separate
+read-only observation above now accepts fresh native mail/current limits state
+and the retained consolidated failure/recovery history.
+The [contact procedure](../../../homelab-monitoring-observability/Munin/docs/ntp-contact-reviews.md)
+keeps SMTP status, downstream confirmation and genuine scheduled use distinct.
+The timing-reader correction committed
+and reconciled at 11:35:57 CDT on October 22; master acceptance passed at 11:54:45.
+Consumed operations:
+[node reader correction + companion master checks](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-timing-20261022-v2/review.md)
+/ [SHA-256](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-timing-20261022-v2/sealing.json:1),
+then the [read-only master acceptance](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-timing-master-acceptance-20261022-v1/review.md)
+/ [SHA-256](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-timing-master-acceptance-20261022-v1/sealing.json:1).
+Both receipts are consumed; do not replay them. The
+[node outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-timing-20261022-v2/outcome.md)
+accepts all 33 plugins across both complete post-change protocol families and
+twelve HTTPS continuity requests. The
+[master outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-timing-master-acceptance-20261022-v1/outcome.md)
+accepts the genuine 11:40/11:45/11:50 CDT cycles, twelve fresh GAUGE RRDs with
+three finite post-commit samples each, and ten verified dual-stack HTTPS
+resources including both day graphs. Both new timing flags are 1; historical
+pre-creation unknowns are preserved. Protected continuity and empty effective
+includes passed.
+That reader rollout did not install contacts. The separately accepted contact
+activation and controlled delivery outcomes are recorded in the current checkpoint.
+
+Guarded qualification passes 17 real native systemd cases, including eight
+reader-specific success/recovery, worker/controller-loss, preflight and foreign
+file/link/settings cases. Scope checks reject nine broadened/missing-prerequisite
+variants. Repeated recovery after restoration does not restart the node again.
+The master capture uses the accepted node commit epoch as a separately hashed
+runtime context; older collection cannot satisfy it, and later read-only
+successors do not require replaying the node change. The
+[deployment procedure](../../../homelab-monitoring-observability/Munin/docs/ntp-timing-deployment.md)
+records guard, acceptance, reset and restoration boundaries. Unexecuted node v1
+was superseded during preparation; use v2 only.
+
+The reader now evaluates inclusive ±5 ms offset and 0–1 ms jitter before native
+rounding, exposing `selected_offset_ok`/`selected_jitter_ok` as 1/0/U in
+`ntp_health` with critical `1:1`. Existing timing values/names/seconds units remain;
+the incorrect native seconds critical directives are removed in production.
+This adds two health RRD fields, with the same 33 plugins and graph identities.
+The generic metrics remain collected. Contact scope is explicitly eight NTP
+limit graphs plus master transport; global and host defaults are `contacts none`,
+and the helper accepts only those graph origins.
+
+The [native correction qualification](../../../homelab-monitoring-observability/Munin/docs/ntp-limits-qualification.md)
+passes 28 cases using the real 2.0.73 engine with matched module bytes in the
+pinned network-disabled image. Correct boundaries, unknown flags, transition
+suppression, per-message pipes and actual candidate inheritance passed. Generic
+and unrelated-host/unselected-master graphs invoked no contact. SMTP/status
+functions were not called. The guarded reader deployment passed complete
+dual-stack probes of all 33 plugins and twelve HTTPS continuity requests.
+Fresh-field scheduled collection and serving passed the separate master capture.
+Contact activation and exact-message delivery remain separately approved stages.
+
+The separately approved [master maintenance outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-master-maintenance-observation-20261022-v1/outcome.md)
+accepted all four maintenance RRDs at 10:28:57 CDT on October 22. Both evidence
+fields are 1; both fresh numeric age series agree with the genuine completion
+epochs. Each field has six finite 300-second samples. Native scheduled cycles
+at 10:10/10:15/10:20 CDT and all ten dual-stack verified HTTPS requests passed,
+including both maintenance day PNGs. Protected continuity, empty effective
+includes and the four native module hashes passed. Contacts remain disabled.
+This receipt is consumed; no replay. No job, parser, update, limits, contact or
+service action was invoked. Master maintenance consumption is now accepted
+within this bounded capture; corrected alert behavior and delivery remain open.
+Retain client coverage, source persistence, sustained four-stream growth/storage
+budget and final observation.
+
+Both approved October 22 inspections completed with controller/SSH exit 0 and
+unchanged protected continuity. The
+[master source outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-canonical-source-20261022-v1/outcome.md)
+accepts canonical IPv4 source `10.1.3.83` to `10.1.0.51:4949`: actual sockets,
+munin-update ownership, munin-cron/pinned-cron ancestry and native events match
+the 09:55 and 10:00 CDT cycles. Transport-plugin sockets were separately
+identified. The 360-scan passive capture invoked no collection or probe.
+
+The [producer outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-producer-followup-20261022-v1/outcome.md)
+accepts both valid/fresh real rule-specific records at 09:55 CDT: retention
+completed October 22 at 00:45:58 CDT and reporting at 05:30:03 CDT. Reporting
+matches root cron; retention completion correlates with timer/unit events.
+Filtered logrotate events omit verdict labels, so global unit success is not
+claimed. The actual protected rule-specific record is independent evidence.
+The exact 33-plugin selection passed. Both receipts are consumed; no replay.
+No job/message, configuration change or service action was performed.
 
 The approved expanded observations completed with controller/SSH exit 0 and
 unchanged protected continuity. The
@@ -141,7 +327,8 @@ plots have no successful-job values; master mail remains unknown.
 
 Also prepare scoped qualification of actual canonical TCP source attribution
 and native limits/contact transitions, then exact-message delivery reviews.
-Keep new contacts disabled. Client refresh/coverage, OBS-02 sustained growth and
+This earlier observation did not activate contacts; see the current checkpoint.
+Client refresh/coverage, OBS-02 sustained growth and
 budget, persistence, final observation and later mandatory separate-host ntpviz
 remain open. The [observation procedure](../../../homelab-monitoring-observability/Munin/docs/ntp-observation.md)
 retains evidence/reset rules; a complete capture alone is not overall readiness.
@@ -574,14 +761,14 @@ maintenance during final observation; do not infer a result from elapsed time.
 | RTC | Commissioning v3 and boot v2 prove RV3028 identity, UTC policy, synchronized set/readback, fake-clock absence and kernel boot initialization | Battery-backed power-loss retention remains explicitly untested; the plan distinguishes it from warm reboot acceptance |
 | Leap maintenance | Timer-only correction executed and passed; prior successful scheduled run preserved and four-week next trigger checked across reload | Actual four-week recurrence and physical-host post-reboot initial trigger remain unobserved; see OBS-05 and OBS-06 |
 | Webmin | v2 local HTTP/configuration checks and operator ama login over IPv4/IPv6 passed; temp-storage inspection found no current space shortage | Assess storage needs before large uploads/backups; controller exposure remains unverified |
-| Mail and needrestart | Mail transport, operator-confirmed synthetic deliveries, manual reporter delivery and daily 05:30 cron activation accepted; current producer record remains absent at October 21 19:13 CDT | Inspect genuine reporter record/provenance after October 22 05:30 CDT plus completion time; cron-generated failure mail remains unobserved |
-| Statistics retention | Four-stream rule/private trigger installed; target fixtures, debug validation and targeted first run passed with empty deletion preview and unchanged NTP/writer identity. Approved 10 GiB/5 percent free-inode pre/postflight floors passed | Subsequent scheduled rotation, continued statistics growth, sustained storage budget, ongoing free-space alerts and maintenance failure reporting remain unaccepted. Current observed next trigger is October 22 at 00:45:39 CDT; the rule-specific success record remains absent at October 21 19:13 CDT. Required plotting is Phase 3B |
-| Munin | Expanded 29-generic/four-NTP node and final master accepted; October 21 19:00/19:05/19:10 scheduled cycles, 280 fresh RRDs and all 120 dual-stack HTTPS checks accepted | Genuine maintenance success/provenance, canonical source attribution, native limits/transitions, delivered alerts, client coverage/persistence and final observation |
+| Mail and needrestart | Transport/manual deliveries and daily cron activation accepted; October 22 genuine reporting record and fresh master evidence/age consumption accepted | Cron-generated failure-mail delivery remains open; recurring reporting must remain observed |
+| Statistics retention | Four-stream rule/private trigger, genuine rule-specific success and master evidence/age consumption accepted; 48-hour growth contract selected October 22 | Execute separately reviewed t0/+6h/+24h/+48h snapshots, account for gross growth and reserve capacity, and map storage/failure alert evidence. Global logrotate-unit verdict remains unaccepted; plotting is Phase 3B |
+| Munin | Expanded profile/graphs, genuine producers, corrected timing readers, canonical source attribution, committed contacts, exact delivered tests and bounded native mail recovery accepted October 22 | Preserve accepted collection; complete the [coverage/persistence matrix](PRODUCTION-OBSERVATION-CONTRACT.md#coverage-and-persistence-reconciliation) and agree the final observation contract. No consumed stage may be replayed |
 | Hardware watchdog | Userspace watchdog package absent from the post-reboot inventory. Deployment recovery timers are different mechanisms | Inspect device/driver ownership and configuration; approve installation/enablement and controlled failure/recovery test separately |
 | Network persistence | Earlier network acceptance established fixed addresses, RA, DNS and egress. Latest boot passed both fixed SSH endpoints and client families | Reconcile current-boot RA global address/default route, resolver views and DHCP/RA DNS suppression; endpoint reachability alone does not prove these properties |
 | PoE, fan and thermal health | Earlier operator observations establish normal fan/power and original PoE HAT; boot success does not establish sustained health | Current power budget/class, fan/control, temperature, undervoltage/throttling and sustained-operation evidence; no stress or switch changes implicit |
 | OS/media/access | Trixie identity and accepted boot/kernel continuity are recorded; original recovery card retained | Close the complete per-node baseline, current update status and final observed inventory. Wi-Fi disablement remains unproven in HISTORY, not silently accepted |
-| Final observation and inventory | Short timing convergence accepted; no agreed final host observation interval or completed final inventory established by these captures | Agree interval and criteria after remaining changes; complete inventory from observed facts |
+| Final observation and inventory | Short timing/monitoring observations accepted; OBS-02 window selected but not started. Final Phase 3 duration/cadence/tolerances remain pending | Resolve baseline gate dispositions and the [final-window decisions](PRODUCTION-OBSERVATION-CONTRACT.md#final-phase-3-window-inputs-still-required), then begin after relevant changes and complete observed inventory |
 
 The October 20 Munin-absence inspection is historical and superseded by the
 accepted deployment/observations above. Watchdog absence comes from the retained post-reboot RTC inventory,
@@ -601,15 +788,15 @@ remain pending wherever not established below.
 
 | ID | Current status | Next checkpoint or dependency | Evidence required to close or hand over |
 | --- | --- | --- | --- |
-| OBS-01 | Genuine retention producer installed/accepted; October 21 19:13 capture finds its record absent | Separately approved read-only follow-up after captured next timer October 22 00:45:39 CDT plus completion time; inspect rule-specific record and provenance | Actual rule-specific success state plus collected monitoring evidence; do not close from global timer success alone |
-| OBS-02 | Earlier two-sample growth/capacity inspection passed; October 21 native collection confirms current floors and statistics-age fields. Sustained budget and delivered alerts incomplete | Choose representative four-stream growth/budget sampling and qualify failure/space notification; retain ongoing cadence/ownership | Four-stream growth/capacity assessment, approved 10 GiB/5 percent inode floors reflected in monitoring or explicitly revised, failure visibility and alert acceptance. Event-driven protostats need not grow on every sample |
-| OBS-03 | Genuine reporter producer installed/accepted; October 21 19:13 capture finds its record absent. Manual test delivery is separate | Observe actual October 22 05:30 America/Chicago run after completion under a new read-only review; preserve quiet success, locks and failure-mail handling | Actual cron execution/quiet-scan or report outcome and collected success evidence; do not infer execution from test delivery |
+| OBS-01 | Initial genuine retention completion/provenance and master evidence/age consumption accepted October 22; four-stream monitoring remains active | Preserve recurring retention evidence and failure visibility; continued statistics/storage observation remains OBS-02 | Actual rule-specific success and collected monitoring evidence accepted within bounded captures; continuing operation is not inferred |
+| OBS-02 | Open: t0 node/master v2 accepted at October 22, 16:08:28 CDT; +6h/+24h/+48h remain due | Separate due-time read-only reviews; measure per-inode gross growth and reclamation, then assess 31-day budget with 2x headroom and active allowance | [Contract](PRODUCTION-OBSERVATION-CONTRACT.md); accepted t0 outcomes above |
+| OBS-03 | Initial genuine reporter completion/cron correlation and master evidence/age consumption accepted October 22 | Preserve recurring reporter evidence, quiet success, locks and failure-mail handling; delivered failure mail remains OBS-04 | Actual producer completion and collected monitoring evidence accepted within bounded captures; recurrence/delivery remain separate |
 | OBS-04 | Synthetic failure route delivered; cron-generated failure mail unobserved | Prepare a separate controlled failure-path review with exact recipient/content approval | Cron-originated test evidence and operator-confirmed downstream receipt; do not resend existing tests implicitly |
 | OBS-05 | Corrected timer accepted; four-week live recurrence unobserved | Retained estimate: November 12, 2026, 18:19:41 CST; refresh live schedule under approved scope before relying on it | Actual scheduled result, valid leapfile and subsequent trigger. Estimate is not a fresh timer observation; reconcile any phase-gate deferral explicitly |
 | OBS-06 | Isolated boot-trigger tests passed; physical Pi boot-trigger behavior after correction unobserved | Next separately approved reboot; observe the 15-minute initial trigger plus allowed jitter | Host reboot/maintenance result and next recurrence schedule; preserve shared-antenna power and recovery controls |
-| OBS-07 | Expanded 29-generic/four-NTP node and final master committed/reconciled; exact 33-link observation passed. Genuine October 21 19:00/19:05/19:10 CDT cycles, 56 j2 graphs plus master transport, 280 fresh RRDs and 120 verified dual-stack HTTPS responses accepted. Maintenance ages remain U; mail U | Observe genuine maintenance records after the October 22 schedules; qualify canonical collector TCP source attribution and native limits/transitions, then preview/approve exact-message delivered problem/recovery tests. Retain client refresh/coverage and persistence comparison | Bounded expanded deployment, scheduled collection and graph serving are accepted. Remaining job health/provenance, source attribution, client coverage/persistence, unknown/failure transitions and delivered notifications remain separate open gates |
+| OBS-07 | Expanded collection/graphs, source attribution, corrected timing/maintenance, contacts and bounded native mail recovery accepted October 22 | Use the [coverage/persistence matrix](PRODUCTION-OBSERVATION-CONTRACT.md#coverage-and-persistence-reconciliation); preserve the explicit source policy and compare after the next separately approved master maintenance event | Current-boot node network policy, representative clients/access, source persistence or approved disposition, and sustained operation remain separate from accepted short captures |
 | OBS-08 | Boot and earlier operator fan/power observations retained; sustained health not accepted | Agree duration/load and collect during final host observation | Fan/thermal/PoE/undervoltage evidence; watchdog controlled failure/recovery remains a separately approved baseline gate |
-| OBS-09 | Final Phase 3 interval, cadence and tolerances not agreed; Phase 8 still later | Close prerequisite gates, agree observation contract, then start after the last relevant change | Reviewed time/client/network health across the full interval and final inventory; record restart/retest rules and recurring operations owner |
+| OBS-09 | Final Phase 3 interval, cadence, tolerances and reset rules remain pending; selected OBS-02 48-hour baseline is a different window | Resolve prerequisite gates and the [final-window contract inputs](PRODUCTION-OBSERVATION-CONTRACT.md#final-phase-3-window-inputs-still-required), then agree start after the last relevant change | Reviewed time/client/network/hardware health across the full agreed interval, evidence-gap/reset dispositions, final inventory and recurring owner/cadence; Phase 8 remains later |
 | OBS-10 | RTC set/readback and warm-boot initialization accepted; power-loss retention untested | Separate operator decision and approved recoverable power-loss window | Battery-retention result or explicit untested disposition; never infer it from the accepted warm reboot |
 | OBS-11 | Required separate-host dashboard deferred to Phase 3B; host/name undecided | After j2 Phase 3 completion, before next-server installation | Host sizing and private dashboard acceptance, then refresh/staleness/failure monitoring under the statistics policy |
 | OBS-12 | Webmin idle temp capacity inspected; large upload/backup suitability unassessed | Before enabling/using large workloads | Workload-specific disk/RAM assessment; retain current configuration until a separate change is reviewed |

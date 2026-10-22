@@ -332,6 +332,17 @@ silently shorten retention to recover space. Keep private operation evidence and
 any longer-lived comparison archives outside this cleanup directory, with their
 own approved retention and backup/restoration scope.
 
+For OBS-02, Aaron selected a 48-hour growth baseline on October 22, 2026,
+with snapshots at t0, +6 hours, +24 hours and +48 hours. Use 31 days at twice
+the measured peak daily-equivalent gross growth, plus the observed active-file
+allowance, for bytes and inode budgeting. Retain the deployed 10 GiB available-
+space and 5 percent available-inode alert floors. Record actual elapsed times,
+retention reclamation and other filesystem consumers; do not treat net directory
+size as gross growth or assume unknown reserves are zero. The
+[observation contract](PRODUCTION-OBSERVATION-CONTRACT.md) defines accounting,
+coverage and remaining final-window decisions. This selects a measurement plan,
+not live access, a new scheduler or the duration of final Phase 3 observation.
+
 #### Thirty-day retention through logrotate
 
 Use [the dedicated logrotate candidate](../templates/ntpstats-retention.logrotate)

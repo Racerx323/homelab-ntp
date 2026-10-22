@@ -1,5 +1,572 @@
 # NTPsec deployment history
 
+## Separate +6h growth reviews sealed in advance — October 22, 2026
+
+Prepared separate one-use node/master +6h archives without target access or
+sampling. Reused the bounded repository-owned t0 collector and retained every
+accepted boot/service/file identity. Pinned both reviewed t0 archives, captures,
+receipts, results and outcomes. The master additionally pins the newly sealed
+node +6h archive and requires its reviewed accepted complete capture before
+receipt or SSH. The accepted t0 epoch remains 1792703308.1661916.
+
+Controller and remote guards reject observation before October 22 at
+22:08:28.166 CDT. Controller rejection precedes receipt creation or transport
+and never waits. Expiry is capped by both t0 proofs; the controller reserves
+15 minutes, refusing starts at or after October 23 at 15:47:08.376 CDT. Actual
+elapsed time and lateness remain findings for review; no tolerance was invented.
+Selected master RRDs, cached native limits and committed contact state remain
+read-only. New scope invokes no plugins, collection, evaluators, jobs or sends.
+No reminder, scheduler change, retry or +24h/+48h authority was created.
+
+The 42 focused growth/observation tests pass, including early rejection on both
+roles, changed proof rejection, target-side timing rejection, and the exact
+reviewed due-node prerequisite. Both frozen archive checks pass. Execution awaits separate approvals; acceptance requires evidence review. Both
+new receipts are absent.
+
+## OBS-02 t0 node/master accepted — October 22, 2026
+
+Executed the separately approved exact-hash v2 node and master read-only stages
+once, node first. Reviewed node metadata, all four active stream writer
+identities, storage floors, maintenance records, exact 33-plugin selection and
+protected before/after continuity. Accepted t0 epoch 1792703308.1661916,
+October 22 at 16:08:28.166 CDT (21:08:28.166 UTC). Retained the transient process
+descriptor race and quiet event-driven protostats finding without forcing activity.
+
+Master verified that exact reviewed node context before target contact. Complete
+capture and protected continuity pass; selected RRD files are present, all nine
+selected graph configurations decode and thresholded native states are ok.
+Three recent completed cycles predate t0 and establish baseline context only.
+Committed contacts and successful submission status are stable. No new send,
+delivery claim, target mutation, forced collection, job or evaluator occurred.
+Both one-use receipts are consumed; original frozen archives remain unchanged.
+
+The 48-hour sampling baseline is established, not sustained-growth acceptance.
+Next checkpoint is +6h on October 22 at 22:08:28 CDT; +24h is October 23 and
++48h October 24 at 16:08:28 CDT. Prepare separate due-time node/master reviews
+and obtain new exact-hash approvals. No later sample or reminder is scheduled.
+Storage budget, remaining coverage, persistence and final-observation gates stay open.
+
+## Node t0 v1 incomplete; corrected successors sealed — October 22, 2026
+
+Executed the approved exact-hash read-only node t0 v1 once. SSH returned the
+collector result successfully, but capture_complete was false with indirect
+observation path. Protected preflight was exported; no observations object or
+accepted baseline epoch was exported. Complete before/after continuity cannot
+be accepted. The read-only collector attempted no target mutation or forced
+metric/job/contact/send. Its one-use receipt is consumed. Master v1 was not
+invoked and has no receipt because its exact node prerequisite was unaccepted.
+
+Repository source review identifies the defect: mount_record used
+/proc/self/mountinfo with a reader that rejects symlinked parents. Corrected it
+to `/proc/<collector-pid>/mountinfo` without relaxing the guard or bounds. Added
+a real local procfs regression proving the direct path passes while /proc/self
+is rejected. Preserved both original frozen archives and their actual outcomes;
+no retry or additional target diagnostic occurred.
+
+Sealed corrected node/master t0 v2 reviews, with the master bound to the exact
+new node archive and a reviewed accepted capture/epoch before receipt or SSH.
+The unchanged 48-hour contract has no accepted start; no checkpoint is inferred
+from the failed attempt. Both successor receipts are absent and require new
+hash-bound approvals. Do not retarget master v1 or replay node v1.
+
+The 36 focused growth/observation tests and full Munin scaffold pass for the
+correction. Both frozen archive checks and working-tree secret scans pass;
+the successor archives remain unexecuted.
+
+## Separate t0 node/master growth reviews sealed — October 22, 2026
+
+Prepared executable one-use node and master t0 archives against the selected
+48-hour OBS-02 contract. Reused the existing statistics inventory/writer scan
+and authenticated observation transport; no target contact or sampling occurred.
+Node scope adds allocated bytes/ns timestamps, unique-inode totals, filesystem
+capacity/mount identity and active-stream findings to bounded metadata snapshots,
+plus actual writer FD identities and existing maintenance/link evidence. It reads
+no statistics contents and schedules no later collection. Two immediate metadata
+snapshots detect races; they are not the +6h checkpoint or a sustained growth rate.
+
+Pinned the accepted timing-reader correction, genuine producer follow-up and
+accepted committed-mail observation as baseline provenance. The corrected reader
+is ntp_metrics.py, preserving its accepted bytes and mode. Master scope selects
+only nine storage/statistics/job graph families and transport v4/v6/mail, native
+cached thresholds/states and committed contact evidence. It performs no HTTPS,
+plugin, evaluator, forced collection, cleanup, status edit or send.
+
+The sealed master binds the exact node archive and requires its completed capture
+plus reviewed growth_t0_node_accepted outcome, capture/receipt hashes and actual
+first snapshot epoch before consuming its own receipt or contacting the master.
+Existing pre-t0 samples remain labelled; no eligible cycles are manufactured.
+All later checkpoints need fresh due-time reviews. No runtime loop, reminder,
+service/timer change, renewal/reboot or automatic budget acceptance was created.
+Both archive frozen checks pass; 35 focused growth/observation tests and the full
+Munin scaffold pass. Added the growth tests to the existing scaffold/CI entry.
+Adjusted only the contact-test baseline to reconstruct inactive authored contact
+settings from the now-active canonical mirror; production config/renderer and
+all consumed archives are unchanged. Shell syntax, ShellCheck, canonical format
+and readonly/local collision checks pass for the test-runner change.
+The readiness checkpoint links separate unexecuted reviews for exact-hash approval.
+
+## Growth sampling contract selected and remaining gates reconciled — October 22, 2026
+
+Aaron selected the OBS-02 measurement plan: 48 hours with t0, +6h, +24h and +48h
+snapshots; budget 31 days at twice measured peak daily-equivalent gross growth
+plus active-file allowance, retaining 10 GiB available-byte and 5 percent
+available-inode alert floors. Recorded the decision in the governing statistics
+policy and the production observation contract. No t0 sample, live access,
+scheduler, reminder, target mutation or new alert test was started or authorized.
+
+The contract accounts for per-inode growth, daily rollover, retention removals,
+logical/allocated bytes, new inodes, quiet protostats, other filesystem reserves
+and actual elapsed times. Unknown reserves or incomplete growth accounting
+remain explicit limitations. Separate one-use node/master checkpoint reviews
+must respect existing expiry/receipt controls; do not extend or replay an archive.
+
+Reconciled stale Phase 3 Munin gate wording with accepted expansion, corrected
+readers, source attribution, genuine jobs, committed contacts and delivered/native
+mail recovery. Retained current-boot node RA/resolver reconciliation, representative
+client/access coverage, master source persistence after separately approved
+maintenance and final inventory as open. The 48-hour growth window does not
+choose a final Phase 3 duration, cadence, tolerances or reset rules. Watchdog/
+recovery, sustained hardware health, cron-originated failure mail, recurring/boot
+maintenance and battery-retention dispositions remain with their owning gates.
+Required ntpviz is Phase 3B; two-node end-to-end acceptance remains Phase 8.
+Next prepare bounded t0 read-only node and master reviews without starting them.
+
+## Native mail/limits/status observation accepted — October 22, 2026
+
+Executed the approved exact-hash observation once at 15:07:04 CDT. Capture
+completed with exit 0. Protected boot/service/file continuity and empty effective
+includes passed; committed state remains accepted, enabled and not pending.
+Submission status is valid, stable and successful, last attempted at 14:50:15.
+Its schema lacks message identity; timestamp correlation is not exact attribution.
+No suppression record exists; its optional absence is not a failure.
+
+Native transport mail sample is 1 at 15:05:13, matching RRD lastupdate, and native
+limits state is ok. Completed genuine scheduled cycles began at 14:50:02,
+14:55:01 and 15:00:01. RRD AVERAGE data retains an earlier zero, fractional
+recovery interval and later one-valued intervals; it is consolidated rather
+than individual raw fetch data. Accepted the bounded native mail/current-state
+and scheduled-collection evidence alongside operator-confirmed automatic
+CRITICAL/OK arrivals. No replay, forced collection/limits/contact, notification,
+HTTP request, status edit, service change or target mutation occurred.
+
+The supplied Apprise logs already locate the initial partial-delivery failure
+at a Pushover connection error; preserve the controlled problem SMTP 450 result
+and separate downstream confirmations. The underlying connection cause and
+permanent reliability remain unproven. This observation receipt is consumed.
+Reconciled OBS-07's stale deployment wording. Next define representative OBS-02
+four-stream growth/budget observation and reconcile coverage/persistence and the
+final Phase 3 contract; overall production readiness remains unaccepted.
+
+## Operator Apprise logs identify partial delivery — October 22, 2026
+
+Aaron supplied Apprise API logs for 14:44:01–05 CDT. The request notified three
+services: Discord and Mailgun reported success; Pushover ALL_DEVICES reported a
+connection error. The API returned HTTP 424 to Mailrise. This establishes
+partial delivery for that request and explains how downstream arrival can
+coexist with the retained Mailrise failure and SMTP 450 result. Preserve those
+results; do not rewrite them as successful submissions.
+
+Requests at 14:45:14, 14:46:04 and 14:50:15 reported success for all three services
+and returned HTTP 200. These logs do not identify the underlying connection
+cause, prove permanent resolution, or map later requests to exact message IDs.
+Retained the supplied facts privately beside the observation as supplemental
+evidence. No target contact, retry, API query or service change occurred. The
+sealed read-only observation is unchanged/unexecuted; native sample/limits
+attribution still awaits its exact-hash approval.
+
+## Read-only mail/limits/status observation sealed — October 22, 2026
+
+Prepared a one-use master observation against accepted activation v3, consumed
+problem/recovery v2 and both exact operator delivery confirmations. Pin current
+main/helper/gate/marker and protected service/module hashes; export selected
+submission/committed/suppression fields, existing cron/update evidence, only
+transport mail RRDs, bounded native limits/sample snapshots and classified
+limits-log markers. Decode snapshots in memory as munin; invoke no evaluator,
+plugin, gate/helper, forced collection, HTTP or SMTP. Existing scheduled
+contacts remain enabled and undisturbed. Missing or racing evidence remains a
+finding, not a retry. No target contact occurred during preparation.
+
+Aaron supplied matching Mailrise log evidence: Apprise API error 424 and
+notification failure for the controlled problem recipient, which fits his
+stated notification-address policy. Preserve it alongside the confirmed
+arrival and SMTP 450 result. The log timezone and failed backend destination
+remain unverified; partial delivery is a possibility, not an established cause.
+No container/API/provider investigation was added to this sealed scope.
+The readiness checkpoint links the unexecuted exact-hash review for approval.
+
+## Automatic transport recovery received — October 22, 2026
+
+Aaron supplied the automatic Munin OK: J1-SVMF/ntp_transport_j2 notification,
+with warning, critical and unknown fields all none, after supplying the
+transport CRITICAL mail-field notification. Recorded both as operator-confirmed
+downstream arrivals. This establishes an observed automatic CRITICAL-to-OK
+notification sequence. No extra send, target read, status reset or mutation
+occurred. The SMTP 450 discrepancy and native limits/RRD sample attribution
+remain open for the scoped read-only observation review.
+
+## Contact activation accepted; exact tests received with SMTP discrepancy — October 22, 2026
+
+Executed approved exact-hash activation v3 once. Publication reached prepared,
+all six before and six after verified HTTPS checks passed, commit was accepted,
+and repository reconciliation passed. The reviewed eight j2 NTP graph contacts
+and J1-SVMF transport contact are enabled through the durable gated marker.
+The commissioning proof was handled by the qualified narrow successor, with
+no manual normalization or commissioning replay. No same-bundle inspection
+was needed; post-commit changes require separate authorization.
+
+Executed approved problem v2 once. The remote sender attempted the exact sealed
+payload, received SMTP 450 failed to send notification, and recorded failure
+status. Aaron supplied the exact downstream Apprise problem notification.
+Recorded an operator confirmation bound to message/archive/consumed receipt;
+do not overwrite the submission failure or retry the send.
+
+That confirmation satisfied the approved recovery prerequisite. Executed
+recovery v2 once: SMTP submission and genuine success status passed. Aaron
+supplied the exact downstream recovery-test notification; recorded its separate
+bound operator confirmation. Both controlled payloads are delivered by operator
+confirmation, while problem SMTP acceptance remains failed.
+
+Aaron also supplied an automatic CRITICAL J1-SVMF/ntp_transport_j2 notification
+with critical field mail. Preserve that as downstream evidence; neither its
+cause nor a current scheduled recovery is established. Next prepare a scoped
+read-only master contact/limits/status observation review. No forced limits,
+status reset, retries, unreviewed target reads or restoration occurred.
+
+## Proof-preserving contact successors qualified and sealed — October 22, 2026
+
+Qualified a narrow exception for the observed commissioning proof relationship,
+without weakening other authored-file link checks. Pin proof device/inode,
+size, mtime and hash plus exact root:root 0644 metadata; allow two links only
+while main shares it, then require one. Never write/unlink/normalize the proof.
+Restore changed main from saved bytes as a separate root:root 0644 single-link
+file; preserve the original relationship if replacement never occurred. Foreign
+proof edits or extra links hold recovery. The completed diagnostic and its
+receipt/result/spec/capture/outcome are frozen provenance in each successor.
+
+All 16 native systemd/gate/sender cases and 28 native limits cases pass with
+unchanged final source inputs and all seven pinned native module hashes.
+Qualification corrected two test-only assumptions: pre-replacement loss retains
+the original pair, and hardlink tests must use the container's same filesystem.
+Full scaffold and focused offline scope tests passed. Sealing initially rejected
+an over-permissive local outcome record; tightened that controller-only record
+to 0600 without changing its content, then sealed activation v3 and problem/
+recovery v2. All frozen checks pass. Exact CRLF payloads and previews match the
+prior approved test bytes; new dependencies/hashes still require approval.
+No successor receipts, production contact/mutation or external sends occurred.
+Contacts remain disabled. The readiness checkpoint links the three unexecuted
+reviews; recovery testing still needs explicit downstream problem confirmation.
+
+## Contact metadata diagnostic confirmed retained proof hardlink — October 22, 2026
+
+Executed the approved exact-hash read-only metadata diagnostic once. Capture
+completed with exit 0. Main config and commissioning config-proof share the same
+device/inode and hash, with nlink 2: the sole failed activation predicate.
+Both names retain expected root:root ownership, mode 0644 and content hash.
+Repeated metadata and protected service/file continuity passed. No target
+mutation occurred; contact helper/gate/control/status paths remain absent.
+Contacts remain disabled; both controlled tests remain unexecuted and unsent.
+The diagnostic receipt is consumed. Next qualify a provenance-bound successor
+preserving the retained proof and restoration, then seal new activation and
+dependent send reviews. No manual normalization, arbitrary link-check waiver,
+activation replay or send was performed or authorized by this diagnostic.
+
+## Approved contact activation rejected at metadata preflight — October 22, 2026
+
+The user approved activation v2 and both separate controlled-message reviews.
+Verified all three archive hashes and frozen local inputs before executing
+activation once. Six verified IPv4/IPv6 HTTPS checks passed. The detached worker
+rejected `/etc/munin/munin.conf` metadata during preflight, before owning contact
+worker state or publishing config/helper/gate/status payload. Its error labels
+the file but not the failed uid/gid/mode/nlink predicate. The approved root
+launcher created audit staging and the transient guard; no service/package or
+schedule correction occurred. Do not claim the precise metadata cause yet.
+
+Consumed the expressly approved same-bundle read-only inspection once. It
+reported preflight-failed, accepted false, contacts_enabled false and absent
+gate-control directory. Both activation/inspection receipts are consumed;
+privileged frozen inputs remain intact. No mutation replay or manual metadata
+normalization was attempted. Both approved test sends remain unexecuted with
+no send receipts because their activation prerequisite failed. No external
+notification was sent and no delivery confirmation is due.
+
+Prepared/frozen-checked a separate read-only contact-config metadata diagnostic.
+It reports numeric ownership/mode/link count, hashes and inode/device for the
+main config and fixed retained commissioning proof, plus bounded lstat metadata
+for contact destinations/parents. It exports no config/source/status contents,
+repeats protected continuity/metadata checks and invokes no parser/plugin,
+limits/update/job, service/timer mutation, correction or message. A retained
+proof hardlink is a source-derived hypothesis, not a live finding. Focused tests
+exercise real local hardlink metadata, no-follow behavior and rejection of
+broadened predicates. The diagnostic itself needs its new hash approval before
+target contact. Corrected activation and dependent sends require new qualified
+inputs/hashes/approvals. The readiness checkpoint retains this gate.
+
+## Dedicated contact execution paths qualified and sealed — October 22, 2026
+
+Implemented a separate contact installer/restorer, committed-marker gate and
+exact-payload one-use sender. The commissioning installer is neither selected
+nor replayed; only repository launch/lock/timer mechanics are reused. Preserve
+the operator's repository stanza placement with its distinct before hash.
+All nine selected graph origins remain explicit; generic metrics inherit none.
+Production contacts remain disabled. No production target was contacted and
+no external notification was sent during preparation.
+
+The gate starts disabled and first permits a native send only after a durable
+committed decision and hash-bound marker publication. Actual pre-commit calls
+exit 75, retain suppression evidence and prevent commit. A lost committer after
+the decision remains committed-disabled for inspection; automatic recovery
+does not undo or complete that decision. Uncommitted rejection/loss restores
+only matching authored bytes/inodes with an independent current-boot guard;
+foreign config/helper/state and real submission/suppression evidence survive.
+No cron/service/schedule, package, collection, limits, job, network or RRD change
+is included in the production operation.
+
+Thirteen real native systemd cases pass against unchanged final inputs,
+including interrupted publication, actual suppression, idempotent restoration,
+worker/controller loss, foreign state, preflight drift, commit loss and
+ambiguous SMTP acknowledgement. All seven protected native module hashes match
+accepted production provenance. The 28 native limits cases pass with the gated
+candidate. Isolated loopback SMTP proves exact wire bytes and consumed-receipt
+replay rejection; it does not prove production Mailrise or downstream delivery.
+The full scaffold suite also passes.
+
+Sealed and frozen-checked `munin-contacts-activate-20261022-v2`,
+`munin-contacts-problem-20261022-v1` and
+`munin-contacts-recovery-20261022-v1`. None is executed. Unsealed activation v1
+was rejected because qualification initially covered four of seven pinned
+modules; its failed proposal is retained, not offered for execution. Earlier
+review-only drafts remain archival. Native setup/binding failures were corrected
+before final qualification; no failed proof was used to seal execution.
+
+Each controlled send has its own exact CRLF payload and local/remote fsynced
+one-use receipts, with no retry after timeout or uncertainty. Recovery requires
+explicit operator acknowledgement bound to the exact problem archive, message
+and consumed receipt. Next obtain separate execution approvals in order:
+activation, problem, confirmed problem receipt, recovery. Genuine scheduled
+activation and both downstream receipts remain open; other readiness gates
+remain unchanged. The readiness checkpoint links all three executable reviews.
+
+## Separate contact activation and delivery review drafts — October 22, 2026
+
+Prepared local review-only proposals for contact activation/conditional
+restoration and exact-message delivery. No target was contacted, no production
+file changed and no message sent; contacts remain disabled. The active main
+candidate preserves the operator's repository stanza placement. Parsed
+directives match accepted production before rendering despite different byte
+hashes. Both exact before-to-candidate diffs are retained privately.
+
+The proposal retains global/j2 contacts none and selects exactly eight NTP
+graphs plus master transport. Accepted native module hashes and real in-memory
+parsing of production/repository baselines and active/inactive candidates
+passed in the existing network-disabled Podman image. This proves parsing,
+not contact activation or recovery. Prior native limit/contact qualification
+remains separate evidence.
+
+Prepared exact CRITICAL and OK recovery test emails with explicit test labels,
+fixed headers, reviewed routes, no attachments and distinct payload hashes.
+Each future send needs its own exact-message approval, consumed receipt, one
+attempt without retry, and Aaron's downstream receipt confirmation. No synthetic
+submission success is created by preparation.
+
+Both proposals explicitly remain non-executable. The commissioning transaction
+forbids contacts; a dedicated guarded contact installer/restorer and one-use
+sender still need implementation and qualification. The first possible ordinary
+scheduler send must be part of the qualified publication/commit boundary;
+rollback cannot recall submitted messages. Next complete those execution paths
+and seal new executable reviews. Review-only archive hashes authorize no live
+action. The readiness checkpoint and contact review procedure retain this hold.
+
+## Timing reader correction and scheduled master acceptance — October 22, 2026
+
+Executed the approved `munin-generic-timing-20261022-v2` once. The guarded
+reader correction committed and reconciled at 11:35:57 CDT. Both complete
+post-change source-bound IPv4/IPv6 probes passed for all 33 plugins, separated
+by 305 seconds. Both timing-health flags passed the full-precision checks;
+raw seconds remained intact without misleading native critical directives.
+Twelve before/after verified HTTPS continuity requests passed. Commit disarmed
+the independent recovery guard; no restoration was needed. Only munin-node
+was briefly stopped/started; protected NTP/GPS and configuration checks passed.
+
+After waiting locally, executed the separately approved
+`munin-timing-master-acceptance-20261022-v1` once at 11:54:45 CDT. Native
+11:40/11:45/11:50 cycles completed with cron provenance and both node finishes.
+All twelve exact health/timing GAUGE RRDs are fresh with three finite post-commit
+300-second samples each. Both new flags are 1. Current selected offset is
+0.0000595 seconds and jitter 0.0000124 seconds. Historical pre-creation unknowns
+remain visible. All ten verified dual-stack HTTPS resources passed, including
+both day PNGs; numeric freshness is independently established by the RRDs.
+Protected continuity, contacts-none bytes, native modules and empty effective
+includes passed. No collection, limits, job, plugin or notification was invoked
+by the master capture.
+
+Private outcomes retain both hashes, consumed receipts and capture bindings.
+Do not replay either operation. Contacts remain disabled; no contact helper or
+active definition was installed. Next prepare separate guarded contact
+activation/restoration and exact-message problem/recovery delivery reviews.
+Sustained storage budget, client coverage, source/client persistence and final
+observation remain open in the readiness checklist.
+
+## Guarded timing correction qualified and reviews sealed — October 22, 2026
+
+Extended the existing repository transaction with a closed reader-only timing
+role. It changes one root-owned 0644 module, preserves all 33 links/settings,
+briefly stops/starts only munin-node, pins its accepted startup guard and uses
+the existing independent 600-second recovery. Companion master probes require
+both new flags healthy and preserve raw seconds configuration across two warm
+passes separated by 305 seconds, with existing dual-stack HTTPS continuity.
+No contact helper/definition or master configuration mutation is included.
+
+Seventeen actual native systemd cases pass against final source bytes: the
+original nine plus eight reader-specific commit/recovery, worker/controller
+loss, foreign file/link/settings preservation and preflight rejection cases.
+Completed recovery is idempotent and cannot restart the node again on a later
+guard. Nine closed-scope/prerequisite rejection checks also pass. Installed
+native update code requests plugin configuration in ordinary polling; no forced
+master collection is introduced. Native timing/contact semantics retain their
+separate 28-case acceptance.
+
+Sealed and checked the unexecuted node review `munin-generic-timing-20261022-v2`
+and master-only `munin-timing-master-acceptance-20261022-v1`. Unexecuted node v1
+is explicitly superseded. The master review requires this exact node archive's
+accepted/committed/reconciled result before contact and derives its actual
+commit cutoff as hash-bound runtime context. It reads twelve exact RRDs and ten
+verified HTTPS resources after three eligible genuine scheduled cycles; it does
+not invoke update, limits or plugins. Later read-only successors can reuse an
+accepted commit without repeating its mutation.
+
+Preparation and isolated qualification contacted no production target and sent
+no message. Production reader/contacts remain unchanged and disabled. Next
+obtain separate exact-hash execution approvals, execute node v2, then master
+acceptance only after sufficient real post-commit cycles. Contact activation,
+exact-message delivery, sustained budget, coverage/persistence and final
+observation remain later gates. The readiness checklist retains both reviews.
+
+## Timing precision and contact scope corrected in repository — October 22, 2026
+
+Implemented the correction candidate without production target contact. The
+reader now evaluates inclusive ±5 ms offset and 0–1 ms jitter at full available
+precision, exposing two health flags with native critical 1:1. Unknown queries
+leave both flags U. Existing timing series retain names, raw values and seconds;
+misleading native critical directives are removed. Plugin/graph selection is
+unchanged; two ntp_health RRD fields are added.
+
+The future contact candidate now defaults globally and on j2 to contacts none.
+Only eight explicit NTP limit graphs and J1-SVMF transport select the contact;
+the helper uses that exact graph scope. Generic statistics remain collected,
+and neither unrelated hosts nor unselected master graphs inherit the contact.
+The profile also reflects the already accepted genuine producer installation.
+
+The corrected candidate passed 28 real native 2.0.73 cases in the existing
+pinned network-disabled image with matched module hashes. Exact boundaries,
+unknowns, state transitions, suppression, per-message pipes and actual candidate
+inheritance passed. Eight NTP and one transport message were captured locally;
+generic and unrelated/unselected origins invoked no contact. No SMTP/status
+function, production message, service or configuration action occurred.
+
+The correction manifest records repository source hashes and accepted deployed
+baselines separately. Production retains its previous reader and disabled
+contacts. Next qualify guarded coordinated node/master update and recovery,
+then seal new deployment reviews. Fresh two-field collection/serving must be
+accepted before separate contact activation and exact-message delivery reviews.
+Prior receipts cannot replay. Other readiness gates remain in the checklist.
+
+## Native master maintenance consumption accepted — October 22, 2026
+
+Executed the separately approved `munin-master-maintenance-observation-20261022-v1`
+once. Controller/SSH exit 0, complete capture at 10:28:57 CDT, unchanged protected
+continuity, empty effective includes and matching four native module hashes.
+Accepted contacts-none bytes remain installed. The receipt is consumed.
+
+Both real maintenance evidence fields are 1. All four exact RRDs are fresh;
+retention/reporting ages are numeric and agree with the sealed genuine producer
+completion epochs. Six finite 300-second samples per field and the lastupdates
+support bounded monitoring consumption. Native cycles at 10:10/10:15/10:20 CDT
+have matching cron/update and node/master/global finishes. All ten verified
+IPv4/IPv6 HTTPS requests passed, including both maintenance PNGs. Consolidated
+samples do not attribute an individual raw fetch.
+
+This closes the initial producer-to-master observation gap for OBS-01/OBS-03 and
+the maintenance-field portion of OBS-07. It does not accept ongoing recurrence,
+corrected limits or delivered alerts. Fresh module hashes confirm applicability
+of the known native timing-precision defect. The candidate graph/contact scope
+mismatch remains unresolved. Contacts stay disabled.
+
+No job, update/limits/contact/plugin invocation, service/configuration/network
+change or message occurred. Private outcome files retain acceptance and raw
+capture references. Next prepare the coordinated full-precision timing-health
+correction and explicit contact scope before requalification and separate
+exact-message delivery reviews. Growth/storage, coverage/persistence and final
+observation gates remain open in the readiness checklist.
+
+## Native limits/contact blockers characterized — October 22, 2026
+
+Ran the installed native 2.0.73 engine in the existing pinned local Bookworm
+image with networking disabled and read-only source/root. Four native module
+hashes matched the accepted master capture. Fourteen cases passed with real
+native state/evaluation and local-only contact capture: state transitions,
+unknown/stale handling, repeat suppression, contacts-none and separate message
+pipes work as characterized. This involved no production target contact or
+message delivery.
+
+Qualification exposed two activation blockers. Native two-decimal formatting
+makes 4 ms jitter healthy against the intended 1 ms seconds threshold, and
+makes the inclusive ±5 ms offset boundary critical. The candidate host-wide
+contact also exceeds its helper's original graph allowlist; a df alert is
+rejected. Keep contacts disabled. Recommended next correction preserves raw
+seconds plots while adding full-precision threshold-health flags, and selects
+an explicit contact graph scope. No live payload correction was applied.
+
+Prepared and locally checked `munin-master-maintenance-observation-20261022-v1`
+for four exact maintenance RRDs, native scheduled evidence, two dual-stack job
+graphs, native module pins and empty effective includes. It needs its own
+exact-hash execution approval; current master maintenance consumption remains
+unobserved. The readiness checkpoint and monitoring qualification report
+retain the findings, correction gate and independent observation review.
+
+## Canonical source and genuine producer follow-ups accepted — October 22, 2026
+
+Both separately authorized sealed inspections ran once, with controller/SSH
+exit 0, complete captures and unchanged protected continuity. Receipts are
+consumed. The node retained the exact 33-plugin expanded selection.
+
+At 09:55 CDT, both protected schema-1 records were valid/fresh: retention
+completed at 00:45:58 CDT, reporting at 05:30:03 CDT. Reporting matches its root
+cron event; retention's rule-specific completion correlates with timer/unit
+events. The filtered journal omits logrotate verdict labels, so global unit
+success is not accepted. Genuine rule completions and bounded scheduled
+correlation are accepted from records and pinned producers together.
+
+The passive master capture ran 09:55–10:01 CDT (360 scans). Actual canonical
+sockets used 10.1.3.83 -> 10.1.0.51:4949 during the 09:55 and 10:00 cycles.
+Socket ownership reached munin-update, munin-cron and the pinned cron daemon;
+matching native starts/finishes corroborate both cycles. Two transport-plugin
+sockets were separately identified and excluded from canonical evidence.
+Accept actual canonical IPv4 source attribution. No job, probe, update/limits
+invocation, message, configuration or service action was performed.
+
+Private `outcome.md`/`outcome.json` under `munin-canonical-source-20261022-v1`
+and `munin-producer-followup-20261022-v1` retain the scoped conclusions. Next
+qualify native limits/contact transitions, and prepare read-only master
+observation of maintenance evidence/age consumption. Contacts stay disabled;
+exact-message delivery, sustained budget, coverage/persistence and final
+observation remain separate gates. The readiness checklist owns the resume point.
+
+## Read-only monitoring follow-ups prepared — October 22, 2026
+
+Resumed the readiness checkpoint with a separate passive native-master source
+attribution review and an independent expanded node/producer follow-up. The
+master scope samples existing canonical-endpoint TCP sockets, matched process
+ownership/ancestry and native scheduler evidence for six minutes. It invokes no
+collection, probe or maintenance job; contacts remain disabled. Sampling misses
+and ambiguous provenance remain inconclusive, with no automatic acceptance.
+
+The producer follow-up inspects actual rule-specific records and scheduler
+provenance after the October 22 retention/reporting schedules; elapsed time is
+not success evidence. Both new reviews require their own exact-hash approval.
+Preparation performs no target contact and consumes no historical receipt.
+After accepted evidence, qualify native limits/contact transitions before
+separate exact-message delivery reviews. All other readiness gates remain open.
+
 The [architecture plan](docs/ntp-architecture-deployment-plan-v1.0.md) owns
 approved design and acceptance criteria. [OPERATIONS](docs/OPERATIONS.md) owns
 the reproducible procedure. This history records milestones, deviations,
