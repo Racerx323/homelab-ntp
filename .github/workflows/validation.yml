@@ -14,8 +14,31 @@ jobs:
   ntp-baseline-offline:
     name: NTP baseline collector offline tests
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: homelab-ntp
     steps:
       - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          path: homelab-ntp
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: Racerx323/homelab-monitoring-observability
+          ref: a4a6083b5181faacb5d0fcd0cde2edad44434aac
+          path: homelab-monitoring-observability
+          persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: Racerx323/homelab-network
+          ref: 87dd9913073de0d7bc942f9abe23e62994d46a09
+          path: homelab-network
+          persist-credentials: false
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          repository: Racerx323/homelab-server-configs
+          ref: dd1eaa0c10fa24f9e0308e2572f0733fd475a0eb
+          path: homelab-server-configs
+          persist-credentials: false
       - name: Run synthetic collector tests
         run: ntpsec/tests/run.sh
       - name: Verify native SHM permissions in an isolated IPC namespace
