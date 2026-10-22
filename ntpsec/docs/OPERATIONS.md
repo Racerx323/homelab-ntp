@@ -2759,6 +2759,251 @@ by this stage; hold on foreign drift. Retain captures/receipts and inspect any
 interruption before retry. First scheduled execution and resulting delivery need
 separate observation; capture tests alone do not close reporting acceptance.
 
+### Static master migration and monitoring stage handoff
+
+The static settings are finalized with explicit ULA and retained RA/global
+IPv6/default route, plus fixed DNS VIPs/search configuration. The network-owned
+[production wrapper](../../../homelab-network/Ubiquiti/munin-master-profile/deploy.py)
+owns exact private backup, durable state, detached supervision, guarded activation,
+fresh dual-stack SSH confirmation and held recovery. Follow its
+[runbook](../../../homelab-network/Ubiquiti/svmf-network-deployment.md) and archive
+local qualification results for the bundled source bytes before sealing execution.
+The earlier checkpoint-primitive qualification is retained separately; it does
+not establish production resolver/application continuity or ARM64 acceptance.
+
+Execution uses a single consumed bundle and a root systemd supervisor independent
+of the controlling SSH session. Missing confirmation leaves native recovery armed;
+failed health or foreign drift holds acceptance. Preserve a bounded 60-second
+recovery convergence window and independent access checks. The separate read-only
+continuation inspects the same consumed operation without applying, confirming,
+restoring, clearing checkpoints or restarting its worker. Native checkpoints are
+not claimed to survive NetworkManager restart/reboot. Operator console access is
+available, but console restoration remains unexercised and needs a separate review
+if recovery outside the native path becomes necessary.
+
+The completed host-local `master-recovery-readiness` review established native
+checkpoint syntax from the installed manual, without creating a checkpoint or
+exercising timed recovery. The completed GET-only controller conflict review
+confirmed the reservation and no reported conflict in selected fields, but those
+collections exposed no selected IPv6 fields. Neither consumed bundle may replay.
+Retain future authorized DAD; this controller projection cannot prove availability.
+Static routing/RA decisions are finalized. Use the wrapper's explicit timeout,
+exact backup, console procedure and complete qualification record before mutation
+sealing; require live preflight and acceptance in the separately approved stage.
+
+Inventory has one svmf member in monitoring/notification groups, with native
+Munin and Podman Apprise API/Mailrise. The operator confirms local-console access
+is available; arrange that access and the exact backup/recovery procedure before
+activation. Availability is not an exercised rollback. Do not target removed
+placeholders or infer rootless/rootful container ownership.
+
+The accepted read-only readiness capture establishes runtime gateway/DNS and
+unchanged automatic-profile settings, not static-network acceptance. Its native
+help stdout was empty; the later protected installed-manual capture supplied
+checkpoint syntax evidence. The operator confirms console availability; retain
+console restoration and live ARM64 acceptance as unexercised. Local native
+qualification remains distinct from production recovery acceptance. Controller IPv6 visibility remains limited despite completed
+GET-only collection; do not infer availability from no reported match.
+Wildcard web sockets and partial firewall projection do not accept dashboard access.
+
+Use `run-munin-prerequisites.py seal --mode master-network-readiness` with the
+accepted profile-save directory as baseline to prepare the network-owned reader.
+Its sealed scope is read-only: selected settings/runtime, profile metadata,
+routes/passive neighbors, listeners/service state, native help and typed firewall
+projection. It makes no controller contact, active probes or checkpoint. Missing
+capability and incomplete firewall semantics remain findings. Exact archive hash
+approval is required before execute; completion does not accept static settings,
+address availability, timed rollback or independent recovery access.
+
+The operator now requires host-static master IPv4 `10.1.3.83` and ULA
+`fd36:5aa8:6971:1::83`. The earlier saved automatic profile is historical accepted
+state, not the new allocation. Use the network-owned IPAM/static-network review
+for fresh readiness, complete settings, guarded activation and rollback. DNS
+then deploys munin/svmf AAAA and canonical PTR through its serial HA procedure,
+including Pi-hole DNS restart. No previous inspection/save bundle is reusable.
+
+Inventory now selects the NTP profile for j2-svntp1. The monitoring owner holds
+[node installation](../../../homelab-monitoring-observability/Munin/docs/ntp-node-installation-review.md)
+and [master/dashboard acceptance](../../../homelab-monitoring-observability/Munin/docs/ntp-master-acceptance-review.md)
+definitions; the NTP owner holds [job-success recording](monitoring-job-success-review.md).
+The node/producer definitions now link sealed guarded bundles; the master still
+requires native activation/merge qualification before execution sealing. Do not interpret review preparation as live authorization.
+The dashboard, node listeners and intended-family polling each need both-family
+acceptance. OBS-07 retains the future static-profile maintenance observation.
+
+### Guarded node and genuine producer stages
+
+Use `scripts/run-munin-stage.py seal --kind producers|node` with the accepted
+node/producer v2 readiness directory, a fresh output directory, and for node,
+the reviewed package directory plus retained qualified release-input manifest.
+The closed archive binds the controller, worker, tests, inventory, spec, helpers,
+pins and all exact package/profile inputs. Offline `check --directory PATH
+--sha256 HASH` verifies archive closure and frozen copies without target contact.
+The frozen `runner.py execute` requires approval of that complete archive hash.
+
+Deploy producers first when both bundles pin the 701-package baseline. Producer
+installation acquires the existing reporter/logrotate locks, preserves schedules
+and installs helper before the rendered hooks. It runs no job and creates no
+success timestamp. The node bundle retains the unchanged qualified first-start
+installer and exact 15-package set; failure contains the authored node service
+without package purge. Read each sealed review for expiry, acceptance, conditional
+recovery and the one-use read-only inspection path. Never replay a consumed stage.
+
+The [producer review](monitoring-job-success-review.md) owns actual job completion
+and record semantics. The [master design](../../../homelab-monitoring-observability/Munin/master/ntp-design.md)
+owns canonical/scheduled family collection, unknown-data limits and fixed alert
+contacts. Keep native master activation and previewed delivery exercises under a
+separate review. Source-bound protocol checks and verified dual-family dashboards
+remain distinct acceptance. Keep all ongoing observations in the readiness
+checklist rather than only in private operation outcomes.
+
+### Munin package and routing/scheduler qualification handoff
+
+The narrowed configs/munin-package-review.json pins the 15 cached archives matched
+to the accepted simulation. The Munin-owned package/plugin qualification records
+maintainer side effects and isolated smoke fixtures. Never execute maintainer
+scripts on a target for inspection. Node installation must separately qualify
+suppression of automatic plugin probing/link creation and service startup;
+service suppression alone does not cover the package's init_plugins function.
+
+Use `run-munin-prerequisites.py seal --mode master-qualification` with the completed
+native-master inspection as baseline and a fresh output directory. Approve its
+hash before execution. It pins the accepted master host/boot, queries local route
+selection to fixed node addresses, inspects eth0 address/profile stability fields
+and parses actual cron structure plus known scheduler references and bounded log
+summaries. It sends no probe, fetch or notification and executes no Munin job.
+No raw log/contact body is exported. Unknown network management, missing markers,
+route failures and absent contacts remain findings, not permission to repair.
+
+Resolve the master findings, metric/privilege selection and full hook/first-start/
+recovery qualification before preparing installation and separate polling/alerts.
+OBS-02/OBS-07 remain the tracked acceptance obligations.
+
+The master qualification completed October 20. It records current eth0 sources
+for both fixed node destinations, explicit cron invocations and recent redacted
+update/limits activity. The active profile uses automatic addresses; reservation,
+effective stable ULA generation and persistence still require qualification.
+No active contacts were captured. Resolve persistent allowlist identities and
+the alert implementation before installation preparation; do not replay the consumed
+qualification or treat current source selection as a permanent network contract.
+
+The operator approved preserving current master networking and assigned alert
+evaluation/delivery to the master, with Aaron as operator and the routes recorded
+in the Munin-owned prerequisite review. Five isolated real-package first-start/
+recovery scenarios passed; their amd64 fixture does not accept ARM64 dependencies
+or the complete future production installer.
+
+For the next master-local check, seal `run-munin-prerequisites.py` with
+`--mode master-identity`, the completed native-master inspection as baseline,
+and a new output directory. It captures effective address-generation/privacy
+policy and stable-id dependency flags without exporting full NetworkManager
+configuration or opening secret_key/machine-id. It performs no renewal, reboot
+or profile change. Separately, the network-owned
+`Ubiquiti/ntp-ipv6/inspect-munin-source.py` prepares a GET-only controller
+reservation review. Its legacy reservation endpoint may be unsupported; absent
+proof remains a gap, never permission to change networking or broaden access.
+Each target stage requires its own exact archive approval before contact.
+
+The saved-profile follow-up is `--mode master-persistence`. Its corrected v2
+capture found the active keyfile in `/run` and retained installed NetworkManager
+1.42.4 policy excerpts. It did not prove an equivalent saved `/etc` profile.
+Do not replay consumed inspections or force a renewal/reboot to collect evidence.
+
+The network-owned profile-save payload uses the same controller with
+`--mode master-profile-save` and the completed corrected persistence inspection
+as baseline. It is a mutation stage: native nmcli saves the current UUID and
+effective name/generation values without activation/reapply/reload. Its distinct
+review describes root-private backup, exact readback and held recovery after a
+submitted write. Obtain its exact archive approval before execution. Keep actual
+renewal/reboot comparison at the next approved master maintenance checkpoint.
+The approved `munin-master-profile-save-20261020-v1` has now passed: protected
+persistent `/etc` profile, unchanged UUID/effective settings, both route sources,
+NetworkManager identity and host-identity metadata. Do not replay it. Configured
+policy persistence is accepted; empirical maintenance observation remains open.
+
+The Munin-owned NTP candidate now has selected metrics/privileges and an actual
+installer qualified through eleven isolated scenarios. A later node bundle must
+pin the payload, all 15 archives, protected runtime/inventory and explicit host
+assignment. The candidate CLI spec digest does not authorize deployment. Root
+job-success records still need NTP-owned producers; preserve quiet scans, locking
+and failure-mail behavior in a separately reviewed job stage. These gaps remain
+in OBS-01/OBS-03/OBS-07; do not turn synthetic fixture records into live evidence.
+
+Both follow-ups completed October 20 with complete captures and no persistent
+mutation. The existing IPv4 reservation matches the master MAC and route source.
+The master-local effective default policy supports stable ULA generation, but
+installed-default and saved-profile evidence are now accepted. Renewal/reboot
+source comparison remains a later approved maintenance checkpoint. The executed
+bundles are consumed. Metric/privilege and actual-installer recovery qualification
+are locally complete; inventory assignment and separate node/job/master acceptance
+reviews are next. Local fixtures do not establish production acceptance.
+
+### Munin dependency and native-master inspection handoff
+
+Use `run-munin-prerequisites.py seal --mode node-dependencies` with the completed
+monitoring inspection as `--baseline`; use `--mode master` with the accepted
+master-host SSH identity inspection as baseline. Give each stage a fresh output
+directory. The controller pins current repository code/tests, the Munin-owned
+profile review draft, baseline provenance and the appropriate SSH key. Approve
+node and master archive hashes separately before executing either stage.
+
+Node collection uses cached APT metadata and a no-recommends simulated install
+of munin-node/munin-plugins-core, with on-disk package-cache generation disabled.
+It neither refreshes indexes nor downloads/installs packages. Retain absent/stale
+candidates and simulation errors as findings. Master collection uses the confirmed
+native /etc/munin/munin.conf path, selected configuration/include fields, contact/
+limit key presence, installed package/scheduler metadata and interface-address
+candidates. Omit contact commands, URLs and credentials. Do not follow arbitrary
+includes, run plugins/munin-update/munin-limits, query nodes or send notifications.
+
+Use results to select package versions, actual plugins and least-privilege access,
+resolve intended-family source addresses and alert ownership, then prepare
+separate node/master deployment and polling/alert acceptance. The Munin repository
+owns deployable profiles, plugins and master entries; the NTP readiness register
+tracks OBS-02/OBS-07. Profile drafts and successful captures are not acceptance.
+
+Node and native-master prerequisite inspections completed October 20. Retain
+both consumed bundles. Cached node/core candidate 2.0.76-5 simulates 15 new
+packages without upgrades/removals; native master 2.0.73-1 has no captured j2 node
+entry or active contact definitions. Do not treat its generated service/cron-row
+presence as effective polling/limits execution. Next qualify package scripts and
+plugin source/privilege, stable source routes and the effective scheduler/contact
+chain before separate node/master installation and acceptance. Version difference
+alone is not an upgrade requirement. Raw interface addresses remain private.
+
+### Monitoring-prerequisites inspection handoff
+
+Prepare OBS-02/OBS-07 with `run-statistics-inspection.py seal --monitoring`, an
+accepted statistics-retention installation directory as `--baseline`, an explicit
+`--poller` hostname and a fresh `--output` directory. This consumes archived
+baseline data and pinned host-key bytes; it never imports historical executable
+code. Review the resulting archive hash before target execution.
+
+The node-only mode compares two metadata/capacity samples at least 60 seconds
+apart, deduplicates hardlinks and preserves negative deltas/rollover. It inventories
+selected local Munin settings and plugin links without executing plugins, and
+retains monitoring-job hashes/term names without raw command bodies. Plugin
+environment values are omitted. No network probe, poller contact, notification,
+package change or service action is included. Recheck the retained boot/NTP
+identity and stop if it changed; do not silently refresh acceptance.
+
+The operator identifies svmf.local.theama.co as master; IPv4/IPv6 source addresses
+and effective polling/alert configuration remain unresolved. The monitoring
+repository owns any NTP profile, plugins and master entries. Node metadata alone
+cannot accept polling, alert delivery, sustained growth or the storage budget.
+Keep these follow-ups under OBS-02/OBS-07 in PRODUCTION-READINESS and use the
+findings to prepare the next scoped node/master reviews. Past scheduler deadlines
+remain unverified until their actual results are collected.
+
+The completed `monitoring-inspection-20261020-v1` confirms short-sample growth
+and adequate capacity, while Munin is absent on the node. Preserve that consumed
+bundle. Prepare dependency/profile and master-prerequisite reviews next; do not
+repeat collection to install monitoring. Resolve master source addresses/access,
+package provenance, metric selection/privilege and alert ownership before node
+installation and intended-family polling acceptance. Retained logrotate service
+success and cron-file presence do not close rule-specific schedule or delivery
+gates. Carry sustained growth, storage budgeting and alerts in OBS-02/OBS-07.
+
 ### Statistics retention inspection handoff
 
 Use `run-statistics-inspection.py seal --followup --baseline ACCEPTED_INSPECTION

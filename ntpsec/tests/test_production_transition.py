@@ -552,13 +552,22 @@ class Controller(unittest.TestCase):
                 (folder/'client-proof.json').write_bytes(stage.encoded({**proof,**change}))
                 with self.assertRaisesRegex(ValueError,'structural client proof'):controller.seal(args)
 
+    @staticmethod
+    def acquisition_config():
+        # This historical transition adds protostats. The accepted live mirror
+        # now already includes it, so reconstruct only its pre-transition input.
+        raw=(ROOT/'configs/j2-svntp1-ntp.conf').read_bytes()
+        return raw.replace(b'statistics loopstats peerstats clockstats protostats\n',
+                           b'statistics loopstats peerstats clockstats\n').replace(
+                               b'filegen protostats file protostats type day enable\n',b'')
+
     def fixture(self,root):
         source=root/'inspection';source.mkdir(mode=0o700)
         old={'hostname':'j2-svntp1','endpoints':['192.0.2.1','2001:db8::1'],
              'host_key_alias':'192.0.2.9','old_units':['old.service'],'watchdog':'old-watchdog','inspection_sha256':'1'*64}
         baseline={'boot_id':'boot','captured_epoch':int(time.time()),
                   'files':{name:record(b'old') for name in controller.helper.INSTALLED}}
-        baseline['files']['/etc/ntp.conf']=record((ROOT/'configs/j2-svntp1-ntp.conf').read_bytes())
+        baseline['files']['/etc/ntp.conf']=record(self.acquisition_config())
         restored_files=copy.deepcopy(baseline['files'])
         for row in baseline['files'].values():row.pop('base64')
         archive=source/'production-transition.tar'
@@ -574,8 +583,10 @@ class Controller(unittest.TestCase):
         for name,value in values.items():
             (source/name).write_bytes(stage.encoded(value));(source/name).chmod(0o600)
         output=root/'transition'
-        sealed=controller.seal(SimpleNamespace(recovery_dir=source,recovery_sha256=digest,
-                               operation_id='transition-fixture',output=output))
+        historical=self.acquisition_config();read_bytes=Path.read_bytes
+        with patch.object(Path,'read_bytes',lambda path:historical if path==ROOT/'configs/j2-svntp1-ntp.conf' else read_bytes(path)):
+            sealed=controller.seal(SimpleNamespace(recovery_dir=source,recovery_sha256=digest,
+                                   operation_id='transition-fixture',output=output))
         return output,Path(sealed['bundle']),sealed['sha256']
 
     def test_seal_pins_flat_inputs_and_rejects_tampering(self):
@@ -585,7 +596,7 @@ class Controller(unittest.TestCase):
             self.assertNotIn('pps_startup',json.loads(files['timeservice.json']))
             self.assertEqual(set(files),set(controller.PATHS)|controller.EXTRA|{'spec.json','review.md'})
             self.assertNotIn('OnFailure=',files['timeservice.service'].decode())
-            original=(ROOT/'configs/j2-svntp1-ntp.conf').read_bytes()
+            original=self.acquisition_config()
             self.assertEqual(files['ntp.conf'],controller.production_config(original))
             self.assertEqual(files['ntp.conf'].count(b'filegen protostats'),1)
             self.assertNotIn('supervisor_pid',json.loads(files['baseline.json']))

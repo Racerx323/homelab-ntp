@@ -7,17 +7,18 @@ observations and the next deployment gate. Entries do not authorize live action.
 
 ## Current deployment state
 
-Last reconciled: October 15, 2026. These are retained observations, not a new
-live inspection.
+Last reconciled: October 21, 2026, including the approved producer/node outcomes
+below. Earlier baseline facts are retained observations, not newly inspected here.
 
 | Component | Accepted state | Still pending |
 | --- | --- | --- |
 | Rebuilt node | Former j1-svntp1 renamed j2-svntp1; spare-card first boot accepted | Full hardware/time/network acceptance |
 | OS/access | Debian 13 Trixie, aarch64, kernel 6.18.50+rpt-rpi-v8; earlier network acceptance and latest dual-stack boot/client checks passed | Full current-boot RA/resolver/egress reconciliation; Wi-Fi disablement unproven |
-| Foundation | 701 accepted package records, including RTC utility, Webmin and mail dependencies; installation control cleanup complete | Preserve accepted inventory and recheck it before further live changes |
+| Foundation | 701 accepted foundation package records, including RTC utility, Webmin and mail dependencies; additional Munin packages are now retained after contained node failure | Capture current inventory before any new continuation; do not reuse the old 701-package pre-install pin |
 | Source candidate | GPSD 3.27.5 and NTPsec 1.2.5; mDNS-enabled build, native installation and runtime prerequisites accepted; 159-entry manifest | Preserve accepted source and installation records |
 | Runtime | All-source startup, saved-drift restart, warm reboot/RTC initialization, convergence, post-reboot clients/discovery and leap-maintenance activation accepted | Remaining per-node production gates and final observation |
 | Reporting and management | Needrestart policy installed, microcode checking disabled; Webmin local HTTP/configuration checks passed and operator confirms ama login over IPv4/IPv6; mail transport, both synthetic delivery routes and daily reporting activation accepted | Webmin temp-storage suitability and controller exposure, first scheduled needrestart run and cron-generated failure-mail acceptance, Munin and hardware-watchdog acceptance |
+| Monitoring | Genuine producer hooks installed/accepted; classifier correction and guarded node runtime accepted with all nine plugins, both literal TCP paths and NTP continuity; guarded native master commissioning committed/reconciled; expanded 33-plugin node/master committed/reconciled; three expanded scheduled cycles, 280 fresh RRDs and all 120 verified HTTPS checks accepted | Actual maintenance records, canonical source attribution, limits/transitions, client coverage/persistence and delivered alerts |
 | Optimizations | OPT-001 through OPT-007 reviewed offline; Phase 3A and proposal register added | Accepted live timing/antenna/network baseline before any optional experiment |
 | Primary | Preserved during standby rebuild, including shared antenna power | Its own fresh inspection and later separately approved rebuild |
 
@@ -25,6 +26,1864 @@ The current accepted source stage is
 `/home/ama/.ntp-source-build-mdns-20261012-v1`; the earlier v5 stage is preserved.
 User-managed passwordless sudo for ama remains in place; its removal is an
 end-of-project operator action. No cleanup here changes it.
+
+## Repository checkpoint — October 21, 2026
+
+Preserve the committed-source checkpoint for accepted DNS/network prerequisites,
+expanded 29-generic/four-NTP monitoring and the bounded three-cycle/all-graph
+observation below. Production actions and their exact consumed approvals remain
+recorded in private evidence; this publication checkpoint authorizes no new live
+change, replay, cleanup or notification.
+
+Resume with scoped read-only canonical collector TCP source attribution, then
+native limits/contact-transition qualification and separate exact-message delivery
+reviews. Keep contacts disabled. Genuine producer follow-up remains after the
+October 22 retention/reporting schedules plus completion time; inspect actual
+records/provenance rather than inferring success. Sustained statistics budget,
+client coverage, persistence, final observation and later separate-host ntpviz
+remain in the [readiness checklist](docs/PRODUCTION-READINESS.md).
+
+## Expanded scheduled collection and all graph families accepted — October 21, 2026
+
+Both approved expanded observations completed with controller/SSH exit 0 and
+unchanged protected continuity. Node capture at 19:13:59 CDT verifies the exact
+33 enabled root-owned links. Retention and reporting success records remain
+absent, and no matching scheduler events were captured; producer completion
+and provenance remain unaccepted. The next retention trigger observed is
+October 22 at 00:45:39 CDT; reporter configuration is 05:30 America/Chicago.
+Allow completion and inspect records under a new read-only review. A future
+schedule, old test delivery or global timer state cannot establish job success.
+
+Master capture at 19:14:41 CDT accepts three genuine expanded collection cycles
+at 19:00, 19:05 and 19:10 CDT, correlated with actual cron and both node/global
+finishes after finalization. All 56 j2 graph families and master transport are
+covered: 280 RRDs, no missing fields, all latest updates about 268–281 seconds
+old at capture. Required finite fields contain values at the reviewed three
+300-second sample timestamps. Only maintenance ages and disabled mail status
+are null; both transport values and query_ok/synced/pps_selected remain 1.
+Consolidated averages do not prove exact raw fetch timing or TCP attribution.
+
+All 120 hostname/CA/leaf-verified HTTPS checks passed over both literal IP
+families: 114 PNGs, four HTML pages and two CSS responses. All diskstats device
+subgraphs/overviews are included. df and df_inode each have six recent native
+field files, matching accepted deployment counts; actual filenames are retained.
+No production configuration, service, job, RRD update or notification was invoked.
+
+Next: prepare scoped read-only canonical collector TCP source attribution,
+qualify native limits/contact transitions, and separately preview/approve exact
+problem/recovery delivery tests. Keep contacts disabled. Producer follow-up
+after the October 22 schedules, client coverage/persistence, sustained statistics
+growth/storage budget, final observation and mandatory later separate-host
+ntpviz remain open. Both inspection receipts are consumed; no replay. See the
+[node outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-expanded-node-observation-20261021-v1/outcome.md),
+[master outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-expanded-master-observation-20261021-v1/outcome.md)
+and [readiness checkpoint](docs/PRODUCTION-READINESS.md), including OBS-01/03/07.
+
+## Expanded observations prepared; stanza intent confirmed — October 21, 2026
+
+The operator approved preparation of separate read-only node/producer and native
+master observations, keeping alerts disabled. Both new one-use reviews are sealed
+and unexecuted, with target contact still requiring their exact-hash approvals.
+Preparation used retained committed expansion/native qualification data only.
+All 56 accepted j2 graph names and the master transport graph are covered;
+nested diskstats CGI paths and native hyphenated RRD names are handled explicitly.
+Fixed field names/types are pinned. Filesystem mount fields are dynamic: df and
+df_inode reported six each during deployment, so observation retains current
+RRD names/timestamps and stale history for membership review rather than treating
+nine-field isolated qualification mounts as today's required set.
+
+The three-cycle cutoff is conservatively after finalization's controller
+completion. Older initial-selection cycles cannot qualify. Require actual
+consecutive cron/update evidence, per-field RRD freshness and all selected
+IPv4/IPv6 HTTPS graphs; no synthetic updates, job invocation, waiting loop,
+limits transition or notification is authorized. Actual producer success and
+scheduler provenance remain separate from collection and delivery acceptance.
+The [observation procedure](/home/aaron/code/homelab-monitoring-observability/Munin/docs/ntp-expanded-observation.md)
+links both new reviews and the readiness checkpoint retains all other gates.
+
+The operator also confirmed the main-config stanza was moved intentionally for
+human readability with no code/directive change. The retained comparison found
+identical active lines grouped by section. Preserve the readable repository
+layout and production's accepted configuration; document their byte difference
+as intentional presentation, not an unexplained functional defect. No layout
+synchronization or main-config deployment was performed or authorized here.
+
+## Expanded generic monitoring deployed and reconciled — October 21, 2026
+
+Executed all three approved v2 stages in order. Each controller completed with
+exit 0; accepted, committed and repository-reconciled are true. Compatibility
+verified the inspected two-link baseline and exact retained commissioning proof,
+then atomically replaced the live transport pathname. Node expansion added the
+24 reviewed links and expanded settings through a guarded Munin-node restart.
+All 29 generic readers retain munin:munin; only ntp_statistics/jobs retain root.
+Protected NTP/GPS inputs and service continuity passed. Master finalization
+requires exactly the expanded 33-plugin selection without a daemon restart.
+
+The node seeded both actual source-bound families, waited 305 seconds and passed
+warm full config/fetch in 7.92/8.06 seconds, within 25 seconds per family.
+query_ok/synced/pps_selected and existing verified dual-stack HTTPS passed.
+Finalization passed both expanded protocol families and HTTPS before/after.
+Canonical transport, node settings and profile mirrors reconciled. The main
+master configuration was preserved. Historical proofs and ordinary RRD/plugin
+state remain retained; every execution receipt is consumed and cannot replay.
+
+Next: prepare separate read-only expanded node/producer and master observations,
+first extending coverage beyond the original graphs to every selected generic
+and NTP graph family, including device-specific diskstats. Require three genuine
+expanded scheduled cycles, fresh canonical RRDs and all selected dual-stack
+HTTPS graphs. Existing initial-selection observations and deployment probes do
+not close those gates. Both maintenance-job ages remained unknown at deployment;
+require genuine records/provenance, never infer scheduled success from time.
+Canonical collector source attribution, limits/transitions, delivered alerts,
+client coverage, sustained storage/growth, persistence and final observation
+remain open. Contacts stay disabled. See the
+[final outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-expanded-20261021-v2/outcome.md)
+and [readiness checkpoint](docs/PRODUCTION-READINESS.md).
+
+Main-config mirror bookkeeping remains open: repository `Munin/master/configs/munin.conf`
+differs from the pinned production file by j2-svntp1 stanza placement and
+whitespace. Active lines grouped by section match in the retained local
+comparison; byte-for-byte equality does not. Preserve the local edit pending
+explicit reconciliation. Production's main configuration remained pinned
+throughout these stages; no main-config deployment occurred.
+
+## Transport hard-link baseline reconciled; v2 successors sealed — October 21, 2026
+
+Approved read-only metadata inspection completed with controller/SSH exit 0,
+unchanged protected continuity and identical repeated target metadata. The
+transport hash matches the accepted baseline, root:root owns it, mode is 0755,
+and link count is 2. Only the single-link predicate caused compatibility v1's
+preflight failure. The original installer retains a hard-link publication proof;
+the inspection did not independently read that proof.
+
+Corrected compatibility requires the inspected target inode and verifies the
+exact retained proof's hash, inode, owner/mode and link count at preflight.
+Publication replaces only the live pathname, retaining the historical proof.
+New/restored sources have one link; recovery restores bytes/ownership/mode,
+without recreating shared linkage to the historical proof. Foreign proof drift
+holds recovery. No production correction, restart or expansion was performed.
+
+Nine native Munin/systemd cases passed against current source, including real
+two-link master baselines, independent timer recovery after controller loss and
+foreign-proof preservation. Three v2 successors are sealed with updated
+predecessor hashes; each is unexecuted and requires new exact-hash approval.
+Compatibility v1 remains consumed; its unexecuted dependents are superseded.
+The [deployment procedure](/home/aaron/code/homelab-monitoring-observability/Munin/docs/ntp-generic-deployment.md#sealed-execution-order)
+links all three reviews; the [readiness checkpoint](docs/PRODUCTION-READINESS.md)
+retains scheduled collection, graphs, genuine records, source attribution,
+limits/delivery and other independent gates.
+
+## Generic compatibility execution stopped at preflight — October 21, 2026
+
+The operator approved all three sealed generic-expansion stages in order.
+Compatibility v1's controller completed with exit 1; SSH returned 0 with a known
+`preflight-failed` result, `update target baseline changed`. The target-file
+check compares SHA-256, mode, uid, gid and link count without identifying which
+predicate failed. No transport publication occurred; accepted, committed and
+repository-reconciled are false. Transaction staging/logging is retained; no
+recovery was reported. The consumed execution must not be replayed.
+
+Before apply, both source-bound IP families completed all nine selected plugins
+and six existing HTTPS HTML/CSS/PNG responses passed. Generic fields were
+numeric; the two maintenance-job ages remain unknown. These checks do not
+accept expanded graphs or scheduled collection. Node expansion and master
+finalization were not submitted because compatibility did not commit.
+
+Next: prepare a scoped read-only transport metadata/hash inspection, reconcile
+the baseline, then seal successors with correct predecessor bindings. Preserve
+the existing production selection and disabled contacts. See the private
+[outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-compatible-20261021-v1/outcome.md)
+and the durable [readiness checkpoint](docs/PRODUCTION-READINESS.md).
+
+## Guarded generic update/recovery qualified; three stages sealed — October 21, 2026
+
+Implemented repository-owned node/master update continuations using the existing
+exclusive-lock, detached-worker and independent-timer transaction machinery.
+Node updates own only 24 links and the expanded settings; NTP/GPS are untouched.
+The original package unit, effective startup drop-in and permit are pinned before
+the restart. Master stages atomically replace only the existing transport source,
+with no restart, main-config/settings change or CGI refresh. Publication records
+the temporary inode before rename; restoration requires matching authored
+inode/hash and verified backup, and preserves foreign file/link drift.
+
+Final [native qualification](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-update-qualification-20261021-v3/qualification.json)
+passes all eight cases: node/master commit, ordinary restoration, node worker
+SIGKILL after publication, master controller loss, foreign link/file and
+preflight drift. Actual independent systemd timers restored uncommitted changes;
+delayed guards preserved commits. The running master daemon saw new plugin
+source without restart. Tests used actual Trixie 2.0.76 bytes/Bookworm Munin,
+networking disabled and workspace read-only. Twenty-second local guard tests
+qualify the same machinery; production guards are 600 seconds. No production
+timing/routing or NTP data is claimed from local cases.
+
+Three reviews are sealed and unexecuted, each requiring separate exact-hash
+execution approval in order:
+
+- [Master compatibility](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-compatible-20261021-v1/review.md)
+  / [SHA-256](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-compatible-20261021-v1/sealing.json:1).
+- [Node expansion](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-node-20261021-v1/review.md)
+  / [SHA-256](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-node-20261021-v1/sealing.json:1).
+- [Master finalization](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-expanded-20261021-v1/review.md)
+  / [SHA-256](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-expanded-20261021-v1/sealing.json:1).
+
+Each later stage requires its predecessor's accepted/reconciled local result and
+committed private root receipt. Node acceptance includes actual source-bound
+seeding, 305 seconds of genuine elapsed time and complete warm native protocol
+over both families before commit; qualification state is never copied. All stages
+include independent dual-stack HTTPS continuity. Accepted source/settings/profile
+mirrors synchronize conditionally after committed readback; concurrent repo
+edits are held. Source aliases let offline checks follow the accepted selection
+without hardcoding nine after future synchronization.
+
+No new production contact or mutation occurred while preparing these stages.
+The selected production profile remains nine plugins; contacts remain disabled.
+The readiness checkpoint now starts with compatibility approval/execution.
+Scheduled expanded graphs, genuine job records, actual canonical-source
+attribution, limits/delivery, clients, growth/persistence and later ntpviz remain open.
+
+## Native generic v2 accepted; coordinated candidates prepared — October 21, 2026
+
+Approved [v2 execution](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-qualification-20261021-v2/outcome.md)
+completed with controller/SSH exit 0, a complete 334.20-second capture and
+unchanged service identities, all 71 protected hashes and production selection.
+The receipt is consumed; isolated stage/state remains retained. No package,
+production plugin, service, schedule, NFS/radio policy or master change occurred.
+
+All 33 proposed instances worked: 29 generic and four NTP readers. Both NFS
+proc3/proc4 counters are present; no reference generic graph group is omitted.
+Individual config/fetch took 13.14 seconds; after a genuine 305-second wait,
+concurrent full workloads took 15.50/15.33/15.33 seconds within 25 seconds.
+All generic warm fields were numeric. Only the already-pending maintenance-job
+ages remained unknown. All three health samples retained query/sync/PPS success.
+Native diskstats state/readback passed at munin UID/GID 103/106, mode 0600, with
+51 numeric fields for loop0/mmcblk0/zram0 and four overview families. Temperature,
+CPU frequency, Ethernet and Wi-Fi counters worked without new root privileges.
+Wi-Fi speed metadata is unavailable as munin; preserve that optional metadata
+limitation without root escalation or radio activation.
+
+The [candidate manifest](../../homelab-monitoring-observability/Munin/node/profiles/ntp/generic-expansion.candidate-manifest.json)
+binds the full selection, expanded least-privilege settings and separate
+compatible/final-expanded transport sources to the accepted capture. Offline
+protocol tests reject partial/superset sets and correct self-referencing CDEF
+field handling. Both candidates parsed all real captured warm outputs offline
+over the two simulated family bindings. That accepts parsing only, not actual
+TCP or master scheduling. Production transport/config mirrors remain unchanged.
+
+Next finish/qualify guarded existing-node/master update continuations and their
+owned-file recovery, then seal ordered deployment reviews. Native qualification
+bypassed systemd-property simulation; daemon confinement, actual source-bound
+protocol, real scheduled RRD/graph freshness and per-source diskstats warm-up
+remain deployment acceptance. Genuine maintenance completion, delivered alerts,
+clients, sustained growth, persistence and mandatory later ntpviz remain open.
+The readiness checkpoint and coordinated draft retain this resume point.
+
+## Native generic v1 stopped before staging; corrected v2 sealed — October 21, 2026
+
+Approved [v1 execution](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-qualification-20261021-v1/outcome.md)
+returned controller exit 1 and SSH exit 0: the protected reader rejected the
+normal /proc/net alias before staging or plugin invocation. All 71 pinned
+files, native 2.0.76-5 package versions, dependency-command files and Perl module
+loads passed. Timeservice and munin-node identities, production links/settings
+and protected bytes remained unchanged. No qualification stage/state was
+created, no restart or restoration occurred, and the one-use receipt is consumed.
+NFS capability and native plugin/output/state/runtime acceptance remain pending.
+
+Corrected the repository-owned collector to read only the current worker's
+/proc/PID/net/rpc/nfs, retaining general symlink rejection. Eleven offline
+contracts pass, including actual current-process procfs ancestry. The
+[v2 review](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-qualification-20261021-v2/review.md)
+is separately sealed to its
+[SHA-256](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-qualification-20261021-v2/sealing.json:1).
+No successor contact/execution is authorized yet. The readiness checkpoint now
+requires v2 approval/execution and review of its findings before coordinated
+deployment implementation/sealing. Frozen v1 artifacts remain unchanged.
+
+## Native generic qualification sealed; coordinated deployment drafted — October 21, 2026
+
+Prepared the [qualification review](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-qualification-20261021-v1/review.md),
+bound to [its archive SHA-256](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-qualification-20261021-v1/sealing.json:1).
+No live execution or new target contact. This is scoped native qualification
+with isolated staging/state writes, not a read-only inspection or deployment.
+All selected installed package/helper bytes are pinned against the approved
+2.0.76-5 packages. Generic readers run munin:munin; the two existing NTP root
+readers retain root. Capture actual dependencies and NFS markers, individual
+config/fetch, a genuine 305-second diskstats warm-up, three concurrent complete
+native workloads within 25-second budgets, and state readback/continuity.
+Unsupported NFS and unknown fields remain explicit disposition requirements.
+
+Local offline contracts and real 2.0.76-5 plugins in a network-disabled Trixie
+container verified native interface names, unprivileged diskstats, isolated
+state, concurrent atomic updates and readback. Native evidence exposed the empty
+diskstats cold fetch and self-referencing interface CDEF requirements; the
+qualification handles these explicitly. Production transport bytes remain
+unchanged; its successor must fix CDEF field classification before expansion.
+Local results do not accept target hardware, daemon confinement, actual network
+polling, the target warm interval or deployment recovery.
+
+The [coordinated draft](../../homelab-monitoring-observability/Munin/docs/ntp-generic-deployment.md)
+defines master compatibility for exactly old or fully expanded sets, guarded
+node continuation, then exact-expanded master finalization. Each stage restores
+its own prior compatible state; no consumed installer replay or arbitrary
+superset acceptance. Final implementation/sealing follows reviewed target
+qualification and recovery checks. The readiness checkpoint retains this exact
+resume point and every other observation/delivery/client/ntpviz gate.
+
+## Generic comparison accepted; expanded selection recorded — October 21, 2026
+
+Approved [node inventory](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-node-inventory-20261021-v1/outcome.md)
+and [master inventory](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-generic-master-inventory-20261021-v1/outcome.md)
+completed at 16:30 CDT: controller/SSH exit 0, complete captures, unchanged
+continuity and four verified index requests passed. Receipts consumed. No plugin,
+autoconfiguration, sensor/device command, install or service change; no contact
+to the reference node. Ordinary HTTPS may refresh native caches/access logs.
+
+The reference has 33 top-level generic graph groups, consistent across both
+families and native RRD names. The target currently has five generic plugins and
+four NTP readers. All proposed source template names are present in its core
+2.0.76-5 pool. Offline exact-package inspection maps the graph groups to 29
+generic plugin instances (24 additions), retaining the four NTP readers. The 33
+unparsed child filenames resolve to diskstats device-field series, not extra
+plugins. Stale old-device series are not target-device assignments.
+
+The separate [candidate and comparison](../../homelab-monitoring-observability/Munin/docs/ntp-generic-comparison.md)
+are recorded without changing the accepted profile. Qualify NFS proc3/proc4
+capability, thermal/cpufreq counters, installed bytes/dependencies, effective
+privileges, diskstats ordinary state and complete runtime. Preserve inactive
+Wi-Fi policy and adapt disk instances to actual target devices. The existing
+node installer and master still expect exactly nine plugins; finish their
+guarded coordinated transition/restoration before sealing deployment. Expanded
+collection and all new generic/NTP graphs require acceptance after deployment.
+Maintenance follow-up and the other readiness gates remain independently open.
+
+## Generic statistics parity requested; comparison reviews prepared — October 21, 2026
+
+The operator requires j2-svntp1 to have every applicable generic system statistic
+from j2-svpi4mf in addition to the four NTP readers. The current profile selects
+only five generic package plugins. The governing plan now records the expanded
+requirement and explicit treatment of unsupported hardware/application differences.
+
+Separate node/master inventory reviews are sealed and linked at the readiness
+checkpoint. Node scope inventories existing links, package availability, safe
+privilege selectors and capability names. Master scope compares existing native
+RRD names/mtimes and verified index links for both hosts; it does not contact
+j2-svpi4mf. No plugin, autoconfiguration, sensor/device read, install or service
+change is included. No live contact occurred during preparation.
+
+The current installer and master protocol checker both enforce the exact
+nine-plugin set. Expansion therefore requires coordinated profile/settings,
+guarded continuation, expected-set and runtime qualification; enabling extra
+links alone would fault transport checks. Preserve accepted production and NTP
+readers until the expanded change is qualified, approved and deployed. Accept
+fresh scheduled data/graphs for the expanded set afterward. Maintenance-record
+follow-up and the other existing readiness gates remain open.
+
+## Read-only scheduled collection and graph observations accepted — October 21, 2026
+
+The [node/producer outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-node-producer-observation-20261021-v1/outcome.md)
+and [master outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-master-observation-20261021-v1/outcome.md)
+completed at 16:00 CDT: controller/SSH exit 0, capture complete, continuity
+unchanged. Receipts consumed; no replay. No forced job/collection, limits/plugin,
+service change, RRD write, packet capture or notification. Approved ordinary
+HTTPS requests may refresh native CGI caches/access logs.
+
+Cron/log evidence confirms consecutive native cycles at 15:45, 15:50 and 15:55.
+Both transport samples remain 1. All 71 RRD last-update timestamps are fresh;
+all nonpending series have finite samples through the reviewed interval.
+NTP query/sync/PPS=1, reach=255, stratum=1, leap=0; sampled timing, storage floors
+and active statistics-age bounds pass. All 40 verified HTTPS checks pass over
+both literals, including every one of the 16 j2 day PNGs and master transport
+PNG. RRD consolidation is not an exact raw fetch or extended timing acceptance.
+
+Both real maintenance records are absent, matching evidence=0 and ages unknown.
+Master mail is unknown because no submission evidence exists. These are open
+health gates, not suppressed failures. The captured next retention timer is
+October 22 00:45:39 CDT; reporting is configured for October 22 05:30 CDT. Wait
+for actual completion evidence under a new read-only review; do not force jobs
+or infer future success. Next preparation also retains actual canonical source
+attribution and native limits/transitions before exact-message delivery reviews.
+Client refresh/coverage, OBS-02 growth/budget, persistence, final observation and
+later mandatory separate-host ntpviz remain open. The readiness register now
+reflects these current outcomes instead of the old pre-install task state.
+
+## Separate read-only scheduled observations prepared — October 21, 2026
+
+The node/producer [review](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-node-producer-observation-20261021-v1/review.md)
+and native-master [review](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-master-observation-20261021-v1/review.md)
+are sealed separately for exact-hash execution approval. They pin accepted
+producer, corrected node and committed master state. Preparation made no target
+contact or production change. Repository-owned collectors and offline contracts
+cover record validation, unknown data, three-cycle/cron correlation, closed
+archives, actual stdin bootstrap and no receipt replay.
+
+Node scope reads the two genuine records and bounded scheduler events. Master
+scope reads native logs/cron and last-update/300-second RRD samples, then checks
+the 16 j2 graph PNGs and master transport graph via verified HTTPS over both
+families. Ordinary CGI may refresh native caches. No job, plugin, update, limits,
+service change, RRD write or message is invoked. Three consecutive scheduled
+cycles require actual completion/provenance evidence; missing records or samples
+remain faults/open gates. The capture does not attribute the actual canonical
+TCP source or close longer growth, persistence, delivery or ntpviz obligations.
+
+Next: approve each review's own SHA-256, then review captured evidence. Do not
+infer daily reporting completion before its next actual schedule or collection
+acceptance from elapsed time. See the readiness checkpoint for both hashes.
+
+## Native master commissioning accepted — October 21, 2026
+
+The approved [commissioning outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-master-commissioning-20261021-v1/outcome.md)
+completed at 15:34:46 CDT under archive
+`a51f6f5cce01f4fd0df3ef94112082c720fccb4146e1ce7ce3ec67616e97185c`.
+Controller and both SSH stages exited 0. Installed CLI/native protocol accepted
+IPv4=1, IPv6=1 and mail=U; independent verified HTTPS HTML/CSS/existing PNG passed
+before and after over both literals. Commit accepted, recovery timer disarmed,
+no recovery errors. Munin-node restarted; verified native CGI workers refreshed;
+Apache/cron/network/package and unrelated-plugin guards passed.
+
+The preserving master config removes the stale cache directive and registers
+one canonical j2 series plus the transport overrides with contacts none.
+Plugin/settings/link are installed. The privately scanned, atomically imported
+repository mirror matches accepted production SHA-256
+`eefe2d3f0cfa59f65ee76b06e53e8e4ef911e9f6fa169ff8f6140d9e61c11851`.
+No message, package/schedule, NTP-node config, network or DNS change. Receipt
+consumed; no replay. Committed restoration requires separate review.
+
+Next: separate scoped read-only node/producer and master observation reviews
+for genuine scheduled records, three consecutive five-minute collection cycles
+and fresh j2 graphs over both HTTPS families. Keep contacts disabled and all
+limits/transitions, delivery, OBS-02/OBS-07, persistence, final-observation and
+later mandatory separate-host ntpviz gates open.
+
+## Native master commissioning qualified and sealed — October 21, 2026
+
+The guarded installer/restorer and controller passed nine isolated native
+Bookworm cases: success, configured/prepared failure, foreign config/link,
+preflight drift, worker loss, controller loss and rejected HTTPS health.
+Real Munin 2.0.73-1, systemd, Apache/FastCGI and native protocol exercised node
+restart, CGI recycling and actual restoration. Existing RRD inodes/history and
+Apache identity were preserved. Isolated transport zero/U is not production
+success. Native text/unit bytes match the captured production sources.
+
+The [sealed review](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-master-commissioning-20261021-v1/review.md)
+is bound to [its archive SHA-256](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-master-commissioning-20261021-v1/sealing.json:1).
+It removes the stale cache directive, merges one canonical j2 entry and the
+dual-family transport plugin with contacts none, and requires independent HTTPS
+before commit. A 600-second current-boot guard restores uncommitted changes;
+foreign drift holds recovery. Execution awaits separate exact-hash approval.
+No production contact or mutation occurred during this preparation. The exact
+accepted config mirror remains unchanged. Scheduled jobs, polling/fresh graphs,
+delivered alerts, persistence and longer readiness gates remain open.
+
+## Exact production master baseline imported — October 21, 2026
+
+The approved [baseline outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-master-baseline-20261021-v1/outcome.md)
+completed at 14:15:51 CDT under archive
+`82ee08df520c32e3bf17e4c5df5781734198d928f71e1dea0b91c72e11bc76f0`.
+Controller/SSH exit 0; capture_complete=true; continuity preserved. Receipt
+consumed. All five in-memory streams, including the direct-RRD commissioning
+candidate, passed installed parsing as munin without stderr.
+
+The guarded repository-only importer scanned exact decoded bytes privately,
+imported atomically and verified readback. Canonical master config now matches
+production byte-for-byte at SHA-256
+`26404e5fb566bb579b28c759c9f1458d495242bea8086855977cf389478c3fd2`,
+including LF, tabs, whitespace, comments and j2-svpi4mf identity. Frozen prior
+archives remain unchanged. The lifecycle retains exact synchronization after
+every accepted future deployment/restoration; candidates remain separate.
+
+Installed UpdateWorker checks socket availability/writability before selecting
+cache transport and otherwise falls back with a warning. GraphOld/CGI set the
+cache address without that check. The separate minimal candidate removes the
+stale socket directive, using Config's empty-socket default; it is not deployed.
+No production config, service, RRD, schedule, package, plugin/update/limits or
+message changed/executed; no second host was contacted.
+
+Next: finish guarded native master commissioning/restoration qualification and
+seal its deployment. Genuine scheduled producer success, native polling/fresh
+graphs/delivery, OBS-02/OBS-07, persistence, longer observation and later mandatory
+separate-host ntpviz remain open. Preparation entries below are historical.
+
+## Exact master baseline synchronization and cache candidate prepared — October 21, 2026
+
+The operator designated production as the known-best master configuration and
+required the repository-managed service to remain synchronized. The previous
+read-only capture did not export raw config bytes; sanitized differences cannot
+reconstruct an exact mirror. Its archive and consumed receipt remain unchanged.
+
+A separate hash-pinned read-only baseline export is prepared. It requires the
+accepted production hash, exports only that config into private evidence, reads
+installed native graph/update source and parses a direct-RRD commissioning
+candidate in memory. The repository-only importer verifies the successful scoped
+capture, scans exact bytes before atomic import and rejects concurrent edits;
+check mode detects drift without target contact. The monitoring-owned lifecycle
+requires exact readback/repository agreement after every accepted deployment or
+restoration. No background access or automatic production overwrite is added.
+
+The cache resolution candidate removes only the stale socket directive, using
+native direct-RRD defaults. The accepted baseline must remain an exact production
+mirror until a separately approved deployment succeeds. Native module review,
+actual activation/restoration qualification and deployment sealing still follow
+the raw-baseline gate. No new live contact or mutation occurred during preparation;
+all scheduled-job/polling/graph/delivery and extended observation gates remain open.
+
+## Native master qualification completed; repository node identity corrected — October 21, 2026
+
+The approved [qualification outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-master-config-qualification-20261021-v1/outcome.md)
+completed at 13:53:32 CDT, controller/SSH exit 0 and capture_complete=true under
+archive `534deb6cf14917fb6eb413ed98d5dd235ea42b118ae9a779118cf86685dd3704`.
+Continuity passed; the receipt is consumed. All four in-memory configurations
+passed installed Munin parsing as munin, without stderr. No production write,
+plugin/update/limits execution, service action, other-target contact or message.
+
+The operator confirmed production's .170 host identity is correct. The repository
+baseline now names j2-svpi4mf; only that substitution changed its bytes. CRLF,
+whitespace and comments still differ, so byte-for-byte equality is not claimed.
+The frozen approved archive retains its original baseline. Production hash is
+unchanged from the morning capture.
+
+The configured rrdcached socket is absent and rrdcached.service is not found.
+Installed keyword tables accept the graph-job keys; the CGI entry point does not
+directly consume either CGI limit key. Native include ordering/filter/overlay
+semantics are identified, but effective contacts/limits and concurrency remain
+unaccepted. munin-node cannot reload; Apache supports graceful reload. Actual
+activation/CGI refresh and restoration still require separate qualification.
+
+Next: review the dangling cache dependency and finish/qualify native master
+installation/restoration before sealing deployment. Preserve all existing graph
+identities and real records; commission new contacts as none. Scheduled jobs,
+polling/fresh graphs/delivery, OBS-02/OBS-07, persistence, longer observation and
+later mandatory separate-host ntpviz remain open. Earlier preparation entries
+below are historical.
+
+## Master baseline review and native qualification prepared — October 21, 2026
+
+The user approved master activation/restoration qualification and requested review
+of the canonical monitoring-owned `Munin/master/configs/munin.conf`. Its hash
+`46c3a709e1a3cb35f166e7edf16af0aaaf1f2ebe4be951b0b6652480ef781728`
+differs from the 10:51:32 CDT production capture
+`26404e5fb566bb579b28c759c9f1458d495242bea8086855977cf389478c3fd2`.
+The repository names the .170 node j1-svpi4mf; the capture names it j2-svpi4mf.
+The earlier structural capture does not prove the complete diff. Baseline bytes
+and production graph identities are preserved; no new live contact occurred.
+
+The [configuration review](../../homelab-monitoring-observability/Munin/docs/master-config-review.md)
+records CGI/cache/concurrency/rate/alert recommendations. A separate read-only
+qualification freezes the canonical baseline, preserving commissioning merge,
+native parser probe and activation/source capture. New contacts stay `none` in
+memory. Native include/inheritance, actual activation/restoration and final
+installer qualification remain open until results are reviewed. Next approve
+that inspection's exact seal; then finish and seal the master mutation. Node
+runtime remains accepted. Scheduled jobs, polling/graphs/delivery and all extended
+readiness obligations remain open; no notification approval is implied.
+
+## Classifier correction and guarded Munin startup accepted — October 21, 2026
+
+The approved [correction/start outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-node-correction-start-20261021-v1/outcome.md)
+passed at 13:04:08 CDT under archive
+`ffe3ab94cdd8ebdbef782ea47d61077409656018a422c7cb0516e03254dd3ee5`.
+Controller/SSH exit 0; node-resumed accepted. Only the classifier was replaced.
+All nine installed config/fetch paths passed before/after guarded startup,
+including the three required health values. Exact literal listeners and
+independent TCP connections passed IPv4/IPv6; NTP continuity and protected
+artifacts/package versions passed. Munin-node is enabled/running; no recovery.
+Original installer state stays archival; new execution receipt is consumed.
+No job, fabricated record, package reinstall, master action or message occurred.
+
+Next: qualify native master merge/parser/activation and restoration, then prepare
+its separate sealed acceptance review. Observe genuine scheduled producer
+completions independently. Master polling/fresh graphs/delivered alerts,
+OBS-02/OBS-07, persistence, longer observation and later mandatory separate-host
+ntpviz remain open. Earlier contained-state entries below are historical.
+
+## PPS classifier defect confirmed; correction/start prepared — October 21, 2026
+
+The explicitly approved [read-only inspection](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-ntp-selection-20261021-v1/outcome.md)
+ran source-built ntpq as munin. Selected association 54497 remained stable:
+*SHM(2), srcadr 127.127.28.2, refid PPS, stratum 0, sel_sys.peer, reach=377,
+flash=00 ok. System leap=00/stratum=1 matched a selected local reference. This
+matches accepted SHM unit 2/PPS configuration. The deployed hash matches the
+classifier requiring o; its pps_selected=0 is a classifier false negative here.
+NTP identity/protected files matched before/after; Munin remained disabled,
+inactive/dead, no listener/start permit. No plugin run, correction, start, job
+or message. No old action was replayed.
+
+The monitoring-owned parser now recognizes selected local SHM(2)/PPS under
+normal selected tally and preserves native PPS support. Real captured-output
+replay and wrong-refid/unit/network rejection tests pass locally. The separate
+[correction/start review](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-node-correction-start-20261021-v1/review.md)
+and [seal](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-node-correction-start-20261021-v1/sealing.json:1)
+are prepared, not executed. Only the classifier is replaced; original guard and
+consumed state stay unchanged. All nine installed paths are checked before/after
+startup; independent TCP families follow. Caught failure conditionally restores
+only authored source and returns to containment using proven permit ownership.
+Packages/producer records are preserved. No package reinstall, NTP, network,
+DNS, Apache or master action belongs to this stage. Initial installer/native
+containment qualification is retained; unchanged containers were not rebuilt.
+
+Next: exact-hash correction/start approval. Node runtime acceptance, real
+scheduled records, master polling/graphs/delivery, OBS-02/OBS-07, persistence and
+later separate-host ntpviz remain open. See readiness for the current checkpoint.
+
+## Retained Munin health field identified — October 21, 2026
+
+The user explicitly requested retrieval of retained health values before any
+correction/start. The [read-only result](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-retained-health-20261021-v1/outcome.md)
+matched the failed stage's hostname/boot, protected state and worker-spec digest.
+The retained munin-run ntp_health fetch exited 0 without stderr: query_ok=1,
+synced=1, pps_selected=0, reach=255, stratum=1, leap=0. **pps_selected** alone
+failed the three required healthy-state assertions. No plugin, ntpq query,
+correction, service action or start was performed by retrieval.
+
+The classifier accepts only a selected tally beginning with o. Raw selected
+association/refid is absent from this derived output, so PPS loss versus a
+classification problem remains unproven. Next qualify actual selected association,
+refid and source-built output format read-only before a reviewed correction/start.
+The node remains unaccepted/contained; accepted producer hooks and remaining
+scheduled-record/master/observation gates are unchanged. Private retrieval inputs,
+manifest, one-use receipt and raw output are retained; no old action was replayed.
+
+## Producers installed; Munin node failed health acceptance and was contained — October 21, 2026
+
+Both approved v3 bundles executed once, producers first. The
+[producer outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-producers-20261021-v3/outcome.md)
+passed at 12:02:25 CDT (controller/SSH exit 0): helper and rendered completion
+hooks accepted, NTP continuity preserved. No real job, synthetic record, schedule
+change or notification. Genuine scheduled retention/reporting completion remains
+independently pending; this installation remains accepted.
+
+The [node outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-node-install-20261021-v3/outcome.md)
+failed at 12:03:50 CDT (controller/SSH exit 1), after the package/profile installer
+returned, during outer installed NTP-health validation. Its generic error does
+not identify which expected query_ok/synced/pps_selected line failed. No root
+cause is established and independent controller TCP acceptance was not reached.
+
+Reviewed automatic containment ran. The same consumed archive's one-use
+read-only inspection completed at 12:05:13 CDT, exit 0: accepted=false,
+phase=node-running, recovery=contained, recovery_errors empty, with NTP continuity
+passing. The phase is a retained installation checkpoint, not serving acceptance.
+Packages, start guard and private state/backups remain; no cleanup, purge, restart,
+master change or message followed. Apply and inspect receipts are consumed.
+
+Next: prepare read-only retrieval of retained failed-plugin values/state before
+any correction/start/recovery continuation. Do not replay old apply or inspect,
+reuse the old 701-package pre-install pin, assume a parser/PPS fault or close
+OBS-02/OBS-07. Native master deployment remains held on node acceptance. Keep real
+scheduled records, graphs/polling/delivery, persistence and later separate-host
+ntpviz visible in [readiness](docs/PRODUCTION-READINESS.md#decision-and-next-action).
+
+## Guarded monitoring stages prepared; master design resolved — October 21, 2026
+
+Local preparation only; no host contact, install, job execution or mail. Separate
+[producer](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-producers-20261021-v3/review.md)
+and [node](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-node-install-20261021-v3/review.md)
+reviews now bind closed archives, captured host/boot/service/package pins,
+private state/backups, one-use transport and conditional recovery. V1/V2 local
+drafts are superseded and were never executed. Existing qualified installer and
+profile bytes remain unchanged; their container cases were not rerun.
+
+| Prepared v3 archive | SHA-256 | Expires (America/Chicago) |
+| --- | --- | --- |
+| Genuine producers | 431949a1715cef61c1d7665f62e2418eaec58d48fd472e39451904d00098b3bb | October 22, 2026, 11:54:01 CDT |
+| Guarded ARM64 node | 264bcdde46629ae7be7fb4decaaa417661aeab4cacbd816e44d5d2f13026466c | October 22, 2026, 11:54:02 CDT |
+
+Both frozen offline checks pass; execution must start with at least 900 seconds
+remaining. No execution receipt exists for either. New focused checks passed
+(18 stage/producer and 6 master tests), as did both repositories' full pre-commit,
+shell collision policy and working-tree secret scans. Private complete logs are
+retained under `munin-local-qualification-20261021-v1`; local results do not
+establish target acceptance.
+
+The genuine completion helper renders new retention/reporting hooks without
+changing the accepted baseline rule/reporter. Actual cleanup, quiet/actionable
+scan, test/failure/lock exclusion, atomic replacement and conditional restoration
+have focused offline coverage. Installation creates no success record and runs
+no job. Producers must precede node installation under the shared 701-package pin;
+each real scheduled completion remains an independent acceptance item.
+
+The [master design](../../homelab-monitoring-observability/Munin/master/ntp-design.md)
+selects one canonical IPv4 series and scheduled full-profile checks over both
+literal families from explicit .83/::83 binds. The existing five-minute scheduler
+collects independent transport fields. Fixed stdin-only Mailrise contacts,
+one-message pipe lifecycle, limits/unknown handling, submission-failure state,
+activation order and recovery are defined and locally tested. Native parser,
+merge/activation/restoration qualification and a sealed master mutation remain;
+commissioning interval and exact problem/recovery effects require review.
+
+Repository-wide validation exposed a historical transition test that used the
+new accepted mirror as its old pre-protostats input. Its isolated test now
+reconstructs that historical input; no privileged historical source or live
+configuration was changed. Keep scheduled records, data/graph/delivery acceptance,
+OBS-02/OBS-07, persistence, final observation and mandatory later separate-host
+ntpviz open in [readiness](docs/PRODUCTION-READINESS.md#decision-and-next-action).
+
+## Node/producer and native-master readiness captured — October 21, 2026
+
+Both approved v2 inspections executed once with exit 0, capture_complete true
+and exact before/after continuity: [node](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-node-producer-readiness-20261021-v2/outcome.md) at 10:51:48 CDT,
+[master](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-native-master-readiness-20261021-v2/outcome.md) at 10:51:32 CDT. Their receipts are consumed;
+no replay, extra target query, plugin/job invocation, repair or notification.
+
+The ARM64 node has 701 package records; the cached no-recommends plan exactly
+matches all 15 reviewed versions with zero upgrades/removals. No Munin account,
+unit/listener/config, installer paths or policy-rc.d is present. NTP config,
+retention rule and reporter match repository hashes. Both success records remain
+missing. Cron is 05:30 America/Chicago; timer/trigger metadata does not prove
+actual cleanup success. One capacity sample exceeds approved floors; continued
+growth/monitoring remains open. Both directions select the intended static route
+sources. No protocol/network-family acceptance is inferred from route lookups.
+
+Native Munin remains 2.0.73-1 with no j2 registration/active contacts in inspected
+configuration. Five-minute cron, recent update/limits activity and accepted
+Apache vhost bytes are retained. INET6/MultiHomed/address excerpts do not resolve
+scheduled dual-family polling for one canonical node. No CGI, client DNS/HTTPS,
+node protocol or delivery test ran. Next: finish the guarded node outer bundle,
+implement genuine producer writes under separate mutation reviews and resolve
+master family/limit/unknown-data/recovery design. OBS-02/OBS-07, scheduled job
+completion, client/graph/persistence and later separate-host ntpviz remain open.
+Prior failed v1 artifacts remain immutable; v2 capture is not monitoring deployment.
+
+## Munin readiness v1 attempts failed; corrected v2 sealed — October 21, 2026
+
+Both approved read-only v1 archives were submitted once; SSH/controller exited 1
+and capture_complete is false. The helper namespace lacked `__file__`, raising
+NameError before collect(). Both stdout files are empty; no readiness command
+or target mutation ran. Receipts are consumed; frozen v1 code/evidence remain.
+The repository fix adds the helper filename to its namespace. An actual stdin
+payload regression reproduced the same failure before correction and passes
+afterward without running a host command; all 10 focused tests now pass.
+
+Corrected scopes remain unchanged and were sealed without new target contact:
+
+- [Node/producer v2](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-node-producer-readiness-20261021-v2/review.md): `d5c8ce58578f3e30072b370193a5e75b4c22066fe30765b655caa4805ba94448`.
+- [Native-master v2](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-native-master-readiness-20261021-v2/review.md): `fab1cbf3d9eaa999f1002b32d8a513001f3850b5a8485ccad78ce01d6a162e86`.
+
+Expiry: October 22, 2026 at 10:48:08 CDT (node) / 10:48:09 CDT (master), with 270-second execution reserve.
+Next: new exact-hash approvals as required for changed artifacts; neither v2
+has an execution receipt. No replay, target repair, package/service/network
+change or notification occurred. All monitoring acceptance obligations remain
+open because no fresh readiness capture completed.
+
+## Separate Munin readiness reviews sealed — October 21, 2026
+
+Prepared two one-target read-only reviews with no target contact:
+
+- [Node/producer](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-node-producer-readiness-20261021-v1/review.md), archive
+  `5dee39accbeb5ba18e216f6723445097548bdf2fc552f5d9d5f70b0336a5b3f6`; j2-svntp1 via ama@10.1.0.51 with established alias 10.1.0.137.
+- [Native master](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-native-master-readiness-20261021-v1/review.md), archive
+  `9a582600fa5813adea90c7e8f54eafc73dc46f5f4479ec588b27de82c0f0925b`; J1-SVMF via pi@10.1.3.83 with established alias svmf.local.theama.co.
+
+Both expire October 22 at 10:36:07 CDT, with 270-second execution reserve.
+The repository-owned run-munin-readiness.py reuses bounded transport and redacted
+configuration helpers. Closed inputs include accepted static-network/DNS outcome
+hashes, pinned root/host/boot/service, inventory/profile and stage definitions.
+The collector has no install, plugin/polling/limits invocation, producer run,
+lock acquisition, CGI/DNS/HTTPS request or notification path. Statistics/data
+collection is metadata-only; fixed producer hashes/structure and validated
+success-record fields preserve the actual evidence gap. No HA fixtures or
+container/failover reruns; focused collector safety tests passed locally.
+Neither execution receipt exists. Next: independent exact-hash approvals, then
+reconcile the two captured outcomes before preparing mutation bundles. Physical
+persistence, client refresh, scheduled dual-family polling/metrics/alerts and
+later separate-host ntpviz remain explicit acceptance obligations.
+
+## Munin installation/producer/master reviews reconciled — October 21, 2026
+
+The [three-stage handoff](../../homelab-monitoring-observability/Munin/docs/ntp-monitoring-review.md#separate-stage-handoff)
+now uses accepted static .83/::83 identity, Munin/svmf DNS and native Apache
+verified-HTTPS transport. Removed stale network/DNS/web-discovery prerequisites;
+retained exact family/source, protected NTP state and recovery requirements.
+Inventory remains selected-not-deployed. Missing job records accept reader fault
+behavior only, not maintenance health; node/producer preparation can proceed
+independently and final master health requires genuine scheduled completion.
+The actual retention producer is the firstaction cleanup in the accepted rule,
+not a presumed standalone cleanup script or global logrotate result.
+
+Fresh node/package/access/producer baselines, production outer bundle, actual
+success writes, native scheduled dual-family polling design, master limits and
+unknown-data/delivery acceptance remain unfinished. Next prepare two separate
+read-only readiness reviews: node/producer and native master. No target contact,
+code/profile/schedule changes, new fixtures, container reruns or notification.
+Existing qualification remains retained. All three definitions remain unsealed;
+no new execution hash or deployment authority is claimed by reconciliation.
+OBS-02/OBS-07, client/FQDN refresh, physical persistence, observation interval
+and mandatory later separate-host ntpviz remain explicit readiness obligations.
+
+## Munin/svmf IPv6 DNS accepted — October 21, 2026
+
+Approved archive `81d6544c533baa2592c9e63c093f2be2f403400309ffc244fb0561840a827e30`
+executed once through all five phases, each exit 0; final acceptance at
+10:12:30 CDT. .54 was accepted before .53 mutation. Both full Unbound/Pi-hole
+restarts changed PIDs on each node. Both names now serve AAAA ::83 and one
+canonical IPv6 PTR to svmf. Exact node/direct-loopback/VIP answers, preserved
+NTP/local records, public DNS, paired Caddy and verified proxy HTTPS passed.
+All retained samples show all four linked VIPs on .53; intervening transitions
+or packet loss were not measured. No rollback, forced failover or sync change.
+The [outcome](/home/aaron/code/.local-evidence/homelab-dns/current/munin-svmf-dns-deployment-20261021-v1/outcome.md) retains proof,
+backups and consumed receipts. Next: reconcile and finish node installation,
+job-success and master acceptance reviews against accepted network/DNS state.
+Client cache/FQDN SSH, graph freshness, alert delivery, physical persistence,
+OBS-02/OBS-07 and later separate-host ntpviz remain open.
+
+## Munin/svmf DNS deployment review prepared — October 21, 2026
+
+Prepared [three-record DNS review](/home/aaron/code/.local-evidence/homelab-dns/current/munin-svmf-dns-deployment-20261021-v1/review.md), archive
+`81d6544c533baa2592c9e63c093f2be2f403400309ffc244fb0561840a827e30`, expiring October 22
+at 10:06:25 CDT. Both names gain AAAA ::83; one canonical IPv6 PTR targets svmf.
+The candidate appends to the accepted NTP DNS zone, preserving all prior bytes;
+boot/include/CLI/zone pins are rechecked before mutation. Accepted static-network
+and DNS outcomes are hash-bound provenance. Unchanged runtime reuses retained
+qualification; no new fixtures or target contact. Next: exact-hash approval,
+then serial atomic updates, full Unbound/Pi-hole restarts and paired DNS/Caddy
+acceptance. No phase consumed. Client cache/FQDN SSH, graph freshness,
+OBS-02/OBS-07 and later separate-host ntpviz remain monitoring obligations.
+
+## svmf static networking accepted — October 21, 2026
+
+Approved archive `935f60fd1dab11fa3a209efb98be40b3657143c2b9148065a8640db0ac160b8e`
+executed once and committed at 09:58:00 CDT, controller exit 0. Both independent
+SSH families passed static .83/::83, DAD, route/source, native ntp1 .51/::51,
+DNS/search and service-continuity gates. Verified Munin HTTPS HTML/CSS/sample
+PNG passed both intended literals, including independent terminal checks.
+RA/global routing and the original generated ULA remain. Apprise/Mailrise health
+passed without a notification. No rollback, protected-service restart or reboot.
+The [outcome](/home/aaron/code/.local-evidence/homelab-network/current/svmf-static-network-20261021-v1/outcome.md) retains proof;
+backup/state and the consumed receipt remain. Next: separate Munin/svmf DNS
+review, then monitoring acceptance. Reboot/renewal persistence, graph freshness,
+OBS-02/OBS-07 and later separate-host ntpviz remain open.
+
+## svmf static-network successor prepared — October 21, 2026
+
+Prepared the [successor review](/home/aaron/code/.local-evidence/homelab-network/current/svmf-static-network-20261021-v1/review.md) and sealed archive
+`935f60fd1dab11fa3a209efb98be40b3657143c2b9148065a8640db0ac160b8e` for
+`svmf-network-static-20261021-v1`, expiring October 22 at 09:48:09 CDT. The spec
+binds the accepted NTP DNS outcome, exact ntp1 .51/native ::51 results and retained
+October 20 host/profile/HTTPS pins. Execution must revalidate those pins and stop
+on drift before profile mutation. Unchanged runtime bytes retain the previously
+passed 21 offline/seven native cases; no new fixtures or target contact occurred.
+Local archive, source, review and provenance checks are recorded with the bundle.
+No successor execution receipt exists. Next: exact-hash approval, then guarded
+static .83/::83 acceptance; subsequent Munin/svmf DNS and OBS-02/OBS-07 remain open.
+
+## NTP-only DNS deployed and accepted — October 21, 2026
+
+Executed the approved archive SHA-256
+`54224a0beac93bc715a8af42ce39b673a7b14f18ac300e1524f714364f03d545`
+through baseline, .54 apply/acceptance, .53 apply and final acceptance. All five
+phases returned 0; final gate completed at 09:34:47 CDT. Atomic writes preserved
+unrelated bytes, and both full Unbound/Pi-hole restarts passed on each node,
+confirmed by retained PID changes. Final local-zone SHA-256 on both nodes is
+`cd69e1d0674ed844c4768c355db319d521dd53805df2da38f25ef9cb819480ef`.
+
+Exact ntp1 A/AAAA and both PTRs passed through node/loopback/VIP transports,
+along with preserved local and public DNS health. Caddy service and verified
+HTTPS 204 passed over both proxy VIPs. All retained paired samples show all four
+linked VIPs on .53; no claim is made about unobserved transitions or packet loss.
+No rollback, forced failover, Caddy/Keepalived configuration or sync change,
+additional fixture or synthetic notification occurred. Backups and consumed
+receipts remain; no cleanup or further live probe followed final acceptance.
+
+The [DNS owner outcome](../../homelab-dns/Unbound/docs/ntp1-ipv6-prerequisite-review.md#deployment-accepted--october-21-2026)
+and private outcome.json/outcome.md retain the exact operation. Next prepare the
+svmf static-network successor with refreshed baseline requirements and current
+NTP DNS. Named-family checks on svmf remain its preflight, not inferred success
+from DNS alone. Later DNS/monitoring obligations and overall host acceptance stay
+open in the readiness checklist. No commit or push occurred.
+
+## NTP-only DNS deployment review sealed — October 20, 2026
+
+Prepared private `ntp1-dns-deployment-20261020-v1`, archive SHA-256
+`54224a0beac93bc715a8af42ce39b673a7b14f18ac300e1524f714364f03d545`.
+It binds the exact two AAAA/PTR additions against retained identical live zones,
+current identities/keys, native-expanded inputs, atomic writes, full Unbound and
+Pi-hole restarts, serial acceptance and reverse recovery. Historical non-zone
+configuration bytes were reused only after matching October 20 captured hashes;
+both expanded candidates match prior installed native validation results.
+
+The operator clarifies DNS and Caddy fail over together: PIHOLE_DUALSTACK owns
+DNS .55/::55 and Proxy .56/::56. Added brief read-only four-VIP, Caddy HTTPS/service
+and public-DNS acceptance, plus a frozen archive/phase wrapper. No Caddy or
+Keepalived configuration change or forced failover is included. Existing normal
+HA logging/notification hooks remain in place; no synthetic message is planned.
+
+Per operator instruction, no additional fixtures, stand-ins or simulated failover
+tests were built. Retained baseline qualification remains historical; new
+read-only guards and wrapper passed source/syntax and real archive/index checks.
+No target contact, DNS write or service restart occurred. Exact-hash execution
+approval is next; the readiness checklist and DNS owner review retain the scope.
+
+## Atomic DNS transaction and recovery locally qualified — October 20, 2026
+
+Updated the DNS-owned production node payload, one-use hash-gated dispatcher and
+paired DNS/HA acceptance gate to the operator's atomic-write/two-full-restart
+policy. The final revision passed 29 offline contracts, the repository suite and
+pre-commit checks, plus all four native two-node fixture scenarios. Native
+Unbound 1.17.1/systemd performed apply and reverse restoration; restart failures
+recovered and foreign drift remained untouched. Nine retained readbacks show both
+service PIDs changed. Final source hashes matched the tested fixture revision.
+
+FTL uses a dnsmasq/restart-command stand-in; Keepalived uses a service sentinel
+with explicit fixture VIP movement. Podman exec is the native test transport;
+SSH identity/hash/receipt contracts have offline coverage. Physical failover,
+real FTL and production ARM64 remain live deployment acceptance gates. No
+production contact, DNS write, service restart or Caddy/Keepalived change occurred.
+
+Private evidence is retained under
+`homelab-dns/current/ntp1-transaction-qualification-20261020-v1` at workspace
+`.local-evidence/`. The [qualification report](../../homelab-dns/Unbound/docs/zone-transaction-qualification.md)
+records coverage and limits. Next prepare the sealed NTP-only deployment review
+with exact inputs/actions/recovery; a new hash approval is required before live
+execution. No production execution bundle was sealed by this qualification.
+
+## DNS atomic replacement and full-restart policy clarified — October 20, 2026
+
+The operator confirms Unbound local-zone synchronization is not implemented;
+node synchronization concerns Caddy separately. Removed broad synchronization
+and unbound-control reload qualification from this DNS record change's next gate.
+The captured Gravity Sync observations remain historical; they do not establish
+an Unbound zone writer. No live job/configuration was changed.
+
+The revised contract requires independent atomic local-zone replacement per
+node, validation, a full Unbound restart and healthy readback, then a full Pi-hole
+DNS restart. Rollback uses atomic restoration and both full restarts. Current
+non-VIP owner goes first with a healthy serving peer; cluster-driven failover is
+permitted within bounded convergence. Require coherent VIP ownership/healthy pair
+and correct answers before progression; do not force Keepalived transitions.
+
+The historical transaction uses atomic rename but pins original VIP ownership
+and omits the required full restarts; it cannot be reused unchanged. Next qualify
+the corrected production transaction and recovery, then seal a new NTP-only DNS
+execution review. Updated DNS policy, guide, owner reviews and readiness checklist;
+no target contact, DNS write or restart occurred during this reconciliation.
+
+## DNS control/writer v2 captured; effective isolation pending — October 20, 2026
+
+Both separately approved v2 archives executed once with controller/SSH exit 0,
+complete captures and no target mutation. Both receipts are consumed. Host/boot,
+DNS service identities, VIP ownership and captured inputs remained stable; .53
+retained both VIPs and .54 owned neither. Sanitized unit projections do not prove
+unchanged redacted unit bytes. Private outcomes and source reviews remain in each
+v2 directory. No reload/restart/sync/control request or DNS query was invoked.
+
+The binary diagnostic identifies v1's failed size predicate: regular root-owned
+0755 unbound-control is 1,487,016 bytes, exceeding the one-MiB bound. Plain
+Pi-hole restartdns's captured source selects a full service restart. The Unbound
+unit's HUP reload differs from the owner's documented unbound-control path,
+which remains unexercised. Gravity Sync's no-argument service selects smart sync;
+source can push/pull and restart either FTL. Active timers and source defaults
+are not evidence of effective one-way authority or safe serial isolation.
+
+Protected reads of sync configuration, versions and root/pi crontabs remain
+unavailable; Caddy Lua projections do not establish complete writer scope.
+Next prepare the read-only ancestry/selected-settings/scheduler follow-up under
+[the DNS prerequisite review](../../homelab-dns/Unbound/docs/ntp1-ipv6-prerequisite-review.md#control-qualification-v2-executed--remaining-isolation-gate).
+No deployment is accepted; monitoring and later network gates remain open.
+
+## DNS control/writer v1 execution incomplete; v2 prepared — October 20, 2026
+
+Both approved v1 control-qualification archives executed once. SSH and pinned
+hostname/boot checks passed; each controller returned 2 with incomplete capture.
+No target mutation occurred. The protected `/usr/sbin/unbound-control` read
+failed before unit/source/sync collection; the combined type/owner/mode/size
+predicate does not identify its specific cause. No final service/VIP stability
+check was reached. Both receipts are consumed; preserve partial outcomes.
+
+Corrected the repository runner to retain that unavailable hash plus lstat-only
+metadata as a finding and continue independent reads, preserving protections.
+The expanded 23-test suite passed, including this rejected-input continuation.
+Separate v2 reviews are sealed under the
+[DNS prerequisite review](../../homelab-dns/Unbound/docs/ntp1-ipv6-prerequisite-review.md#control-qualification-v1-incomplete-corrected-v2-sealed).
+No further target contact occurred. New exact-hash approvals are the next gate;
+no DNS deployment or control/writer qualification has been accepted.
+
+## DNS control/writer qualification prepared — October 20, 2026
+
+Prepared two separate read-only DNS control/writer qualification archives under
+[the DNS prerequisite review](../../homelab-dns/Unbound/docs/ntp1-ipv6-prerequisite-review.md#reloadrestart-and-synchronization-qualification-sealed).
+Twenty-three offline contracts passed. Each pins its captured boot identity and
+established key and freezes source/helper/tests with single-use and expiry checks.
+The scope reads reload/restart source, unit definitions, protected sync settings
+and scheduler projections, with source/service/VIP stability checks and sensitive
+line redaction. No target contact occurred; exact-hash execution approvals remain
+pending. Actual controls, synchronization and DNS mutation stay outside this scope.
+Unknown writers/redacted or dynamic dependencies remain deployment holds.
+The readiness checklist records both approvals/executions as the next action;
+later monitoring and observation obligations remain open.
+
+## NTP/DNS readiness executed — October 20, 2026
+
+The three approved archives listed in the sealing entry below executed once;
+all captures completed with controller exit 0 and no target mutation. Receipts
+are consumed. NTP authenticated IPv4/native-IPv6 identity, saved fixed ULA and
+route-source checks passed address publication readiness with stable boot and
+time-service identity. This does not close overall production acceptance.
+
+Both DNS nodes' installed Unbound 1.17.1 validated the original configuration
+and the exact two-record in-memory NTP candidate. Both VIPs stayed on .53;
+.54 owned neither. All 24 queries per node completed, with correct A/IPv4 PTR,
+NOERROR/empty AAAA and NXDOMAIN/empty IPv6 PTR. DNS records remain undeployed.
+
+The local j2-svntp1 NTP configuration mirror was missing already-running
+protostats settings. Both current family captures report live SHA-256
+`354429d3070cda6120364cabb94503a4f86de95fcd16f3b9563032f63e1b8b02`.
+Restored the exact matching retained October 15 bytes from
+`production-boot-20261015-v2/resume-1-outcome.json` to the repository mirror;
+verified the retained archive provenance. No live NTP change occurred.
+
+The [DNS review](../../homelab-dns/Unbound/docs/ntp1-ipv6-prerequisite-review.md#executed-readiness-and-remaining-qualification--october-20-2026)
+records remaining reload/full-restart and synchronization-writer gaps. The
+operator-supplied local-zone guide documents the required reload/full-restart
+sequence; it does not qualify the installed implementation. Next prepare that
+scoped read-only qualification before sealing serial DNS deployment. Private
+outcomes remain in each readiness directory. The
+[readiness checklist](docs/PRODUCTION-READINESS.md) retains later OBS obligations.
+
+## Separate NTP/DNS read-only readiness inspections sealed — October 20, 2026
+
+Completed the authorized checkpoint preparation without target contact. The DNS
+owner's repository runner freezes the existing NTP bounded-transport helper as
+an explicit versioned input; no historical implementation is imported at runtime.
+Seventeen offline contracts passed, covering exact candidate scope, include safety,
+closed archives, target/member/expiry binding, single-use receipts, planned NTP
+families and DNS-node isolation. Established Ed25519 keys are frozen, with the
+NTP key verified against its accepted October 20 monitoring archive.
+
+- `ntp1-address-readiness-20261020-v1`: `bd139b4d64ace97d4c73cb0e1f509e76d5d7c3c3d0a15081b2b9a8e6f95ec24e`.
+- `ntp1-dns53-readiness-20261020-v1`: `b4ee8a69eb5879dd3fe1de84956b52fea25e36fdd87dfab32cfdef9e1cf51ce6`.
+- `ntp1-dns54-readiness-20261020-v1`: `53420d803c3b48a518a1e8f02c0d224a5434a124ab046b0e87167bc95e4cbdd2`.
+
+The NTP stage captures authenticated .51/::51 identity, permanent/DAD address
+flags, route/listener data, selected persistent profile settings/hash and stable
+time-service identity. Each DNS stage captures only its node's current services,
+roles, protected config/fragment and include graph, original/NTP-only in-memory
+native validation, forward/reverse node/VIP/loopback queries and bounded
+reload/restart/writer projections. Unknown writer or full restart semantics remain
+holds, not inferred acceptance. No target staging, mutation, restart, DNS update,
+clock query/control, notification or reboot is authorized by these inspections.
+
+The three execution receipts are absent. Exact-hash live execution approvals
+are pending because this checkpoint approved sealing rather than previously
+unseen bundle hashes. Next: collect/reconcile all three readiness outcomes before
+preparing any serial HA DNS deployment. The
+[readiness checklist](docs/PRODUCTION-READINESS.md) owns the exact gates and
+retains the existing later monitoring/maintenance actions.
+
+## NTP DNS review prepared and native resolver wrapper requalified — October 20, 2026
+
+The DNS owner prepared the
+[NTP1 IPv6 prerequisite review](../../homelab-dns/Unbound/docs/ntp1-ipv6-prerequisite-review.md)
+and pending source additions for ntp1 AAAA ::51 and canonical IPv6 PTR. It requires
+fresh NTP target/DNS-node readiness and a separately approved serial HA deployment
+with native validation, full Pi-hole DNS restarts and verified rollback. Pending
+Munin/svmf additions must be excluded from the NTP-only delta. Fifteen DNS tests
+passed; native DNS checker validation and target baselines remain pending.
+
+Corrected the repository network sealer to ntp1 and exact native .51/::51 answers.
+It rejects mapped, wrong-family, empty, extra and unexpected endpoints, including
+identically bad baseline/observation lists. Lookup errors now preserve family,
+status/output byte bounds or timeout. Twenty-one offline contracts and all seven
+isolated native systemd/SSH/NetworkManager 1.42.4 cases passed. Commit and five
+recovery outcomes retained their acceptance/hold boundaries and independent
+original-family SSH/HTTPS proof. The new missing-AAAA case reproduced successful
+mapped fallback and stopped before checkpoint, backup or profile write, then
+proved unchanged original networking after restoring only synthetic fixture DNS.
+
+Private qualification is `svmf-resolver-wrapper-qualification-20261020-v1` under
+the workspace evidence root. Initial collisions with retained r1 fixture names
+were preserved; only the six unstarted cases ran as r2, while missing-aaaa-r1 was
+retained. All completed fixture containers were stopped; current source hashes
+matched launch inputs. These amd64 synthetic cases are not live ARM64 acceptance.
+No production contact, DNS deployment or new network seal occurred. Next: seal
+the read-only NTP-address/DNS-node readiness scopes, accept the NTP DNS prerequisite,
+then prepare a freshly baselined network successor. The
+[readiness checklist](docs/PRODUCTION-READINESS.md) owns that order and ongoing
+observation duties; consumed production archives remain unchanged.
+
+## Resolver diagnostic found missing native NTP IPv6 answer — October 20, 2026
+
+Executed approved `svmf-resolver-diagnostic-20261020-v1` once, archive SHA-256
+`12b1bb0a770ab96b541049550b7fe7feaaa8c121713c053cdf6aa2bd9ce34b0a`.
+Capture completed with no target mutation. Both DNS VIPs returned A 10.1.0.51
+for ntp1 and NOERROR with zero AAAA answers. Named ahostsv4 returned .51;
+ahostsv6 exited 0 but returned only IPv4-mapped ::ffff:10.1.0.51, not native
+::51. This is not native IPv6 resolution acceptance. NSS/resolver files and
+NetworkManager identity remained stable; configured DNS VIPs were reachable.
+Evidence covers the sampled VIP paths, not each underlying DNS node. The
+receipt is consumed; private capture, transport and outcome records are retained.
+
+Next: prepare the DNS-owner ntp1 AAAA/canonical IPv6 PTR prerequisite review,
+with target/node readiness and serial HA validation. Correct the repository
+wrapper's wrong name and require expected native-family answers, including
+mapped-address rejection and family-specific error evidence; qualify its fixtures
+before a successor. No DNS or wrapper mutation occurred here. Munin/svmf DNS
+remains a later host-dependent change. The
+[readiness checklist](docs/PRODUCTION-READINESS.md) owns the ordered next gate.
+
+## Wrong resolver dependency corrected in diagnostic scope — October 20, 2026
+
+The operator confirms ntp2 does not exist. Inspection found the production
+network sealer hardcodes `ntp2.local.theama.co`, also used in its synthetic fixture.
+The governing plan and DNS repository instead identify `ntp1.local.theama.co`
+at 10.1.0.51; the plan specifies ::51, but the inspected zone file lacks its AAAA.
+This is repository evidence, not a fresh live DNS finding. The bare getent output
+supplied from j2-svntp1 did not test the named lookup on svmf. Existing consumed
+archives and their captured outcomes remain unchanged.
+
+Prepared read-only `svmf-resolver-diagnostic-20261020-v1`, archive SHA-256
+`12b1bb0a770ab96b541049550b7fe7feaaa8c121713c053cdf6aa2bd9ce34b0a`.
+It tests the intended ntp1 name by both getent families, selected NSS/resolver
+state and optional four A/AAAA queries to the two DNS VIPs. Ten offline contracts
+passed without target contact. Exact-hash execution approval is pending. After
+findings, correct the repository sealer and qualify any successor; do not invent
+an ntp2 record or relax the dual-stack acceptance requirement. The
+[readiness checklist](docs/PRODUCTION-READINESS.md) owns the next gate.
+
+## Retained getent preflight failure identified — October 20, 2026
+
+Executed approved `svmf-preflight-diagnostic-20261020-v1` once, archive SHA-256
+`de3a3f8cf44801ca8dbe43a30b6ec05308fb246d16498a26849b36810889637e`.
+Capture completed (controller exit 0) without target mutation. Retained v2 state
+reports `RuntimeError: bounded command failed: getent` during preflight. The
+label identifies neither the address family nor whether the command exited
+nonzero or exceeded an output limit; no specific DNS/NSS cause is established.
+The profile content hash and all pinned metadata match the baseline, and
+NetworkManager identity stayed stable during capture. The worker unit exited
+successfully while durable state remained `preflight_failed`; networking is
+not accepted. The diagnostic receipt is consumed, and all evidence is retained.
+
+Next: prepare a separately scoped read-only resolver/NSS diagnostic before any
+correction or successor deployment. Static-network, DNS and Munin holds remain.
+The [readiness checklist](docs/PRODUCTION-READINESS.md) owns the resume point.
+
+## Read-only failed-preflight diagnostic prepared — October 20, 2026
+
+Prepared `svmf-preflight-diagnostic-20261020-v1`, archive SHA-256
+`de3a3f8cf44801ca8dbe43a30b6ec05308fb246d16498a26849b36810889637e`.
+One pinned IPv4 SSH session is scoped to retained state/specification, profile
+hash/metadata and selected service status, with stable host/boot/UUID and manager
+identity checks. The source and six offline contracts are in the network
+repository; preparation contacted no target. It cannot replay the worker, mutate
+networking, restore files or send notifications. Execution was subsequently
+approved and completed; its outcome is recorded above. The [readiness checklist](docs/PRODUCTION-READINESS.md) owns this gate.
+
+## Static-network v2 stopped before network mutation — October 20, 2026
+
+Executed approved `svmf-static-network-20261020-v2` once, archive SHA-256
+`20e8297328c270b3c623076479ae6feb35f5f855bfc3e49e44c531f99fb8de83`.
+All six original-family HTTPS baseline checks passed and pinned SSH staging
+succeeded. The detached worker returned `preflight_failed`; controller exit 2.
+No checkpoint was armed or network settings changed; staging and transient-unit
+execution occurred. No rollback was invoked. The returned status does not expose
+the failed predicate, so no specific cause is established.
+
+Private outcome, controller/transport records and target staging are retained.
+The receipt is consumed; do not replay. Next: prepare a scoped read-only
+worker-state diagnostic, then use its findings for any successor review.
+The interruption-only continuation is not used for this terminal failure.
+IPAM stays desired/pending; DNS and Munin remain held. The
+[readiness checklist](docs/PRODUCTION-READINESS.md) owns the resume point.
+
+## HTTPS static-network successor requalified and sealed — October 20, 2026
+
+The network owner replaced the obsolete port-80 `/munin/` dashboard contract
+with verified HTTPS root, stylesheet and the discovered daily PNG. Public trust,
+certificate leaf, fixed SNI/hostname/Host and exact three-response proofs are
+bound to the accepted Apache deployment. The native guard/settings bytes,
+full-file validation, network freshness/reserve and recovery controls are
+unchanged. The sealer now requires accepted dashboard provenance explicitly.
+
+Seventeen offline contracts and all six real isolated SSH/systemd/NetworkManager
+1.42.4 scenarios passed. Commit accepted both fixed families over HTTPS; all
+five recovery paths have fresh original-family SSH/HTTPS evidence. Controller
+loss reached `rolled_back`; worker loss and after-write interruption retained
+their incomplete durable phases despite native-timeout restoration. Failed
+health and foreign drift remained held. No production contact occurred during
+requalification; Debian 12 amd64 synthetic fixtures are not live ARM64 acceptance.
+
+Sealed `svmf-static-network-20261020-v2`, archive SHA-256
+`20e8297328c270b3c623076479ae6feb35f5f855bfc3e49e44c531f99fb8de83`,
+with qualified deployment source SHA-256
+`583cf549688dcbf329c75d31c90b338b93f5fa92b0826167a068aef76d2b735f`.
+Execution was subsequently approved and stopped at preflight failure, as recorded
+above. The consumed HTTP-only v1 is preserved
+without replay. Actual target preflight, DAD, route/DNS/application continuity
+and independent fixed-family SSH/HTTPS must pass before host acceptance, DNS
+publication and Munin deployment. The
+[readiness checklist](docs/PRODUCTION-READINESS.md) owns the resume point and
+retains later monitoring and maintenance observation.
+
+## Apache IPv6 ACL deployment committed and accepted — October 20, 2026
+
+Executed approved `svmf-apache-acl-20261020-v1` once, archive SHA-256
+`23aafda870c8cf1dc9863c48c5402ed8aa8306a06838c5d081f40760e0800941`.
+The controller exited 0 with `committed`, final HTTPS verification true and
+acceptance true. Target native configuration testing and graceful reload passed;
+the root worker revalidated service identity, included configurations and exact
+metadata before commit. The accepted vhost hash is
+`555551c423e879d6b0ea5706807f5bb7a02c6238293e7509527ecf6d2004091f`,
+root:root 0644. The repository mirror matches that hash.
+
+All six final gates passed: root, stylesheet and the known daily PNG returned
+verified HTTPS 200 through both original literal families, with expected types
+and PNG signature. The prior IPv6 stylesheet/graph 403 responses changed to 200;
+IPv4 access remained working. Eighteen GETs covered baseline, candidate and final
+readback. No host networking, DNS, firewall, package or notification change was
+included. The original root-private backup and durable state remain retained;
+restoration was not needed. Its recovery timer's later no-op has not been
+observed and is not inferred; the committed phase prevents restoration.
+
+The receipt is consumed. Do not replay or clean up the frozen archive/target
+state. This accepts sampled access on current IPv4/generated ULA, not future
+static addressing, DNS AAAA, every-client coverage or graph freshness.
+
+Next: update/requalify the network wrapper for verified HTTPS root/CSS/PNG gates,
+then seal the successor static-network deployment. Preserve the existing
+qualified network rollback controls and mandatory live acceptance. DNS and
+Munin stages remain separately gated. The
+[readiness checklist](docs/PRODUCTION-READINESS.md) retains OBS-02/OBS-07 and
+later observation requirements.
+
+## Apache ACL deployment qualified and sealed — October 20, 2026
+
+The Apache owner added a repository-owned detached controller/worker with
+root-private backup/state, atomic metadata-preserving replacement, full native
+configuration testing, qualified graceful reload, exact dual-stack proof and
+an independent recovery timer. Eight offline contracts passed. Eight native
+Apache 2.4.68/FastCGI/SSH/systemd cases passed: commit; missing confirmation;
+worker loss; rejected health; failed configtest; failed reload; foreign drift
+held; preflight drift rejected. Restoration cases have original byte/mode and
+service checks plus independent HTTPS readbacks. A real invalid-directive test
+also rejected configtest/reload while retaining dual-stack root serving, then
+reloaded the restored valid configuration.
+
+Sealed `svmf-apache-acl-20261020-v1`, archive SHA-256
+`23aafda870c8cf1dc9863c48c5402ed8aa8306a06838c5d081f40760e0800941`,
+with the identical qualified worker SHA-256
+`cd9c1e95c547cf3031adfc596eedc71b40fc5290ab5fbee278b6076b24c5af04`.
+The mutation is limited to four LAN ULA /64 additions. Production was not
+contacted during this qualification/preparation. Fixtures were Debian 12 amd64
+with synthetic TLS/content, not live ARM64, real graph freshness or console
+acceptance. Test-only delegate config-root and baseline-readiness corrections
+are retained in private evidence; the successful worker bytes remained fixed.
+
+Next: approve the exact sealed Apache bundle, then execute and accept actual
+dual-stack HTML/CSS/PNG. Host networking, DNS and Munin activation remain later
+separate gates. The [runbook](../../homelab-monitoring-observability/Apache2/docs/acl-deployment.md)
+and [readiness checklist](docs/PRODUCTION-READINESS.md) preserve recovery limits,
+foreign-drift holds and ongoing observation requirements. No deployment approval
+or live acceptance is inferred from local qualification.
+
+## Targeted graph qualification isolates IPv6 asset denial — October 20, 2026
+
+Executed `svmf-graph-qualification-20261020-v1` once under approved archive
+SHA-256 `f183d89b85872fe132a921043a7870731c1044cf1948bc5278fae9b4a246dbd8`.
+The controller exited 0 after eight verified HTTPS GETs, four per original literal
+family. Domain and node HTML returned 200 on both. The same stylesheet and daily
+Apache-accesses graph returned IPv4 200 and IPv6 403. IPv4 graph content type and
+PNG signature passed; TLS validation passed throughout. Discovery produced the
+exact graph path, so another discovery inspection is not required for this sample.
+
+Graph path:
+`/munin-cgi/munin-cgi-graph/J1-SVMF/J1-SVMF/apache_accesses-day.png`.
+Bodies were not retained; eligible links and response metadata remain private.
+IPv4 sampled acceptance passed; IPv6, graph freshness and host networking remain
+unaccepted. No Apache configuration/service change, SSH, notification or network
+mutation was performed. Normal access logs and graph caches may have been written.
+The receipt is consumed; preserve it and the archive without replay.
+
+Next: qualify configuration testing, controlled graceful reload and restoration
+for the [minimal Apache IPv6 proposal](../../homelab-monitoring-observability/Apache2/docs/munin-ipv6-access-review.md),
+then prepare its separate mutation bundle. The four proposed LAN ULA additions
+remain undeployed. Dual-stack HTML/CSS/PNG regression gates must pass before a
+corrected host-network bundle, DNS deployment or Munin activation. Graph freshness
+and later scheduled monitoring remain tracked in the
+[readiness checklist](docs/PRODUCTION-READINESS.md).
+
+## Targeted graph review and IPv6 ACL proposal prepared — October 20, 2026
+
+Prepared `svmf-graph-qualification-20261020-v1`, archive SHA-256
+`f183d89b85872fe132a921043a7870731c1044cf1948bc5278fae9b4a246dbd8`.
+It starts from the previously observed master-domain page and descends its links
+before siblings, at most four HTML reads, one stylesheet and one daily graph
+per original literal family. Verified TLS behavior and frozen public trust are
+preserved. Seven offline contracts passed. No new production contact occurred;
+exact-hash execution approval remains pending.
+
+The Apache owner prepared a [repository-only IPv6 access review](../../homelab-monitoring-observability/Apache2/docs/munin-ipv6-access-review.md).
+The candidate adds the operator's LAN ULA /64 to four existing IP lists; all other
+vhost bytes remain unchanged against the captured baseline. It is not deployed.
+Native configuration testing, reviewed graceful reload and tested restoration
+must precede a separate mutation bundle. Root remains the candidate landing
+page; this proposal does not rewrite the failing `/munin/` path or claim uniform
+CGI authorization. The [readiness checklist](docs/PRODUCTION-READINESS.md) retains
+graph/IPv6 access and all later network, DNS and monitoring gates.
+
+## Apache/TLS qualification found route and IPv6 asset failures — October 20, 2026
+
+Executed `svmf-apache-qualification-20261020-v1` once under approved archive
+SHA-256 `87ba990d3cdbc21321f8aabfec18ea0e5549eaf985af7c4a81318ae0cc1f8ed2`.
+The read-only SSH collection completed: Apache 2.4.68 owns TCP 80/443 listeners;
+service identity stayed unchanged, and the enabled Munin vhost on disk matches
+the repository candidate exactly. Parsed disk configuration does not prove the
+running process loaded identical bytes. Selected rules have no ULA client range.
+
+Twelve HTTPS GETs through the original literal IPv4/ULA destinations verified
+TLSv1.3 and certificate identity/trust for `munin.local.theama.co`. The same
+wildcard leaf certificate was presented through both families, expiring
+January 19, 2027 at 23:59:59 UTC. Root and three discovered HTML pages returned
+200 through each family. `/munin/` returned 403 through both. The sampled
+stylesheet `/static/style-new.css` returned IPv4 200 and IPv6 403, consistent
+with the missing ULA authorization but without a full merging trace.
+
+No daily graph link was found within the three-page discovery allowance; no PNG
+was requested. Sampled dashboard acceptance and graph freshness remain open.
+No configuration change, service action, private-key export or notification was
+performed; requests may have produced ordinary logs and CGI caches. The execution
+receipt is consumed; preserve its archive/evidence without replay.
+
+Next: prepare targeted graph-path qualification and a minimal IPv6 Apache access
+review. Root `/` is the candidate canonical HTTPS landing page for a successor
+network health contract. Accept dual-stack assets and graphs before correcting
+and resealing the host-network bundle. No further contact or mutation is implied.
+The [readiness checklist](docs/PRODUCTION-READINESS.md) retains OBS-07 and subsequent
+network, DNS, monitoring and maintenance-observation gates.
+
+## Dashboard diagnostic found dual-stack HTTPS redirects — October 20, 2026
+
+Executed `svmf-dashboard-inspection-20261020-v1` once under its approved archive
+SHA-256 `0a2e5641c7ec181a9d2b10cd79999a86e1f64079d4644e8bb19f0750c8de5bbd`.
+Exactly one HTTP GET through each original literal address returned HTTP 301 with
+an HTTPS Location for `munin.local.theama.co/munin/`. Both sampled bodies were
+nonempty and below the old gate's size limit; no body content was retained.
+The responses establish a current HTTP/HTTPS endpoint contract mismatch with
+the installation's HTTP 200 requirement. The original installation checker did
+not retain its response status, so this does not reconstruct that exact response.
+
+No redirect was followed, HTTPS/TLS or SSH contacted, notification sent or host
+configuration changed by this diagnostic. Its receipt is consumed and both
+executed archives are preserved. HTTPS trust/reachability, serving-process
+ownership, current host-network state and static-address acceptance remain open.
+
+The operator subsequently identified Apache and moved the supplied configuration
+into the [repository vhost](../../homelab-monitoring-observability/Apache2/configs/001-munin.theama.co-ssl.conf).
+Local inspection found the same
+dashboard ServerName and explicit HTTP-to-HTTPS redirect. Selected access rules
+contain RFC1918 IPv4 ranges and `::1`, but no ULA client range. Active-vhost
+equivalence, effective IPv6 authorization, certificate trust and root versus
+`/munin/` routing remain unverified. No Apache files or private keys were changed
+or retrieved from the target.
+
+Prepared `svmf-apache-qualification-20261020-v1`, archive SHA-256
+`87ba990d3cdbc21321f8aabfec18ea0e5549eaf985af7c4a81318ae0cc1f8ed2`,
+with one pinned SSH read-only Apache capture and bounded verified HTTPS
+page/stylesheet/daily-graph sampling through each original literal address.
+The moved repository vhost is byte-identical to the sealed candidate. Eleven
+offline contracts passed; no live execution occurred. Exact-hash approval is
+pending. Preserve trust/ACL failures as findings; no automatic Apache changes,
+verification bypass, old-bundle replay or host-network acceptance is included.
+
+Next: approve and execute the prepared bounded HTTPS/TLS/dashboard qualification through each
+existing literal address with the intended SNI/hostname/Host identity and verified
+trust. Do not rely on DNS redirect following for dual-stack proof, bypass TLS
+verification, change service redirect policy or replay either consumed archive.
+Use the verified findings to define a new host-network bundle. DNS and NTP
+monitoring stages remain held. The active resume point is in the
+[readiness checklist](docs/PRODUCTION-READINESS.md).
+
+## Authorized static-network controller stopped at HTTP preflight — October 20, 2026
+
+Executed the approved frozen `svmf-static-network-20261020-v1` controller once,
+bound to archive SHA-256
+`2d2dead17d738275b217bee30b29d4dddff050c2d3683f26b847395ecaa994bb`.
+It consumed its exclusive local execution receipt and exited 1 at the initial
+IPv4 HTTP dashboard check, before the SSH bootstrap. No SSH transport record was
+created. This operation did not stage a worker/backup, create a checkpoint or
+attempt host configuration mutation. No rollback or replay was performed.
+
+The retained exception is `HTTP health failed`. The sealed checker uses that
+label for non-200, empty or oversized responses, so it does not establish the
+actual status, redirect/authentication behavior or current host configuration.
+The original archive and execution evidence remain unchanged; a corrected scope
+cannot reuse this consumed execution approval.
+
+Prepared repository-owned `probe_dashboard.py` and five offline contracts, plus
+the new read-only `svmf-dashboard-inspection-20261020-v1` review. Its exact scope
+is one HTTP GET through each original literal address at the same port/path/Host,
+with status, body-size/limit flags and selected redacted metadata only. No bodies,
+redirect following, credentials, SSH or mutation. It has not contacted the target.
+Next: approve/execute that exact diagnostic archive, review its findings, then
+prepare any corrected host-network stage. DNS and Munin remain held. See the
+[readiness checklist](docs/PRODUCTION-READINESS.md) for the active resume point.
+
+## Production network wrapper qualified and sealed — October 20, 2026
+
+The network-owned production wrapper now implements an exclusive sealed operation,
+root-private exact backup, durable state, detached root systemd supervision,
+one-device native checkpoint, guarded activation and independent fresh literal
+IPv4/IPv6 SSH confirmation. Resolver configuration/results, active profile and
+routes, completed DAD, core service identities, Apprise HTTP health and Mailrise
+greeting/QUIT are mandatory gates. Confirmation is submitted once. Interrupted
+operations have a separate read-only continuation; foreign drift and unproven
+recovery hold without backup restoration or replay.
+
+Fifteen offline wrapper contracts and six actual native scenarios passed with the
+same sealed deployment/helper/settings bytes: commit, controller loss, worker loss,
+failed health, foreign profile drift and interruption after the real profile write.
+Five recovery paths have independent peer SSH/network readbacks. Controller loss
+completed verified rollback; killed workers retained their interrupted durable
+phase despite native restoration. Failed health and foreign drift remained held.
+Fixtures use Debian 12 amd64, NetworkManager 1.42.4 and synthetic DHCP/RA/DNS/apps;
+they do not establish live ARM64, real application/resolver or console acceptance.
+
+Retained development failures identified a DHCP-only DOMAIN gate, an inspection
+path expression and atime being mistaken for profile drift; regression contracts
+and the final source matrix cover their corrections. A synthetic SMTP restart
+failure required a fixture-only socket-reuse correction. Deployment/helper/settings
+bytes were unchanged between the selected final native cases. Exact source/image
+hashes, logs and stopped fixture identities are retained privately under
+`svmf-wrapper-qualification-20261020-v1`.
+
+Prepared `svmf-static-network-20261020-v1`, archive SHA-256
+`2d2dead17d738275b217bee30b29d4dddff050c2d3683f26b847395ecaa994bb`.
+The review includes exact original identity/profile pins, live preflight, the
+strict candidate dashboard path, recovery and the bounded read-only continuation.
+No production contact/change, notification, restart/reboot or DNS/Munin deployment
+occurred. The transient supervisor is part of the future reviewed host stage.
+
+Next: approve and execute that exact archive once, then accept live static host
+networking before separately approved DNS and Munin stages. Preserve the future
+approved renewal/reboot source/configuration observation in OBS-07. Console
+availability is confirmed; console restoration remains unexercised. See the
+[readiness checklist](docs/PRODUCTION-READINESS.md) and network-owned runbook.
+
+## Static settings finalized; native guarded rollback qualified locally — October 20, 2026
+
+The operator selected fixed ULA alongside RA-provided global IPv6/default routes.
+Network-owned settings now specify manual IPv4/gateway, explicit static ULA with
+IPv6 auto retained for RA, both observed DNS VIPs/search domain and automatic DNS
+disabled. IPAM records the explicit RA gateway source; target acceptance remains
+pending. The existing generated ULA is retained for transition consumers.
+
+The actual network-owned checkpoint helper/settings passed six native NM 1.42.4
+cases in an isolated Debian 12 amd64 systemd fixture: commit, explicit rollback,
+automatic timeout, actual controller-process exit, failed acceptance and failure
+after a real saved-profile write. All five rollback outcomes have independent
+original-address, route-source, RA-default-route, DNS and peer reachability checks.
+The helper/settings bytes were identical across retained successful cases.
+
+Initial fixture failures exposed missing helper/raw-socket capability, escaped
+nmcli IPv6 output, an incomplete DHCP baseline and asynchronous rollback
+convergence. Their exact evidence is retained; only the affected explicit-rollback
+case was repeated after baseline correction. Original checks and strengthened
+independent readbacks are separate. Native API success alone was not accepted.
+The observer uses a bounded 60-second convergence window. No production target
+was contacted or changed; no notification or reboot was performed.
+
+The network owner retains exact source/image hashes, invocation logs and outcomes
+under the private static qualification evidence. Completed fixture containers are
+stopped and retained. Five offline guard tests cover ownership/confirmation/expiry
+and restoration contracts, with pre-commit/CI coverage. Native tests do not accept
+ARM64, real host resolver/application/SSH continuity or console recovery.
+
+Next: finish and qualify the production outer backup/durable-state/independent
+confirmation/held-recovery path, then seal the exact mutation bundle. The reusable
+native helper is deliberately not a standalone deployment entrypoint. DNS and
+monitoring stages remain gated on live static-network acceptance.
+
+## Master recovery/controller inspections completed — October 20, 2026
+
+Executed both separately approved read-only archives once:
+
+- `svmf-recovery-inspection-20261020-v1`, SHA-256
+  `af8a95fe24f25f130442ccaf66697987eedec56f0e2d03f48188007e7a24b8cc`.
+- `svmf-address-conflicts-20261020-v1`, SHA-256
+  `c044508bbbcbcbdfddb7084e4615ef88720e3a6458d9bc64ed382f75c27c72ab`.
+
+Both controllers and captures passed. The host retained accepted host/boot/UUID
+and NetworkManager identity. Its protected installed nmcli 1.42.4 manual documents
+checkpoint, explicit timeout, selected interfaces, command and confirmation;
+missing confirmation restores the checkpoint after timeout. Both native-help
+excerpts were empty; the manual supplied syntax evidence. No checkpoint or timed
+rollback was exercised. Local-console availability remains operator-confirmed.
+
+The controller confirmed target MAC and enabled IPv4 reservation. Across 61
+configured and 43 active clients, selected fields matched 10.1.3.83 only to the
+master and reported no desired-address conflict. Neither collection exposed the
+selected IPv6 fields; the matching IPv4 network exposed no selected IPv6-prefix
+fields. This limits coverage rather than proving IPv6 absence or ::83 availability.
+DAD and guarded acceptance remain required during a separately approved change.
+
+No networking/profile/DHCP/RA/firewall/DNS/service/container mutation, probe,
+notification or reboot occurred. Exact archives, captures and outcomes remain
+private and unchanged; both stages are consumed. Next: resolve complete static
+settings and qualify guarded activation/rollback, with exact backup and operator
+console procedure, before sealing the network mutation. DNS/Munin remain separate.
+
+## Shared svmf inventory corrected; recovery/conflict reviews prepared — October 20, 2026
+
+The operator confirmed 10.1.3.83 is one host: native Munin master plus Apprise API
+and Mailrise in Podman containers. Server inventory replaces monitoring and
+notification placeholder hosts with svmf in both groups, reached through
+svmf.local.theama.co. The nonexistent placeholder FQDNs are not planned hosts.
+The shared record owns both functions, all three components and runtime kinds;
+container privilege/ownership is not inferred. The operator confirms local-console
+access is available; inventory records availability, not an exercised recovery.
+
+Prepared separate read-only host recovery-capability and controller address-conflict
+scopes. The host reader captures checkpoint excerpts from native stdout/stderr
+and installed manuals without creating a checkpoint. The GET-only controller
+reader projects only matching-address owner classes, coverage and relevant typed
+prefixes from configured/active clients and networks. Incomplete IPv6 visibility
+and passive/static/offline clients never become proof that an address is unused.
+Both archives are sealed and unexecuted:
+
+- `svmf-recovery-inspection-20261020-v1`, SHA-256
+  `af8a95fe24f25f130442ccaf66697987eedec56f0e2d03f48188007e7a24b8cc`.
+- `svmf-address-conflicts-20261020-v1`, SHA-256
+  `c044508bbbcbcbdfddb7084e4615ef88720e3a6458d9bc64ed382f75c27c72ab`.
+
+No host/controller contact occurred during preparation; each review needs its
+own exact sealed archive approval. Thirty-three focused reader/controller/
+coordinator tests, network/NTP full pre-commit, inventory structure/YAML, Markdown,
+whitespace and relevant working-tree secret checks passed. Timed rollback and DAD remain later gates.
+
+Next: execute the separately approved read-only reviews, then resolve complete
+static settings and qualify guarded activation/recovery before network mutation.
+DNS and monitoring deployment stages remain separate.
+
+## Static master readiness inspection completed — October 20, 2026
+
+Executed `svmf-network-readiness-20261020-v1` once under approved archive SHA-256
+`2abf2098e4b68452e27e241fc5ed90bf2dfa320100659eea668910ceae24d9df`.
+Controller and capture passed; host/boot/UUID, selected settings and NetworkManager
+identity were unchanged. No network/service mutation occurred. The exact consumed
+archive, capture, derived summary and outcome remain private and immutable.
+
+Both profile methods remain automatic. Runtime gateway/DNS values were captured;
+IPv4 NTP route source is the reserved address and IPv6 still selects the generated
+ULA. Desired static ::83 is not assigned. Apache, cron, SSH and local munin-node
+were active; wildcard web sockets do not accept dual-stack dashboard reachability.
+No HTTP, container-health or notification test was performed.
+
+Native device-help returned success with empty captured stdout; the sealed reader
+discarded stderr. This does not establish absence of checkpoint support. Recovery
+capability, exact backup and independent access remain unqualified. Passive
+neighbors do not prove address availability; controller conflict checks remain
+separate. The firewall projection retained 24 unresolved expressions and is not
+complete policy evidence.
+
+Next: prepare corrected bounded recovery-help/manual and controller conflict
+reviews, resolve the complete static settings and qualify guarded recovery before
+requesting network mutation. DNS and monitoring stages remain unexecuted. The
+readiness register carries these gates; do not replay this inspection.
+
+## Static master read-only readiness inspection sealed — October 20, 2026
+
+Prepared `svmf-network-readiness-20261020-v1`, archive SHA-256
+`2abf2098e4b68452e27e241fc5ed90bf2dfa320100659eea668910ceae24d9df`, without target contact.
+The network-owned collector reads selected non-secret settings, runtime gateways/
+DNS/routes, profile metadata, passive neighbors, listeners, service identities,
+native device help and a redacted typed firewall projection. It does not read
+profile contents, create a checkpoint, probe addresses, contact the controller,
+invoke containers or mutate networking/services. Optional missing tools remain
+findings; configured static state, address availability and recovery stay unaccepted.
+
+Seven network-reader tests and fifteen NTP coordinator tests passed. Full
+pre-commit and working-tree secret scans passed in network and NTP repositories.
+CI/pre-commit cover the reader offline. The archive binds collector/tests, IPAM,
+static-network review, helper/controller and the accepted profile-save baseline
+with its pinned SSH identity. Execution is single-use, source-checked and expires
+24 hours after sealing. No old consumed authorization is reused.
+
+Next: exact-bundle approval and this read-only collection. Then resolve complete
+static settings, controller conflict proof and timed recovery before sealing the
+host-network mutation. DNS and monitoring deployment remain separate stages.
+
+## Static master addressing selected; monitoring reviews prepared — October 20, 2026
+
+The operator superseded automatic-address preservation with host-static
+`10.1.3.83/22` and `fd36:5aa8:6971:1::83/64` for svmf. Network-owned IPAM and
+static-network review now record desired state; gateway/DNS/RA and activation
+recovery require fresh, separately authorized inspection before sealing.
+The prior automatic-profile save stays accepted history, not proof of this change.
+
+The DNS source adds AAAA for munin and svmf and one canonical IPv6 PTR to svmf;
+existing A/IPv4 PTR remain. The DNS review requires network acceptance first,
+serial HA deployment, native validation, Unbound reload and Pi-hole DNS restart.
+No target contact or deployment occurred in this preparation.
+
+Inventory explicitly selects ntp for j2-svntp1. Separate node installation,
+job-success recording and master acceptance reviews are prepared with their
+prerequisites and rollback boundaries. Both dashboard families, both node
+listeners and intended-family scheduled polling are required. These definitions
+are not sealed executable bundles; missing producer/outer-runner and installed
+master/web evidence remain visible blockers. No notification was sent.
+
+Next: the network-owned read-only readiness inspection, then static network and
+DNS acceptance, followed by the separately approved monitoring stages. Track
+remaining observations in PRODUCTION-READINESS rather than only private outcomes.
+
+## Master profile save accepted — October 20, 2026
+
+Executed `munin-master-profile-save-20261020-v1` once under approved SHA-256
+`27ee8e3d9cf594b62ee89a43790726604ad05f984a152da5b4dcc55593291167`.
+The controller and native readback passed. The existing UUID and effective
+settings were saved to a root-owned mode-0600 `/etc` profile. Both route sources,
+effective-setting fingerprint, NetworkManager PID/invocation/restarts and
+host-identity-file metadata stayed unchanged. The root-private runtime-profile
+backup is retained; recovery was not needed. No activation, reapply, reload,
+renewal or reboot occurred.
+
+Configured ULA policy persistence is accepted. Empirical renewal/reboot source
+comparison remains in OBS-07 at the next approved master maintenance window.
+Next: assign the qualified profile in inventory and prepare separate node,
+job-success producer and master acceptance reviews. No node installation, master
+registration, contact configuration or notification was performed.
+
+## Runtime master profile identified; NTP metric and installer candidates qualified — October 20, 2026
+
+Executed the separately approved saved-profile inspections once each:
+
+- `munin-master-persistence-20261020-v1`, SHA-256
+  `93be4c7ca8411a03faf449ed8964d1065c8cb10b008e6aee6869c4d1f66e00dc`:
+  accepted host/boot preflight and transport status zero, but incomplete capture at the
+  restrictive saved-profile path check. Captured NetworkManager 1.42.4; no write.
+- Corrected `munin-master-persistence-20261020-v2`, SHA-256
+  `630e798841b49cb1c8d1c4a10b87b35fcb2294b264054220520033669c8699bd`:
+  complete capture, same active UUID and route sources, installed policy manual
+  excerpts. The active keyfile is under `/run/NetworkManager/system-connections`.
+
+The existing runtime-generated setup is not declared broken. Its current
+stable-generation defaults and reserved IPv4 are established, but a saved
+persistent profile is not. A network-owned same-UUID native profile-save review
+is prepared; no connection save, activation, reapply, reload, renewal or reboot
+has executed. Policy persistence needs that separately approved operation or
+other sufficient proof; empirical confirmation stays at the next approved
+master maintenance checkpoint in OBS-07.
+
+The monitoring repository now defines the NTP candidate's exact nine-plugin
+selection and execution identities. Baseline plugins and fixed numeric NTP /
+filesystem readers use munin. Only fixed statistics-metadata and private
+job-success readers use root; no broad ACL, sudo or raw-statistics grant.
+Missing job-success producers report evidence=0, not healthy. Their NTP-owned
+integration remains in OBS-01/OBS-03/OBS-07.
+
+The actual installer payload passed eleven final-source, isolated systemd
+scenarios. These cover both loopback families and protocol fetches, all selected
+plugin config/fetches, effective munin query UID, root-private heartbeat access,
+partial/staged failures, foreign state, pre-activation drift and resumed/held CLI
+recovery. Held recovery exits nonzero; time-service and protected-file continuity
+were retained. Earlier failed fixtures and their fixes remain in private evidence.
+The final input manifest and results are retained under
+munin-production-installer-qualification-20261020-v1. Tests use amd64 dependencies
+and the exact Architecture-all Munin packages; native ARM and actual target
+acceptance are not inferred. No NTP-node package, plugin, listener, master entry,
+contact, network configuration or notification changed in production.
+
+Next: review/approve the profile-save stage, then assign the inventory profile and
+prepare separately approved node installation, job-success and master acceptance
+stages. Local metric/privilege and installer recovery qualification are complete;
+permanent ULA, sustained growth/storage and polling/alert acceptance remain open.
+
+## Master identity and IPv4 reservation inspections completed — October 20, 2026
+
+Executed each approved read-only stage once at 11:14 CDT:
+
+- `munin-master-identity-20261020-v2`, SHA-256
+  `6a4171cf69aa045b328a077b38382206ec5f8842a4a0e0c3958d6255dcc9fd19`:
+  complete capture, transport status zero, unchanged accepted master host/boot.
+- Network-owned `munin-reservation-inspection-20261020-v1`, SHA-256
+  `928eafdd43fb1fb31bb0fbb248193abbb1a370e99b38d0c86f8bc2224d59c1a2`:
+  complete capture, controller status zero, verified DNS/TLS and fixed GET-only
+  access. The legacy reservation response was supported.
+
+The existing reservation has use_fixedip=true and fixed_ip=10.1.3.83 for the
+matching master MAC; it agrees with the current IPv4 route source. Both routes
+still select eth0 and the previously observed IPv4/ULA sources. The profile has
+addr-gen-mode=default and unset stable-id; effective configuration exposes no
+generation/stable-id override. Runtime temporary addressing is disabled. Host
+secret/machine-ID files are root-owned regular files; only metadata was read.
+
+Current upstream default semantics support stable generation, conditional on
+profile/host identity and prefix continuity. The inspections do not verify the
+installed manual, saved-profile state, or actual renewal/reboot persistence.
+Keep permanent ULA acceptance open in OBS-07. No networking change, polling,
+plugin execution or notification occurred. Executed archives/receipts and
+private outcomes are retained; both stages are consumed and must not be replayed.
+
+Next: close remaining ULA persistence evidence, then metric/privilege selection
+and complete installer recovery qualification before installation preparation.
+
+## Munin ownership decisions and isolated installation qualification — October 20, 2026
+
+The operator chose to preserve current master networking and verify the existing
+IPv4 reservation and stable ULA policy. No network mutation is authorized.
+svmf.local.theama.co owns alert evaluation and Mailrise delivery; Aaron is the
+operator. Problems use `notify.failure@mailrise.xyz` and recovery/status uses
+`notify@mailrise.xyz`. This does not authorize sending or establish delivery.
+
+Five fresh network-isolated systemd fixtures passed with the exact
+Architecture-all Munin 2.0.76-5 packages: success, partial dpkg failure,
+configuration failure, failure after actual startup and foreign-policy edit.
+Premature startup/autoconfiguration were blocked; reviewed activation served
+load only on loopback. Recovery removed the listener/permit and preserved an
+unrelated dummy service. Foreign policy bytes were preserved with recovery held.
+The amd64 fixture does not accept ARM64 dependencies or the full future installer.
+Complete private results are retained in munin-install-qualification-20261020-v1;
+the monitoring repository owns the fixture and qualification document. Completed
+containers are stopped and retained. No production contact or notification ran.
+
+Next: separately approved read-only master policy and controller reservation
+checks, then metric/privilege selection and complete production-installer recovery
+qualification before installation preparation. Keep persistent identity,
+polling, alerts and sustained growth/storage obligations open in OBS-02/OBS-07.
+
+## Master route and scheduler qualification completed — October 20, 2026
+
+Executed `munin-master-qualification-20261020-v1` once under approved SHA-256
+`a3af2ca6d861caf03719d04480c207f9ef17b7dc7be328c8fa57de7aa2b4bc4a` at
+10:40:04 CDT. Complete capture, transport status zero, unchanged accepted master
+host/boot and no persistent changes, packets, plugins, polling or notifications.
+
+Both fixed node routes select eth0 with the observed master IPv4/ULA sources.
+The active NetworkManager profile uses automatic addressing with no explicit
+IPv4/IPv6 addresses; captured addresses are dynamic with finite lifetimes.
+No temporary flag appeared, but reservation/stable-generation and persistence
+are unproven. Do not infer either permanence or random rotation from these facts.
+
+Cron invokes munin-cron every five minutes and also references a daily limits
+job. Scheduler sources contain the expected update/limits/contact references;
+bounded logs show recent update/limits activity and no ERROR/FATAL markers.
+This supports the active scheduler chain, not j2 polling or alert delivery.
+The captured main configuration hash is unchanged and still has no active
+contacts, explicit limit overrides or j2 registration.
+
+Next: resolve persistent master IPv4/ULA allowlist identities and alert ownership,
+then complete full package-hook/autoconfiguration/first-start/recovery qualification
+and metric/privilege selection before installation preparation. OBS-02/OBS-07
+retain persistence, alerting, polling and sustained storage/growth obligations.
+
+## Munin package qualification and master follow-up prepared — October 20, 2026
+
+Verified all 15 simulated package archives against exact versioned manifest
+entries; recorded the narrowed selection in configs/munin-package-review.json.
+Retained control scripts and selected plugin sources privately. Six maintainer
+scripts pass syntax checks. The node postinst runs autoconfiguration and executes
+its generated shell before service startup; installation must guard both plugin
+selection/execution and first start. A function-level private-PATH shim fixture
+passed, but does not qualify a full dpkg transaction.
+
+Sixteen isolated config/fetch runs passed for eight candidate plugins. Initial
+shell failures were traced to the local extraction missing packaged plugin.sh;
+that exact helper was restored and only affected runs repeated. No host plugin
+ran. Deferred ntp_states due to its DNS dependency/lookups and kernel NTP plugins
+due to legacy version/ntpdc selection. Default df thresholds do not establish the
+absolute byte floor or 5 percent inode requirement; custom measurement/settings
+and metadata-only access still need explicit qualification.
+
+Prepared `munin-master-qualification-20261020-v1` for fixed local route-source
+queries, address/profile stability fields, actual cron structure, scheduler source
+markers and redacted activity summaries. No new live contact occurred. Next:
+authorize its sealed hash, resolve source/scheduler/alert findings, and qualify
+full package-hook/first-start/recovery controls before preparing installation.
+OBS-02/OBS-07 remain open in the readiness register and Munin-owned review docs.
+
+## Munin node and native-master inspections completed — October 20, 2026
+
+Executed the separately approved node `munin-dependencies-20261020-v1` and master
+`munin-master-inspection-20261020-v1` bundles, SHA-256 values respectively
+`80aa4b664d8b0b27c34b078ca957ac6a981fb6179d66be988c0e76e15321d746` and
+`717c60903a663a841ad4a4aa1ca2241ff7f311a853851fe19f907b06b3d53538`.
+Both complete captures returned transport status zero with empty stderr, stable
+boots and unchanged accepted NTP identity on j2. No persistent changes, downloads,
+plugin runs, polling or notifications occurred.
+
+Cached Debian Trixie/main node/core candidates are 2.0.76-5. The no-recommends
+simulation selects 15 new packages, zero upgrades/removals and no competing time
+daemon. Native master J1-SVMF has Munin 2.0.73-1 and a root-owned main configuration;
+its captured four node sections do not include j2-svntp1, and captured directives
+contain no active contacts or explicit limit overrides. Default/plugin limits
+and external notification remain unknown. Master cron has a */5 row; omitted
+command bodies mean the effective invocation/alert chain is still unproven.
+Master interface IPv4/ULA candidates were captured, not source-route qualified.
+
+Next: qualify package archives/scripts and selected plugin source/privilege,
+stable master source addresses/routes and effective cron/limits/contact ownership.
+Then prepare separate restricted node installation and master registration/polling
+acceptance. Do not infer a master upgrade from the version difference. OBS-02 and
+OBS-07 remain open; preserve both consumed reviews and private evidence.
+
+## Munin dependency/profile and master reviews prepared — October 20, 2026
+
+Prepared separate `munin-dependencies-20261020-v1` node and
+`munin-master-inspection-20261020-v1` master inspection reviews. The node stage
+uses the completed monitoring capture and retained boot/NTP identity; it inspects
+cached package candidates/dependencies and simulates only munin-node plus
+munin-plugins-core without refresh/download/installation. APT cache-file generation
+is disabled. Candidate/simulation errors remain findings, not repair permission.
+
+The operator confirms native Munin on svmf.local.theama.co using
+/etc/munin/munin.conf. The master stage uses the previously verified pi SSH key
+and endpoint, capturing native configuration structure, limits/contact presence,
+scheduling and interface-address candidates. Contact commands and credentials are
+omitted. It executes no plugins, polling, limits processing or notifications;
+interface addresses do not prove routing/source selection for the node.
+
+The Munin repository now owns a nondeployable dependency/profile review draft:
+baseline/storage/time/statistics/job-health measurements, minimal privilege,
+absolute-byte and free-inode floors, intended-family access and alert acceptance.
+No profile/plugin list, inventory assignment or registration is activated.
+Next: approve each separate sealed inspection hash, review its findings, then
+select exact packages/plugins/source addresses and prepare node/master deployment
+stages. OBS-02/OBS-07 and later polling/alerts remain open. No live contact occurred.
+
+## Monitoring-prerequisites inspection completed — October 20, 2026
+
+Executed `monitoring-inspection-20261020-v1` once under approved SHA-256
+`b13f360f8f3056f2f59b5d134e03ef797de2655b36416c30a456eca44e1627c6`.
+Transport status zero; complete capture spanning 09:50:32–09:51:32 CDT.
+Boot/NTP identity matched; no persistent changes, plugins, messages or master
+connections ran.
+
+Over 60.0048 seconds, unique-inode loop/peer/clock growth was 61/262/43 bytes;
+protostats was quiet. No inode turnover or shrinkage appeared. Both capacity
+floors passed: final 106.302 GiB and 98.414 percent free inodes. Historical dated
+file-group sizes support later sizing but do not accept sustained growth or the
+storage budget. The bounded scan found needrestart/logrotate references, with no
+dedicated space-alert job in that coverage; external/nested monitoring is unknown.
+
+Munin-node and both queried plugin packages are absent. Its unit/configuration
+and named executables are absent, no plugins were collected and TCP 4949 has no
+listener. Master svmf.local.theama.co was not contacted; source addresses and
+polling/alert configuration remain unresolved. The retained logrotate service
+result is successful, but rule-specific scheduled execution remains unproven;
+OBS-01 and the unobserved cron outcome OBS-03 stay open.
+
+Next: prepare Munin dependency/profile and master-prerequisite reviews, resolving
+master source addresses/access, package provenance, selected metrics/privileges
+and alert ownership before node installation/polling acceptance. Choose the
+representative growth interval and storage budget. OBS-02/OBS-07 remain open;
+the readiness register carries these obligations beyond private evidence.
+
+## Monitoring-prerequisites inspection prepared — October 20, 2026
+
+Prepared `monitoring-inspection-20261020-v1` for OBS-02/OBS-07 using the accepted
+statistics-retention installation as data/provenance. The reusable statistics
+collector now has a separately sealed monitoring mode: two metadata/capacity
+samples 60 seconds apart, hardlink-aware deltas, selected Munin settings,
+plugin-link metadata, service/listener state and bounded monitoring-job references.
+Plugin environment values and raw job command bodies are omitted; no plugin runs.
+A successful capture cannot accept sustained growth, alerting or master polling.
+
+The Munin repository remains a scaffold with no accepted NTP profile or host
+selection. The operator identifies svmf.local.theama.co as the intended master;
+its source addresses and live configuration remain unresolved. The review covers
+only j2-svntp1 and requires the retained October 15 boot/NTP identity to match.
+A changed identity stops collection. No target/master contact, monitoring change,
+notification, commit or push occurred during this preparation.
+
+Next: authorize the sealed node-inspection hash, execute once and review findings.
+Keep OBS-01/OBS-03 open: October 16 checkpoints are past but their actual scheduled
+outcomes remain unobserved. Then define representative growth sampling, monitoring
+integration and separate master/polling acceptance. Required ntpviz stays Phase 3B.
 
 ## Checkpoint and saved next action — October 15, 2026
 

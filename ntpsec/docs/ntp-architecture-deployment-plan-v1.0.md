@@ -1778,6 +1778,43 @@ copy operational transcripts or volatile timer timestamps into it.
 | OBS-12 | Webmin temporary-storage/load suitability under [baseline acceptance](#per-node-baseline-and-acceptance) | Before large uploads/backups and after material workload changes | Inspect expected workload and disk/RAM headroom. An idle-capacity snapshot does not qualify large jobs; Caddy migration remains a separate project |
 
 Before closing a phase, reconcile every applicable row with the current checklist.
+
+For j2-svntp1, the generic system-statistics baseline must match every applicable
+generic measurement provided by j2-svpi4mf, in addition to the NTP-specific
+measurements. The monitoring component owns the
+[explicit comparison and expanded selection](../../../homelab-monitoring-observability/Munin/docs/ntp-generic-statistics.md).
+Map interface, disk and sensor instances to the actual target. Record unsupported
+capabilities and proposed equivalents for explicit disposition; do not silently
+omit a requested measurement. Application-specific measurements apply only when
+that application exists on the target. Qualify dependencies, privileges, complete
+polling runtime and NTP continuity; coordinate the selected plugin set with both
+family checks before accepting the expanded profile and its scheduled graphs.
+
+The Munin master `svmf.local.theama.co` requires host-static IPv4 `10.1.3.83/22`
+and ULA `fd36:5aa8:6971:1::83/64`, allocated by `homelab-network/ipam`.
+The static ULA coexists with RA-provided global IPv6 and default routes; keep
+existing generated ULA consumers through transition. Use explicit DNS VIPs in
+both families and reject automatically learned DNS. The network owner qualifies
+the complete static configuration and recovery;
+the DNS owner publishes A/AAAA for both `svmf.local.theama.co` and
+`munin.local.theama.co`, with canonical PTR target `svmf.local.theama.co`.
+Accept networking and DNS before enabling node allowlists or master entries.
+The Munin dashboard must respond over IPv4 and IPv6; node listeners and native
+master collection must also pass each intended family. These are independent
+acceptance checks, not consequences inferred from DNS alone. The monitoring-owned
+[master design](../../../homelab-monitoring-observability/Munin/master/ntp-design.md)
+uses one canonical IPv4 raw-metric series and a master-local unprivileged plugin
+that fully configures/fetches the selected profile over both explicit source-bound
+literal families during the same native five-minute schedule. Keep family failures
+independent, expose missing/stale data through limits, and add no duplicate node
+series or second scheduler. Qualify the installed master configuration and actual
+scheduled evidence before acceptance; candidate code does not close OBS-07.
+
+OBS-07 also retains the poller's source-identity policy and persistence evidence.
+Distinguish a saved deterministic profile from an address seen only in one boot.
+After policy acceptance, compare sources and intended-family collection at the
+next separately approved master network-maintenance window. Saving/readback does
+not prove a renewal/reboot occurred; this obligation does not authorize one.
 An unmet requirement remains open or has an explicit operator-approved disposition
 with its reason, owner and next checkpoint; it must not disappear into an outcome
 file. Do not invent an observation duration, tolerance or automatic reminder when

@@ -1,0 +1,142 @@
+{
+  "schema": 1,
+  "review_date": "2026-10-20",
+  "status": "archives verified; installation not authorized",
+  "packages": [
+    {
+      "package": "libhtml-tagset-perl",
+      "version": "3.24-1",
+      "architecture": "all",
+      "filename": "libhtml-tagset-perl_3.24-1_all.deb",
+      "url": "https://deb.debian.org/debian/pool/main/libh/libhtml-tagset-perl/libhtml-tagset-perl_3.24-1_all.deb",
+      "sha256": "5efdaf433e10ce127257176d8093e41eabc642839e71f1961bc17f2e4f6169b0",
+      "size": 14704
+    },
+    {
+      "package": "liburi-perl",
+      "version": "5.30-1",
+      "architecture": "all",
+      "filename": "liburi-perl_5.30-1_all.deb",
+      "url": "https://deb.debian.org/debian/pool/main/libu/liburi-perl/liburi-perl_5.30-1_all.deb",
+      "sha256": "33957bd8218ddd3a86cc19fdf3bf7832b0640337a4be6cf23b2714b73d220220",
+      "size": 104548
+    },
+    {
+      "package": "libhtml-parser-perl",
+      "version": "3.83-2~deb13u1",
+      "architecture": "arm64",
+      "filename": "libhtml-parser-perl_3.83-2~deb13u1_arm64.deb",
+      "url": "https://deb.debian.org/debian/pool/main/libh/libhtml-parser-perl/libhtml-parser-perl_3.83-2%7edeb13u1_arm64.deb",
+      "sha256": "51f1d70726daa87f762b91bc1f45ca6119a8e99d3f1952575581de3cf3d813d8",
+      "size": 97336
+    },
+    {
+      "package": "libcgi-pm-perl",
+      "version": "4.68-1",
+      "architecture": "all",
+      "filename": "libcgi-pm-perl_4.68-1_all.deb",
+      "url": "https://deb.debian.org/debian/pool/main/libc/libcgi-pm-perl/libcgi-pm-perl_4.68-1_all.deb",
+      "sha256": "281cba6f89a9c1ed5583e5d142b106498bcf5f6b548e96447cff5c9c615aba75",
+      "size": 217396
+    },
+    {
+      "package": "libio-multiplex-perl",
+      "version": "1.16-3",
+      "architecture": "all",
+      "filename": "libio-multiplex-perl_1.16-3_all.deb",
+      "url": "https://deb.debian.org/debian/pool/main/libi/libio-multiplex-perl/libio-multiplex-perl_1.16-3_all.deb",
+      "sha256": "7eb52b86a6cef3e6a1f3c2569ba9fb6b3b852c4053853b3f83b58b6ba2204029",
+      "size": 20568
+    },
+    {
+      "package": "libio-socket-inet6-perl",
+      "version": "2.73-1",
+      "architecture": "all",
+      "filename": "libio-socket-inet6-perl_2.73-1_all.deb",
+      "url": "https://deb.debian.org/debian/pool/main/libi/libio-socket-inet6-perl/libio-socket-inet6-perl_2.73-1_all.deb",
+      "sha256": "e9bdf2ef7541dbc89c9035e81cbc544026f1258641b24687186bf085d3dec780",
+      "size": 17456
+    },
+    {
+      "package": "libio-socket-ssl-perl",
+      "version": "2.089-1",
+      "architecture": "all",
+      "filename": "libio-socket-ssl-perl_2.089-1_all.deb",
+      "url": "https://deb.debian.org/debian/pool/main/libi/libio-socket-ssl-perl/libio-socket-ssl-perl_2.089-1_all.deb",
+      "sha256": "9fe58e2dd2847896e380f9fb26b5344d62cab21d8390598912e485ceedb30f00",
+      "size": 223404
+    },
+    {
+      "package": "libnet-cidr-perl",
+      "version": "0.25-1",
+      "architecture": "all",
+      "filename": "libnet-cidr-perl_0.25-1_all.deb",
+      "url": "https://deb.debian.org/debian/pool/main/libn/libnet-cidr-perl/libnet-cidr-perl_0.25-1_all.deb",
+      "sha256": "54e28b30ca9267771cbd0e2c2db21193123bd84c8ace78fbc5c7d709b3a5083b",
+      "size": 14960
+    },
+    {
+      "package": "libnet-server-perl",
+      "version": "2.014-1",
+      "architecture": "all",
+      "filename": "libnet-server-perl_2.014-1_all.deb",
+      "url": "https://deb.debian.org/debian/pool/main/libn/libnet-server-perl/libnet-server-perl_2.014-1_all.deb",
+      "sha256": "a8106949d84a5bcac7277099a5e4f574baa4293775444db9433f51a5f47ffbd9",
+      "size": 184032
+    },
+    {
+      "package": "libexporter-tiny-perl",
+      "version": "1.006002-1",
+      "architecture": "all",
+      "filename": "libexporter-tiny-perl_1.006002-1_all.deb",
+      "url": "https://deb.debian.org/debian/pool/main/libe/libexporter-tiny-perl/libexporter-tiny-perl_1.006002-1_all.deb",
+      "sha256": "27d5eeaf052c149675df33db58f1fa650f461b1ddebe4d73ae53be88087b5b31",
+      "size": 38748
+    },
+    {
+      "package": "liblist-moreutils-xs-perl",
+      "version": "0.430-4+b2",
+      "architecture": "arm64",
+      "filename": "liblist-moreutils-xs-perl_0.430-4+b2_arm64.deb",
+      "url": "https://deb.debian.org/debian/pool/main/libl/liblist-moreutils-xs-perl/liblist-moreutils-xs-perl_0.430-4%2bb2_arm64.deb",
+      "sha256": "8f3ced8e5c89e662a893135b4cf5d670b380aeab9a02ad40daf374be09b81860",
+      "size": 37728
+    },
+    {
+      "package": "liblist-moreutils-perl",
+      "version": "0.430-2",
+      "architecture": "all",
+      "filename": "liblist-moreutils-perl_0.430-2_all.deb",
+      "url": "https://deb.debian.org/debian/pool/main/libl/liblist-moreutils-perl/liblist-moreutils-perl_0.430-2_all.deb",
+      "sha256": "8a3ac2cd2c995bced7449a17838005abcaecfc302b0c51739dcc326f6eb8fbde",
+      "size": 46948
+    },
+    {
+      "package": "munin-common",
+      "version": "2.0.76-5",
+      "architecture": "all",
+      "filename": "munin-common_2.0.76-5_all.deb",
+      "url": "https://deb.debian.org/debian/pool/main/m/munin/munin-common_2.0.76-5_all.deb",
+      "sha256": "880d2301c933a15cb41325112ccf00bca65549cde885ba76e9682f058d06d7d5",
+      "size": 95448
+    },
+    {
+      "package": "munin-plugins-core",
+      "version": "2.0.76-5",
+      "architecture": "all",
+      "filename": "munin-plugins-core_2.0.76-5_all.deb",
+      "url": "https://deb.debian.org/debian/pool/main/m/munin/munin-plugins-core_2.0.76-5_all.deb",
+      "sha256": "780529a11bc9dc563bd69268b0153421923ff6ceea50b1b48bf80bca8826781c",
+      "size": 243384
+    },
+    {
+      "package": "munin-node",
+      "version": "2.0.76-5",
+      "architecture": "all",
+      "filename": "munin-node_2.0.76-5_all.deb",
+      "url": "https://deb.debian.org/debian/pool/main/m/munin/munin-node_2.0.76-5_all.deb",
+      "sha256": "3307903b4bc39ccaa1219202be9c06bd37f65d500c0748d9d817975d0a70e137",
+      "size": 137040
+    }
+  ]
+}
