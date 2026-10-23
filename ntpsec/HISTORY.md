@@ -1,5 +1,76 @@
 # NTPsec deployment history
 
+## Separate +24h growth reviews sealed — October 23, 2026
+
+Prepared and sealed separate one-use node/master +24h reviews in advance at
+Aaron's request, without target access, sampling or execution receipts. Both
+preserve original t0 epoch 1792703308.1661916 and enforce October 23 at
+16:08:28.166 CDT as the earliest observation. Master requires explicit reviewed
+acceptance of the exact new +24h node archive before receipt or SSH. The scopes
+pin the accepted t0 pair, accepted late +6h pair and operator-confirmed overnight
+Munin restart disposition; late snapshots are not reclassified as punctual.
+
+Separated retained evidence verification from execution validity: historical
+proofs must pass archive/member integrity, completed capture, stable protected
+continuity, reviewed acceptance and execution within their original validity
+interval. Historical code is never imported or run. New archives have fresh
+24-hour validity and retain the 15-minute controller reserve; original expired
+or consumed archives gain no execution authority. No live or CLI bypass of
+execution expiry was added. Local clock simulation verifies the exact accepted
+historical proofs remain usable as data at +24h, after t0's execution deadline.
+
+The latest controller starts are before October 24 at 09:53:59.014 CDT for node
+and 09:53:59.385 CDT for master. Retained scopes read the same bounded statistics
+metadata/writer/maintenance and native-master metrics/limits/contact evidence.
+No forced collection, job, evaluator, send, retry, scheduler change or +48h
+authority was introduced. Both new stages remain unexecuted and require
+separate exact-hash approvals. Complete observation/budget acceptance stays open.
+
+All 48 focused growth/observation tests and the full Munin scaffold pass,
+including +24h early rejection on both controller roles and target, previous
+proof drift, exact reviewed node acceptance, expired-proof reading with expired
+execution rejection, and corruption/scope-expansion rejection. Frozen checks,
+source equality and Python/payload compilation pass. The cross-repository
+runtime inputs still match the CI-pinned NTP commit.
+
+## Late +6h node/master observations executed — October 23, 2026
+
+Executed the separately approved exact-hash node/master growth checkpoints once,
+node first. Both complete read-only captures and protected within-capture
+continuity pass. The node was captured at 09:51:32.482 CDT, 17h 43m 04.316s
+after the accepted t0 and 11h 43m 04.316s late against +6h. Reviewed and accepted
+the late snapshot for its exact master prerequisite without accepting punctual
++6h coverage or inventing a lateness tolerance. Original t0 is unchanged.
+
+NTP service/writer and protected file identities match t0. All four active
+streams retain matching writable ntpd descriptors; storage floors, exact
+33-plugin selection and fresh genuine maintenance records pass. Endpoint inode
+comparison records 321,674 logical bytes and 339,968 allocated bytes of growth,
+three new daily stream inodes, and no observed endpoint removal/shrinkage.
+Unseen transient file activity remains unexcluded; no complete gross-growth or
+storage-budget acceptance follows from those sums. Quiet event-driven protostats
+and the bounded process-descriptor race remain recorded.
+
+Munin-node invocation changed since t0 but remains active/stable within this
+capture. Aaron confirms routine overnight restarts explain the change. Recorded
+that expected-behavior disposition in a separate private addendum, preserving
+the reviewed node outcome bytes already bound by the master. No extra restart
+diagnostic is required for this expected change.
+
+Master captured at 09:55:27.919 CDT; exact node proof/runtime context and
+protected continuity pass. Selected RRDs are fresh, nine selected graph
+configurations decode and thresholded native states are ok. Recent complete
+scheduled cycles began at 09:40:01, 09:45:01 and 09:50:02, rather than being
+three new post-node cycles. Committed contacts and successful submission status
+remain unchanged. No new downstream delivery claim is made.
+
+Both one-use receipts are consumed and frozen archives remain unchanged. No
+target mutation, forced collection, plugin, job, evaluator, send or retry
+occurred. Next prepare separate +24h reviews for October 23 at 16:08:28.166 CDT
+and obtain their execution approvals. +48h stays due October 24 at the same
+local time. Sustained growth, budget and remaining readiness gates remain open;
+no later sample or reminder is scheduled.
+
 ## Separate +6h growth reviews sealed in advance — October 22, 2026
 
 Prepared separate one-use node/master +6h archives without target access or

@@ -1,6 +1,6 @@
 # j2-svntp1 production readiness
 
-Reconciled October 22, 2026, after accepted canonical source and producer follow-ups.
+Reconciled October 23, 2026, after the late node/master growth observations.
 This checklist summarizes approved captures and repository documents;
 updating it performs no additional live inspection. The [plan](ntp-architecture-deployment-plan-v1.0.md)
 defines requirements; [HISTORY](../HISTORY.md) records operation outcomes.
@@ -8,23 +8,62 @@ defines requirements; [HISTORY](../HISTORY.md) records operation outcomes.
 ## Decision and next action
 
 **Resume here:** obtain separate exact-hash execution approvals for the sealed,
-unexecuted +6h reviews, then execute node first at or after **October 22, 2026,
-22:08:28.166 CDT**. Review the node capture before master execution:
+unexecuted +24h reviews, then execute node first at or after **October 23,
+2026, at 16:08:28.166 CDT**. Review the node capture before master execution:
 
-1. [Node +6h review](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-growth-6h-node-20261022-v1/review.md)
-   / [SHA-256](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-growth-6h-node-20261022-v1/sealing.json:1).
-2. [Master +6h review](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-growth-6h-master-20261022-v1/review.md)
-   / [SHA-256](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-growth-6h-master-20261022-v1/sealing.json:1).
+1. [Node +24h review](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-growth-24h-node-20261023-v1/review.md)
+   / [SHA-256](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-growth-24h-node-20261023-v1/sealing.json:1).
+2. [Master +24h review](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-growth-24h-master-20261023-v1/review.md)
+   / [SHA-256](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-growth-24h-master-20261023-v1/sealing.json:1).
 
-Both scopes pin the accepted t0 pair and enforce the due time before receipt or
-SSH; the remote collector checks it again before observations. Master also
-requires reviewed acceptance of that exact +6h node capture. No target access,
-sampling, receipt, reminder or waiting process was created during preparation.
-Archive expiry is capped by the pinned t0 proofs; the controller's last permitted
-start is before **October 23, 2026, 15:47:08.376 CDT**, reserving 15 minutes before
-expiry. This upper bound permits execution, not acceptance of an arbitrarily
-late checkpoint: record actual elapsed time and assess any lateness explicitly.
-No later checkpoint is authorized by either review.
+Original t0 remains October 22 at 16:08:28.166 CDT. The new scopes pin the
+accepted t0 pair, accepted late +6h pair and operator restart disposition.
+Controller and target reject early sampling; master also requires reviewed
+acceptance of its exact new +24h node archive. No target access, sampling,
+execution receipt, background wait or reminder was created in preparation.
+
+The controller's last permitted start is before **October 24, 2026, at
+09:53:59.014 CDT** for node and **09:53:59.385 CDT** for master, reserving 15
+minutes before their independent expiries. Historical proof verification now
+checks archive integrity, accepted captures/outcomes and execution within the
+original validity interval without requiring old proofs to remain executable.
+Expired archives still fail execution checks. Never replay consumed t0/+6h
+archives or reset t0; no +48h execution authority is included.
+
+The 48 focused growth/observation tests and full Munin scaffold pass. Frozen
+checks, exact source equality and a local proof-validation clock simulation at
++24h pass. This local preparation accepts no new live sample or storage budget.
+
+Both approved +6h stages executed once on October 23 and their complete late
+snapshots are accepted as bounded observations:
+
+1. [Node outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-growth-6h-node-20261022-v1/outcome.md):
+   captured **09:51:32.482 CDT**, 17h 43m 04.316s after t0 and 11h 43m 04.316s
+   late against +6h. NTP service/writer and protected file identities are
+   unchanged; within-capture continuity, active streams, writable descriptors,
+   storage floors, exact 33-plugin selection and fresh genuine job records pass.
+   Endpoint comparison records 321,674 logical bytes and 339,968 allocated
+   bytes of growth, three new daily stream inodes, and no observed endpoint
+   removal/shrinkage. These are endpoint observations; unseen transient file
+   activity is not excluded and no complete gross-growth budget is accepted.
+2. [Master outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-growth-6h-master-20261022-v1/outcome.md):
+   captured **09:55:27.919 CDT** with exact reviewed late-node proof binding and
+   stable protected continuity. Selected RRDs are present and fresh; nine graph
+   configurations decode and thresholded native states are `ok`. Existing
+   completed cycles began at 09:40:01, 09:45:01 and 09:50:02; these are not three
+   cycles after the node checkpoint. Contact/submission status is unchanged.
+
+Aaron confirms expected overnight Munin restarts. The
+[operator disposition](/home/aaron/code/.local-evidence/homelab-ntp/current/munin-growth-6h-node-20261022-v1/restart-disposition.md)
+explains the changed Munin-node invocation since t0; the service was active and
+stable within this capture. No additional restart diagnostic is required for
+that expected change. This addendum preserves the node outcome bytes already
+bound into the master runtime proof.
+
+The intended +6h time was missed. No lateness tolerance is invented: punctual
++6h coverage remains unaccepted, while these late snapshots provide useful
+observations. Keep the original t0 and +24h/+48h deadlines. No target mutation,
+forced collection, plugin/job/limits invocation, notification or retry occurred.
 
 Approved t0 v2 node and master inspections completed once and their reviewed
 baselines are accepted:
@@ -47,17 +86,17 @@ The selected [contract](PRODUCTION-OBSERVATION-CONTRACT.md) remains 48 hours at
 t0/+6h/+24h/+48h, with 31 days at twice peak daily-equivalent gross growth plus
 active-file allowance and unchanged 10 GiB/5% floors. Remaining checkpoints:
 
-| Checkpoint | Due in America/Chicago |
+| Checkpoint | Due/sample time in America/Chicago |
 | --- | --- |
-| +6h | October 22, 2026, 22:08:28 CDT |
+| +6h (late snapshots) | October 23, 2026, 09:51:32 node / 09:55:27 master; intended time was October 22 at 22:08:28 |
 | +24h | October 23, 2026, 16:08:28 CDT |
 | +48h | October 24, 2026, 16:08:28 CDT |
 
-Only t0 is accepted; sustained growth and storage budget remain open. Later
-samples require fresh due-time reviews. No target mutation, forced collection,
-plugin/job/limits invocation, send or retry occurred. Both v2 receipts are
-consumed; do not replay them. Failed node v1 and unexecuted master v1 remain
-preserved as historical evidence. Final Phase 3 duration/tolerances remain pending.
+T0 and the bounded late snapshots are accepted; punctual +6h coverage,
+sustained growth and storage budget remain open. Later samples require fresh
+reviews and execution approvals. T0 and +6h receipts are consumed; original
+frozen archives remain unchanged. Failed node t0 v1 and unexecuted master t0 v1
+remain preserved. Final Phase 3 duration/tolerances remain pending.
 
 Coverage reconciliation preserves accepted expanded metrics, canonical IPv4
 source attribution, dual-family transport/dashboard evidence and delivered
@@ -768,7 +807,7 @@ maintenance during final observation; do not infer a result from elapsed time.
 | Network persistence | Earlier network acceptance established fixed addresses, RA, DNS and egress. Latest boot passed both fixed SSH endpoints and client families | Reconcile current-boot RA global address/default route, resolver views and DHCP/RA DNS suppression; endpoint reachability alone does not prove these properties |
 | PoE, fan and thermal health | Earlier operator observations establish normal fan/power and original PoE HAT; boot success does not establish sustained health | Current power budget/class, fan/control, temperature, undervoltage/throttling and sustained-operation evidence; no stress or switch changes implicit |
 | OS/media/access | Trixie identity and accepted boot/kernel continuity are recorded; original recovery card retained | Close the complete per-node baseline, current update status and final observed inventory. Wi-Fi disablement remains unproven in HISTORY, not silently accepted |
-| Final observation and inventory | Short timing/monitoring observations accepted; OBS-02 window selected but not started. Final Phase 3 duration/cadence/tolerances remain pending | Resolve baseline gate dispositions and the [final-window decisions](PRODUCTION-OBSERVATION-CONTRACT.md#final-phase-3-window-inputs-still-required), then begin after relevant changes and complete observed inventory |
+| Final observation and inventory | Short timing/monitoring observations accepted; OBS-02 t0 and late follow-up snapshots accepted; sustained window/budget remain open. Final Phase 3 duration/cadence/tolerances remain pending | Resolve baseline gate dispositions and the [final-window decisions](PRODUCTION-OBSERVATION-CONTRACT.md#final-phase-3-window-inputs-still-required), then begin after relevant changes and complete observed inventory |
 
 The October 20 Munin-absence inspection is historical and superseded by the
 accepted deployment/observations above. Watchdog absence comes from the retained post-reboot RTC inventory,
@@ -789,7 +828,7 @@ remain pending wherever not established below.
 | ID | Current status | Next checkpoint or dependency | Evidence required to close or hand over |
 | --- | --- | --- | --- |
 | OBS-01 | Initial genuine retention completion/provenance and master evidence/age consumption accepted October 22; four-stream monitoring remains active | Preserve recurring retention evidence and failure visibility; continued statistics/storage observation remains OBS-02 | Actual rule-specific success and collected monitoring evidence accepted within bounded captures; continuing operation is not inferred |
-| OBS-02 | Open: t0 node/master v2 accepted at October 22, 16:08:28 CDT; +6h/+24h/+48h remain due | Separate due-time read-only reviews; measure per-inode gross growth and reclamation, then assess 31-day budget with 2x headroom and active allowance | [Contract](PRODUCTION-OBSERVATION-CONTRACT.md); accepted t0 outcomes above |
+| OBS-02 | Open: t0 accepted October 22; +6h snapshots captured late October 23 at 09:51/09:55 CDT; +24h/+48h remain due | Approve the sealed +24h node/master reviews for October 23 at 16:08:28 CDT; preserve t0 and assess lateness/endpoint coverage before budget acceptance | [Contract](PRODUCTION-OBSERVATION-CONTRACT.md); accepted outcomes and restart disposition above |
 | OBS-03 | Initial genuine reporter completion/cron correlation and master evidence/age consumption accepted October 22 | Preserve recurring reporter evidence, quiet success, locks and failure-mail handling; delivered failure mail remains OBS-04 | Actual producer completion and collected monitoring evidence accepted within bounded captures; recurrence/delivery remain separate |
 | OBS-04 | Synthetic failure route delivered; cron-generated failure mail unobserved | Prepare a separate controlled failure-path review with exact recipient/content approval | Cron-originated test evidence and operator-confirmed downstream receipt; do not resend existing tests implicitly |
 | OBS-05 | Corrected timer accepted; four-week live recurrence unobserved | Retained estimate: November 12, 2026, 18:19:41 CST; refresh live schedule under approved scope before relying on it | Actual scheduled result, valid leapfile and subsequent trigger. Estimate is not a fresh timer observation; reconcile any phase-gate deferral explicitly |
