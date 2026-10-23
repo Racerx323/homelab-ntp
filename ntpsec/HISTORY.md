@@ -1,5 +1,70 @@
 # NTPsec deployment history
 
+## Separate +48h closing reviews sealed — October 23, 2026
+
+Prepared separate one-use node/master +48h reviews for October 24 at
+16:08:28.166 CDT without target access or sampling. Original t0 remains epoch
+1792703308.1661916. Both scopes pin the accepted +24h pair and verify its full
+historical chain through the late +6h pair to t0 and the operator's expected
+overnight Munin restart disposition. Existing timing gaps remain unaccepted as
+punctual cadence. No previous receipt or execution expiry was extended.
+
+Kept the 24-hour archive lifetime and 15-minute controller reserve. Latest
+starts are before October 24 at 16:47:50.678 CDT for node and 16:47:51.032 CDT
+for master, leaving about 39 minutes after the due time. Node must execute and
+be reviewed before master starts; a missed window requires fresh reviews and
+new exact-hash approvals. No wait, timer, reminder or later target access was
+created. Both new archives remain unexecuted, with no execution receipt.
+
+Reused the bounded read-only node and native-master collectors. Controller and
+target reject early observation; master requires the exact reviewed closing
+node capture. Local closing analysis must use actual elapsed intervals, preserve
+rollover/reclamation and endpoint/cadence limitations, and account for quiet
+protostats and unknown non-statistics filesystem reserves. Capture completeness
+accepts no sustained growth, 31-day budget or final readiness automatically.
+No forced job, plugin, collection, limits evaluator, notification or retry is
+part of either scope.
+
+The 51 focused growth/observation tests and full Munin scaffold pass. Closing
+scope/offset checks, both early controller roles and target, master acceptance
+rejection, and a changed earlier proof inside the +24h chain are covered. Frozen
+checks, exact repository-source equality and Python/payload compilation pass.
+Local clock simulation verifies retained proofs at +48h after prior archives'
+execution windows expire. Cross-repository runtime inputs still match CI pins.
+
+## Daily +24h node/master observations executed — October 23, 2026
+
+Executed the separately approved exact-hash +24h stages once, node first, within
+their validity windows. Node captured at 16:52:11.963 CDT, 24h 43m 43.797s
+after original t0 and 43m 43.797s late against +24h. Accepted the complete late
+snapshot for its exact master prerequisite; punctual daily cadence remains
+unaccepted and no lateness tolerance was invented. Original t0 is unchanged.
+
+Protected files and NTP service identity match t0 and the morning sample;
+Munin-node invocation matches the morning sample. Complete within-capture
+continuity, mount identity, four active streams with matching writable ntpd
+descriptors, storage floors, exact 33-plugin selection and valid fresh genuine
+maintenance records pass. Endpoint growth from t0 is 449,815 logical bytes and
+466,944 allocated bytes, including three new daily stream inodes. Since the
+morning sample it is 128,141 logical bytes and 126,976 allocated bytes with no
+additional observed inodes. No endpoint removal or shrinkage is observed.
+Unseen transient file activity, quiet event-driven protostats and the bounded
+descriptor-scan race remain explicit; no complete growth-budget claim follows.
+
+Master captured at 16:54:18.646 CDT. Exact node archive/capture/receipt/outcome
+runtime binding and protected continuity pass. Selected RRDs are fresh; nine
+cached graph configurations decode; thresholded native fields and mail limits
+are ok. Recent complete scheduled cycles began at 16:40:01, 16:45:01 and
+16:50:02, rather than being three new cycles after the node snapshot. Committed
+contacts and successful submission status are unchanged. No send or new
+downstream-delivery claim was made.
+
+Both one-use receipts are consumed and original archives remain unchanged.
+No target mutation, forced collection, plugin, job, evaluator or retry occurred.
+Next prepare separate +48h reviews for October 24 at 16:08:28.166 CDT and obtain
+their execution approvals. No later sample or reminder is scheduled. Cadence
+gaps, sustained growth, budget and remaining final-readiness gates remain open.
+
 ## Separate +24h growth reviews sealed — October 23, 2026
 
 Prepared and sealed separate one-use node/master +24h reviews in advance at
