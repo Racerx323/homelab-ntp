@@ -2721,6 +2721,14 @@ separate end-of-project action, not an installer side effect.
 
 ### Reporter capture and schedule activation
 
+Current disposition: genuine scheduled reporting and cron correlation were
+accepted October 22; qualified OBS-02 acceptance followed October 24. OBS-04
+cron-originated failure delivery remains open. Its native inputs and local
+one-byte output gate are now qualified; the separate controlled-test execution
+review is sealed but unapproved. Follow the
+[OBS-04 procedure](OBS04-CRON-FAILURE.md) and current readiness checkpoint. The October 15 handoff below describes its state at that time;
+its pending first-run wording does not supersede later accepted observations.
+
 The October 15, 2026 execution of `mail-reporting-20261015-v1` passed. The
 05:30 America/Chicago cron is installed; its first scheduled occurrence is
 October 16, 2026, at 5:30 a.m. CDT. The instrumented live scan was quiet and

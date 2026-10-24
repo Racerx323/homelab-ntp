@@ -1,5 +1,220 @@
 # NTPsec deployment history
 
+## OBS-04 genuine cron delivery accepted — October 24, 2026
+
+Executed the separately approved v2 archive once. Cron launched the unique
+command at 18:43 CDT; retained ancestry reaches the pinned cron daemon. The
+controlled production failure wrapper returned 2 with the exact private
+diagnostic and released the approved single marker once. Aaron confirmed the
+matching subject/sender display and `!` through AppriseAPP at 18:43 CDT.
+The private reviewed outcome binds raw records and receipt by SHA-256.
+
+Withdrawal removed the authored test entry at 18:44:16 CDT. Terminal observation
+at 18:44:17 confirmed absence and unchanged active/running cron, NTP and Munin
+identities. Four authorized connections completed; controller session retired,
+receipt consumed, no retry or ordinary service restart. Stage evidence retained.
+
+OBS-04 is accepted for this controlled argument-failure delivery route. Exact
+SMTP response/mailer exit are unobserved; receipt establishes downstream delivery,
+not all provider fanout, full diagnostic delivery, scanner crashes or sustained
+reliability. Historical controller results remain unchanged and do not themselves
+claim acceptance. Qualified OBS-02 and D1–D5 remain unchanged.
+
+Next: repository-only reconciliation of remaining Phase 3 prerequisites,
+coverage/persistence and final-window decisions. No additional target access,
+cleanup, reboot, notification or final-window start is authorized. Earlier
+preparation entries describe their historical state, not the current resume point.
+
+## OBS-04 native inputs and guarded test qualified — October 24, 2026
+
+Resolved expected native inputs locally from the official cron 3.0pl1-197 ARM64
+package, whose cron binary, service unit and defaults match the accepted capture.
+Verified source tar checksums and applied all 85 versioned Debian patches.
+Source and matching binary format strings establish the subject/mailer contract:
+empty EXTRA_OPTS, log level 1, short hostname and no failure suffix. Actual daemon
+argv/hostname must still pass exact checks before publication and release;
+no fresh target observation is claimed or required merely to assume they match.
+
+Native source also establishes that job stdout is an anonymous regular tmpfile,
+not a pipe. Superseded the unexecuted pipe-based candidate. The v2 design validates
+the installed reporter's full early-rejection diagnostic privately, then releases
+one approved ASCII exclamation-mark byte. This has no nonempty partial prefix;
+one terminal SMTP LF/CRLF is explicitly permitted. The diagnostic itself is not
+sent. The message subject names the unique delivery-test stage and requires
+separate exact-message execution approval.
+
+Added repository-owned worker/controller, closed sealing/check interfaces and
+focused safety regressions integrated into the existing offline/CI test path.
+The transaction pins production/transport inputs, verifies cron ancestry, preserves
+normal reporting and uses a private lock, exclusive attempt, release deadline,
+independent authored-entry withdrawal timer and byte/identity-checked restoration.
+It retains uncertain attempts and stage evidence; no reinstallation or send retry
+is permitted. Real scheduled provenance, submission disposition and downstream
+receipt remain live acceptance gates, not local-test claims.
+
+The controlled-test review and message preview are sealed, unexecuted and
+unapproved. The old draft and v1 archive remain historical, without any send.
+No target contact, cron installation, production failure injection, notification
+or ordinary service change occurred during this preparation. Qualified OBS-02
+acceptance and D1–D5 are unchanged; OBS-04 and final observation remain open.
+
+## OBS-04 non-sending inspection accepted — October 24, 2026
+
+Executed the separately approved exact-hash node inspection once; capture
+completed at 2026-10-24T17:51:29.283245-05:00. Archive/capture/spec/receipt bindings and protected
+boot/file/service continuity pass. Selected protected files match the closing
+baseline. Production cron/reporter and proposed test-path absence are confirmed;
+no configuration, service or lock changes occurred.
+
+Both sendmail links resolve to msmtp. Captured options and the installed manual
+establish fixed sender policy `j2-svntp1@local.theama.co`, disabled envelope-from
+overrides and enabled From-header replacement. No root transport override or
+include was detected; two allowlist-excluded directives remain unexported.
+Installed native cron/mail manuals and package identities are retained privately.
+
+The cron unit uses `EXTRA_OPTS` from `/etc/default/cron`. That file was hashed,
+not exported, and daemon arguments were outside scope. Exact runtime options and
+native subject therefore remain unqualified. The next checkpoint is local
+native-input qualification where possible, then controlled worker/payload/
+recovery qualification before a send-capable seal. Any extra target reads need
+a new review; no automatic follow-up or replay is authorized.
+
+The prerequisite capture is accepted only within its bounded scope; OBS-04
+remains open. No cron test, failure injection, notification, relay contact,
+downstream-delivery claim or retry occurred. The receipt is consumed, controller
+session retired, raw evidence private and prior sealed draft unchanged.
+Qualified OBS-02 acceptance and D1–D5 remain unchanged.
+
+## OBS-04 prerequisites and execution design prepared — October 24, 2026
+
+Traced retained reporting/producer evidence and repository mail/cron sources.
+Genuine scheduled reporting is accepted, but earlier instrumented failures ran
+under a shell with captured mail; they do not prove cron-daemon failure delivery.
+Clarified the historical October 15 handoff in OPERATIONS without erasing it.
+
+Prepared a bounded non-sending node inspection, sealed and unexecuted, to read
+current cron/reporter/success-producer bytes, native package/manual identities,
+selected non-secret transport options and relevant file/service/boot continuity.
+It excludes credentials, unrelated cron contents, message bodies and relay
+contact. Exact-hash execution approval is still required; no target was accessed.
+
+Prepared a separate non-executable controlled-test design using the installed
+reporter's early rejection of `--obs04-controlled-failure`. The retained producer
+reporter hash matches the closing node; its argument-handling section matches
+the shared repository source despite a removed comment and appended success
+hook. A local source-only check exited 2 with deterministic output before scanning,
+direct sending or success recording. Normal reporting remains untouched.
+
+The draft specifies a separate cron entry/private lock, one durable attempt,
+expiry/quiet repeat handling, payload validation before cron output, scoped
+withdrawal and uncertain-send containment. These are design requirements, not
+qualified live recovery. The proposed failure recipient/body and no-attachment
+preview are prepared; native envelope sender and subject remain unresolved.
+No send-capable execution bundle is sealed. OBS-04 stays open for genuine
+cron-originated evidence and operator-confirmed downstream receipt.
+
+Qualified OBS-02 acceptance and D1–D5 are preserved. No target contact, cron
+installation, failure injection, notification, retry or service change occurred.
+The readiness checkpoint names the inspection approval and subsequent draft
+completion; final observation and other owning-phase gates remain separate.
+
+## OBS-02 accepted with D1–D5 dispositions — October 24, 2026
+
+Aaron agreed to all five proposed dispositions in the named acceptance review.
+Recorded qualified acceptance of the actual endpoint growth study and conditional
+storage budget, preserving lateness/gaps, unmeasured protostats burst uncertainty,
+composed failure-coverage evidence and the current native inode-alert rounding
+limitation. Adopted additional planning reserves of 10 GiB and 386,433 inodes
+(5% of closing total), above unchanged free-space floors. Projected remaining
+availability is about 96.267 GiB and 93.399% of inodes; sufficiency for other
+workloads remains a planning assumption, not a measurement.
+
+A separate private decision record retains the operator's statement and binds
+the unchanged review, review seal and reserve scenario hashes. OBS-02 is accepted
+within that qualified scope; punctual cadence, a worst-case gross-growth bound
+and actual storage-fault delivery are not claimed. No further information or
+approval is needed for D1–D5. OBS-04 cron-originated failure receipt, remaining
+coverage/persistence/recovery and final observation keep their separate gates.
+
+No target access, sampling, code/threshold change, notification, retry or live
+authorization occurred. Original t0 and frozen captures/outcomes/review remain
+unchanged. The readiness checkpoint now points to separate OBS-04 review
+preparation and remaining baseline reconciliation before final observation.
+
+## OBS-02 acceptance review prepared — October 24, 2026
+
+Prepared a private review from retained closing evidence; no acceptance decision
+was recorded. Rechecked all eight node/master archive, capture, receipt and
+accepted-outcome chains, each master/node binding and the closing assessment
+binding. Original t0 and executed artifacts remain unchanged.
+
+The review proposes explicit dispositions for late cadence and endpoint gaps,
+quiet event-driven protostats and unmeasured bursts, other-consumer reserves,
+failure-alert coverage and native inode-alert precision. The proposed additional
+10 GiB and 5% of total filesystem inodes leave about 96.267 GiB and 93.399% of
+inodes available after the conditional statistics model. Reserve sufficiency
+requires owner workload confirmation; this is not a measured gross-growth bound.
+
+The captured production native evaluator rounds to two decimals before comparing
+limits. An inode percentage just below 5% can therefore compare as 5.00%; the
+review requires an explicit resolution disposition or separately scoped
+correction qualification. The source hash matches the closing master capture;
+this is a source-derived limitation, not an observed production fault.
+
+The review distinguishes reader/native-routing/common-contact evidence from
+actual storage/maintenance fault delivery. Last-success age is not immediate
+last-attempt failure detection. OBS-04 cron-originated failure receipt remains
+separate. All D1–D5 decisions, OBS-02, sustained-growth and budget acceptance
+remain open. No target access, new sampling, synthetic tests, configuration
+change, notification or retry occurred. The readiness checkpoint links the
+review-only sealed dossier; it contains no executable payload.
+
+## Closing +48h inspections and conditional budget — October 24, 2026
+
+Executed both separately approved exact-hash +48h inspections once within their
+validity windows, node first. Node captured at 16:28:46.479 CDT, 48h 20m 18.313s
+after original t0 and 20m 18.313s late against +48h. Accepted the complete late
+closing snapshot for its exact master prerequisite, preserving t0 and every
+cadence gap. No punctual follow-up or lateness tolerance is retroactively accepted.
+
+Protected files and NTP service identity match t0 and earlier captures. Four
+active streams retain matching writable ntpd descriptors; within-capture
+continuity, mount identity, storage floors, exact 33-plugin selection and fresh
+genuine maintenance records pass. Munin invocation changed since the prior day,
+consistent with operator-confirmed overnight restarts, and remained stable/active
+within capture. Quiet event-driven protostats and the bounded descriptor-scan
+race remain explicit.
+
+Master captured at 16:30:42.149 CDT; exact reviewed node archive/capture/receipt/
+outcome runtime binding and protected continuity pass. Selected RRDs are fresh,
+nine native graph configurations decode and thresholded states are ok. Existing
+complete cycles began at 16:15:02, 16:20:01 and 16:25:01, rather than being three
+new post-node cycles. Committed contacts and successful submission status remain
+unchanged; no send or new downstream-delivery claim occurred.
+
+Endpoint growth over the 174,018.313-second actual window is 878,135 logical
+bytes and 921,600 allocated bytes with six new daily stream inodes. The second
+daily interval is 84,994.516 seconds, with 428,320 logical bytes, 454,656 allocated
+bytes and three new daily stream inodes. No endpoint removal/shrinkage is
+observed. Retained endpoint arithmetic cannot exclude unseen transient activity.
+
+Calculated the agreed 31-day scenario from the higher observed logical/allocated
+rate and largest active allowance: 29,073,408 block-rounded bytes (27.727 MiB)
+and 256 inodes. Subtracting only additional statistics allocation preserves the
+existing floors and leaves about 106.267 GiB available before other reserves.
+This is a conditional statistics-only scenario, not an accepted gross-growth
+upper bound or whole-filesystem budget. The hash-bound private closing assessment
+records input-capture hashes, interval rates, active allowances, rounding,
+projected floors and explicit limitations.
+
+OBS-02 and overall readiness remain open pending dispositions for late cadence,
+endpoint history, protostats/event-burst representativeness, explicit other
+filesystem reserves and remaining failure visibility. No automatic window reset,
+new sampling schedule, target mutation, forced collection, plugin, job,
+evaluator, notification or retry occurred. Both closing receipts are consumed;
+all executed archives and master-bound node outcome bytes remain unchanged.
+Next review the concrete closing assessment before selecting any follow-up.
+
 ## Separate +48h closing reviews sealed — October 23, 2026
 
 Prepared separate one-use node/master +48h reviews for October 24 at
