@@ -5,6 +5,7 @@ import copy
 import importlib.util
 import json
 import os
+import shutil
 from pathlib import Path
 import subprocess
 from types import SimpleNamespace
@@ -44,6 +45,16 @@ class RuntimeDiscovery(unittest.TestCase):
             path=self.installation/name;path.write_bytes(c.c.encoded(value));path.chmod(0o600)
         self.args=SimpleNamespace(installation_dir=self.installation,installation_sha256=result['sha256'],
             operation_id='fixture-runtime-discovery',output=self.native.fixture.root/'runtime')
+        # This chain uses a synthetic current-code release, not the production mirror.
+        repository = self.native.fixture.root / 'repository'
+        repository.mkdir()
+        for name in ('scripts', 'tests', 'templates', 'docs', 'HISTORY.md'):
+            (repository / name).symlink_to(ROOT / name)
+        shutil.copytree(ROOT / 'configs', repository / 'configs')
+        (repository / 'configs/accepted-source-release.json').write_bytes(files['release.json'])
+        self.mirror = patch.object(c, 'ROOT', repository)
+        self.mirror.start()
+        self.addCleanup(self.mirror.stop)
 
     def seal(self):
         with patch.object(c.subprocess,'run') as run:

@@ -48,8 +48,7 @@ def stop(children):
             process.wait()
 
 
-def supervise(config):
-    validate(config)
+def validate_startup_gate(config):
     gate=config.get('startup_gate')
     if (not isinstance(gate,dict) or set(gate) not in ({'timeout_seconds','matching_samples_per_source','units'},
                                                  {'timeout_seconds','matching_samples_per_source','units','acquisition_policy'})
@@ -58,6 +57,12 @@ def supervise(config):
             or set(gate['units'])!={'TOFF','PPS'} or len(set(gate['units'].values()))!=2
             or any(not isinstance(v,str) or not re.fullmatch(r'NTP[0-9]+',v) for v in gate['units'].values())):
         raise ValueError('reviewed bounded startup gate and observed units required')
+    return gate
+
+
+def supervise(config):
+    validate(config)
+    gate = validate_startup_gate(config)
     stopping = False
 
     def requested_stop(signum, frame):

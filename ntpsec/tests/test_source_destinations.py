@@ -38,6 +38,8 @@ class Destinations(unittest.TestCase):
         self.known.write_bytes(b'fixture.example ssh-ed25519 ' + base64.b64encode(b'fixture key') + b'\n')
         self.known.chmod(0o600)
         release = json.loads((ROOT / 'configs/accepted-source-release.json').read_bytes())
+        # This synthetic release exercises current code; do not change the accepted manifest.
+        release['helpers']['clockmaker.py'] = c.sha((ROOT / 'scripts/clockmaker.py').read_bytes())
         inventory = {}
         for line in (ROOT / 'configs/accepted-packages.tsv').read_text().splitlines():
             name, version, status = line.split('\t')

@@ -1,12 +1,22 @@
 # Installation, configuration, operations and maintenance
 
-This is the single operations recipe. The
-[architecture plan](ntp-architecture-deployment-plan-v1.0.md) owns design,
-addresses, schedules, hardware constraints and acceptance requirements.
-[HISTORY](../HISTORY.md) records accepted milestones and the next deployment
-gate. Machine-readable recipes and manifests are supporting installation
-assets, not separate plans. A documented or tested procedure is not permission
-to contact a node, deploy files, send a notification or reboot it.
+The [architecture plan](ntp-architecture-deployment-plan-v1.0.md) defines
+requirements; inventory and owning repositories supply host values.
+[Readiness](PRODUCTION-READINESS.md) records current status and the next action;
+[HISTORY](../HISTORY.md) records milestones.
+
+Use the [clockmaker source lifecycle](../README.md#fresh-source-lifecycle) for
+fresh profile preparation, source installation, configuration application and
+service activation/recovery.
+The sections below retain pilot procedures and outcomes; prerequisites naming
+accepted acquisition/restoration archives do not apply to that new source-file
+and service lifecycle. A documented
+or tested procedure does not authorize target contact, mutation, sends or reboot.
+
+For a fresh second host, follow [fleet qualification](FLEET-QUALIFICATION.md).
+It separates guarded trial, external acceptance and persistence, and documents
+partial-install/completed-service restoration. Native qualification and second-host
+selection follow accepted J2-SVNTP1 production deployment.
 
 ## GPSD acquisition before final cutover
 

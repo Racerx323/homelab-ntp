@@ -15,12 +15,17 @@ or approval is needed for those dispositions. Late cadence/gaps, unmeasured
 protostats bursts, unmeasured reserve sufficiency, composed failure coverage and
 native inode-alert rounding remain explicit limitations.
 
-**Next checkpoint:** continue the repository-only [clockmaker lifecycle refactor](../README.md),
-starting with shared preflight/execution inputs and removal of pilot prerequisites
-from fresh installation. Policy and the initial migration map are prepared; the
-fresh-host path is not yet qualified. Production follow-up remains reconciliation
-of the post-update baseline and delayed timing convergence before a watchdog
-successor. No replay or additional live action is authorized by this checkpoint.
+**Next checkpoint:** resume J2-SVNTP1 production acceptance. Per Aaron, select
+and deploy the second host only after J2-SVNTP1's production deployment is
+accepted. The reusable [fleet procedure](FLEET-QUALIFICATION.md) now separates
+trial from external acceptance/persistence, arms independent systemd recovery,
+and supports partial-install and completed-service restoration. These controls
+are qualified locally; actual timer expiry, native recovery and reboot acceptance
+remain live gates for the later trial. No second-host selection or target action
+is authorized by this repository work. OBS-02/D1–D5 remain unchanged.
+Production follow-up remains reconciliation of the post-update baseline and
+delayed timing convergence before a watchdog successor. No replay or additional
+live action is authorized by this checkpoint.
 
 The [v5 outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/base-os-update-20261027-v5/outcome.md)
 records all 22 approved upgrades completed at 12:51:57 CDT on October 27, clean

@@ -431,6 +431,175 @@ class ClockmakerTests(unittest.TestCase):
                 self.assertEqual(old.read_bytes(), b'old')
                 self.assertFalse((target / 'new').exists())
 
+    def test_fresh_profiles_in_clean_checkout_without_pilot_history(self):
+        # Real CLI preparation and config validation; no native build is claimed.
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            checkout = base / 'checkout'
+            scripts = checkout / 'ntpsec/scripts'
+            scripts.mkdir(parents=True)
+            for name in CLOCK.FLEET_HELPERS:
+                (scripts / name).write_bytes((SCRIPTS / name).read_bytes())
+            cache = base / 'artifacts'
+            cache.mkdir()
+            source = self.profile(cache)['sources']
+            recipe = base / 'recipe.json'
+            recipe_sha = write_json(recipe, {'schema': 1, 'prefix': '/usr/local',
+                'jobs': 2, 'build_roots': ['build-essential'], 'sources': source})
+            original_files = sorted(str(p.relative_to(cache)) for p in cache.rglob('*'))
+            results = []
+            for hostname in ('ntp-east.example.test', 'ntp-west.example.test'):
+                host = base / (hostname + '.json')
+                host_sha = write_json(host, {'schema': 1, 'hostname': hostname,
+                    'recipe': {'path': recipe.name, 'sha256': recipe_sha},
+                    'packages': {p: '1' for p in ('build-essential', 'python3', 'libc6',
+                                                 'binutils', 'gcc', 'g++', 'make')},
+                    'python': {'executable': '/usr/bin/python3', 'version': [3, 13],
+                               'module_directory': '/usr/local/lib/python3.13/dist-packages'}})
+                out = base / (hostname + '-prepared')
+                command = [CLOCK.sys.executable, '-I', '-B', str(scripts / 'clockmaker.py'),
+                    'prepare', '--input', str(host), '--sha256', host_sha,
+                    '--artifact-cache', str(cache), '--output', str(out)]
+                result = subprocess.run(command, cwd=checkout, capture_output=True, text=True)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                manifest = json.loads(result.stdout)
+                profile = CLOCK.bound_json(Path(manifest['profile']), manifest['sha256'])
+                self.assertEqual(profile['hostname'], hostname)
+                self.assertEqual(profile['recipe_sha256'], recipe_sha)
+                self.assertEqual(list(out.iterdir()), [out / 'profile.json'])
+                self.assertEqual((out / 'profile.json').stat().st_mode & 0o777, 0o600)
+                self.assertNotIn('j2-svntp1', (out / 'profile.json').read_text())
+                self.assertNotIn('.local-evidence', (out / 'profile.json').read_text())
+                results.append(profile)
+                ntp = base / 'ntp.conf'
+                ntp.write_text('refclock shm unit 1\n')
+                unit = base / 'timeservice.service'
+                unit.write_bytes((SCRIPTS.parent / 'templates/timeservice.service').read_bytes())
+                config = base / (hostname + '-config.json')
+                config_sha = write_json(config, {'schema': 1, 'hostname': hostname,
+                    'ntp_config': {'path': ntp.name, 'sha256': CLOCK.digest(ntp.read_bytes())},
+                    'unit': {'path': unit.name, 'sha256': CLOCK.digest(unit.read_bytes())},
+                    'timeservice': {'uart_device': '/dev/observed-gps',
+                        'gpsd': ['/usr/local/sbin/gpsd', '-N', '-s', '115200', '/dev/observed-gps'],
+                        'ntpd': ['/usr/local/sbin/ntpd', '-n', '-u', '123:123', '-c', '/etc/ntp.conf']}})
+                common = [CLOCK.sys.executable, '-I', '-B', str(scripts / 'clockmaker.py')]
+                inputs = ['--input', str(config), '--sha256', config_sha]
+                checked = subprocess.run(common + ['preflight', '--for', 'configure'] + inputs,
+                                         cwd=checkout, capture_output=True, text=True)
+                self.assertEqual(checked.returncode, 0, checked.stderr)
+                configured = base / (hostname + '-configuration')
+                staged = subprocess.run(common + ['configure', '--output', str(configured)] + inputs,
+                                        cwd=checkout, capture_output=True, text=True)
+                self.assertEqual(staged.returncode, 0, staged.stderr)
+                for name, checksum in json.loads(checked.stdout)['files'].items():
+                    self.assertEqual(CLOCK.digest((configured / name).read_bytes()), checksum)
+                ntp.write_text('changed\n')
+                for mode in (['preflight', '--for', 'configure'],
+                             ['configure', '--output', str(base / 'rejected-config')]):
+                    rejected = subprocess.run(common + mode + inputs, cwd=checkout,
+                                              capture_output=True, text=True)
+                    self.assertNotEqual(rejected.returncode, 0)
+                self.assertFalse((base / 'rejected-config').exists())
+                # Reuse must not overwrite an earlier prepared profile.
+                again = subprocess.run(command, cwd=checkout, capture_output=True, text=True)
+                self.assertNotEqual(again.returncode, 0)
+            self.assertNotEqual(results[0]['host_profile_sha256'], results[1]['host_profile_sha256'])
+            self.assertEqual(results[0]['sources'], results[1]['sources'])
+            self.assertEqual(original_files, sorted(str(p.relative_to(cache)) for p in cache.rglob('*')))
+            self.assertFalse((base / '.local-evidence').exists())
+            self.assertEqual(len(list(scripts.iterdir())), len(CLOCK.FLEET_HELPERS))
+
+    def test_preparation_rejects_incomplete_inputs_before_output(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            recipe = base / 'recipe.json'
+            profile = self.profile(base)
+            recipe_sha = write_json(recipe, {'schema': 1, 'prefix': '/usr/local', 'jobs': 2,
+                'build_roots': ['build-essential'], 'sources': profile['sources']})
+            host = {'schema': 1, 'hostname': 'ntp-west.example.test',
+                    'recipe': {'path': recipe.name, 'sha256': recipe_sha},
+                    'packages': {p: '1' for p in ('build-essential', 'python3', 'libc6',
+                                                 'binutils', 'gcc', 'g++', 'make')}, 'python': {}}
+            path = base / 'host.json'
+            for change in ('missing-package', 'recipe-drift', 'cache-drift', 'archive-traversal'):
+                candidate = copy.deepcopy(host)
+                original = (base / 'source.tar').read_bytes()
+                if change == 'missing-package': del candidate['packages']['gcc']
+                elif change == 'recipe-drift': candidate['recipe']['sha256'] = '0' * 64
+                elif change == 'cache-drift': (base / 'source.tar').write_bytes(b'corrupt')
+                else:
+                    altered = json.loads(recipe.read_text())
+                    altered['sources']['gpsd']['archive'] = '../source.tar'
+                    candidate['recipe']['sha256'] = write_json(recipe, altered)
+                checksum = write_json(path, candidate)
+                with self.subTest(change=change), self.assertRaises(ValueError):
+                    CLOCK.prepare(path, checksum, base / 'output', base)
+                self.assertFalse((base / 'output').exists())
+                (base / 'source.tar').write_bytes(original)
+
+    def test_build_preflight_and_execution_reject_same_drift(self):
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            profile = self.profile(base)
+            path = base / 'profile.json'
+            checksum = write_json(path, profile)
+            with patch.object(CLOCK.os, 'geteuid', return_value=1000), \
+                    patch.object(CLOCK, 'target_identity'), \
+                    patch.object(CLOCK, 'require_no_package_applications'), \
+                    patch.object(CLOCK.subprocess, 'check_output', return_value=b'1\tii '), \
+                    patch.object(CLOCK, 'run') as execute:
+                self.assertEqual(CLOCK.preflight(path, checksum, 'build', base)['state'],
+                                 'build_inputs_verified')
+                (base / 'source.tar').write_bytes(b'changed')
+                for function in (lambda: CLOCK.preflight(path, checksum, 'build', base),
+                                 lambda: CLOCK.build(path, checksum, base / 'output', artifact_cache=base)):
+                    with self.assertRaisesRegex(ValueError, 'archive hash'):
+                        function()
+                execute.assert_not_called()
+                self.assertFalse((base / 'output').exists())
+
+    def test_fresh_install_preflight_install_and_rollback_second_host(self):
+        # Exercise file mutation/rollback in an isolated root with explicit OS seams.
+        with tempfile.TemporaryDirectory() as directory:
+            base = Path(directory)
+            target = base / 'target'
+            target.mkdir()
+            path = base / 'release.json'
+            record = {'type': 'file', 'mode': 0o755, 'sha256': CLOCK.digest(b'new')}
+            checksum = write_json(path, {'schema': 1, 'hostname': 'ntp-west.example.test',
+                'operation': 'build', 'files': {'usr/local/bin/tool': record}})
+            stage = base / 'stage/usr/local/bin/tool'
+            stage.parent.mkdir(parents=True)
+            stage.write_bytes(b'new')
+            real_lstat = Path.lstat
+            def protected(path, *args, **kwargs):
+                fields = list(real_lstat(path, *args, **kwargs))
+                fields[4] = fields[5] = 0
+                if stat.S_ISDIR(fields[0]): fields[0] &= ~0o022
+                return os.stat_result(fields)
+            with patch.object(CLOCK.os, 'geteuid', return_value=0), \
+                    patch.object(CLOCK, 'target_identity') as identity, \
+                    patch.object(CLOCK, 'require_no_package_applications'), \
+                    patch.object(CLOCK, 'require_stopped_daemons'), \
+                    patch.object(CLOCK, 'safe_destination', side_effect=lambda p: target / Path(p).name), \
+                    patch.object(Path, 'lstat', protected), patch.object(CLOCK.os, 'fchown'):
+                state = CLOCK.preflight(path, checksum, 'install')
+                self.assertIsNone(state['previous_sha256'])
+                self.assertTrue(all(v is None for v in state['files'].values()))
+                state_path = base / 'state.json'
+                state_sha = write_json(state_path, state)
+                (target / 'tool').write_bytes(b'unexpected')
+                with self.assertRaisesRegex(ValueError, 'pre-state changed'):
+                    CLOCK.install(path, checksum, state_path, state_sha, base / 'journal')
+                self.assertFalse((base / 'journal').exists())
+                (target / 'tool').unlink()
+                CLOCK.install(path, checksum, state_path, state_sha, base / 'journal')
+                self.assertEqual((target / 'tool').read_bytes(), b'new')
+                receipt = base / 'journal/receipt.json'
+                CLOCK.rollback(receipt, CLOCK.digest(receipt.read_bytes()))
+                self.assertFalse((target / 'tool').exists())
+                self.assertTrue(all(c.args == ('ntp-west.example.test',) for c in identity.call_args_list))
+
 
 class PinupTests(unittest.TestCase):
     def test_hash_mismatch_prevents_boot_edit(self):

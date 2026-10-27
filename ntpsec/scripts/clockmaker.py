@@ -1,11 +1,13 @@
 #!/usr/bin/python3
-"""Target-local source builds and manifest-bound installs; no OS/service changes.
+"""Target-local source builds, configuration, activation and explicit recovery.
 
 Adapted workflow from NTPsec's microserver HOWTO clockmaker. Upstream bytes and
 the deliberate departures are recorded in docs/OPERATIONS.md.
 """
 import argparse
+import copy
 import hashlib
+import importlib.util
 import json
 import os
 from pathlib import Path, PurePosixPath
@@ -21,6 +23,9 @@ import tempfile
 
 PREFIX = '/usr/local'
 APPLICATIONS = ('gpsd', 'ntpsec')
+BASE_HELPERS = {'clockmaker.py', 'pinup.py', 'timeservice.py'}
+FLEET_HELPERS = BASE_HELPERS | {'clockmaker-service.py', 'gpsd-pairing.py',
+                                'pps-startup.py', 'measure-time-service.py', 'check-time-client.py'}
 
 
 def digest(data):
@@ -77,7 +82,9 @@ def require_stopped_daemons():
             raise ValueError('both daemons must be stopped by the approved cutover')
 
 
-def validate_profile(profile):
+def validate_profile(profile, native=True):
+    if not re.fullmatch(r'[a-zA-Z0-9][a-zA-Z0-9.-]{0,252}', profile['hostname']):
+        raise ValueError('explicit hostname required')
     if profile['schema'] != 1 or profile['prefix'] != PREFIX:
         raise ValueError('unsupported profile/prefix')
     if type(profile.get('jobs', 1)) is not int or not 1 <= profile.get('jobs', 1) <= 4:
@@ -90,12 +97,14 @@ def validate_profile(profile):
         python = profile.get('python', {})
         directory = python.get('module_directory', '')
         if (python.get('executable') != '/usr/bin/python3'
-                or python.get('version') != list(sys.version_info[:2])
+                or not isinstance(python.get('version'), list) or len(python['version']) != 2
+                or any(type(n) is not int or n < 0 for n in python['version'])
+                or (native and python['version'] != list(sys.version_info[:2]))
                 or not directory.startswith('/usr/local/lib/')
-                or directory not in set(sys.path) | {sysconfig.get_path('purelib'), sysconfig.get_path('platlib')}
+                or (native and directory not in set(sys.path) | {sysconfig.get_path('purelib'), sysconfig.get_path('platlib')})
                 or '..' in PurePosixPath(directory).parts):
             raise ValueError('observed Python interpreter/version and local module directory required')
-    if set(profile['helpers']) != {'clockmaker.py', 'pinup.py', 'timeservice.py'}:
+    if set(profile['helpers']) not in (BASE_HELPERS, FLEET_HELPERS):
         raise ValueError('reviewed maintained helper hashes required')
     if not profile['packages']:
         raise ValueError('reviewed build prerequisite versions required')
@@ -103,6 +112,10 @@ def validate_profile(profile):
         if not re.fullmatch(r'[a-z0-9][a-z0-9+.-]*(?::[a-z0-9]+)?', package) or not version:
             raise ValueError('invalid prerequisite package/version')
     for name, source in profile['sources'].items():
+        if (not isinstance(source['archive'], str) or not source['archive']
+                or PurePosixPath(source['archive']).parts != (source['archive'],)
+                or source['archive'] in ('.', '..')):
+            raise ValueError('source archive must be one cache filename')
         if (not re.fullmatch(r'[0-9a-f]{40}', source['commit'])
                 or not re.fullmatch(r'[0-9a-f]{64}', source['sha256'])
                 or not source['release_tag'] or not source['origin'].startswith('https://')):
@@ -226,9 +239,7 @@ def link_gpsd_test_dependency(directory, stage, module_directory):
     link.symlink_to(package.resolve(), target_is_directory=True)
 
 
-def build(profile_path, expected, output, updating=False):
-    if os.geteuid() == 0:
-        raise ValueError('build/update must be unprivileged')
+def build_inputs(profile_path, expected, artifact_cache=None):
     profile = bound_json(profile_path, expected)
     validate_profile(profile)
     target_identity(profile['hostname'])
@@ -242,17 +253,24 @@ def build(profile_path, expected, output, updating=False):
     # Verify all input bytes before creating workspace or running build code.
     sources = {}
     for name, source in profile['sources'].items():
-        sources[name] = regular_bytes(profile_path.parent / source['archive'])
+        sources[name] = regular_bytes((artifact_cache or profile_path.parent) / source['archive'])
         if digest(sources[name]) != source['sha256']:
             raise ValueError('source archive hash mismatch')
     helpers = {}
     for name, expected_hash in profile['helpers'].items():
         helper_path = Path(__file__).parent / name
-        if name == 'timeservice.py' and not helper_path.exists():
+        if name not in ('clockmaker.py', 'pinup.py', 'clockmaker-service.py') and not helper_path.exists():
             helper_path = Path('/usr/local/libexec') / name
         helpers[name] = regular_bytes(helper_path)
         if digest(helpers[name]) != expected_hash:
             raise ValueError('maintained helper hash mismatch: ' + name)
+    return profile, sources, helpers
+
+
+def build(profile_path, expected, output, updating=False, artifact_cache=None):
+    if os.geteuid() == 0:
+        raise ValueError('build/update must be unprivileged')
+    profile, sources, helpers = build_inputs(profile_path, expected, artifact_cache)
     output.mkdir(mode=0o700)  # Never reuse or clobber a previous candidate.
     stage = output / 'stage'
     stage.mkdir(mode=0o700)
@@ -293,7 +311,7 @@ def build(profile_path, expected, output, updating=False):
                 env['DESTDIR'] = str(stage.resolve())
             run(command, directory, env, log)
     for name, data in helpers.items():
-        destination = stage / ('usr/local/libexec' if name == 'timeservice.py' else 'usr/local/bin') / name
+        destination = stage / ('usr/local/bin' if name in ('clockmaker.py', 'pinup.py', 'clockmaker-service.py') else 'usr/local/libexec') / name
         destination.parent.mkdir(parents=True, exist_ok=True)
         destination.write_bytes(data)
         destination.chmod(0o755)
@@ -373,22 +391,7 @@ def inspect_install(path, expected, previous_path=None, previous_hash=None):
             'files': {p: snapshot(safe_destination(p)) for p in sorted(set(manifest['files']) | set(old_files))}}
 
 
-def install(path, expected, state_path, state_hash, journal,
-            previous_path=None, previous_hash=None):
-    """Copy verified native staged output; never execute build code as root.
-
-    Journal and backups survive failure. A later rollback must be explicitly
-    scoped; this entry point never restarts daemons, changes config or reboots.
-    """
-    if os.geteuid() != 0:
-        raise ValueError('installation requires root')
-    manifest = read_release(path, expected)
-    target_identity(manifest['hostname'])
-    require_no_package_applications()
-    require_stopped_daemons()
-    state = bound_json(state_path, state_hash)
-    if state != inspect_install(path, expected, previous_path, previous_hash):
-        raise ValueError('installation pre-state changed')
+def installation_inputs(path, manifest, state):
     payload = {}
     for relative, record in manifest['files'].items():
         source = path.parent / 'stage' / relative
@@ -412,6 +415,42 @@ def install(path, expected, state_path, state_hash, journal,
                 info = parent.lstat()
                 if not stat.S_ISDIR(info.st_mode) or info.st_uid != 0 or info.st_mode & 0o022:
                     raise ValueError('unsafe installation parent: ' + str(parent))
+    return payload
+
+
+def write_record(path, value):
+    """Publish a complete transaction record, including across abrupt interruption."""
+    fd, name = tempfile.mkstemp(prefix='.clockmaker-record-', dir=path.parent)
+    try:
+        with os.fdopen(fd, 'w') as stream:
+            os.fchmod(stream.fileno(), 0o600)
+            json.dump(value, stream, indent=2); stream.write('\n'); stream.flush()
+            os.fsync(stream.fileno())
+        os.replace(name, path)
+        fd = os.open(path.parent, os.O_RDONLY | os.O_DIRECTORY)
+        try: os.fsync(fd)
+        finally: os.close(fd)
+    finally:
+        Path(name).unlink(missing_ok=True)
+
+
+def install(path, expected, state_path, state_hash, journal,
+            previous_path=None, previous_hash=None):
+    """Copy verified native staged output; never execute build code as root.
+
+    Journal and backups survive failure. A later rollback must be explicitly
+    scoped; this entry point never restarts daemons, changes config or reboots.
+    """
+    if os.geteuid() != 0:
+        raise ValueError('installation requires root')
+    manifest = read_release(path, expected)
+    target_identity(manifest['hostname'])
+    require_no_package_applications()
+    require_stopped_daemons()
+    state = bound_json(state_path, state_hash)
+    if state != inspect_install(path, expected, previous_path, previous_hash):
+        raise ValueError('installation pre-state changed')
+    payload = installation_inputs(path, manifest, state)
     parent_info = journal.parent.lstat()
     if not stat.S_ISDIR(parent_info.st_mode) or parent_info.st_uid != 0 or parent_info.st_mode & 0o022:
         raise ValueError('unsafe journal parent')
@@ -419,20 +458,24 @@ def install(path, expected, state_path, state_hash, journal,
     backups = journal / 'before'
     backups.mkdir(mode=0o700)
     receipt = {'release_sha256': expected, 'before': state, 'installed': [],
-               'removed': [], 'state': 'started'}
+               'removed': [], 'state': 'started', 'backups_complete': False,
+               'intended': {name: dict(record, uid=0, gid=0) for name, record in manifest['files'].items()}}
     receipt_path = journal / 'receipt.json'
-    receipt_path.write_text(json.dumps(receipt, indent=2) + '\n')
+    write_record(receipt_path, receipt)
     for relative in state['files']:
         destination = safe_destination(relative)
         before = state['files'][relative]
         if before and before['type'] == 'file':
             backup = backups / relative
             backup.parent.mkdir(parents=True, exist_ok=True, mode=0o700)
-            backup.write_bytes(regular_bytes(destination))
+            with backup.open('xb') as stream:
+                stream.write(regular_bytes(destination)); stream.flush(); os.fsync(stream.fileno())
             if digest(backup.read_bytes()) != before['sha256']:
                 raise ValueError('rollback backup mismatch')
     if state != inspect_install(path, expected, previous_path, previous_hash):
         raise ValueError('pre-state changed during backup')
+    receipt['backups_complete'] = True
+    write_record(receipt_path, receipt)
     for relative, record in manifest['files'].items():
         destination = safe_destination(relative)
         destination.parent.mkdir(parents=True, exist_ok=True, mode=0o755)
@@ -453,13 +496,13 @@ def install(path, expected, state_path, state_hash, journal,
                 os.lchown(temporary, 0, 0)
             os.replace(temporary, destination)
             receipt['installed'].append(relative)
-            receipt_path.write_text(json.dumps(receipt, indent=2) + '\n')
+            write_record(receipt_path, receipt)
         finally:
             temporary.unlink(missing_ok=True)
     for relative in state['obsolete']:
         safe_destination(relative).unlink()
         receipt['removed'].append(relative)
-        receipt_path.write_text(json.dumps(receipt, indent=2) + '\n')
+        write_record(receipt_path, receipt)
     receipt['state'] = 'copied_not_activated'
     receipt['after'] = {'hostname': manifest['hostname'], 'files': {
         relative: snapshot(safe_destination(relative)) for relative in manifest['files']}}
@@ -468,7 +511,7 @@ def install(path, expected, state_path, state_hash, journal,
         if current is None or current['uid'] != 0 or current['gid'] != 0 or any(
                 current.get(k) != v for k, v in record.items()):
             raise ValueError('installed artifact verification failed')
-    receipt_path.write_text(json.dumps(receipt, indent=2) + '\n')
+    write_record(receipt_path, receipt)
     return {'journal': str(journal), 'state': receipt['state']}
 
 
@@ -480,16 +523,18 @@ def rollback(receipt_path, expected):
         if stat.S_ISLNK(info.st_mode) or info.st_uid != 0 or info.st_mode & 0o022:
             raise ValueError('unsafe rollback receipt/parent')
     receipt = bound_json(receipt_path, expected)
-    if receipt['state'] != 'copied_not_activated':
-        raise ValueError('partial install requires state inspection and a new recovery definition')
+    partial = receipt['state'] == 'started'
+    if receipt['state'] not in ('started', 'copied_not_activated') or (partial and not receipt.get('backups_complete')):
+        raise ValueError('complete pre-mutation backups required for partial recovery')
     target_identity(receipt['before']['hostname'])
     require_stopped_daemons()
     before = receipt['before']['files']
     payload = {}
     for relative, previous in before.items():
         destination = safe_destination(relative)
-        current = receipt['after']['files'].get(relative)
-        if snapshot(destination) != current:
+        current = receipt['intended'].get(relative) if partial else receipt['after']['files'].get(relative)
+        observed = snapshot(destination)
+        if observed != current and observed != previous:
             raise ValueError('application changed after install; rollback held')
         if previous and previous['type'] == 'file':
             backup = receipt_path.parent / 'before' / relative
@@ -498,10 +543,15 @@ def rollback(receipt_path, expected):
                 raise ValueError('rollback backup hash mismatch')
     # Record the new operation before its first file mutation; never rerun it.
     status = receipt_path.parent / 'rollback.json'
-    with status.open('x') as stream:
-        json.dump({'receipt_sha256': expected, 'state': 'started'}, stream)
+    if status.exists():
+        prior = json.loads(regular_bytes(status))
+        if prior != {'receipt_sha256': expected, 'state': 'started'}:
+            raise ValueError('completed/different rollback must not be replayed')
+    else:
+        write_record(status, {'receipt_sha256': expected, 'state': 'started'})
     for relative, previous in before.items():
         destination = safe_destination(relative)
+        if snapshot(destination) == previous: continue
         if previous is None:
             destination.unlink(missing_ok=True)
             continue
@@ -524,12 +574,12 @@ def rollback(receipt_path, expected):
             Path(name).unlink(missing_ok=True)
     if any(snapshot(safe_destination(p)) != old for p, old in before.items()):
         raise ValueError('rollback verification failed; preserve original journal')
-    status.write_text(json.dumps({'receipt_sha256': expected, 'state': 'restored_not_activated'}) + '\n')
+    write_record(status, {'receipt_sha256': expected, 'state': 'restored_not_activated'})
     return {'state': 'restored_not_activated', 'receipt': str(status)}
 
 
-def configure(profile_path, expected, output):
-    """Stage reviewed per-host configuration; never replace live configuration."""
+def configuration_inputs(profile_path, expected):
+    """Read and validate per-host configuration without writing output."""
     profile = bound_json(profile_path, expected)
     if profile['schema'] != 1:
         raise ValueError('unsupported configuration profile')
@@ -560,13 +610,24 @@ def configure(profile_path, expected, output):
         if digest(data) != source['sha256']:
             raise ValueError('configuration input hash mismatch')
         content[name] = data
+    if 'leapfile' in profile:
+        source = profile['leapfile']
+        data = regular_bytes(profile_path.parent / source['path'])
+        if digest(data) != source['sha256']:
+            raise ValueError('leapfile input hash mismatch')
+        content['leap-seconds.list'] = data
     content['ntpsec-timeservice.json'] = (json.dumps(profile['timeservice'], indent=2) + '\n').encode()
+    return profile, content
+
+
+def configure(profile_path, expected, output):
+    profile, content = configuration_inputs(profile_path, expected)
     output.mkdir(mode=0o700)
     files = {}
     for name, data in content.items():
         path = output / name
         path.write_bytes(data)
-        mode = 0o644 if name.endswith('.service') else 0o640
+        mode = 0o644 if name.endswith('.service') or name == 'leap-seconds.list' else 0o640
         path.chmod(mode)
         files[name] = {'sha256': digest(data), 'uid': 0, 'gid': 0, 'mode': mode}
     manifest = {'hostname': profile['hostname'], 'profile_sha256': expected,
@@ -576,9 +637,74 @@ def configure(profile_path, expected, output):
     return {'manifest': str(path), 'sha256': digest(path.read_bytes())}
 
 
+def prepare(profile_path, expected, output, artifact_cache):
+    """Compose a source profile from a pinned recipe and current host inputs."""
+    host = bound_json(profile_path, expected)
+    if set(host) != {'schema', 'hostname', 'recipe', 'packages', 'python'} or host['schema'] != 1:
+        raise ValueError('closed fresh-host profile required')
+    recipe = bound_json(profile_path.parent / host['recipe']['path'], host['recipe']['sha256'])
+    if recipe['schema'] != 1:
+        raise ValueError('unsupported source recipe')
+    required = set(recipe['build_roots']) | {'python3', 'libc6', 'binutils', 'gcc', 'g++', 'make'}
+    packages = {}
+    for name in sorted(required):
+        matches = [p for p in host['packages'] if p.split(':')[0] == name]
+        if len(matches) != 1:
+            raise ValueError('missing or ambiguous build prerequisite: ' + name)
+        packages[matches[0]] = host['packages'][matches[0]]
+    profile = {'schema': 1, 'hostname': host['hostname'], 'prefix': recipe['prefix'],
+               'jobs': recipe['jobs'], 'sources': copy.deepcopy(recipe['sources']),
+               'packages': packages, 'python': host['python'],
+               'helpers': {name: digest(regular_bytes(Path(__file__).parent / name))
+                           for name in sorted(FLEET_HELPERS)},
+               'recipe_sha256': host['recipe']['sha256'], 'host_profile_sha256': expected}
+    validate_profile(profile, native=False)
+    # Cache stays external: verify bytes, do not replicate archives into every run.
+    for source in profile['sources'].values():
+        if digest(regular_bytes(artifact_cache / source['archive'])) != source['sha256']:
+            raise ValueError('source archive hash mismatch')
+    output.mkdir(mode=0o700)
+    path = output / 'profile.json'
+    path.write_text(json.dumps(profile, sort_keys=True, indent=2) + '\n')
+    path.chmod(0o600)
+    return {'profile': str(path), 'sha256': digest(path.read_bytes())}
+
+
+def preflight(profile_path, expected, phase, artifact_cache=None,
+              previous_path=None, previous_hash=None):
+    """Run execution's input checks; creates no output or approval receipt."""
+    if phase in ('apply-configuration', 'activate'):
+        return service_module().preflight(profile_path, expected, phase)
+    if phase == 'build':
+        profile, _, _ = build_inputs(profile_path, expected, artifact_cache)
+        return {'hostname': profile['hostname'], 'profile_sha256': expected,
+                'state': 'build_inputs_verified'}
+    if phase == 'configure':
+        profile, content = configuration_inputs(profile_path, expected)
+        return {'hostname': profile['hostname'], 'profile_sha256': expected,
+                'files': {name: digest(data) for name, data in content.items()},
+                'state': 'configuration_inputs_verified'}
+    if phase != 'install':
+        raise ValueError('unsupported preflight phase')
+    manifest = read_release(profile_path, expected)
+    require_no_package_applications()
+    require_stopped_daemons()
+    state = inspect_install(profile_path, expected, previous_path, previous_hash)
+    installation_inputs(profile_path, manifest, state)
+    return state
+
+
+def service_module():
+    path = Path(__file__).with_name('clockmaker-service.py')
+    spec = importlib.util.spec_from_file_location('clockmaker_service', path)
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
 def parse_arguments(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
-    modes = ('build', 'update', 'configure', 'inspect', 'install', 'rollback')
+    modes = ('prepare', 'preflight', 'build', 'update', 'configure', 'inspect', 'install', 'rollback', 'apply-configuration', 'activate', 'recover-service', 'restore-service', 'expire-service', 'check-client', 'accept-service')
     aliases = {prefix + alias: mode for mode in modes for prefix in ('-', '--')
                for alias in ((mode, 'config') if mode == 'configure' else (mode,))}
     argv = list(sys.argv[1:] if argv is None else argv)
@@ -591,33 +717,64 @@ def parse_arguments(argv=None):
     parser.add_argument('--input', type=Path, required=True, help='profile or release.json')
     parser.add_argument('--sha256', required=True)
     parser.add_argument('--output', type=Path)
+    parser.add_argument('--artifact-cache', type=Path)
+    parser.add_argument('--for', dest='phase', choices=('build', 'configure', 'install', 'apply-configuration', 'activate'))
     parser.add_argument('--state', type=Path)
     parser.add_argument('--state-sha256')
     parser.add_argument('--journal', type=Path)
+    parser.add_argument('--client-result', type=Path)
+    parser.add_argument('--client-result-sha256')
     parser.add_argument('--previous', type=Path, help='accepted previous release.json for an update')
     parser.add_argument('--previous-sha256')
     args = parser.parse_args(argv)
+    if args.mode == 'accept-service':
+        if args.client_result is None or args.client_result_sha256 is None:
+            parser.error('accept-service requires --client-result and --client-result-sha256')
+    elif args.client_result is not None or args.client_result_sha256 is not None:
+        parser.error('client result applies only to accept-service')
     if (args.previous is None) != (args.previous_sha256 is None):
         parser.error('--previous and --previous-sha256 must be supplied together')
-    if args.mode in ('build', 'update', 'configure') and args.output is None:
-        parser.error('--output required for build/update/configure')
-    if args.mode == 'install' and None in (args.state, args.state_sha256, args.journal):
-        parser.error('--state, --state-sha256 and --journal required for install')
-    if args.mode not in ('build', 'update', 'configure') and args.output is not None:
-        parser.error('--output applies only to build/update/configure')
-    if args.mode != 'install' and any(value is not None for value in (args.state, args.state_sha256, args.journal)):
-        parser.error('--state/--state-sha256/--journal apply only to install')
-    if args.mode not in ('inspect', 'install') and args.previous is not None:
-        parser.error('--previous/--previous-sha256 apply only to inspect/install')
+    if args.mode in ('prepare', 'build', 'update', 'configure') and args.output is None:
+        parser.error('--output required for prepare/build/update/configure')
+    if args.mode in ('install', 'apply-configuration', 'activate') and None in (args.state, args.state_sha256, args.journal):
+        parser.error('--state, --state-sha256 and --journal required for install/apply-configuration/activate')
+    if args.mode not in ('prepare', 'build', 'update', 'configure') and args.output is not None:
+        parser.error('--output applies only to prepare/build/update/configure')
+    if args.mode not in ('install', 'apply-configuration', 'activate') and any(value is not None for value in (args.state, args.state_sha256, args.journal)):
+        parser.error('--state/--state-sha256/--journal apply only to install/apply-configuration/activate')
+    if args.mode not in ('inspect', 'install') and not (args.mode == 'preflight' and args.phase == 'install') and args.previous is not None:
+        parser.error('--previous/--previous-sha256 apply only to inspect/install or install preflight')
+    if (args.mode == 'preflight') != (args.phase is not None):
+        parser.error('--for is required only for preflight')
+    if args.mode == 'prepare' and args.artifact_cache is None:
+        parser.error('--artifact-cache required for prepare')
+    if args.artifact_cache is not None and not (args.mode in ('prepare', 'build', 'update') or
+            (args.mode == 'preflight' and args.phase == 'build')):
+        parser.error('--artifact-cache applies only to source preparation/build')
     return parser, args
 
 
 def main(argv=None):
     parser, args = parse_arguments(argv)
     try:
-        if args.mode in ('build', 'update', 'configure'):
+        if args.mode in ('apply-configuration', 'activate'):
+            result = service_module().execute(args.input, args.sha256, args.mode, args.state, args.state_sha256, args.journal)
+        elif args.mode in ('recover-service', 'restore-service', 'expire-service'):
+            result = service_module().recover(args.input, args.sha256,
+                completed=args.mode == 'restore-service', automatic=args.mode == 'expire-service')
+        elif args.mode == 'check-client':
+            result = service_module().check_client(args.input, args.sha256)
+        elif args.mode == 'accept-service':
+            result = service_module().accept(args.input, args.sha256, args.client_result, args.client_result_sha256)
+        elif args.mode == 'prepare':
+            result = prepare(args.input, args.sha256, args.output, args.artifact_cache)
+        elif args.mode == 'preflight':
+            result = preflight(args.input, args.sha256, args.phase, args.artifact_cache,
+                               args.previous, args.previous_sha256)
+        elif args.mode in ('build', 'update', 'configure'):
             result = (configure(args.input, args.sha256, args.output) if args.mode == 'configure'
-                      else build(args.input, args.sha256, args.output, args.mode == 'update'))
+                      else build(args.input, args.sha256, args.output, args.mode == 'update',
+                                 **({'artifact_cache': args.artifact_cache} if args.artifact_cache else {})))
         elif args.mode == 'inspect':
             result = inspect_install(args.input, args.sha256, args.previous, args.previous_sha256)
         elif args.mode == 'rollback':

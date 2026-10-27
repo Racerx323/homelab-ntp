@@ -1,5 +1,61 @@
 # NTPsec deployment history
 
+## Guarded trial, external acceptance and reusable recovery — October 27, 2026
+
+Fresh activation now checks mapped refclock/NTS health, credentials and journal
+errors, then waits for a bound independent-client result before enabling startup.
+A protected current-run systemd timer recovers abandoned trials; committed state
+precedes timer cancellation. Added explicit completed-service restoration and
+partial-install rollback using atomic records and pre-mutation backups. Runtime
+data and completion records remain preserved. Native timer/recovery qualification
+is not claimed by local tests. Second-host selection/deployment is deferred until
+J2-SVNTP1 production deployment is accepted. No target contact, notification,
+commit/push or evidence deletion; OBS-02/D1–D5 remain unchanged.
+Validation: 32 source lifecycle and 25 service/recovery tests passed, along with
+full repository pre-commit, 16 runbook CLI templates, document links, whitespace
+and working-tree secret checks. Local systemd option availability was checked
+without starting a unit; native timer/recovery behavior remains unproved.
+
+## Second-host qualification procedure — October 27, 2026
+
+Prepared the [fleet qualification runbook](docs/FLEET-QUALIFICATION.md) from the
+current clockmaker interface and governing plan. It covers host/artifact inputs,
+unprivileged builds, root installation, activation, recovery and conditional
+reboot with no historical evidence prerequisite. It explicitly retains native
+NTS/client/journal checks and the independent recovery/persistence gap. No target
+selected or contacted; no live execution or historical cleanup. OBS-02/D1–D5
+and production outcomes are unchanged.
+Validation: all 13 runbook command templates passed the current CLI parser;
+Markdown, runbook file links, whitespace and working-tree secret checks passed.
+
+## Fresh configuration and service lifecycle — October 27, 2026
+
+Clockmaker now applies fresh configuration and activates the supervised GPSD/NTP
+service using shared preflight inputs, explicit health bounds and current-run
+backups. Fresh builds carry runtime/health helpers. Failure and catchable
+interruption restore prior configuration/bootstrap state; incomplete same-boot
+recovery is explicit. Runtime data and partial results are retained. Local tests
+exercise application, activation, failure and recovery with native-service seams;
+no target was contacted. Native second-host/reboot acceptance remains open.
+OBS-02/D1–D5 and production outcomes are unchanged.
+Validation: 32 existing lifecycle tests plus 14 service tests, full repository
+pre-commit, working-tree secret scan and whitespace checks passed. New document
+links resolve; pre-existing unavailable historical evidence links are unchanged.
+
+## Clockmaker fresh source lifecycle inputs — October 27, 2026
+
+Added offline preparation from explicit host inputs and a pinned recipe, with
+caller-selected artifact cache/output. Build, configuration and install preflight
+share execution validators. Local two-host profile/configuration checks and
+isolated second-host file installation/rollback need no pilot receipts or private
+evidence tree. Legacy callers remain supported; source-native second-host builds,
+configuration application and activation/boot acceptance remain unqualified.
+Validation: 32 focused lifecycle tests, full repository pre-commit, working-tree
+secret scan and new-document link checks passed. Legacy tests bind synthetic
+current-code releases in private fixtures; the accepted production mirror is
+unchanged. No target access, fleet package installation or historical evidence
+changes. OBS-02/D1–D5 and all production limitations remain unchanged.
+
 ## Fleet build policy and migration map — October 27, 2026
 
 Revised repository instructions around clockmaker, explicit fleet ownership,

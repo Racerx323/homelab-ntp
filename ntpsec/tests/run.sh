@@ -75,4 +75,5 @@ python3 -I -B "$test_dir/test_prepare_source_build.py"
 if command -v systemd-analyze >/dev/null 2>&1; then
     systemd-analyze verify "$test_dir/../templates/timeservice.service"
 fi
-exec python3 -I -B "$test_dir/test_clockmaker.py"
+python3 -I -B "$test_dir/test_clockmaker.py"
+exec python3 -I -B "$test_dir/test_clockmaker_service.py"
