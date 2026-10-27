@@ -1,6 +1,6 @@
 # j2-svntp1 production readiness
 
-Reconciled October 24, 2026, after the closing node/master growth observations.
+Reconciled October 27, 2026, from retained outcomes and Phase 3 requirements.
 This checklist summarizes approved captures and repository documents;
 updating it performs no additional live inspection. The [plan](ntp-architecture-deployment-plan-v1.0.md)
 defines requirements; [HISTORY](../HISTORY.md) records operation outcomes.
@@ -15,9 +15,110 @@ or approval is needed for those dispositions. Late cadence/gaps, unmeasured
 protostats bursts, unmeasured reserve sufficiency, composed failure coverage and
 native inode-alert rounding remain explicit limitations.
 
-**Next checkpoint:** prepare a repository-only reconciliation of remaining
-Phase 3 prerequisite gates, monitoring coverage/persistence and final-window
-contract decisions. OBS-04's controlled cron-originated route is accepted after
+**Next checkpoint:** continue the repository-only [clockmaker lifecycle refactor](../README.md),
+starting with shared preflight/execution inputs and removal of pilot prerequisites
+from fresh installation. Policy and the initial migration map are prepared; the
+fresh-host path is not yet qualified. Production follow-up remains reconciliation
+of the post-update baseline and delayed timing convergence before a watchdog
+successor. No replay or additional live action is authorized by this checkpoint.
+
+The [v5 outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/base-os-update-20261027-v5/outcome.md)
+records all 22 approved upgrades completed at 12:51:57 CDT on October 27, clean
+dpkg/exact inventory, unchanged protected files and verified generated initramfs.
+The ALSA override passed native verification; its old errors are absent after the
+single reboot. The new boot is `7b4ab07a-e87f-4237-8755-d84d9f6471a9` on the unchanged
+6.18.50+rpt-rpi-v8 kernel. Package maintenance and ALSA correction are accepted
+within this scope; broader recovery/Phase 3 acceptance remains limited below.
+
+Both fixed-address clients returned PPS/stratum-1/leap-0 within about 99 seconds.
+At +5 minutes, selected offset/jitter failed the configured 5 ms/1 ms limits
+(15.1021 ms / 18.0712 ms). At +30 minutes, 13:25:56 CDT, both passed
+(-2.0126 ms / 0.0630 ms), with services and watchdog healthy in the captures.
+The five-minute precision objective and continuous timing stability are not
+established. Aaron confirmed transport CRITICAL/OK, both-field timing CRITICAL
+and later jitter-only CRITICAL, followed by timing OK reported at 13:20 CDT.
+The timer listing shows a 13:25:27 ntpleapfetch trigger, but its service result
+was not captured. Keep OBS-06 open with that partial evidence.
+
+**Maintenance controls:** owned inherited EEPROM inhibition and all four APT masks
+were removed after initial post-boot checks. Original APT timers are active/enabled;
+normal EEPROM policy resumes for later boots. No firmware flash was performed.
+All consumed stages/backups and complete evidence remain. The controller receipt
+records a procedural deviation: approved read-only preflight preceded receipt
+creation after an incorrect local manifest-count check; complete verification
+passed before mutation. Earlier unexecuted and controls-held wording is historical.
+No stage may be replayed. OBS-02/D1–D5 and bounded OBS-04 remain unchanged.
+
+The [v3 outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/base-os-update-20261027-v3/outcome.md)
+records a consumed attempt held before containment: `/usr/sbin/ss` was absent,
+so baseline health exited 127. No package update, controls, ALSA publication,
+reboot or retry occurred. Its stage, frozen archive and partial logs remain intact;
+v4 verifies it as retained data and creates a different stage. Do not replay v3.
+V3 verified v2 cleanup, original timers, unchanged boot/kernel, protected inputs,
+backup and the exact native 22-upgrade simulation. Its dual-stack client probes
+passed; its full baseline health was incomplete. Earlier unexecuted wording is
+historical. The [native runbook](MAINTENANCE-NATIVE-RUNBOOK.md) retains the gates.
+
+The approved [v2 attempt](/home/aaron/code/.local-evidence/homelab-ntp/current/base-os-update-20261027-v2/outcome.md)
+verified the independent 13-file backup, passed both preflights, native package
+simulation and ALSA parsing, then stopped before package intent. The query returned
+`Conditions=[unprintable]`; the guard could not establish the EEPROM condition.
+This is not proof that the inhibit was absent. Cleanup reported owned controls
+removed, with successful reload and APT timer starts; final unit/path/health state
+was not independently captured. No packages installed, ALSA override, reboot or
+retry occurred. The root-owned stage/backups remain; the consumed runner rejects
+that existing root and must not be replayed. All 130 exported evidence files were
+hash-verified. Earlier v2 sealed/unexecuted wording is historical.
+
+The approved [v1 update attempt](/home/aaron/code/.local-evidence/homelab-ntp/current/base-os-update-20261027-v1/outcome.md)
+stopped during its read-only preflight on October 27. It incorrectly required
+standalone gpsd.service to be active; the sealed baseline already records it as
+not-found/inactive. This is a runner qualification defect, not proof of GPSD failure.
+The receipt is consumed. No package-stage connection, backup export, package change,
+EEPROM/APT control installation, ALSA override, reboot or retry occurred. Partial
+collector data was not exported; the traceback alone does not establish current
+complete health. Earlier sealed/unexecuted wording is historical.
+
+The [earlier procedure](MAINTENANCE-UPDATE-EXECUTION.md) remains the record of the
+consumed pre-reboot scope. The consolidated plan replaces that mandatory split;
+the [recovery contract](EEPROM-MAINTENANCE-CONTAINMENT.md) retains the firmware and
+backup boundaries. Generated artifacts and native logs must pass reviewed criteria
+before the proposed same-scope reboot.
+Old-card address 10.1.0.51 and hostname j1-svntp1 remain exclusive-replacement facts.
+OBS-02/D1–D5 and bounded OBS-04 unchanged; base OS/ALSA maintenance accepted
+within v5 scope, delayed precision recovery retained, panic/OBS-09 held.
+Any future executable panic stage must retain one panic with unchanged PID 1 ownership/policy,
+30-second observed-reset criterion, 120-second escalation, conservative 300-second
+usable-NTP recovery and 30-minute stability. A fresh operator record is required at
+execution. Durable receipts prevent replay; independent KVM evidence and explicit
+operator acceptance remain required even if automated health checks complete.
+Node-only manual recovery is bounded; no notification or broad discovery is added.
+
+The [debugger snapshot](/home/aaron/code/.local-evidence/homelab-server-configs/current/watchdog-debugger-inputs-20261026-v1/outcome.md)
+passed October 26 at 13:35:55 CDT. Configured debugger transport is resolved for
+that snapshot; fresh preflight remains required. Existing volatile journals and
+empty pstore cannot be assumed to preserve the reset. Do not enable persistence
+or replay consumed inspections. The [pilot contract](../../../homelab-server-configs/watchdog/docs/PILOT-RECOVERY-CONTRACT.md)
+links the new design. Earlier executable panic attempts are consumed; no panic review is currently awaiting execution.
+
+The October 26 [accepted ownership capture](/home/aaron/code/.local-evidence/homelab-ntp/current/watchdog-ownership-20261026-v1/outcome.md)
+found PID 1/systemd holding watchdog0 with matching 1min/2min effective/vendor
+settings. Preserve that owner. The historical daemon install, load thresholds,
+15-second timeout and sendmail symlink were reference inputs only.
+
+Trigger implementation and local guard qualification are complete. Native
+attribution, restoration and five-minute recovery remain unproved live gates.
+No trigger, reset, target contact or final observation is approved by preparation.
+The prior inspection receipt remains consumed. The j2-specific operator confirmation
+is now recorded separately from historical svmf console access.
+
+The [Phase 3 reconciliation](PHASE3-PREREQUISITE-RECONCILIATION.md) records
+requirements and remaining decisions. Final duration, cadence, tolerances,
+gap/reset rules and handoff await explicit agreement. OBS-09 has not started;
+no blanket prerequisite deferral is approved. The approved inspection is consumed;
+further target contact requires its own scoped review and approval.
+
+OBS-04's controlled cron-originated route is accepted after
 the approved one-use test and Aaron's matching AppriseAPP receipt at 18:43 CDT
 on October 24. The [reviewed outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/obs04-cron-failure-delivery-test-20261024-v2/outcome.md)
 binds the execution archive, cron ancestry/journal, expected failure status,
@@ -872,14 +973,19 @@ maintenance during final observation; do not infer a result from elapsed time.
 | RTC | Commissioning v3 and boot v2 prove RV3028 identity, UTC policy, synchronized set/readback, fake-clock absence and kernel boot initialization | Battery-backed power-loss retention remains explicitly untested; the plan distinguishes it from warm reboot acceptance |
 | Leap maintenance | Timer-only correction executed and passed; prior successful scheduled run preserved and four-week next trigger checked across reload | Actual four-week recurrence and physical-host post-reboot initial trigger remain unobserved; see OBS-05 and OBS-06 |
 | Webmin | v2 local HTTP/configuration checks and operator ama login over IPv4/IPv6 passed; temp-storage inspection found no current space shortage | Assess storage needs before large uploads/backups; controller exposure remains unverified |
-| Mail and needrestart | Transport/manual deliveries and daily cron activation accepted; October 22 genuine reporting record and fresh master evidence/age consumption accepted | Cron-generated failure-mail delivery remains open; recurring reporting must remain observed |
-| Statistics retention | Four-stream rule/private trigger, genuine rule-specific success and master evidence/age consumption accepted; 48-hour growth contract selected October 22 | Execute separately reviewed t0/+6h/+24h/+48h snapshots, account for gross growth and reserve capacity, and map storage/failure alert evidence. Global logrotate-unit verdict remains unaccepted; plotting is Phase 3B |
+| Mail and needrestart | Genuine reporting/master consumption accepted October 22; controlled cron-originated failure route and downstream receipt accepted October 24 | Preserve recurring reporting and bounded OBS-04 acceptance; no replay or claim of all scanner failures/provider delivery |
+| Statistics retention | Genuine rule-specific success/master consumption accepted; completed t0/+6h/+24h/+48h study accepted October 24 as qualified OBS-02 planning baseline and conditional budget under D1–D5 | Preserve accepted limitations, ordinary retention and collected health; no replacement sampling or actual storage-fault test required by this reconciliation. Global logrotate-unit verdict remains unaccepted; plotting is Phase 3B |
 | Munin | Expanded profile/graphs, genuine producers, corrected timing readers, canonical source attribution, committed contacts, exact delivered tests and bounded native mail recovery accepted October 22 | Preserve accepted collection; complete the [coverage/persistence matrix](PRODUCTION-OBSERVATION-CONTRACT.md#coverage-and-persistence-reconciliation) and agree the final observation contract. No consumed stage may be replayed |
 | Hardware watchdog | Userspace watchdog package absent from the post-reboot inventory. Deployment recovery timers are different mechanisms | Inspect device/driver ownership and configuration; approve installation/enablement and controlled failure/recovery test separately |
 | Network persistence | Earlier network acceptance established fixed addresses, RA, DNS and egress. Latest boot passed both fixed SSH endpoints and client families | Reconcile current-boot RA global address/default route, resolver views and DHCP/RA DNS suppression; endpoint reachability alone does not prove these properties |
 | PoE, fan and thermal health | Earlier operator observations establish normal fan/power and original PoE HAT; boot success does not establish sustained health | Current power budget/class, fan/control, temperature, undervoltage/throttling and sustained-operation evidence; no stress or switch changes implicit |
 | OS/media/access | Trixie identity and accepted boot/kernel continuity are recorded; original recovery card retained | Close the complete per-node baseline, current update status and final observed inventory. Wi-Fi disablement remains unproven in HISTORY, not silently accepted |
 | Final observation and inventory | Short timing/monitoring observations accepted; OBS-02 qualified growth baseline and conditional budget accepted with D1–D5 limitations. Final Phase 3 duration/cadence/tolerances remain pending | Resolve baseline gate dispositions and the [final-window decisions](PRODUCTION-OBSERVATION-CONTRACT.md#final-phase-3-window-inputs-still-required), then begin after relevant changes and complete observed inventory |
+
+The [October 26 reconciliation](PHASE3-PREREQUISITE-RECONCILIATION.md) distinguishes
+mandatory pre-window work, explicit pending decisions and later-phase obligations.
+Watchdog acceptance remains mandatory before extended observation; OBS-05
+deferral needs an explicit decision. RTC battery retention remains Phase 8.
 
 The October 20 Munin-absence inspection is historical and superseded by the
 accepted deployment/observations above. Watchdog absence comes from the retained post-reboot RTC inventory,
@@ -904,7 +1010,7 @@ remain pending wherever not established below.
 | OBS-03 | Initial genuine reporter completion/cron correlation and master evidence/age consumption accepted October 22 | Preserve recurring reporter evidence, quiet success, locks and failure-mail handling; controlled cron failure delivery accepted under OBS-04; preserve its limits | Actual producer completion and collected monitoring evidence accepted within bounded captures; recurrence/delivery remain separate |
 | OBS-04 | Accepted October 24 for one controlled argument-failure route: genuine cron ancestry/journal, expected failure and one marker release, plus operator-confirmed AppriseAPP receipt | Preserve ordinary reporting and consumed evidence; no replay. Full diagnostics, scanner crashes, fanout reliability and exact SMTP disposition remain outside this proof | [Reviewed outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/obs04-cron-failure-delivery-test-20261024-v2/outcome.md); authored entry withdrawn and running service identities unchanged |
 | OBS-05 | Corrected timer accepted; four-week live recurrence unobserved | Retained estimate: November 12, 2026, 18:19:41 CST; refresh live schedule under approved scope before relying on it | Actual scheduled result, valid leapfile and subsequent trigger. Estimate is not a fresh timer observation; reconcile any phase-gate deferral explicitly |
-| OBS-06 | Isolated boot-trigger tests passed; physical Pi boot-trigger behavior after correction unobserved | Next separately approved reboot; observe the 15-minute initial trigger plus allowed jitter | Host reboot/maintenance result and next recurrence schedule; preserve shared-antenna power and recovery controls |
+| OBS-06 | Isolated tests passed; v5 physical boot timer listing records an October 27 13:25:27 trigger, but service success/payload uninspected | Reconcile the retained trigger and separately scope only missing service/result evidence | Do not infer success or four-week recurrence from timer activation; preserve existing recovery controls |
 | OBS-07 | Expanded collection/graphs, source attribution, corrected timing/maintenance, contacts and bounded native mail recovery accepted October 22 | Use the [coverage/persistence matrix](PRODUCTION-OBSERVATION-CONTRACT.md#coverage-and-persistence-reconciliation); preserve the explicit source policy and compare after the next separately approved master maintenance event | Current-boot node network policy, representative clients/access, source persistence or approved disposition, and sustained operation remain separate from accepted short captures |
 | OBS-08 | Boot and earlier operator fan/power observations retained; sustained health not accepted | Agree duration/load and collect during final host observation | Fan/thermal/PoE/undervoltage evidence; watchdog controlled failure/recovery remains a separately approved baseline gate |
 | OBS-09 | Final Phase 3 interval, cadence, tolerances and reset rules remain pending; selected OBS-02 48-hour baseline is a different window | Resolve prerequisite gates and the [final-window contract inputs](PRODUCTION-OBSERVATION-CONTRACT.md#final-phase-3-window-inputs-still-required), then agree start after the last relevant change | Reviewed time/client/network/hardware health across the full agreed interval, evidence-gap/reset dispositions, final inventory and recurring owner/cadence; Phase 8 remains later |

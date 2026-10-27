@@ -559,6 +559,38 @@ acceptance record, and recovery path. Rebuild `j2-svntp1` first. Do not begin
 selected GPS/PPS, survived a reboot, and completed the agreed observation
 interval while `j1-svntp` remains available.
 
+### Base OS update completion gate
+
+For each rebuilt node, complete base OS updating during commissioning, before
+service deployment and recovery/final-observation qualification. Installing only
+application prerequisites does not satisfy this gate.
+
+1. Under a separately approved maintenance scope, refresh and verify metadata
+   from the intended Debian/Raspberry Pi repositories. Record release identities,
+   refresh time, installed inventory, available updates and explicit package holds.
+2. Review the native upgrade simulation, including dependencies, removals,
+   configuration-file handling, service restarts and required reboot. Apply all
+   applicable updates under a hash-bound execution/recovery review. Do not convert
+   this requirement into an unreviewed distribution upgrade or release change.
+3. Record any deferred, held or unavailable update with its reason, operational
+   impact and explicit operator disposition. A hold or stale package index must
+   not silently satisfy the requirement. Verify the remaining update set after
+   application; acceptance requires no unresolved applicable updates.
+4. Complete required reboot and verify the running kernel/firmware, package
+   inventory, access, networking and service readiness. Keep the peer serving and
+   preserve the node's independent recovery path throughout maintenance.
+5. Bind commissioning acceptance to the resulting installed and running baseline.
+   Changes to kernel, systemd, drivers or other qualified dependencies invalidate
+   affected earlier source, ownership, reset-path and runtime proofs; repeat the
+   relevant qualification before recovery testing or final observation.
+
+Recheck update readiness before final acceptance. For a node already deployed
+without this evidence, resolve the gap through a reviewed maintenance stage and
+requalify affected services; do not rewrite historical acceptance as proof that
+updates occurred. Cached-index simulations and update dashboards are inputs to
+assessment, not evidence of completed updating. Keep operation dates and outcomes
+in HISTORY and current status in PRODUCTION-READINESS.
+
 ### RTC package dependencies
 
 Include `util-linux-extra` in each node's reproducible installation inputs for
@@ -616,7 +648,7 @@ and validate:
 
 | Area | Required evidence before accepting the node |
 | --- | --- |
-| Base OS and access | Raspberry Pi OS Lite Trixie release and arm64 architecture; boot firmware and kernel; correct hostname, SSH access, package sources, updates, users and administrative access; persistent boot and root filesystems |
+| Base OS and access | Raspberry Pi OS Lite Trixie release and arm64 architecture; boot firmware and kernel; correct hostname, SSH access, package sources, completed base OS update gate, users and administrative access; persistent boot and root filesystems |
 | Network and DNS | Stable node IPv4 and ULA, retained Router Advertisement global IPv6 and default route, both DNS VIPs with DHCP/RA DNS replacement disabled; dual-stack reachability and reboot persistence |
 | `webmin` | Package provenance, service health, authenticated management access from an approved LAN path, intended bind/firewall scope, and no unintended External exposure; restore required settings from observed Debian 11 state only after review |
 | `needrestart` | Trixie package, enabled kernel checks with the Pi 4 filter, list-only reporting, actual kernel/service report and notification through the accepted msmtp/Mailrise path; no unattended restart of the combined time service |

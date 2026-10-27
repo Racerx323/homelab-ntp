@@ -1,199 +1,115 @@
 # Repository instructions
 
-## Scope and sources of truth
+## Product and ownership
 
-- Keep portable NTPsec server and client configuration in this repository.
-- Treat `ntpsec/docs/ntp-architecture-deployment-plan-v1.0.md` as the source of
-  truth for locked architecture, constraints, stages, and acceptance criteria.
-- Keep current state, operation outcomes, deviations, and the exact resume
-  point in `ntpsec/HISTORY.md`; keep active operation definitions and sanitized
-  evidence separate from the governing plan.
-- Keep host membership and OS facts in `homelab-server-configs/inventory`.
-- Keep A, AAAA, PTR, and SRV records in `homelab-dns`.
-- Keep addresses, DHCP, UniFi firewall policy, and NAT policy in
-  `homelab-network`.
-- Keep Munin endpoint configuration and plugins in
-  `homelab-monitoring-observability/Munin`; record the NTP hosts' Munin
-  requirement and acceptance evidence here.
-- Keep architecture diagrams in `homelab-docs`; keep secrets, private keys,
-  credentials, and controller exports out of Git.
-- Keep addresses, ports, schedules, records, and rollout procedure in the
-  governing plan instead of duplicating them here.
+- Keep the repeatable NTPsec server build in `ntpsec`; `scripts/clockmaker.py`
+  is its operator entrypoint. Prefer reusable helpers over operation-specific
+  installers. Keep NTP client configuration under `client`.
+- Host inventory, base OS maintenance, Webmin, watchdog and needrestart belong
+  to `homelab-server-configs`; Munin belongs to
+  `homelab-monitoring-observability`. NTP declares prerequisites and validates
+  integration; do not duplicate fleet package installers here.
+- Keep DNS records in `homelab-dns`, address/firewall/NAT policy in
+  `homelab-network`, and architecture diagrams in `homelab-docs`.
+- The architecture plan defines requirements; OPERATIONS defines reusable
+  procedures; PRODUCTION-READINESS records current status and the next action;
+  HISTORY records concise milestones. Detailed attempts belong in run records.
+  Keep host values in owning inventory/configuration and reference them from
+  the plan. Preserve accepted outcomes and limitations when reorganizing docs.
 
-## Working practice
+## Build contract
 
-- Inspect live state before generating host configuration. Do not infer
-  interfaces, connection profiles, package paths, unit names, daemon users,
-  leapfile locations, or UniFi rule order.
-- Repository edits and local tests do not require a live-action gate.
-- Change the governing plan for an approved architecture decision or deviation.
-  Record milestones, live actions, rollback, and resume-point changes in
-  `ntpsec/HISTORY.md`, not in the governing plan.
-- A plan entry does not authorize live access.
-- One scoped approval may cover a defined read-only collection on one target.
-  It does not require approval for each command in that collection.
-- Obtain scoped authorization for each live node or controller stage. One
-  approval may cover its exact preflight, mutation, convergence, acceptance,
-  and rollback path; it does not authorize another node or controller stage.
-- Bind that approval to the SHA-256 of one deployment bundle containing the
-  operation specification and every non-secret execution input. Name the
-  target, command, mutation boundary, acceptance checks, and rollback in the
-  approval request. An edit or scope change requires a new hash and approval.
-- Preserve executed privileged mutation artifacts with their evidence. Edit
-  unexecuted files through the normal review workflow.
-- After a failed or interrupted mutation, inspect live state before retrying.
+- A fresh build takes a clean checkout, declared release artifacts, explicit
+  host/platform inputs and current target observations. It must not require
+  pilot receipts, historical recovery bundles or private evidence directories.
+- Make artifact-cache and output locations configurable. Evidence is an output;
+  never import executable implementations from previous operation archives.
+  Updates may use installed-state manifests and the current transaction backup.
+- Render configuration offline from validated inputs. Before applying, verify
+  target identity and assumptions that can change; inspect missing facts rather
+  than inventing paths, interfaces, users, unit names or hardware capabilities.
+- Separate templates, host inputs and rendered output. Retain accepted host
+  configuration mirrors where required, without treating them as fleet defaults.
+- Pin executable/configuration inputs and release artifacts. Store large
+  immutable artifacts once by digest; reference predecessors rather than nesting
+  their archives. Preserve executed artifacts and unique results; cleanup needs
+  an explicit retention/deletion scope and must not remove the only recovery copy.
 
-## Rollout safety
+## Authorization and recovery
 
-- Change and accept `j1-svntp1` before changing `j1-svntp`.
-- Mutate one NTP node or one DNS node at a time. Keep the peer serving while
-  changing the other node.
-- Follow the governing plan's independent-server and active/standby DNAT
-  design. Do not add an HA mechanism without an approved plan change.
-- Define rollback before a persistent mutation. Verify the backup path and the
-  configuration needed to restore service.
-- Retain ordinary diagnostics without a classification step. Redact secrets and
-  protect output that may contain credentials or private material.
-- Use the observed UniFi rule model; do not require a fixed number of rules.
+- Repository edits and local tests do not authorize target contact or mutation.
+  Obtain explicit authorization for the named targets and operational outcome.
+  One approval may cover preflight, bounded diagnostics, mutation, convergence,
+  acceptance and recovery, including declared conditional branches.
+- Bind live approval to a digest manifest of executable/configuration inputs,
+  targets, permitted effects and recovery scope. Declare runtime discovery and
+  its allowed decisions. Changes to those approved inputs or scope require fresh
+  approval; unrelated documentation and appended results do not. Preserve the
+  originally approved artifact and record new results separately.
+- Reuse authorization within its scope. Ask again only for uncovered actions or
+  materially changed conditions. Preserve explicit one-send approvals and
+  destructive-action boundaries. Existing sealed contracts retain their terms;
+  this policy does not retroactively broaden them or authorize replay.
+- Change one NTP node or one DNS node at a time; preserve a serving peer. Put
+  actual rollout targets/order in the deployment plan. Preserve the approved
+  independent-server/network design unless the user approves a design change.
+- Before persistent mutation, define bounded recovery and verify protected
+  backups, restore inputs and operator access appropriate to the failure mode.
+  Repeat attendance confirmation only when conditions materially change or the
+  approved contract requires it. After interruption, inspect state before retry;
+  do not replay an uncertain or consumed operation.
 
-## Configuration artifacts
+## Implementation and evidence
 
-- All deployment artifacts must have a durable repository source or an explicit,
-  versioned input. Pin executable bytes, configuration, baseline data and target
-  identity in each operation manifest; never resolve a floating baseline at run time.
-- Production scripts must not depend on private local evidence directories or
-  import executable implementations from prior operation archives. Evidence is
-  data/provenance, not a source of runtime code. Keep historical executed bundles
-  immutable; migrate successor implementations to repository-owned scripts.
+- Prefer native package/service operations and existing helpers. Add orchestration
+  only for a demonstrated requirement. After a second failure attributable to
+  deployment machinery, reassess the design before producing another successor.
+- Derive preflight and execution from the same command/input definitions. Verify
+  authentication, executable paths, options, native return-code semantics and
+  acceptance predicates before mutation. Unsupported checks are unresolved,
+  not automatic evidence that the service is unhealthy.
+- Use the declared interpreter or verified executable with an explicit working
+  directory. Capture stdout, stderr, exit status and partial progress from launch;
+  preserve failure evidence even when a later step fails. Label acceptance checks
+  distinctly and reject missing, duplicate or false required results.
+- Install with explicit owner/group/mode. Validate path types and ownership;
+  reject unexpected symlinks and unsafe traversal while allowing documented
+  platform links. Keep credentials/private captures out of Git and protect logs.
+- Test locally provable failure/recovery behavior. Document hardware/native
+  assumptions and qualify them in an authorized pilot; stand-ins do not prove
+  native recovery or downstream delivery. Local tests never establish live
+  acceptance, and SMTP acceptance alone never establishes receipt.
 
-- Mirror each accepted live `/etc/ntp.conf` under a host-specific
-  `ntpsec/configs/` path. Keep the accepted mirror byte-for-byte exact.
-- Keep source templates separate from rendered files. Put server scripts under
-  `ntpsec/scripts/`, client scripts under `client/scripts/`, and runbooks under
-  `ntpsec/docs/`.
-- Keep public examples free of private hostnames, addresses, credentials, and
-  operational evidence.
-- Install files with explicit owner, group, and mode. Reject symlinks and
-  unexpected file types at installation boundaries.
+## NTP acceptance
 
-## NTPsec and systemd
+- Use the declared platform profile and installed build/manuals; do not assume
+  paths or boot overlays carry across operating systems. Check GPS/PPS, upstream,
+  restriction, drift/leap configuration and daemon state before applying changes.
+- Validate intended IPv4/IPv6 listeners and client responses, source selection,
+  reach, stratum, leap state, offset/jitter and relevant journal health against
+  explicit plan criteria. Preserve failed criteria and measurement limitations.
+- Verify leapfile reload behavior before adding restarts. Validate changed units
+  with `systemd-analyze verify` where available and on the target before activation.
+  Query properties appropriate to the systemd unit type.
 
-- Treat each installed build and its local manual pages as the authority for
-  that node: Debian 11 for baseline capture, then Raspberry Pi OS Lite
-  (64-bit), Trixie for rebuild candidates and acceptance. Do not assume that
-  package paths or boot overlays carry over.
-- Audit the live GPS/PPS, upstream, restriction, interface, driftfile, leapfile,
-  and daemon state before changing `ntp.conf`.
-- Prove IPv4 and IPv6 listeners, client responses, peer selection, reach,
-  stratum, leap state, offset, jitter, and journal health after deployment.
-- Confirm the installed leapfile reload behavior before adding an `ntpd`
-  restart or reload.
-- Run `systemd-analyze verify` on changed units when available and repeat unit
-  validation on the Trixie target before installation.
-- Query `MainPID` and `NRestarts` only for service units. Use properties common
-  to the inspected type for timers, paths, sockets, and targets.
-- Treat workstation checks as partial when required packages, hardware,
-  systemd state, or UniFi behavior exist only on a target. Follow the governing
-  plan's network and DNS acceptance checks.
+## Validation and publication
 
-## Shell rules
-
-- Use Bash for repository shell entry points. Standalone entry points should
-  use `set -Eeuo pipefail`; sourced helpers must not change caller shell options.
-- Handle fallible commands explicitly in functions used by `if`, `!`, `&&`, or
-  `||`.
-- Never reuse a script-level readonly variable name as a function-local name.
-  Bash dynamic scope can reject the local declaration at runtime.
-- Run `bash -n`, ShellCheck, and shfmt on each changed shell file. Never run
-  bare `shfmt -w`; format intended files with `shfmt -w -i 4 -ci FILE`.
-- Keep the pre-commit shfmt check at `-d -i 4 -ci`. If an NTP `--write` helper
-  becomes useful, require an explicit regular-file list, reject symlinks and
-  paths outside this repository, and format only the requested files. Do not
-  copy the server-configs wrapper's unrelated Munin path exception.
-- Keep tracked shell entry points executable in the working tree and Git index.
-- Test success and rejection paths for parsers, fail-closed validators, and
-  mutation scripts. Give simple read-only wrappers a focused dry run or
-  self-test.
-
-Privileged remote runners require extra controls:
-
-- Set an explicit remote working directory, invoke staged files through
-  `/bin/bash`, and capture both output streams with the transport status.
-- Give acceptance conditions distinct labels and fail on missing, duplicate,
-  or false results.
-- Test rollback and early-failure behavior before requesting live execution.
-
-## Validation
-
-Run the smallest checks that cover the change. Documentation-only edits need
-focused Markdown, link, and Git checks; they do not require a full behavior
-suite. When executable behavior or a durable safety boundary changes, add or
-run regression tests for the affected entry points and failure paths. Run
-repository-wide pre-commit before a release or when the change spans multiple
-components.
-
-When the first NTP collector, installer, or deployment operation is added,
-add focused success and rejection tests and a pre-commit hook for that
-behavior. Trigger the hook on its executable, tests, relevant configuration,
-and `.pre-commit-config.yaml`; use `pass_filenames: false` if the test runner
-accepts no file arguments. Add the same NTP test path to this repository's CI
-workflow because the shared baseline job runs only its named general hooks.
-Keep the hook and CI test offline; live acceptance remains a separate gate.
-
-Baseline checks:
-
-```bash
-git diff --check
-```
-
-The pre-commit Gitleaks hook checks staged content. `pre-commit run --all-files`
-does not scan untracked or unstaged files for secrets through that hook. Before
-reviewing new local artifacts or requesting deployment, scan the working tree:
-
-```bash
-gitleaks detect --source . --no-git --redact --no-banner
-```
-
-Run Markdownlint on changed documentation that policy does not exclude. Review
-excluded `AGENTS.md` by inspection.
-
-If Gitleaks classifies a reviewed public integrity hash as a secret, allowlist
-that exact value. Do not add path-wide or arbitrary-hex exclusions.
-
-## Reviews
-
-- CodeRabbit review is optional. Run it only when the user authorizes sharing
-  the relevant private infrastructure content with that external service and
-  workspace policy permits the upload. Its absence does not block local work.
-- Use pull-request title format `[homelab-ntp] <title>`. Describe validation,
-  live impact, authorization, rollback, and cross-repository changes.
-- Do not claim live acceptance from local tests.
-
-## vexp
-
-Call `run_pipeline` once at task start for orientation unless the task names
-the files or symbols to inspect. Use `eager: true` for non-trivial work. After
-that call, use normal tools and native search for literal strings and runtime
-output.
-
-
-## vexp - Context-Aware AI Coding <!-- vexp v3.3.0 -->
-
-### Context strategy: call run_pipeline ONCE at task start
-If the task already names the files/symbols to touch, SKIP vexp. Otherwise one
-`run_pipeline({ "task": "..." })` returns ranked pivot files with line ranges and
-blast radius. Do NOT open files one by one to find your way around - every extra
-tool call costs a turn. Call it again ONLY when the task moves to a new area.
-`get_skeleton` for files to understand, not edit. `verify_done` before calling a
-multi-file task complete, then RUN the tests it names.
-
-### Query shape (do this)
-Anchor the task on real identifiers (ClassName, functionName) or file paths:
-`run_pipeline({ "task": "fix JWT expiry in AuthService.validateToken" })`
-
-vexp runs entirely on this machine, index in `.vexp/`;
-`run_pipeline` transmits nothing to any external service.
-On `status: "degraded"` or 0 pivots the index is still building - use your own tools.
-For literal string sweeps use your native search - do NOT route text sweeps through vexp.
-Repo SOURCE only: logs, dist/, node_modules/ and files outside the repo are NOT indexed.
-<!-- /vexp -->
+- Run the smallest checks covering the change. Test meaningful success/rejection
+  and interruption paths for changed parsers/installers. Keep offline tests in CI;
+  avoid unrelated harnesses and implementation-mirroring tests. Run repository-wide
+  pre-commit before release or changes spanning executable components.
+- Documentation changes need focused Markdown/link checks and `git diff --check`;
+  inspect excluded AGENTS.md manually. Scan new/changed publishable artifacts for
+  secrets, including untracked content; staged-only hooks are not sufficient.
+  Use `gitleaks detect --source . --no-git --redact --no-banner` for a full local
+  scan when needed. Allowlist only verified exact false-positive hashes.
+- Use Bash for shell entrypoints, `set -Eeuo pipefail` for standalone scripts,
+  and explicit fallible-command handling in conditional functions. Sourced
+  helpers must not change caller options. Never shadow script-level readonly
+  names with function locals. Keep entrypoints executable in Git and on disk.
+- Run `bash -n`, ShellCheck and shfmt on changed shell files; use explicit files
+  and `shfmt -w -i 4 -ci`, never bare `shfmt -w`. Keep CI formatting consistent.
+- Inherit workspace tool guidance rather than duplicating it here. External
+  review requires authorization to share the content; its absence does not block
+  local work. PR titles use `[homelab-ntp] <title>` and describe changes, validation,
+  live impact and remaining limitations.

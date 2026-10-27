@@ -1,0 +1,73 @@
+{
+  "schema": 1,
+  "scope": "Isolated signed metadata and whole-installed-system full-update simulation only; no package actions",
+  "releases": [
+    {
+      "base_uri": "http://deb.debian.org/debian/",
+      "suite": "trixie",
+      "codename": "trixie",
+      "origin": "Debian",
+      "release_suite": "stable",
+      "components": [
+        "main",
+        "contrib",
+        "non-free",
+        "non-free-firmware"
+      ],
+      "keyring": "/usr/share/keyrings/debian-archive-keyring.pgp"
+    },
+    {
+      "base_uri": "http://deb.debian.org/debian/",
+      "suite": "trixie-updates",
+      "codename": "trixie-updates",
+      "origin": "Debian",
+      "release_suite": "stable-updates",
+      "components": [
+        "main",
+        "contrib",
+        "non-free",
+        "non-free-firmware"
+      ],
+      "keyring": "/usr/share/keyrings/debian-archive-keyring.pgp"
+    },
+    {
+      "base_uri": "http://deb.debian.org/debian-security/",
+      "suite": "trixie-security",
+      "codename": "trixie-security",
+      "origin": "Debian",
+      "release_suite": "stable-security",
+      "components": [
+        "main",
+        "contrib",
+        "non-free",
+        "non-free-firmware"
+      ],
+      "keyring": "/usr/share/keyrings/debian-archive-keyring.pgp"
+    },
+    {
+      "base_uri": "http://archive.raspberrypi.com/debian/",
+      "suite": "trixie",
+      "codename": "trixie",
+      "origin": "Raspberry Pi Foundation",
+      "release_suite": "stable",
+      "components": [
+        "main"
+      ],
+      "keyring": "/usr/share/keyrings/raspberrypi-archive-keyring.pgp"
+    },
+    {
+      "base_uri": "https://download.webmin.com/download/newkey/repository/",
+      "suite": "stable",
+      "codename": "stable",
+      "origin": "Jamie Cameron",
+      "release_suite": "stable",
+      "components": [
+        "contrib"
+      ],
+      "keyring": "/usr/share/keyrings/webmin-reviewed.gpg",
+      "fingerprint": "7D1AE915F3DCFADA344A4FCB2D223B918916F2A2"
+    }
+  ],
+  "maximum_snapshot_age_seconds": 86400,
+  "webmin_keyring_sha256": "5f9124881530f977e9b7c474df44a87fe9ea26bdba32a097886f84009d4ecd1c"
+}

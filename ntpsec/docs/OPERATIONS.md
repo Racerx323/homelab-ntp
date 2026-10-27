@@ -1449,6 +1449,13 @@ and this recovery does not survive reboot or undo clock corrections.
 
 ## Current state and remaining work
 
+This section preserves an earlier installation/runtime handoff. Its pending
+activation wording and package counts are historical, superseded by later accepted
+outcomes. Use [production readiness](PRODUCTION-READINESS.md) for current status
+and the [October 26 Phase 3 reconciliation](PHASE3-PREREQUISITE-RECONCILIATION.md)
+for the remaining prerequisite and final-observation decisions. Do not replay
+old activation or acquisition stages from this table.
+
 j2-svntp1 is the renamed former j1-svntp1 physical node, now running Raspberry
 Pi OS Lite Trixie on the spare card. Its accepted foundation contains 686 package
 records. The retained NTPsec/GPSD source candidate has 159 manifest entries;
@@ -1770,6 +1777,21 @@ protected new inputs, effective needrestart policy, expected hook completion,
 restored controls/automatic updates and boot/access/network continuity.
 Do not replay installation after an acceptance failure; inspect its terminal
 state and prepare only the necessary recovery/acceptance action.
+
+## Base OS maintenance
+
+For the next j2 maintenance window, use the
+[consolidated maintenance plan](MAINTENANCE-SIMPLIFICATION.md) to prepare one
+bounded update/reboot/verification/recovery review. It supersedes the earlier
+mandatory inspection and pre-reboot handoffs, while retaining the architecture's
+update acceptance gate. Cleanup verification belongs in the authorized preflight.
+The plan is local preparation, not execution permission.
+
+Follow the [maintenance procedure](BASE-OS-MAINTENANCE.md) to close the
+[commissioning update gate](ntp-architecture-deployment-plan-v1.0.md#base-os-update-completion-gate).
+Pinned foundation additions do not establish full base OS update completion.
+Fresh snapshot, authenticated resolution, payload/hook/firmware assessment,
+recovery qualification and exact execution approval precede any update.
 
 ## Source build
 
