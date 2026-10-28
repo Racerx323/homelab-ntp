@@ -3678,6 +3678,17 @@ side effect. Preserve primary-supplied shared antenna power during outages.
 
 ## Recovery, records and validation
 
+For recovery acceptance, record separate boot/network, NTP availability,
+convergence, stability and reset-attribution results under the
+[governing stages](ntp-architecture-deployment-plan-v1.0.md#recovery-acceptance-stages)
+and [watchdog contract](../../../homelab-server-configs/watchdog/docs/CONTROLLED-PANIC-REVIEW.md).
+Run bounded dual-stack client checks even when native precision is still settling;
+otherwise availability timing is unmeasured. Keep `timeservice.service` running
+under its existing production policy. Record failed precision without forcing
+restart, drift reset, source changes or media fallback. Qualify the observer's
+separate gates before a new execution review; old combined-gate runners and
+consumed operations must not be reused as the revised procedure.
+
 Old-card recovery restores the original Debian 11 hostname/configuration; it
 does not reverse a hardware replacement. Verify physical target/card, access,
 GPS/PPS and primary/antenna continuity before any outage. Stop if independent

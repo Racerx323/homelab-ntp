@@ -1365,6 +1365,32 @@ PPS-first profile. This fallback does not serve NTP. A stopped node on bootstrap
 time is a recovery outcome, not production acceptance. Define and test this path
 before its hash-bound execution review; boot validation remains a later stage.
 
+### Recovery acceptance stages
+
+Separate host recovery, synchronized NTP availability and steady-state precision.
+For the NTP pilot, boot/network recovery must return an authenticated new-boot
+host within 60 seconds of trigger submission. NTP service availability must
+return within five minutes of the last bounded healthy pre-trigger observation,
+with synchronized responses on both fixed IP families and a selected source
+allowed by the existing production configuration. An active unit or SSH alone
+is insufficient. Availability does not require all steady-state precision checks.
+
+Allow up to 30 minutes from trigger submission for three full precision-ready
+samples at least 30 seconds apart, then 30 continuous minutes of stability.
+Retain selected PPS offset <=5 ms, jitter <=1 ms, source/authentication and
+client criteria for that precision gate. Receiver acquisition and convergence
+are distinct recorded states; the observation budget never changes the existing
+production supervisor's acquisition/shutdown policy. Precision-only settling
+must not trigger an automatic restart, drift reset or media swap.
+
+Use the fleet watchdog [recovery contract](../../../homelab-server-configs/watchdog/docs/CONTROLLED-PANIC-REVIEW.md)
+for clock definitions, bounds, independent attribution, recovery and separate
+stage verdicts. Hardware-reset attribution remains independent of a successful
+boot. Preserve original sealed test verdicts when interpreting them under revised
+criteria; missing samples cannot be retroactively accepted. Qualify the observer
+against this contract before execution. These recovery windows do not replace
+final OBS-09 or alter accepted OBS-02/D1–D5 limitations.
+
 ### Phase 3A: evaluate and accept measured optimizations
 
 Evaluate host, system, NTPsec and GPSD proposals here. Required hardware,

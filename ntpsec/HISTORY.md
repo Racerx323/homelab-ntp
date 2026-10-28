@@ -1,5 +1,154 @@
 # NTPsec deployment history
 
+## Watchdog successor readiness snapshot accepted — October 28, 2026
+
+The [approved read-only inspection](/home/aaron/code/.local-evidence/homelab-server-configs/current/watchdog-successor-readiness-20261028-v1/outcome.md) completed at 15:38:26 CDT.
+Expected boot and service identities were stable; PPS offset/jitter were
+-0.01155/0.0043 ms, both client families passed, and inspected configuration/native
+hashes matched. Existing tty1/printk/panic/debugger settings were captured without
+changes. They do not establish panic visibility. No fault, restart, send or retry.
+Next: resolve independent panic/timing evidence, then bind the current snapshot
+into a successor review. Historical recovery gaps, OBS-02/D1–D5 and OBS-09 remain.
+
+## Watchdog successor evidence gaps made explicit — October 28, 2026
+
+Prepared a [successor decision review](/home/aaron/code/.local-evidence/homelab-server-configs/current/watchdog-successor-review-20261028-v1/review.md)
+and separate ten-minute [read-only readiness review](/home/aaron/code/.local-evidence/homelab-server-configs/current/watchdog-successor-readiness-20261028-v1/review.md).
+The successor is not execution-ready: current post-panic state and an adequate
+independent panic/timing observation method remain unresolved. Aaron cannot record
+with a seconds clock; recording is not required, and manual elapsed notes remain
+an option. The previous black screen is not a witnessed panic. The readiness scope
+reads existing console state without changing it; it cannot guarantee panic output.
+No target contact or new fault. Original outcomes, OBS-02/D1–D5 and final OBS-09
+boundaries remain unchanged. Next: approve/assess the snapshot and resolve the
+observation method before sealing a single executable successor.
+
+## Separate recovery gates locally qualified — October 28, 2026
+
+The watchdog observer now separates boot/network return, synchronized native and
+dual-stack NTP availability, precision convergence and sustained stability.
+Availability uses the five-minute budget; convergence uses 30 minutes from the
+original trigger submission, followed by 30 uninterrupted minutes of stability.
+Both client probes run despite precision/native collection failures. Fixed
+windows, retained stage results and the 70-minute cap have local regression
+coverage. Strict pretrigger checks, one-use grants and `timeservice.service`
+ownership remain intact. No target contact, panic, notification or new seal.
+Validation: 58 panic/observer tests, 23 readiness tests and 15 Phase 3 tests pass.
+
+Next: prepare a review bound to current target facts and an explicit independent
+reset-attribution evidence method. The consumed attempt and its old verdicts
+remain unchanged; local qualification does not fill its missing observations.
+OBS-02/D1–D5 and final OBS-09 boundaries remain unchanged.
+
+## Recovery availability and precision separated — October 28, 2026
+
+Aaron accepted boot/network return within 60 seconds and selected up to
+30 minutes for convergence, followed by 30 minutes of stability. Five minutes
+now explicitly governs synchronized NTP availability, not steady-state precision.
+The governing plan/procedure and watchdog contract define independent client
+probing and stage verdicts. `timeservice.service` remains unchanged; the runner
+still implements the former combined gate and needs alignment/qualification.
+The [v2 addendum](/home/aaron/code/.local-evidence/homelab-server-configs/current/watchdog-panic-recovery-20261028-v2/acceptance-contract-addendum.md)
+accepts its 41.5-second boot/network return only. Early NTP availability is unproved,
+30-minute convergence/stability unobserved, and attribution inconclusive. Original
+sealed failures remain intact. No target contact, retry or new execution approval;
+OBS-02/D1–D5 and final OBS-09 boundaries are unchanged.
+
+## Watchdog attempt rebooted; recovery acceptance failed — October 28, 2026
+
+The approved [v2 attempt](/home/aaron/code/.local-evidence/homelab-server-configs/current/watchdog-panic-recovery-20261028-v2/outcome.md)
+passed full preflight and submitted one panic grant at 13:39:52 CDT. A new boot
+was reachable about 41.5 seconds later. All 52 post-trigger health samples failed;
+at the final five-minute sample, PPS offset/jitter were -6.177337/36.048430 ms.
+No three-sample acceptance or stability phase completed. The controller stopped;
+no retry. Aaron reported no manual intervention, but no panic text and only
+minute-level console times, leaving reset attribution inconclusive. Transport
+CRITICAL delivery was operator-confirmed. Next assess retained startup convergence
+and arrange any further observation within a new approved scope. Aaron confirmed a running hold with KVM available and an attended check
+within 60 minutes. OBS-02/D1–D5 and prior timing limitations remain unchanged.
+
+## Corrected watchdog successor sealed — October 28, 2026
+
+Prepared the [v2 review](/home/aaron/code/.local-evidence/homelab-server-configs/current/watchdog-panic-recovery-20261028-v2/review.md)
+with [seal](/home/aaron/code/.local-evidence/homelab-server-configs/current/watchdog-panic-recovery-20261028-v2/sealing.json)
+`af4ec32b74098fa8d5d185697d2e9360e1e6493d2d17a1367cf614df2c81670a`.
+It includes corrected executable hashing and failure evidence, binds the local
+reassessment, and preserves `timeservice.service`, native preflight and attended
+single-panic recovery. Qualification covers 79 focused tests; the 41 panic tests
+were rerun after review wording changed. Archive/source integrity and frozen
+Python compilation passed. No target contact or execution receipt. Next exact-hash
+approval, then fresh operator conditions at execution. Latest start October 29
+at 11:56:58 CDT; expiry 13:26:58 CDT. Prior attempts remain consumed, the earlier
+five-minute miss remains recorded, and OBS-02/D1–D5 are unchanged.
+
+## Watchdog file validation corrected and preflight reassessed — October 28, 2026
+
+Native executable hashing now uses a bounded streaming reader instead of the
+small-file capture helper. Specific file errors, preceding successful records
+and failed timing measurements are retained. `timeservice.service` and its
+supervisor/child model are unchanged. The original live file-rejection reason
+was discarded and remains unproved; local tests reproduce the size-limit defect.
+Seventy-nine focused tests pass. The
+[reassessment](/home/aaron/code/.local-evidence/homelab-server-configs/current/watchdog-preflight-reassessment-20261028-v1/assessment.md)
+separates completed native checks from the unexecuted preflight tail and recovery
+gates. Next prepare one successor review; no target contact, new seal or retry.
+OBS-02/D1–D5 and the prior five-minute miss remain unchanged.
+
+## Watchdog attempt held before arming — October 28, 2026
+
+The approved successor stopped in its first full observation at the native
+`/usr/local/sbin/ntpd` file check. No panic, sync or restart was reached;
+partial evidence and terminal status are retained in the
+[outcome](/home/aaron/code/.local-evidence/homelab-server-configs/current/watchdog-panic-recovery-20261028-v1/outcome.md).
+Native startup-journal classification passed. The file guard discarded the
+specific failure reason; daemon absence or ill health is not established.
+Next qualify executable-file validation and diagnostic retention, and reassess
+the remaining preflight before another review. No replay; recovery and final
+Phase 3 gates remain open. OBS-02/D1–D5 and the prior timing miss are unchanged.
+
+## Watchdog successor sealed — October 28, 2026
+
+The fleet watchdog component prepared a single-panic successor bound to the
+accepted post-update observation. Only expected boot identity advances; native
+source/policy/protected-file checks remain mandatory. Seventy-three focused
+tests and archive integrity passed. No target contact or trigger; next is
+exact-hash approval and fresh attended execution conditions. The previous
+five-minute precision miss and final Phase 3 limitations remain unchanged.
+
+## Post-update observation completed — October 28, 2026
+
+All 31 scheduled timing samples passed; maximum selected absolute offset/jitter
+0.096152/0.036947 ms. Both client families passed at start/end; Windows-native
+discovery passed after Aaron corrected the known WSL path limitation. Boot,
+service and protected configuration continuity passed; no new priority-error
+records appeared. OBS-06 initial leap invocation/schedule is now observed.
+The five-minute recovery miss, OBS-05, watchdog recovery and final Phase 3 gates
+remain open; OBS-02/D1–D5 and bounded OBS-04 are unchanged. Next prepare the
+watchdog successor using this baseline and the exact startup-journal dispositions.
+No restart, panic, service/configuration change or notification was performed.
+
+## Bounded post-update observation review — October 28, 2026
+
+Prepared a sealed manual node/workstation review: 31 ordinary-operation timing
+samples over 30 minutes, two dual-stack client checks, bounded native baseline,
+journal and leap reads, with a 45-minute overall cap and explicit stop rules.
+Reused repository client code and native command definitions; no new deployment
+framework or remote staging. Local syntax, client compilation and SSH configuration
+parsing passed; native availability/state remains an execution-time observation.
+No target contact, notification, restart or panic. Execution approval is pending;
+OBS-02/D1–D5, bounded OBS-04 and the failed five-minute precision result remain.
+
+## Post-update prerequisite reconciliation — October 28, 2026
+
+Reconciled retained v5 results with Phase 3 gates and corrected stale watchdog,
+leap schedule and package-maintenance handoffs. Availability recovered within
+about 99 seconds; the five-minute precision miss and bounded 30-minute pass remain
+separate. Prepared one non-mutating observation scope in the existing prerequisite
+record before a watchdog successor. The reported Avahi warning ends with successful
+registration and does not establish a timing fault. No target contact, restart,
+injection or notification; OBS-02/D1–D5 and bounded OBS-04 remain unchanged.
+Second-host deployment remains deferred until J2-SVNTP1 production acceptance.
+
 ## Guarded trial, external acceptance and reusable recovery — October 27, 2026
 
 Fresh activation now checks mapped refclock/NTS health, credentials and journal
