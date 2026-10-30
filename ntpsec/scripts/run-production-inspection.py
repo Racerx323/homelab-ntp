@@ -48,7 +48,7 @@ def expired(signum, frame):
     raise CaptureDeadline('remote capture deadline exceeded')
 
 
-def bounded(argv, timeout=10, limit=LIMIT, payload=None, env=None):
+def bounded(argv, timeout=10, limit=LIMIT, payload=None, env=None, sink=None):
     """Bound both pipes while draining them; never create target spool files."""
     result = {'argv': argv, 'stdout': '', 'stderr': '', 'returncode': None}
     outputs = {'stdout': bytearray(), 'stderr': bytearray()}
@@ -85,9 +85,14 @@ def bounded(argv, timeout=10, limit=LIMIT, payload=None, env=None):
                         continue
                     output = outputs[key.data]
                     if len(output) + len(raw) > limit:
-                        output.extend(raw[:limit-len(output)])
+                        part = raw[:limit-len(output)]
+                        output.extend(part)
+                        if sink is not None:
+                            sink(key.data, part)
                         raise ValueError('command output bound exceeded')
                     output.extend(raw)
+                    if sink is not None:
+                        sink(key.data, raw)
             result['returncode'] = process.wait(timeout=max(0.01, deadline-time.monotonic()))
     except (OSError, ValueError, TimeoutError, subprocess.TimeoutExpired) as error:
         result['error'] = str(error)

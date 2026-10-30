@@ -110,7 +110,7 @@ never fill a disk or resend a message to manufacture acceptance.
 | Address-family coverage | Canonical IPv4 series, source-bound dual-family transport checks and sampled dual-stack dashboard access accepted | Saved-profile/static-address evidence does not prove renewal/reboot behavior; retain the master persistence obligation with an owner and next maintenance checkpoint |
 | Node networking | Prior fixed endpoints and post-boot client-family checks accepted | Reconcile current-boot RA global address/default route, resolver views and DHCP/RA DNS suppression; master persistence cannot prove node persistence |
 | Clients/access | Controlled IPv4/IPv6 NTP responses, query denial and native Windows discovery accepted in earlier captures | Build the expected client/VLAN/family and management-access matrix from inventory; identify representative tested clients, gaps and explicit dispositions rather than claiming every client was covered |
-| Alerts and jobs | Genuine producers, corrected timing limits, committed contacts, both exact delivered tests and bounded native mail recovery accepted | Retain cron-originated failure-mail gate OBS-04, storage-specific acceptance and continuing job-health checks; Pushover connection cause remains unproven |
+| Alerts and jobs | Genuine producers, corrected timing limits, committed contacts, both exact delivered tests and bounded native mail recovery accepted | Preserve bounded accepted OBS-04, accepted OBS-02/D1–D5 and continuing job-health checks; Pushover connection cause remains unproven |
 
 The current baseline is evidence from named captures, not a new live inventory.
 Do not infer persistence from a saved profile, a quiet interval, a successful
@@ -120,33 +120,18 @@ or have an explicit operator-approved phase disposition with owner/checkpoint.
 
 ## Final Phase 3 window: inputs still required
 
-Do not start or backdate OBS-09 from the mail capture or this growth baseline.
-The governing plan requires the remaining Phase 3 baseline gates before its
-extended observation. Reconcile watchdog device/ownership/enablement and its
-controlled recovery test, current network policy, hardware/power health, software
-and access facts, and final inventory. Historical watchdog absence is not a
-current inspection. OBS-05/06 recurrence/boot gaps and OBS-10 battery retention
-must retain their applicable requirements or explicit approved dispositions.
-Required separate-host ntpviz is Phase 3B; two-node end-to-end work is Phase 8.
-Neither is silently pulled into or removed from the current Phase 3 window.
+See the [dedicated OBS-09 contract](FINAL-OBSERVATION-CONTRACT.md) and
+[current prerequisite reconciliation](PHASE3-PREREQUISITE-RECONCILIATION.md).
+On October 30 Aaron selected 48 hours with five-minute node/client samples and
+existing Munin records, and approved the bounded OBS-05 phase-gate deferral.
+Aaron also approved the remaining completeness/tolerance/reset criteria; execution is not
+authorized and OBS-09 has not started. The watchdog prerequisite is satisfied
+with its accepted one-test exception; OBS-06 initial invocation is accepted.
+Accepted OBS-02/D1–D5 and the original growth measurement policy remain unchanged.
 
-| Decision | Disposition before final observation |
-| --- | --- |
-| Duration and start | Pending agreement; start only after the last relevant accepted change and prerequisite reconciliation |
-| Cadence and completeness | Pending agreement, including node/master/client checkpoints, allowed gaps and what continuous records establish between snapshots |
-| Time/client tolerances | Bind adopted source, leap, reach, offset/jitter, freshness and storage limits; agree client response/loss limits and do not invent new numeric thresholds |
-| Hardware/load envelope | Agree ordinary workload, fan/PoE/thermal/undervoltage evidence and exclusions; no stress, antenna power change or switch mutation is implied |
-| Ownership and response | Aaron is operator; svmf owns existing native polling/evaluation/delivery. Record recurring review cadence, response to failures and evidence retention before handoff |
-| Reset/retest | Record boot/configuration/source/device changes, missing samples and real failures. Rebaseline affected evidence and agree restart/disposition; do not erase failed intervals or impose an automatic full restart without the agreed rule |
+## Historical OBS-02 t0 preparation
 
-For the selected OBS-02 window, relevant writer/filegen/retention/filesystem or
-boot changes invalidate cross-change growth attribution; start a separately
-approved baseline for the affected measurements. For final Phase 3, duration,
-gap tolerance and reset decisions remain pending until explicitly agreed.
-Any declaration of overall host readiness must cite the completed contract,
-every remaining gate's disposition and final inventory, not just passing graphs.
-
-## Next executable preparation
+The following is the original t0 preparation record, not the current next action.
 
 Prepare the t0 node and master read-only reviews with exact bounded inputs,
 accepted baselines, recovery/continuity boundaries and acceptance labels. Inspect

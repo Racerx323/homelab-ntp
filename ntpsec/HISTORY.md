@@ -1,5 +1,130 @@
 # NTPsec deployment history
 
+## OBS-09 v3 duplicate record stopped entry — October 30, 2026
+
+Executed v3 once. Protected hashing completed, but the rich node collector
+emitted `capacity` twice and the parser rejected it. No boundary probes or
+sampling start occurred. Raw outputs and the [outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261030-v3-run/outcome.md)
+are retained; no retry or target changes. Reassess collector composition and
+qualify the emitted-record/parser contract before a successor. Accepted
+OBS-02/D1–D5 and bounded limitations remain unchanged.
+
+## OBS-09 v3 collector and endpoint correction — October 30, 2026
+
+Replaced the protected-file buffer with bounded streaming SHA-256, retaining
+regular-file, symlink and change-during-read checks and adding path-specific
+errors. Corrected all Munin HTTPS requests to Aaron's `munin.local.theama.co`,
+matching repository Apache ServerName. TLS verification remains enabled.
+Prepared the [v3 successor](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261030-v3/review.md)
+for fresh approval; v2 and its partial evidence remain unchanged. No target
+contact or sampling under v3; OBS-02/D1–D5 remain unchanged.
+
+## OBS-09 v2 entry stopped before sampling — October 30, 2026
+
+Executed the approved bounded entry once. Retained partial node evidence shows
+native timing passes but protected hashing exceeds its fixed read bound. Munin
+HTTPS rejects the certificate hostname. Both client probes and DNS boundaries
+passed; these snapshots do not establish entry acceptance. Full partial streams,
+exit status and [outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261030-v2-run/outcome.md)
+are preserved. No retry, target mutation or sampling start. The next checkpoint
+is collector correction and certificate/endpoint resolution before a successor;
+OBS-02/D1–D5 remain unchanged.
+
+## Executable OBS-09 successor prepared — October 30, 2026
+
+Qualified the bounded node/master/client collector and sealed the
+[successor review](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261030-v2/review.md).
+One scope covers entry capture, reviewed start and 48-hour sampling; no target
+installation or historical executable dependency. Aaron accepted the explicit
+power-reserve and external-filtering limitations. Local subprocess/guard tests,
+native decoder syntax, Windows parser/address checks and repository validation
+passed. The initial sandbox ownership-test failure remains recorded; native
+validation passed without weakening its guard. Execution approval remains pending.
+No node/master contact or sampling; OBS-02/D1–D5 and original evidence unchanged.
+
+## OBS-09 bounded preparation scope approved — October 30, 2026
+
+Aaron approved the integrity-sealed observation proposal. The appended
+[approval record](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-review-20261030-v1/approval.json)
+binds the unchanged manifest. Its `execution_ready: false` boundary remains:
+finish collector qualification, concrete inputs and entry dispositions before
+sealing an executable successor for separate approval. No target contact or
+sampling occurred; OBS-02/D1–D5 remain unchanged.
+
+## Bounded OBS-09 observation review prepared — October 30, 2026
+
+Prepared the [node/master/client review](docs/OBS09-OBSERVATION-REVIEW.md) with
+missing entry checks, 577 scheduled slots, approved completeness/tolerance rules,
+bounded effects and interruption handling. Aaron confirmed dual-stack workstation
+access, trusted-LAN Webmin, master-persistence ownership and PoE+ capability on
+USW-Pro-48-POE with reported 600 W total availability. Per-port reserve remains
+unmeasured. Existing component checks passed (55 tests); combined scheduler,
+full selectors and concrete trust/client bindings remain to qualify. The sealed
+preparation snapshot is not executable. No target contact or sampling; OBS-02
+D1–D5 and all accepted limitations remain unchanged.
+
+## Remaining OBS-09 contract criteria approved — October 30, 2026
+
+Aaron explicitly approved the remaining completeness, tolerance, reset/response
+and handoff criteria in the [final contract](docs/FINAL-OBSERVATION-CONTRACT.md).
+The 48-hour window, five-minute sampling and bounded OBS-05 deferral remain agreed.
+Next: prepare the bounded node/master/client observation review with missing
+read-only entry checks. Unresolved prerequisites and separate execution approval
+remain required; no observation started. OBS-02/D1–D5 remain unchanged.
+
+## Final observation contract and recurrence disposition — October 30, 2026
+
+Reconciled retained prerequisites after the accepted J2 watchdog exception.
+Aaron selected a new 48-hour OBS-09 window, five-minute node/client samples and
+existing Munin records. He approved deferring the OBS-05 Phase 3 gate, with Aaron
+owning genuine recurrence review within 24 hours of its verified next trigger.
+OBS-05 remains open; no current trigger date is inferred from an older boot.
+The [final contract](docs/FINAL-OBSERVATION-CONTRACT.md) proposes detailed
+completeness/tolerance/reset criteria. Hardware/power, Wi-Fi, client/access and
+master-persistence dispositions remain explicit. No live contact or observation
+started; accepted OBS-02/D1–D5 and original recovery evidence are unchanged.
+
+## J2 recovery accepted with timing exception — October 30, 2026
+
+Aaron [approved the sealed acceptance exception](/home/aaron/code/.local-evidence/homelab-server-configs/current/watchdog-timing-disposition-20261030-v1/acceptance.md).
+The J2 Phase 3 watchdog recovery prerequisite is satisfied; independent reset
+timing and hardware attribution remain unproved. Original verdicts and fleet
+requirements remain unchanged. No repeat panic solely for timing is required.
+Next: remaining Phase 3/OBS-09 contract decisions, including OBS-05 disposition.
+No live action, final production acceptance or second-host rollout is authorized.
+
+## Reset-timing disposition proposed — October 30, 2026
+
+Prepared the [acceptance-exception review](/home/aaron/code/.local-evidence/homelab-server-configs/current/watchdog-timing-disposition-20261030-v1/review.md) from verified retained evidence.
+Recommend qualified acceptance of the J2 pilot recovery prerequisite while keeping
+independent reset timing and hardware attribution unproved; no repeat panic solely
+for the missed timing measurement. Decision pending Aaron's approval. Original
+verdicts, fleet requirements, OBS-02/D1–D5 and final production gates are unchanged.
+No target contact, execution or configuration change.
+
+## Controlled panic recovered; independent reset timing unmeasured — October 29, 2026
+
+The [approved attempt](/home/aaron/code/.local-evidence/homelab-server-configs/current/watchdog-panic-recovery-20261029-v1/outcome.md) completed at 18:55:04 CDT:
+boot/network 50.643 seconds; usable native/dual-stack NTP 119.119 seconds;
+convergence 882.997 seconds; stability 1801.631 seconds, all 31 samples passing.
+Final protected/native/watchdog/network and client-denial checks passed. One panic,
+one new boot, no manual intervention, retry or persistent configuration change.
+Aaron confirmed panic text; the approximately five-second reset interval was an
+untimed visual estimate. Exact reset-timing attribution and overall watchdog
+acceptance remain open. Next: review that limitation, without automatically
+repeating the panic. OBS-02/D1–D5 and separate final-observation gates remain.
+
+## KVM successor sealed — October 29, 2026
+
+Prepared the [single-attempt review](/home/aaron/code/.local-evidence/homelab-server-configs/current/watchdog-panic-recovery-20261029-v1/review.md)
+with the accepted bounded readiness snapshot and operator-confirmed ordinary KVM
+visibility. A checked snapshot adapter advances boot identity without claiming
+sustained stability or reset attribution; shared live preflight remains mandatory.
+All 99 focused tests passed. Manual panic/reset notes, separate recovery/timing
+gates and attended recovery remain explicit. Sealed and unexecuted; next is
+exact-hash execution approval. No target contact or retry. Earlier outcomes and
+OBS-02/D1–D5 remain unchanged.
+
 ## Watchdog successor readiness snapshot accepted — October 28, 2026
 
 The [approved read-only inspection](/home/aaron/code/.local-evidence/homelab-server-configs/current/watchdog-successor-readiness-20261028-v1/outcome.md) completed at 15:38:26 CDT.

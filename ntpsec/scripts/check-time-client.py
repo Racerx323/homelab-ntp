@@ -26,13 +26,15 @@ def ntp_response(raw, nonce, structural=False):
     return {'stratum':raw[1],'leap':raw[0]>>6,'refid':'PPS'}
 
 
-def client_ntp(endpoint, structural=False):
+def client_ntp(endpoint, structural=False, administrative=True):
     family=socket.AF_INET6 if ':' in endpoint else socket.AF_INET
     with socket.socket(family,socket.SOCK_DGRAM) as sock:
         sock.settimeout(3);sock.connect((endpoint,123))
         nonce=secrets.token_bytes(8);packet=bytearray(48);packet[0]=0x23;packet[40:48]=nonce
         sock.send(packet);result=ntp_response(sock.recv(512),nonce,structural)
         result['local_address']=sock.getsockname()[0]
+        if not administrative:
+            return result
         # A mode-6 READVAR response, including permission errors, violates localhost-only queries.
         sock.send(struct.pack('!BBHHHHH',0x26,2,1,0,0,0,0))
         try:sock.recv(512)

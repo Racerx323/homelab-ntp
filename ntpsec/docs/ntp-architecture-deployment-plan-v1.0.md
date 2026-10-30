@@ -1391,6 +1391,13 @@ criteria; missing samples cannot be retroactively accepted. Qualify the observer
 against this contract before execution. These recovery windows do not replace
 final OBS-09 or alter accepted OBS-02/D1–D5 limitations.
 
+For j2-svntp1 only, the operator-approved pilot exception permits the demonstrated
+controlled-panic recovery to satisfy the Phase 3 watchdog recovery prerequisite
+while independent reset timing and precise hardware attribution remain unproved.
+Preserve the original test verdicts and the separate acceptance addendum referenced
+in readiness/history. This exception does not relax future fleet test criteria,
+authorize another fault, or replace final observation and production acceptance.
+
 ### Phase 3A: evaluate and accept measured optimizations
 
 Evaluate host, system, NTPsec and GPSD proposals here. Required hardware,
