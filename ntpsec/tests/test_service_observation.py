@@ -1,10 +1,14 @@
 #!/usr/bin/python3
 """Offline contracts for the actual bounded observation executor; no target contact."""
 import importlib.util
+import copy
+import contextlib
+import io
 import json
 import os
 from pathlib import Path
 import shutil
+import subprocess
 import sys
 import tempfile
 import types
@@ -106,6 +110,29 @@ class Observation(unittest.TestCase):
     def test_duplicate_remote_record_rejected(self):
         with self.assertRaises(ValueError): r.parse_remote('{"key":"complete","data":true}\n'*2)
 
+    def test_command_names_do_not_collide_with_observation_records(self):
+        output = io.StringIO()
+        commands = {name: [sys.executable, '-c', 'print("local output")']
+                    for name in ('capacity', 'identity', 'complete')}
+        with contextlib.redirect_stdout(output):
+            r.emit('capacity', {'bytes': 'root', 'inodes': 'root'})
+            r.emit('identity', {'host': 'local'})
+            r.emit_command_records(commands, lambda argv: subprocess.check_output(argv, text=True))
+            r.emit('complete', True)
+        parsed = r.parse_remote(output.getvalue())
+        self.assertEqual(parsed['capacity'], {'bytes': 'root', 'inodes': 'root'})
+        for name in commands:
+            self.assertEqual(parsed['passive_commands.' + name], 'local output\n')
+        self.assertIs(parsed['complete'], True)
+
+    def test_command_failure_preserves_completed_records(self):
+        output = io.StringIO()
+        commands = {'capacity': [sys.executable, '-c', 'print("local output")'],
+                    'later': [sys.executable, '-c', 'raise SystemExit(7)']}
+        with contextlib.redirect_stdout(output), self.assertRaises(subprocess.CalledProcessError):
+            r.emit_command_records(commands, lambda argv: subprocess.check_output(argv, text=True))
+        self.assertEqual(r.parse_remote(output.getvalue()), {'passive_commands.capacity': 'local output\n'})
+
     def test_partial_subprocess_failure_is_preserved(self):
         value = r.stream_record(self.root,self.root,'failed',
               [sys.executable,'-c','import sys;print("before failure",flush=True);sys.stderr.write("reason");sys.exit(7)'],None,2,1024)
@@ -186,11 +213,150 @@ class Observation(unittest.TestCase):
                 r.execute(self.root,self.root,'approved','observe',grant)
         self.assertFalse((self.root/'start.json').exists())
 
+    def test_master_inspection_cannot_start_observation(self):
+        with patch.object(r, 'check', return_value={'purpose':'master-selection'}), \
+             patch.object(r, 'fingerprint', side_effect=AssertionError('scope first')):
+            for phase in ('entry','observe'):
+                with self.assertRaisesRegex(ValueError, 'outside sealed scope'):
+                    r.execute(self.root,self.root,'approved',phase,None)
+
+    def test_inspection_captures_only_master_once_without_entry(self):
+        import time
+        output = self.root/'output'; output.mkdir(mode=0o700)
+        spec = {'purpose':'master-selection', 'not_after_epoch':time.time()+100,
+                'controller_hostname':r.socket.gethostname(),'boundary_commands':[]}
+        row = {'complete':True,'data':{'config':{'selected':{}}}}
+        with patch.object(r,'check',return_value=spec), patch.object(r,'fingerprint'), \
+             patch.object(r,'capture',return_value=row) as capture, \
+             patch.object(r,'boundary',side_effect=AssertionError('no boundary probes')):
+            r.execute(self.root,output,'approved','inspect-master',None)
+            self.assertEqual(capture.call_count,1)
+            self.assertEqual(capture.call_args.args[4:6],('master',False))
+            with self.assertRaisesRegex(ValueError,'empty output'):
+                r.execute(self.root,output,'approved','inspect-master',None)
+            self.assertEqual(capture.call_count,1)
+        self.assertFalse((output/'entry.json').exists())
+        self.assertFalse((output/'start.json').exists())
+        self.assertIs(json.loads((output/'inspection.json').read_text())['entry_accepted'],False)
+
     def test_rrd_membership_requires_available_inventory(self):
-        with self.assertRaises(ValueError):
-            r.rrd_membership({'collection':{'rrd':{'j2':{'cpu':{'finding':'missing'}}}}})
-        self.assertEqual(r.rrd_membership({'collection':{'rrd':{'j2':{'cpu':{'files':[{'filename':'b'},{'filename':'a'}]}}}}}),
-                         {'j2/cpu':['a','b']})
+        graph = {'files': [{'filename': 'b'}, {'filename': 'a'}],
+                 'missing': False, 'missing_expected_files': []}
+        data = {'collection': {'rrd': {'aligned_end': 1800, 'resolution': 300,
+                'data': {'j2': {'cpu': graph}}}}}
+        self.assertEqual(r.rrd_membership(data), {'j2/cpu': ['a', 'b']})
+        for envelope in ({}, {'data': {}}, {'data': {'j2': 1}},
+                         {'data': {'j2': {'cpu': {'files': []}}}},
+                         {'data': {'j2': {'cpu': dict(graph, missing_expected_files=['c'])}}},
+                         {'data': {'j2': {'cpu': {'files': [{'filename': 'a'}]*2}}}}):
+            with self.subTest(envelope=envelope), self.assertRaises(ValueError):
+                r.rrd_membership({'collection': {'rrd': envelope}})
+
+    @unittest.skipUnless(os.environ.get('OBS09_NATIVE_IMAGE'), 'optional installed Munin parser')
+    def test_native_storable_multigraph_selection(self):
+        # Native parser produces the tree: do not hand-build its nested hash.
+        producer = r"""
+use Munin::Master::Utils; use Storable qw(nstore_fd);
+my @lines = ("[j2;j2]", "cpu.user.label user", "cpu.user.state ok",
+             "diskstats_iops.mmcblk0.reads.label reads",
+             "diskstats_iops.mmcblk0.reads.state ok");
+my $d = Munin::Master::Utils::munin_parse_config(\@lines); nstore_fd($d, \*STDOUT);
+"""
+        program = """
+import json, subprocess
+p = json.loads(input())
+raw = subprocess.check_output(['perl','-e',p['producer']])
+for mode in ('config','limits'):
+ result = json.loads(subprocess.check_output(['perl','-e',p['decoder'],mode,
+     json.dumps([['j2','cpu'],['j2','diskstats_iops.mmcblk0'],['j2','absent']])],input=raw))
+ field = 'label' if mode == 'config' else 'state'
+ assert result['j2/cpu']['user'][field] == ('user' if mode == 'config' else 'ok')
+ assert result['j2/diskstats_iops.mmcblk0']['reads'][field] == ('reads' if mode == 'config' else 'ok')
+ assert result['j2/absent'] == {'missing':True}
+print('native Storable config/limits: flat and multigraph selection passed')
+"""
+        command = ['podman','run','--rm','--pull=never','--network=none','--read-only',
+                   '--cap-drop=all','--security-opt=no-new-privileges','-i',
+                   '--entrypoint','/usr/bin/python3',os.environ['OBS09_NATIVE_IMAGE'],'-c',program]
+        result = subprocess.run(command,input=json.dumps(dict(producer=producer,decoder=r.LIMITS_DECODER)),
+                                text=True,capture_output=True,timeout=60)
+        self.assertEqual(result.returncode,0,result.stdout+result.stderr)
+
+
+@unittest.skipUnless(os.environ.get('OBS09_RETAINED_RUN'), 'optional private retained captures')
+class RetainedCaptures(unittest.TestCase):
+    """Exercise actual predicates without launching commands or changing old records."""
+    @classmethod
+    def setUpClass(cls):
+        cls.capture_dir = Path(os.environ['OBS09_RETAINED_RUN'])
+        cls.bundle = Path(os.environ['OBS09_RETAINED_BUNDLE'])
+        cls.spec = json.loads((cls.bundle/'spec.json').read_text())
+        cls.rows = {}
+        for role in r.STREAMS:
+            meta = json.loads((cls.capture_dir/('entry-'+role+'.json')).read_text())
+            raw = (cls.capture_dir/('entry-'+role+'.stdout')).read_text()
+            meta['data'] = r.parse_remote(raw) if role in ('node','master') else json.loads(raw)
+            cls.rows[role] = meta
+        cls.reference = {role: row['data'] for role, row in cls.rows.items()}
+
+    def test_complete_entry_and_continuity_schemas(self):
+        r.require_entry(self.rows, self.spec)
+        r.require_continuity(self.rows, self.reference)
+
+    def test_entry_rejects_missing_stream_check_graph_and_inventory(self):
+        for mutate in (lambda x: x.pop('client6'),
+                       lambda x: x['node']['data']['time']['checks'].pop('finite'),
+                       lambda x: x['node']['data']['time']['checks'].update(offset=False),
+                       lambda x: x['master']['data']['collection']['rrd']['data'].pop('J1-SVMF')):
+            rows = copy.deepcopy(self.rows); mutate(rows)
+            with self.assertRaises(ValueError): r.require_entry(rows, self.spec)
+
+    def test_continuity_rejects_each_changed_input(self):
+        def service(rows):
+            rows['node']['data']['services']['timeservice.service']['stdout'] += '\nInvocationID=changed\n'
+        for mutate in (lambda x: x['node']['data']['identity'].update(boot='changed'),
+                       lambda x: x['master']['data']['hashes'].update(extra='changed'),
+                       lambda x: x['master']['data']['config']['selected'].update(extra={}),
+                       lambda x: x['master']['data']['collection']['rrd']['data'].pop('J1-SVMF'),
+                       lambda x: x['client4']['data'].update(local_address='changed'), service,
+                       lambda x: x['node'].update(returncode=255),
+                       lambda x: x['master'].update(complete=False)):
+            rows = copy.deepcopy(self.rows); mutate(rows)
+            with self.assertRaises(ValueError): r.require_continuity(rows, self.reference)
+
+    def test_start_predicates_without_writing_grant_or_start(self):
+        receipt = json.loads((self.capture_dir/'execution.json').read_text())
+        now = max(row['finished_epoch'] for row in self.rows.values()) + 1
+        expected = receipt['manifest_sha256']
+        entry = {'epoch': now, 'manifest_sha256': expected, 'streams': self.rows}
+        raw = r.encoded(entry)
+        names = ('identity_configuration wifi_hardware native_time master_fields_freshness_limits '
+                 'jobs_leap_deadline client_dns_discovery webmin_both_families controller_capacity_awake '
+                 'journal_dispositions obs02_storage_floors thermal_trip_policy').split()
+        # Only predicate mechanics: these booleans are not an entry acceptance or authorization.
+        grant = dict(manifest_sha256=expected, entry_sha256=r.digest(raw), operator='Aaron',
+                     epoch=now, checks=dict.fromkeys(names, True),
+                     obs05_due_epoch=now+1000, obs05_followup_epoch=now+87400)
+        r.require_start_grant(grant, entry, receipt, expected, raw, now)
+        for name in names:
+            bad = copy.deepcopy(grant); bad['checks'][name] = False
+            with self.assertRaisesRegex(ValueError, 'unresolved entry'):
+                r.require_start_grant(bad, entry, receipt, expected, raw, now)
+        for changes in ({'entry_sha256': 'changed'}, {'manifest_sha256': 'changed'},
+                        {'operator': 'other'}, {'epoch': now+1}, {'obs05_due_epoch': now},
+                        {'obs05_followup_epoch': now}, {'obs05_due_epoch': float('nan')}):
+            with self.assertRaises(ValueError):
+                r.require_start_grant(dict(grant, **changes), entry, receipt, expected, raw, now)
+        with self.assertRaisesRegex(ValueError, 'stale'):
+            r.require_start_grant(grant, entry, receipt, expected, raw, now+1801)
+
+    def test_all_boundary_predicates_from_retained_results(self):
+        def retained(bundle, output, name, *args):
+            result = json.loads((self.capture_dir/(name+'.result.json')).read_text())
+            result['stdout'] = (self.capture_dir/(name+'.stdout')).read_text(errors='replace')
+            return result
+        with patch.object(r, 'stream_record', side_effect=retained):
+            r.boundary(self.bundle, self.spec, self.capture_dir, 'entry')
 
 
 if __name__ == '__main__': unittest.main()

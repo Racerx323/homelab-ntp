@@ -32,7 +32,7 @@ use Munin::Master::Utils;
 binmode STDIN; my $d=fd_retrieve(\*STDIN); my %out;
 my $pairs=decode_json($ARGV[1]); die 'graph bound' if @$pairs>64;
 for my $pair (@$pairs) {
- my ($host,$graph)=@$pair; my $n=munin_get_node($d,[$host,$host,$graph]);
+ my ($host,$graph)=@$pair; my $n=munin_get_node($d,[$host,$host,split(/\./,$graph)]);
  if (ref($n) ne 'HASH') {$out{"$host/$graph"}={missing=>JSON::PP::true}; next;}
  my %selected;
  for my $k (keys %$n) {
@@ -107,6 +107,12 @@ def emit(key, data):
     print(json.dumps({'key': key, 'data': data}, allow_nan=False), flush=True)
 
 
+def emit_command_records(commands, command):
+    """Keep imported command names separate from the observation record names."""
+    for name, argv in commands.items():
+        emit('passive_commands.' + name, command(argv))
+
+
 def protected_hash(path):
     """Hash bounded regular files without buffering installed binaries in memory."""
     path = Path(path)
@@ -160,8 +166,7 @@ def remote(role, rich, spec, sources, since):
             emit('capacity', {'bytes': command(['/usr/bin/df', '-P', '-B1', '/']),
                               'inodes': command(['/usr/bin/df', '-Pi', '/'])})
             if rich:
-                for name, argv in p.COMMANDS.items():
-                    emit(name, command(argv))
+                emit_command_records(p.COMMANDS, command)
                 emit('hardware', p.hardware())
                 wifi = {'radio': command(['/usr/bin/nmcli', 'radio', 'all']),
                         'boot_directives': [line for line in read('/boot/firmware/config.txt').splitlines()
@@ -333,21 +338,76 @@ def boundary(bundle, spec, output, label):
 
 
 def rrd_membership(data):
+    collection = data.get('collection')
+    require(isinstance(collection, dict), 'RRD collection unavailable')
+    envelope = collection.get('rrd', {})
+    require(isinstance(envelope, dict) and isinstance(envelope.get('data'), dict),
+            'RRD host map unavailable: expected collection.rrd.data')
     result = {}
-    for host, graphs in data['collection']['rrd'].items():
+    for host, graphs in envelope['data'].items():
+        require(isinstance(graphs, dict) and graphs, 'RRD graph map unavailable: '+host)
         for graph, value in graphs.items():
-            require('files' in value, 'RRD inventory unavailable')
-            result[host+'/'+graph] = sorted(row['filename'] for row in value['files'])
+            label = host+'/'+graph
+            require(isinstance(value, dict) and isinstance(value.get('files'), list)
+                    and value['files'] and not value.get('missing')
+                    and not value.get('missing_expected_files'), 'RRD inventory incomplete: '+label)
+            require(all(isinstance(row, dict) and isinstance(row.get('filename'), str)
+                        and row['filename'] for row in value['files']), 'invalid RRD filename: '+label)
+            names = [row['filename'] for row in value['files']]
+            require(len(set(names)) == len(names), 'duplicate RRD filename: '+label)
+            result[label] = sorted(names)
+    require(result, 'empty RRD host map')
     return result
 
 
-def require_entry(rows):
-    require(all(r['complete'] for r in rows.values()), 'incomplete entry')
+def require_entry(rows, spec):
+    require(set(rows) == set(STREAMS) and all(r.get('complete') is True for r in rows.values()), 'incomplete entry')
     master = rows['master']['data']
-    require(rrd_membership(master) and all(rrd_membership(master).values()), 'missing master graph')
+    expected = {host+'/'+graph for host, graphs in spec['master_fields']['graphs'].items() for graph in graphs}
+    require(set(rrd_membership(master)) == expected, 'master graph selection mismatch')
     node = rows['node']['data']
-    require(node['time']['checks'] and all(v is True for v in node['time']['checks'].values()), 'node not precision ready')
+    required = {'leap','stratum','pps_selected','pps_reachable','offset','jitter',
+                'serial_reachable','associations','nts','finite'}
+    require(set(node['time']['checks']) == required
+            and all(v is True for v in node['time']['checks'].values()), 'node not precision ready')
     require(node['throttled'].strip() == 'throttled=0x0', 'throttle/undervoltage indication')
+
+
+def require_continuity(rows, reference):
+    for role in ('node','master'):
+        row = rows[role]
+        require(row['returncode'] != 255, 'SSH authentication/transport failed; no retry')
+        require(row['complete'], 'incomplete target capture; stop for assessment')
+        require(row['data']['identity'] == reference[role]['identity'], 'boot/identity changed')
+        require(row['data']['hashes'] == reference[role]['hashes'], 'protected configuration changed')
+    require(rrd_membership(rows['master']['data']) == rrd_membership(reference['master']),
+            'RRD field/device membership changed')
+    require(rows['master']['data']['config']['selected'] == reference['master']['config']['selected'],
+            'master limits/configuration changed')
+    services = rows['node']['data']['services']
+    baseline = reference['node']['services']
+    for unit in ('timeservice.service',):
+        current = dict(x.split('=',1) for x in services[unit]['stdout'].splitlines() if '=' in x)
+        previous = dict(x.split('=',1) for x in baseline[unit]['stdout'].splitlines() if '=' in x)
+        require(bool(current.get('InvocationID')) and current.get('InvocationID') == previous.get('InvocationID'),
+                'time service invocation missing or changed')
+    for role in ('client4','client6'):
+        if rows[role]['complete']:
+            require(rows[role]['data']['local_address'] == reference[role]['local_address'], 'client source changed')
+
+
+def require_start_grant(g, entry, receipt, expected, entry_raw, now):
+    require(g['manifest_sha256'] == expected and g['entry_sha256'] == digest(entry_raw), 'entry grant mismatch')
+    required = ('identity_configuration','wifi_hardware','native_time','master_fields_freshness_limits',
+                'jobs_leap_deadline','client_dns_discovery','webmin_both_families','controller_capacity_awake',
+                'journal_dispositions','obs02_storage_floors','thermal_trip_policy')
+    require(set(g['checks']) == set(required) and all(v is True for v in g['checks'].values()), 'unresolved entry gate')
+    require(isinstance(g.get('obs05_due_epoch'), (int,float)) and math.isfinite(g['obs05_due_epoch'])
+            and g['obs05_due_epoch'] > entry['epoch']
+            and g.get('obs05_followup_epoch') == g['obs05_due_epoch']+86400, 'concrete OBS05 deadline required')
+    require(g['operator'] == 'Aaron' and entry['epoch'] <= g['epoch'] <= now
+            and receipt['epoch'] <= entry['epoch'] <= now
+            and now-receipt['epoch'] <= 1800, 'stale entry/grant')
 
 
 def fingerprint(spec):
@@ -375,12 +435,24 @@ def summarize(rows):
 
 
 def execute(bundle, output, expected, phase, grant):
-    spec = check(bundle, expected); private(output); fingerprint(spec)
+    spec = check(bundle, expected); private(output)
+    require(spec.get('purpose', 'observation') ==
+            ('master-selection' if phase == 'inspect-master' else 'observation'), 'phase outside sealed scope')
+    fingerprint(spec)
     require(time.time() <= spec['not_after_epoch'], 'execution scope expired')
-    require(Path(spec['windows']['executable']).is_file(), 'Windows native executable missing')
+    if phase != 'inspect-master':
+        require(Path(spec['windows']['executable']).is_file(), 'Windows native executable missing')
     for argv in [t['argv'] for t in spec['boundary_commands']]:
         require(os.access(argv[0], os.X_OK), 'boundary executable missing')
     require(socket.gethostname() == spec['controller_hostname'], 'wrong controller')
+    if phase == 'inspect-master':
+        require(not any(output.iterdir()), 'new empty output directory required')
+        write_new(output/'execution.json', {'manifest_sha256': expected, 'epoch': time.time(), 'phase': phase})
+        row = capture(bundle, spec, output, 'inspection', 'master', False, time.time()-300)
+        require(row['complete'] is True, 'incomplete master inspection; retain raw evidence')
+        write_new(output/'inspection.json', {'manifest_sha256': expected, 'epoch': time.time(),
+                                            'stream': row, 'entry_accepted': False})
+        return
     if phase == 'entry':
         require(not any(output.iterdir()), 'new empty output directory required')
         space = os.statvfs(output)
@@ -388,7 +460,7 @@ def execute(bundle, output, expected, phase, grant):
         write_new(output/'execution.json', {'manifest_sha256': expected, 'epoch': time.time(), 'phase': 'entry'})
         rows = parallel_capture(bundle, spec, output, 'entry', True, time.time()-300)
         boundary(bundle, spec, output, 'entry')
-        require_entry(rows)
+        require_entry(rows, spec)
         write_new(output/'entry.json', {'manifest_sha256': expected, 'epoch': time.time(), 'streams': rows})
         return
     receipt = json.loads((output/'execution.json').read_text())
@@ -398,16 +470,7 @@ def execute(bundle, output, expected, phase, grant):
     gst = grant.stat()
     require(gst.st_uid == os.getuid() and not gst.st_mode & 0o077, 'private operator grant required')
     g = json.loads(grant.read_text())
-    require(g['manifest_sha256'] == expected and g['entry_sha256'] == digest(entry_raw), 'entry grant mismatch')
-    required = ('identity_configuration','wifi_hardware','native_time','master_fields_freshness_limits',
-                'jobs_leap_deadline','client_dns_discovery','webmin_both_families','controller_capacity_awake',
-                'journal_dispositions','obs02_storage_floors','thermal_trip_policy')
-    require(set(g['checks']) == set(required) and all(v is True for v in g['checks'].values()), 'unresolved entry gate')
-    require(isinstance(g.get('obs05_due_epoch'), (int,float)) and math.isfinite(g['obs05_due_epoch'])
-            and g['obs05_due_epoch'] > entry['epoch']
-            and g.get('obs05_followup_epoch') == g['obs05_due_epoch']+86400, 'concrete OBS05 deadline required')
-    require(g['operator'] == 'Aaron' and entry['epoch'] <= g['epoch'] <= time.time()
-            and time.time()-receipt['epoch'] <= 1800, 'stale entry/grant')
+    require_start_grant(g, entry, receipt, expected, entry_raw, time.time())
     require(entry['manifest_sha256'] == expected, 'entry manifest mismatch')
     write_new(output/'start.json', {'manifest_sha256': expected, 'entry_sha256': digest(entry_raw),
                                   'grant': g, 'epoch': time.time(), 'monotonic': time.monotonic()})
@@ -430,25 +493,7 @@ def execute(bundle, output, expected, phase, grant):
                 rows = parallel_capture(bundle, spec, output, 'slot-'+str(k).zfill(3), k in (0,288,576), time.time()-600)
                 record['streams'] = {role: {key:value for key,value in row.items() if key != 'data'}
                                      for role,row in rows.items()}
-                for role in ('node','master'):
-                    row = rows[role]
-                    require(row['returncode'] != 255, 'SSH authentication/transport failed; no retry')
-                    require(row['complete'], 'incomplete target capture; stop for assessment')
-                    require(row['data']['identity'] == reference[role]['identity'], 'boot/identity changed')
-                    require(row['data']['hashes'] == reference[role]['hashes'], 'protected configuration changed')
-                require(rrd_membership(rows['master']['data']) == rrd_membership(reference['master']),
-                        'RRD field/device membership changed')
-                require(rows['master']['data']['config']['selected'] == reference['master']['config']['selected'],
-                        'master limits/configuration changed')
-                services = rows['node']['data']['services']
-                baseline = reference['node']['services']
-                for unit in ('timeservice.service',):
-                    current = dict(x.split('=',1) for x in services[unit]['stdout'].splitlines() if '=' in x)
-                    previous = dict(x.split('=',1) for x in baseline[unit]['stdout'].splitlines() if '=' in x)
-                    require(current.get('InvocationID') == previous.get('InvocationID'), 'time service restarted')
-                for role in ('client4','client6'):
-                    if rows[role]['complete']:
-                        require(rows[role]['data']['local_address'] == reference[role]['local_address'], 'client source changed')
+                require_continuity(rows, reference)
                 if k in (0,576): boundary(bundle, spec, output, 'boundary-'+str(k))
             write_new(output/('slot-'+str(k).zfill(3)+'-summary.json'), record); records.append(record)
         write_new(output/'completion.json', summarize(records))
@@ -459,7 +504,7 @@ def execute(bundle, output, expected, phase, grant):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('phase', choices=('check','entry','observe'))
+    parser.add_argument('phase', choices=('check','entry','observe','inspect-master'))
     parser.add_argument('--bundle', required=True, type=Path)
     parser.add_argument('--sha256', required=True)
     parser.add_argument('--output', type=Path)

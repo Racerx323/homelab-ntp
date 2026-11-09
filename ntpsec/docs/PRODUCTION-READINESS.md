@@ -32,15 +32,27 @@ error-priority record appeared. The known WSL discovery limitation is recorded
 with Aaron's Windows-stack amendment. OBS-06 initial invocation/schedule is now
 observed successfully; OBS-05 four-week recurrence remains open.
 
-**Next checkpoint:** reassess rich collector record composition and qualify its
-producer/parser interface before preparing another successor. The approved
-[v3 entry outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261030-v3-run/outcome.md)
-records duplicate `capacity` keys from the dedicated and imported passive reads.
-Protected hashing completed on both targets; native timing and both client
-probes passed. Entry was not accepted. Boundary probes, including the corrected
-Munin HTTPS hostname, were never reached. V3 is consumed; no retry, target change
-or sampling occurred. Preserve duplicate rejection and the retained real outputs
-when qualifying the correction. No accepted OBS-09 epoch exists.
+**OBS-09 is running:** Aaron approved the November 9 renewal and confirmed
+current dual-stack authenticated Webmin access and workstation availability.
+All eleven entry gates passed; [entry assessment](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261109-v1-run/entry-assessment.md)
+records current identities, unchanged protected inputs, 55 graphs/275 fresh
+RRDs and healthy native/client timing. The current master boot and client IPv6
+source form the prospective baseline. No historical boot identity is assumed.
+
+Sampling started **November 9, 2026, 12:08:43 p.m. CST**. The final scheduled
+sample is **November 11, 2026, 12:08:43 p.m. CST**; capture completion follows.
+Slot 000 and its boundaries passed. The [run outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261109-v1-run/outcome.md)
+and [session record](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261109-v1-session.json)
+retain progress. **Next checkpoint:** inspect the existing observer and retained
+samples; do not relaunch a consumed operation. Keep the workstation awake and
+connected. At completion, assess coverage/health/boundaries and obtain final
+operator Webmin confirmation before Aaron's acceptance. No final acceptance is
+claimed. November 4 v2 remains expired and unexecuted; earlier consumed attempts
+remain preserved.
+
+OBS-05's current next trigger is **November 26, 2026, 5:45:57 p.m. CST**;
+Aaron's review is due by **November 27 at 5:45:57 p.m. CST**. Update these
+if the actual schedule or boot changes. All accepted limitations remain.
 
 Aaron approved the prior preparation scope, the full OBS-09 contract and both
 bounded limitations: reported USW-Pro-48-POE/600 W/PoE+ plus ordinary-load hardware

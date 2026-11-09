@@ -87,9 +87,10 @@ retain their owning phases. OBS-12 Webmin temporary-storage suitability remains
 an obligation before large uploads/backups, not proof supplied by idle capacity.
 
 The [observation procedure](OBS09-OBSERVATION-REVIEW.md) records consumed v3.
-Entry stopped on duplicate collector records before boundaries or t0; qualify
-record composition before another successor. Retained timing/client snapshots
-do not establish accepted entry. Aaron accepted
+Entry stopped on duplicate collector records before boundaries or t0. The
+November 4 namespace correction passed local regression and retained-output
+replay; the November 4 successor was consumed and stopped on master RRD envelope handling after successful boundary checks. Retained
+timing/client snapshots do not establish accepted entry. Aaron accepted
 ordinary-load health plus reported USW-Pro-48-POE/600 W/PoE+ facts without measured
 per-port reserve, and workstation IPv4/IPv6 Webmin scope without proof of
 external/controller filtering. Master persistence remains assigned to him at
@@ -178,3 +179,38 @@ accepted under D1–D5; its old approval wording does not authorize replay.
 The contract and accepted OBS-02 evidence remain byte-for-byte unchanged here.
 Likewise OPERATIONS' older installation/runtime table is historical; use readiness
 and later accepted outcomes to determine whether activation is still pending.
+
+### November 4 retained-entry reassessment
+
+The [complete assessment](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-entry-assessment-20261104/assessment.md)
+qualifies the corrected parser and remaining controller predicates locally.
+Master selection still needs reconciliation: seven stale zram RRDs, twelve
+unrecovered multigraph configuration selections and two omitted timing boolean
+RRDs. No accepted entry or new observation interval exists. Resolve those facts
+before another sealed successor; preserve every accepted limitation above.
+
+The [completed master-only inspection](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-master-selection-20261104-v1-run/outcome.md)
+resolves the selection gaps: ten recovered configurations, two retired zram child
+graphs and related overview fields, and both fresh timing booleans. The candidate
+has 55 graphs/275 RRDs. Historical files and accepted limitations remain intact.
+Prepare a new sealed observation review; no accepted entry or sampling exists.
+
+The [OBS-09 successor v2](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261104-v2/review.md)
+is now prepared with the qualified selection and corrected controller. Execution
+approval, fresh entry acceptance and the 48-hour interval remain pending; no
+existing receipt or historical confirmation authorizes its execution.
+
+On November 9, v2 approval arrived after its November 6 start deadline. V2 remains
+unexecuted. The [deadline-only renewal](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261109-v1/review.md)
+proposes November 11 at 23:59 CST with unchanged executable/acceptance inputs;
+fresh approval and entry acceptance remain pending. No target contact occurred.
+
+### November 9 observation started
+
+The renewal was approved and its fresh entry passed all eleven gates. Sampling
+started at 12:08:43 p.m. CST; the final sample is scheduled for November 11 at
+12:08:43 p.m. CST. The [run record](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261109-v1-run/outcome.md)
+supersedes the preparation handoffs above. Final observation acceptance remains
+pending. OBS-05 next trigger is November 26 at 5:45:57 p.m. CST, with Aaron's
+follow-up due November 27 at that time, subject to actual schedule changes.
+All accepted limitations and separate obligations remain unchanged.

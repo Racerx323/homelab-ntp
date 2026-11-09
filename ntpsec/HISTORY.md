@@ -1,5 +1,89 @@
 # NTPsec deployment history
 
+## OBS-09 entry accepted; observation started — November 9, 2026
+
+Executed the approved renewal once after current operator confirmations.
+All eleven entry gates passed; all 275 selected RRDs were fresh and finite,
+configured limits were OK, and native/client timing passed. Started the 48-hour
+window at 12:08:43 p.m. CST; first four-stream sample and boundaries completed.
+Final sample is due November 11 at 12:08:43 p.m. CST. Observation and final
+acceptance remain pending. [Run record](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261109-v1-run/outcome.md)
+preserves current baseline and OBS-05 trigger/follow-up deadlines. Accepted
+OBS-02/D1–D5 and other limitations remain unchanged; no production mutation.
+
+## OBS-09 start deadline renewed without execution — November 9, 2026
+
+V2 approval arrived after its November 6 start deadline. Verified its intact
+seal and unexecuted state; no receipt, target contact or sampling. Prepared a
+[deadline-only renewal](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261109-v1/review.md)
+through November 11 at 23:59 CST. Repository executable sources and qualified
+selection match v2; existing qualification reused. Fresh approval and entry
+checks remain required. Original artifacts and accepted limitations unchanged.
+
+## OBS-09 successor v2 prepared — November 4, 2026
+
+Prepared the [new executable review](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261104-v2/review.md)
+from current repository sources and the qualified 55-graph/275-RRD selection.
+Both timing booleans included; seven retired historical RRDs preserved. Retained
+capture qualification exercises entry/continuity schemas; native/parser tests
+pass. Sealed and unexecuted, awaiting exact-hash approval. No target contact,
+new baseline or sampling. Prior receipts and accepted limitations unchanged.
+
+## OBS-09 master selection inspection completed — November 4, 2026
+
+The [approved inspection](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-master-selection-20261104-v1-run/outcome.md) recovered ten nested
+configurations and confirmed two retired zram child graphs plus overview fields,
+accounting for all seven stale historical RRDs. Both timing booleans are fresh
+and OK. Qualified a 55-graph/275-RRD active selection; historical files preserved.
+Protected hashes/identity unchanged; no production changes or sampling. Next:
+prepare a new observation review with this selection. Accepted limitations stand.
+
+## OBS-09 master selections combined into one inspection — November 4, 2026
+
+Added the two omitted timing booleans to the proposed RRD selection and retained
+seven stale zram files for comparison. Prepared one
+[master-only read-only review](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-master-selection-20261104-v1/review.md)
+for corrected native cache selections and fresh RRD evidence. The shared observer
+rejects entry/observe phases for this scope; 35 focused tests passed. No target
+contact, observation successor, sampling start or changed acceptance limitation.
+
+## OBS-09 retained-entry audit and schema correction — November 4, 2026
+
+Corrected the RRD envelope and native multigraph paths. Qualified entry, boundary,
+start-grant and continuity predicates against complete retained captures and
+Munin's installed parser: 33 focused tests passed. The
+[assessment](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-entry-assessment-20261104/assessment.md)
+records all eleven entry decisions and exposes remaining stale/omitted master
+field selections. No successor sealed, target contacted or sampling started.
+Original attempts and accepted OBS-02/D1–D5 limitations remain unchanged.
+
+## OBS-09 November 4 entry stopped on RRD schema handling
+
+Executed the approved successor once. Complete remote/client captures and all
+Windows/DNS/HTTPS boundaries passed, including the corrected Munin hostname.
+Entry validation then treated the master RRD envelope as the host map and raised
+an exception; hosts are under `rrd.data`. The [outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261104-v1-run/outcome.md)
+retains all evidence. No entry acceptance, sampling, retry or target mutation.
+Qualify master schema handling and downstream predicates against retained
+captures before a successor. Accepted limitations remain unchanged.
+
+## OBS-09 successor sealed — November 4, 2026
+
+Sealed the [November 4 executable review](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261104-v1/review.md)
+with the qualified record namespace fix and unchanged runtime scope. Source-byte,
+scope and integrity checks bind the local qualification. V3 remains consumed;
+no target contact or sampling occurred. Fresh execution approval and current
+entry acceptance remain required. OBS-02/D1–D5 remain unchanged.
+
+## OBS-09 record namespace corrected — November 4, 2026
+
+Separated imported passive command records under `passive_commands.*`, preserving
+the dedicated capacity payload, incremental failure evidence and duplicate
+rejection. Local emitter/parser regressions and replay of retained v3 output
+passed: all 34 node records preserved; unchanged master output parsed. No target
+contact, retry, HTTPS check or sampling occurred. V3 remains consumed; prepare
+and approve a new successor before execution. OBS-02/D1–D5 remain unchanged.
+
 ## OBS-09 v3 duplicate record stopped entry — October 30, 2026
 
 Executed v3 once. Protected hashing completed, but the rich node collector

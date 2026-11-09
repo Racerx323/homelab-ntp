@@ -7,14 +7,14 @@ it does not install, configure, restart or repair production services.
 
 ## Current checkpoint
 
-The [executable review](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261030-v3/review.md)
-and [integrity seal](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261030-v3/sealing.json)
-bind node/master/client targets, exact source and trust inputs, commands, limits
-and recovery boundaries. V3 was approved and consumed during entry, then stopped
-on duplicate `capacity` records. The [outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261030-v3-run/outcome.md)
-retains partial evidence. No boundary probes or sampling start occurred. Do not
-replay v3. Qualify record composition and the producer/parser interface before
-preparing another successor. Historical reviews remain unchanged.
+The [November 9 renewal](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261109-v1/review.md)
+was approved and executed. All eleven entry gates passed after current operator
+confirmations. The [run record](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261109-v1-run/outcome.md)
+records sampling start on November 9, 2026, at 12:08:43 p.m. CST and the final
+scheduled sample on November 11 at 12:08:43 p.m. CST. The observation remains
+in progress; final acceptance is pending. Do not replay entry or sampling.
+November 4 v2 remains expired and unexecuted. Earlier consumed records and
+accepted limitations remain unchanged.
 
 Aaron accepted two bounded entry limitations: reported USW-Pro-48-POE/600 W/PoE+
 facts plus ordinary-load hardware health, without measured per-port reserve; and
@@ -80,3 +80,19 @@ probe separation. The normal repository test suite includes them. Native Munin
 Perl syntax and Windows parser/local-adapter checks were qualified locally;
 these do not establish current node/master health or actual 48-hour acceptance.
 The shared helper's optional output sink preserves existing callers' behavior.
+
+## Local retained-capture qualification
+
+Run `ntpsec/tests/test_service_observation.py` with `OBS09_RETAINED_RUN` pointing
+to a complete run directory and `OBS09_RETAINED_BUNDLE` to its frozen inputs.
+This exercises the real entry, boundary, grant and continuity predicates without
+launching target commands or writing acceptance/start records. Add
+`OBS09_NATIVE_IMAGE=localhost/munin-master-validation:bookworm` to qualify flat
+and nested cache selection with the installed Munin parser in the existing
+network-disabled Podman image. Run that option outside the filesystem sandbox.
+Default CI skips these optional private/native cases and retains portable
+schema and rejection tests; private evidence is not a build dependency.
+
+An offline pass proves parser/predicate compatibility, not that every reviewed
+entry criterion passed. Record missing selections, stale values and operator
+conditions separately; never fill all grant checks merely because tests pass.
