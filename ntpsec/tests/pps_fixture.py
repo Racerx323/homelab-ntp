@@ -25,6 +25,12 @@ class HardwareTree:
                     mode, major, minor = tree.devices[str(self)]
                     return SimpleNamespace(st_mode=mode, st_rdev=os.makedev(major, minor), st_uid=0, st_gid=20)
                 return SimpleNamespace(st_mode=info.st_mode, st_uid=0, st_gid=info.st_gid)
+            # pathlib 3.14 predicates can bypass stat() and inspect the host path.
+            def is_symlink(self): return self.real().is_symlink()
+            def is_file(self, *, follow_symlinks=True):
+                return self.real().is_file() and (follow_symlinks or not self.is_symlink())
+            def exists(self, *, follow_symlinks=True):
+                return self.real().exists() or (not follow_symlinks and self.is_symlink())
             def lstat(self): return self.stat(follow_symlinks=False)
             def resolve(self, strict=False):
                 return VirtualPath('/')/self.real().resolve(strict=strict).relative_to(tree.root)
