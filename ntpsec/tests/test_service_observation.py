@@ -22,6 +22,8 @@ def load(path):
 r = load(ROOT/'scripts/observe-service-window.py')
 h = load(ROOT/'scripts/run-production-inspection.py')
 c = load(ROOT/'scripts/check-time-client.py')
+readiness = load(ROOT/'scripts/inspect-observer-readiness.py')
+hosted = load(ROOT/'scripts/host-service-observation.py')
 
 
 class Observation(unittest.TestCase):
@@ -34,6 +36,291 @@ class Observation(unittest.TestCase):
         return [{'due_monotonic': k*300, 'streams': {s: {'recorded': True,
                  'start_monotonic': k*300, 'complete': True} for s in r.STREAMS}}
                 for k in range(r.SLOTS)]
+
+    def test_hosted_gateway_closed_samples_and_real_cli_rejection(self):
+        self.assertTrue(hosted.sample('entry'))
+        self.assertTrue(hosted.sample('slot-576'))
+        self.assertFalse(hosted.sample('slot-001'))
+        for value in ('', 'sh', 'entry;id', 'entry\n', 'slot-577', 'slot--01', 'slot-000 extra'):
+            with self.assertRaises(ValueError): hosted.sample(value)
+        env = dict(os.environ, SSH_ORIGINAL_COMMAND='sh -c id')
+        result = subprocess.run([sys.executable, '-I', '-B', str(ROOT/'scripts/host-service-observation.py'),
+                                 'node', '--bundle', str(self.root), '--sha256', 'irrelevant'],
+                                env=env, capture_output=True, text=True, timeout=5)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('named sample required', result.stderr)
+        self.assertNotIn('sudo:', result.stderr)
+
+    def test_dedicated_key_line_and_atomic_preservation(self):
+        subprocess.run(['ssh-keygen', '-q', '-t', 'ed25519', '-N', '', '-f', str(self.root/'identity')],
+                       check=True, timeout=5)
+        spec = {'gateway_path': '/usr/local/libexec/obs09-test.py',
+                'deployment_root': '/var/lib/ntp-observation/test', 'operation': 'obs09-test'}
+        line = hosted.key_line((self.root/'identity.pub').read_text(), spec, 'a'*64)
+        self.assertTrue(line.startswith(b'restrict,from="10.1.3.83",command="'))
+        self.assertIn(b' node --bundle ', line)
+        self.assertNotIn(b'permitopen', line)
+        with self.assertRaises(ValueError): hosted.key_line('ssh-ed25519 not-a-key', spec, 'a'*64)
+        target = self.root/'authorized_keys'; target.write_bytes(b'existing key\n'); target.chmod(0o600)
+        before, meta = hosted.key_file(target, os.getuid())
+        hosted.replace_key_file(target, before, before+line, meta)
+        self.assertEqual(target.read_bytes(), before+line)
+        with self.assertRaisesRegex(ValueError, 'concurrent key edit'):
+            hosted.replace_key_file(target, before, b'do not publish', meta)
+        self.assertEqual(target.read_bytes(), before+line)
+        current, meta = hosted.key_file(target, os.getuid())
+        hosted.replace_key_file(target, current, before, meta)
+        self.assertEqual(target.read_bytes(), before)
+        self.assertFalse(target.with_name('authorized_keys.obs09-new').exists())
+
+    def test_owned_authorization_revokes_without_losing_unrelated_new_keys(self):
+        subprocess.run(['ssh-keygen', '-q', '-t', 'ed25519', '-N', '', '-f', str(self.root/'identity')],
+                       check=True, timeout=5)
+        shutil.copyfile(self.root/'identity.pub', self.root/'public.pub')
+        directory = self.root/'.ssh'; directory.mkdir(mode=0o700)
+        path = directory/'authorized_keys'; original = b'original-key\n'
+        path.write_bytes(original); path.chmod(0o600)
+        account = types.SimpleNamespace(pw_dir=str(self.root), pw_uid=os.getuid())
+        spec = {'gateway_path': '/usr/local/libexec/obs09-test.py',
+                'deployment_root': '/var/lib/ntp-observation/test', 'operation': 'obs09-test'}
+        with patch.object(hosted.pwd, 'getpwnam', return_value=account):
+            hosted.authorize(self.root, spec, 'a'*64, r)
+            with self.assertRaisesRegex(ValueError, 'already consumed'):
+                hosted.authorize(self.root, spec, 'a'*64, r)
+            path.write_bytes(path.read_bytes()+b'unrelated-new-key\n')
+            hosted.authorize(self.root, spec, 'a'*64, r, remove=True)
+            hosted.authorize(self.root, spec, 'a'*64, r, remove=True)
+        self.assertEqual(path.read_bytes(), original+b'unrelated-new-key\n')
+        self.assertTrue((self.root/'revoked.json').exists())
+
+    def test_boundary_time_binding_and_unavailable_boundary(self):
+        value = {'manifest_sha256': 'seal', 'complete': True,
+                 'started_epoch': 100, 'finished_epoch': 120}
+        hosted.validate_boundary(value, 'seal', 200)
+        hosted.validate_boundary(value, 'seal', 90, finish=True)
+        for other, endpoint in ((dict(value, complete=False), 200),
+                                (dict(value, manifest_sha256='other'), 200),
+                                (value, 2000), (value, 110)):
+            with self.assertRaises(ValueError): hosted.validate_boundary(other, 'seal', endpoint)
+
+    def test_hosted_admission_uses_current_boot_then_rejects_transition_and_expiry(self):
+        boot = Path('/proc/sys/kernel/random/boot_id').read_text().strip()
+        value = {'manifest_sha256': 'seal', 'role': 'node', 'epoch': 100, 'deadline': 180100, 'boot': boot}
+        path = self.root/'admission.json'; path.write_text(json.dumps(value))
+        with patch.object(hosted, 'trusted'):
+            hosted.admission(self.root, 'seal', 'node', 200)
+            for change in ({'boot': 'previous-operation'}, {'manifest_sha256': 'other'},
+                           {'deadline': 180101}, {'deadline': 150}, {'role': 'master'}):
+                path.write_text(json.dumps(dict(value, **change)))
+                with self.assertRaises(ValueError): hosted.admission(self.root, 'seal', 'node', 200)
+
+    def test_hosted_unit_has_no_restart_and_independent_bounds(self):
+        unit = (ROOT/'templates/obs09-master.service.in').read_text()
+        for control in ('Restart=no', 'RuntimeMaxSec=49h', 'KillMode=control-group',
+                        'TimeoutStopSec=15s', 'MemoryMax=1G', ' retire-key ', 'UMask=0077'):
+            self.assertIn(control, unit)
+        self.assertNotIn('WantedBy=', unit)
+
+    def test_hosted_review_wait_does_not_invent_grant_or_extend_deadline(self):
+        with patch.object(hosted.time, 'monotonic', return_value=200):
+            with self.assertRaisesRegex(ValueError, 'review deadline'):
+                hosted.wait_for_grant(self.root, 199)
+        self.assertFalse((self.root/'grant.json').exists())
+        (self.root/'grant.json').write_text('{}')
+        hosted.wait_for_grant(self.root, 999999999999)
+
+    def test_hosted_run_uses_same_process_for_entry_and_observation_and_retires_key(self):
+        import time
+        root = self.root; bundle = root/'inputs'; bundle.mkdir(); (root/'results').mkdir()
+        identity = root/'identity'; identity.write_text('temporary test credential')
+        spec = {'master': {'hostname': r.socket.gethostname()}, 'identity_file': str(identity)}
+        boundary_raw = r.encoded({'complete': True, 'manifest_sha256': 'seal',
+                                  'started_epoch': time.time()-10, 'finished_epoch': time.time()-5})
+        (root/'start-boundary.json').write_bytes(boundary_raw)
+        (root/'grant.json').write_text(json.dumps({'start_boundary_sha256': r.digest(boundary_raw)}))
+        calls = []
+        def execute(bundle, output, expected, phase, grant): calls.append(phase)
+        observer = types.SimpleNamespace(write_new=r.write_new, execute=execute, digest=r.digest)
+        argv = ['hosted', 'run', '--bundle', str(bundle), '--sha256', 'seal']
+        with patch.object(sys, 'argv', argv), patch.object(hosted.os, 'geteuid', return_value=0), \
+             patch.object(hosted, 'load', return_value=(observer, spec)), patch.object(hosted, 'admission'), \
+             patch.object(hosted, 'trusted'), patch('signal.signal'):
+            hosted.main()
+            with self.assertRaises(FileExistsError): hosted.main()
+        self.assertEqual(calls, ['entry', 'observe'])
+        self.assertFalse(identity.exists())
+
+    def test_hosted_entry_failure_retains_evidence_and_retires_key_without_observing(self):
+        root = self.root; bundle = root/'inputs'; bundle.mkdir(); (root/'results').mkdir()
+        identity = root/'identity'; identity.write_text('temporary test credential')
+        spec = {'master': {'hostname': r.socket.gethostname()}, 'identity_file': str(identity)}
+        def execute(bundle, output, expected, phase, grant):
+            self.assertEqual(phase, 'entry')
+            r.write_new(output/'execution.json', {'partial': True})
+            raise ValueError('actual entry failed')
+        observer = types.SimpleNamespace(write_new=r.write_new, execute=execute)
+        argv = ['hosted', 'run', '--bundle', str(bundle), '--sha256', 'seal']
+        with patch.object(sys, 'argv', argv), patch.object(hosted.os, 'geteuid', return_value=0), \
+             patch.object(hosted, 'load', return_value=(observer, spec)), patch.object(hosted, 'admission'), \
+             patch.object(hosted, 'trusted'), patch('signal.signal'):
+            with self.assertRaisesRegex(ValueError, 'actual entry failed'): hosted.main()
+        self.assertFalse(identity.exists())
+        self.assertTrue((root/'results/execution.json').exists())
+        self.assertEqual(json.loads((root/'results/hosted-error.json').read_text())['error'], 'actual entry failed')
+
+    def test_hosted_named_sample_consumes_receipt_before_collecting(self):
+        requests = self.root/'requests'; requests.mkdir()
+        for name in ('helper.py', 'passive.py', 'measure.py', 'checks.py', 'munin.py'):
+            (self.root/name).write_text('# test')
+        bundle = self.root/'inputs'; bundle.mkdir()
+        for name in ('helper.py', 'passive.py', 'measure.py', 'checks.py', 'munin.py'):
+            shutil.copy2(self.root/name, bundle/name)
+        spec = {'node': {'hostname': r.socket.gethostname()}}
+        observer = types.SimpleNamespace(write_new=r.write_new, remote=lambda *args: None)
+        argv = ['hosted', 'node-root', '--bundle', str(bundle), '--sha256', 'seal', '--sample', 'entry']
+        with patch.object(sys, 'argv', argv), patch.object(hosted.os, 'geteuid', return_value=0), \
+             patch.object(hosted, 'load', return_value=(observer, spec)), patch.object(hosted, 'admission'):
+            hosted.main()
+            with self.assertRaises(FileExistsError): hosted.main()
+        self.assertEqual(json.loads((requests/'entry.json').read_text())['label'], 'entry')
+
+    def test_bound_client_uses_real_loopback_source_and_rejects_unavailable(self):
+        import socket
+        import struct
+        import threading
+        import time
+        real_socket = socket.socket
+        with real_socket(socket.AF_INET, socket.SOCK_DGRAM) as server:
+            server.bind(('127.0.0.1', 0)); server.settimeout(5)
+            port = server.getsockname()[1]; observed = []
+            def respond():
+                packet, peer = server.recvfrom(512); observed.append(peer[0])
+                response = bytearray(48); response[0] = 0x24; response[1] = 1
+                response[12:16] = b'PPS\0'; response[24:32] = packet[40:48]
+                response[32:40] = struct.pack('!II', int(time.time())+2208988800, 1)
+                response[40:48] = response[32:40]; server.sendto(response, peer)
+            thread = threading.Thread(target=respond); thread.start()
+            class LocalPort(real_socket):
+                def connect(self, destination):
+                    self.assert_destination = destination
+                    return super().connect((destination[0], port))
+            try:
+                with patch.object(c.socket, 'socket', LocalPort):
+                    result = c.client_ntp('127.0.0.1', source='127.0.0.2', administrative=False)
+                    with self.assertRaises(OSError):
+                        c.client_ntp('127.0.0.1', source='192.0.2.199', administrative=False)
+            finally: thread.join(6)
+        self.assertEqual(observed, ['127.0.0.2'])
+        self.assertEqual(result['local_address'], '127.0.0.2')
+        with self.assertRaisesRegex(ValueError, 'family mismatch'):
+            c.client_ntp('127.0.0.1', source='::1')
+
+    def test_hosted_capture_local_master_and_fixed_node_command(self):
+        for name in ('passive.py', 'measure.py', 'checks.py', 'munin.py', 'observer.py'):
+            (self.root/name).write_text('# test input')
+        spec = {'hosting': 'master', 'identity_file': '/owned/identity', 'ssh_options': ['BatchMode=yes'],
+                'probe_sources': {'client4': '10.1.3.83'},
+                'node': {'target': 'ama@10.1.0.51', 'host_key_alias': '10.1.0.137'}}
+        result = {'returncode': 0, 'stdout': '{"key":"complete","data":true}\n', 'error': None}
+        with patch.object(r, 'stream_record', return_value=result) as stream:
+            r.capture(self.root, spec, self.root, 'entry', 'node', True, 0)
+            args = stream.call_args.args
+            self.assertIsNone(args[4])
+            self.assertEqual(args[3][-1], 'entry')
+            self.assertIn('-n', args[3]); self.assertIn('10.1.3.83', args[3])
+            r.capture(self.root, spec, self.root, 'entry', 'master', True, 0)
+            self.assertEqual(stream.call_args.args[3], ['/usr/bin/python3', '-I', '-B', '-'])
+
+    def test_controller_readiness_scope_cannot_observe(self):
+        with patch.object(r, 'check', return_value={'purpose': 'controller-readiness'}), \
+             patch.object(r, 'fingerprint', side_effect=AssertionError('no authentication')):
+            for phase in ('entry', 'observe', 'inspect-master'):
+                with self.assertRaisesRegex(ValueError, 'outside sealed scope'):
+                    r.execute(self.root, self.root, 'approved', phase, None)
+
+    def test_actual_readiness_payload_imports_before_wrong_host_rejection(self):
+        shutil.copy2(ROOT/'scripts/inspect-observer-readiness.py', self.root/'controller-readiness.py')
+        program = r.readiness_payload(self.root, 'master', 'deliberately-wrong-host.invalid')
+        result = subprocess.run([sys.executable, '-I', '-B', '-'], input=program,
+                                text=True, capture_output=True, timeout=5)
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn('root/host mismatch', result.stderr)
+        self.assertNotIn('NameError', result.stderr)
+        rows = r.parse_remote(result.stdout)
+        self.assertEqual(set(rows), {'identity'})
+        self.assertEqual(rows['identity']['hostname'], r.socket.gethostname())
+
+    def test_controller_readiness_runs_two_reads_once_and_retains_status(self):
+        import time
+        output = self.root/'result'; output.mkdir(mode=0o700)
+        (self.root/'controller-readiness.py').write_text('# sealed input')
+        spec = {'purpose': 'controller-readiness', 'not_after_epoch': time.time()+100,
+                'controller_hostname': r.socket.gethostname(), 'boundary_commands': [],
+                'master': {'hostname': 'J1-SVMF'}, 'node': {'hostname': 'j2-svntp1'}}
+        result = {'stdout': json.dumps({'key': 'complete', 'data': True})+'\n',
+                  'returncode': 0, 'error': None}
+        with patch.object(r, 'check', return_value=spec), patch.object(r, 'fingerprint'), \
+             patch.object(r, 'target_argv', return_value=['approved-read']), \
+             patch.object(r, 'stream_record', return_value=result) as stream:
+            r.execute(self.root, output, 'approved', 'inspect-controller', None)
+            self.assertEqual(stream.call_count, 2)
+            with self.assertRaisesRegex(ValueError, 'empty output'):
+                r.execute(self.root, output, 'approved', 'inspect-controller', None)
+            self.assertEqual(stream.call_count, 2)
+        self.assertIs(json.loads((output/'inspection.json').read_text())['accepted'], False)
+        self.assertFalse((output/'start.json').exists())
+
+    def test_readiness_public_metadata_never_reads_private_key(self):
+        import base64
+        kind = b'ssh-ed25519'
+        raw = len(kind).to_bytes(4, 'big')+kind+b'public test bytes'
+        public = 'ssh-ed25519 '+base64.b64encode(raw).decode()
+        directory = self.root/'.ssh'; directory.mkdir()
+        (directory/'id_ed25519').mkdir()  # Opening as a file would fail.
+        (directory/'id_ed25519.pub').write_text(public+' sensitive-comment\n')
+        account = types.SimpleNamespace(pw_dir=str(self.root), pw_uid=os.getuid())
+        with patch.object(readiness.pwd, 'getpwnam', return_value=account):
+            result = readiness.ssh_metadata('pi')
+        self.assertNotIn('sensitive-comment', json.dumps(result))
+        keys = result['entries']['id_ed25519.pub']['public_keys']
+        restricted = readiness.public_fingerprints('command="secret command",restrict '+public+' comment')
+        self.assertEqual(keys[0]['fingerprint'], restricted[0]['fingerprint'])
+        self.assertTrue(restricted[0]['has_options'])
+        self.assertNotIn('secret', json.dumps(restricted))
+        (directory/'linked.pub').symlink_to(directory/'id_ed25519.pub')
+        with self.assertRaisesRegex(ValueError, 'indirect'):
+            readiness.read_public(directory/'linked.pub')
+
+    def test_readiness_source_binding_uses_real_local_sockets_without_send(self):
+        with patch.object(readiness, 'SOURCES', ('127.0.0.1', '::1')):
+            rows = readiness.bind_sources()
+        self.assertEqual(rows, [{'expected_source': '127.0.0.1', 'actual_source': '127.0.0.1'},
+                                {'expected_source': '::1', 'actual_source': '::1'}])
+
+    def test_readiness_source_binding_preserves_failure(self):
+        with patch.object(readiness.socket, 'socket', side_effect=OSError('source unavailable')):
+            rows = readiness.bind_sources()
+        self.assertEqual(len(rows), 2)
+        self.assertTrue(all(x['error'] == 'source unavailable' for x in rows))
+
+    def test_readiness_admits_current_boot_and_rejects_mid_capture_change(self):
+        helper = types.SimpleNamespace(bounded=lambda *a, **kw: {'returncode': 0, 'stdout': '', 'stderr': ''})
+        for after, fails in [('fresh-boot', False), ('changed-boot', True)]:
+            output = io.StringIO()
+            with patch.object(readiness.socket, 'gethostname', return_value='j2-svntp1'), \
+                 patch.object(readiness.os, 'geteuid', return_value=0), \
+                 patch.object(readiness.Path, 'read_text', side_effect=['fresh-boot', after]), \
+                 patch.object(readiness, 'ssh_metadata', return_value={}), \
+                 patch.object(readiness, 'read_public', return_value=''), \
+                 contextlib.redirect_stdout(output):
+                if fails:
+                    with self.assertRaisesRegex(ValueError, 'boot/identity changed'):
+                        readiness.collect('node', 'j2-svntp1', helper)
+                else:
+                    readiness.collect('node', 'j2-svntp1', helper)
+            rows = r.parse_remote(output.getvalue())
+            self.assertEqual(rows['identity']['boot'], 'fresh-boot')
+            self.assertEqual(rows.get('complete', False), not fails)
 
     def test_full_window(self):
         self.assertTrue(all(v['completeness_pass'] for v in r.summarize(self.rows())['streams'].values()))

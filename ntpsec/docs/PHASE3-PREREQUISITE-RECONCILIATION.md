@@ -214,3 +214,14 @@ supersedes the preparation handoffs above. Final observation acceptance remains
 pending. OBS-05 next trigger is November 26 at 5:45:57 p.m. CST, with Aaron's
 follow-up due November 27 at that time, subject to actual schedule changes.
 All accepted limitations and separate obligations remain unchanged.
+
+### November 24 interruption disposition
+
+The November 9 running status above is superseded: the observer stopped at
+12:38:48 p.m. CST after six slots on changed client IPv6 source. No 48-hour
+acceptance exists. Aaron reported rebooting the workstation and selected
+J1-SVMF for the successor. See the [current work ledger](PRODUCTION-READINESS.md)
+and [successor preparation](OBS09-OBSERVATION-REVIEW.md#j1-svmf-successor-preparation).
+Retain all original failure evidence and OBS-02/D1–D5. OBS-05 verification is
+approved in intent; the last captured recurrence deadline is still a historical
+schedule observation, pending current bounded evidence.

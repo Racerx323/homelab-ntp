@@ -26,10 +26,17 @@ def ntp_response(raw, nonce, structural=False):
     return {'stratum':raw[1],'leap':raw[0]>>6,'refid':'PPS'}
 
 
-def client_ntp(endpoint, structural=False, administrative=True):
+def client_ntp(endpoint, structural=False, administrative=True, source=None):
     family=socket.AF_INET6 if ':' in endpoint else socket.AF_INET
     with socket.socket(family,socket.SOCK_DGRAM) as sock:
-        sock.settimeout(3);sock.connect((endpoint,123))
+        sock.settimeout(3)
+        if source is not None:
+            if ipaddress.ip_address(source).version != ipaddress.ip_address(endpoint).version:
+                raise ValueError('source/endpoint address family mismatch')
+            sock.bind((source,0))
+        sock.connect((endpoint,123))
+        if source is not None and ipaddress.ip_address(sock.getsockname()[0]) != ipaddress.ip_address(source):
+            raise ValueError('bound client source mismatch')
         nonce=secrets.token_bytes(8);packet=bytearray(48);packet[0]=0x23;packet[40:48]=nonce
         sock.send(packet);result=ntp_response(sock.recv(512),nonce,structural)
         result['local_address']=sock.getsockname()[0]

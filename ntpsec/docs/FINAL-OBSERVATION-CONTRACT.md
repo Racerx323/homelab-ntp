@@ -2,7 +2,7 @@
 
 Prepared October 30, 2026. **Contract approved by Aaron on October 30, 2026.**
 Aaron explicitly approved the remaining criteria: “Approve remaining contract criteria.”
-No observation has started. This contract does not authorize target contact,
+The November 9 attempt stopped incomplete. This contract does not authorize target contact,
 installation, restart, failure injection, notification, retry or second-host work.
 Aaron owns acceptance. The architecture plan defines requirements; the
 [prerequisite reconciliation](PHASE3-PREREQUISITE-RECONCILIATION.md) records their
@@ -17,7 +17,8 @@ of a node discovery failure. Keep the serving peer and primary DNAT unchanged.
 
 Before starting, bind current inventory, native tool paths, source identities,
 reader thresholds, expected jobs/schedules, protected configuration and boot IDs
-in the execution review. Reuse accepted evidence; refresh changed or missing
+at live admission under the execution review, not from an old inspection.
+Reuse accepted evidence; refresh changed or missing
 facts only. Close or explicitly disposition the remaining hardware/power,
 Wi-Fi, management/access and master-persistence gaps listed in reconciliation.
 An omitted check is unavailable, never an implicit pass.
@@ -124,3 +125,18 @@ observation review with explicit node/master/client scopes and any missing
 read-only entry checks. Qualify only the required collector behavior locally;
 use current repository implementations, never consumed-operation code or a new
 unrelated test harness. Start requires separate execution authorization.
+
+## November 24 controller-location amendment
+
+Aaron selected J1-SVMF to host the next observation and independent client probes
+because the operator workstation had to reboot. Node-local measurements remain
+necessary but cannot replace independent network-client evidence. Keep all
+existing duration, completeness, precision and health criteria. The master-hosted
+collector must survive workstation disconnection without automatic replay.
+Windows discovery and authenticated Webmin checks remain workstation boundary
+observations; continuous workstation availability is no longer required.
+The master-hosted implementation is locally qualified. Its new execution review
+proposes a 30-minute workstation boundary allowance before start and after the
+final scheduled sample, without weakening native/client window criteria. That
+allowance and deployment still require approval of the sealed review. The consumed November 9 operation is
+unchanged; its failed source-continuity predicate remains historical evidence.

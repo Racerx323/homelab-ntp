@@ -1,0 +1,32 @@
+[Unit]
+Description=One-use bounded OBS-09 observation
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=exec
+User=root
+Group=root
+UMask=0077
+WorkingDirectory=/
+ExecStart=/usr/bin/python3 -I -B @ROOT@/inputs/hosted.py run --bundle @ROOT@/inputs --sha256 @SHA256@
+ExecStopPost=/usr/bin/python3 -I -B @ROOT@/inputs/hosted.py retire-key --bundle @ROOT@/inputs --sha256 @SHA256@
+Restart=no
+RuntimeMaxSec=49h
+TimeoutStopSec=15s
+KillMode=control-group
+SendSIGKILL=yes
+StandardOutput=append:@ROOT@/service.stdout
+StandardError=append:@ROOT@/service.stderr
+MemoryMax=1G
+TasksMax=64
+Nice=10
+CPUWeight=10
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=read-only
+ReadWritePaths=@ROOT@
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+
+# Deliberately no [Install] section: never enable or restart on boot/failure.

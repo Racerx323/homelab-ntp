@@ -1,14 +1,108 @@
 # NTPsec deployment history
 
+This is a dated record, not an execution queue. Statements such as “next”,
+“pending” and “unexecuted” describe the state when each entry was written.
+Later outcomes supersede earlier handoffs without erasing their failures or
+limitations. Use [production readiness](docs/PRODUCTION-READINESS.md#decision-and-next-action)
+for the single current action; no history entry grants execution authority.
+New entries should record concise milestones and link detailed run evidence,
+not duplicate the readiness ledger.
+
+## OBS-05 recurrence capture qualified — November 24, 2026
+
+Prepared a [separate read-only review](/home/aaron/code/.local-evidence/homelab-ntp/current/obs05-recurrence-inspection-20261124-v1/review.md)
+for the expected November 26 leap-maintenance recurrence. It admits the current
+boot, retains bounded command/file evidence and partial failures, and prevents
+replay. Initial activation and successful service exit alone do not establish
+recurrence provenance. Execution approval and genuine-result acceptance remain
+pending; OBS-09 and OBS-02/D1–D5 are unchanged. No target contact occurred.
+
+## OBS-09 closeout prepared — November 24, 2026
+
+Prepared [finish and retirement steps](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-master-deployment-20261124-v1-run/closeout.md),
+an evidence-based acceptance template and the separate OBS-05 read-only command
+plan. Local syntax, schedule and integrity checks preserve the deployed seal.
+No target contact, finish capture, cleanup or final acceptance occurred.
+
+## Master-hosted OBS-09 started — November 24, 2026
+
+Executed the approved deployment once. Native restricted authentication, fixed
+probe sources, eleven entry gates and workstation boundaries passed. The 48-hour
+window started at **3:50:28.978 p.m. CST** on J1-SVMF; all four first-slot streams
+completed. Final scheduled sample is November 26 at the same time, with the
+workstation finish boundary due by **4:20:28.978 p.m. CST**. The [execution outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-master-deployment-20261124-v1-run/outcome.md)
+records active paths, cleanup ownership, the local prelaunch directory correction
+and resource-measurement limits. Final acceptance and cleanup remain pending;
+OBS-05 recurrence remains open. OBS-02/D1–D5 and accepted limitations are unchanged.
+
+## Master-hosted OBS-09 deployment prepared — November 24, 2026
+
+Qualified a source-restricted, named-sample SSH gateway and dedicated on-master
+key lifecycle, fixed-source probes, finite native systemd execution and owned-key
+retirement. Local tests cover real loopback NTP source binding, one-use receipts,
+concurrent-key preservation, expiry/boot continuity and workstation boundary
+binding; unchanged entry predicates pass against retained captures. Full offline
+checks and native unit parsing passed. The [sealed review](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-master-deployment-20261124-v1/review.md)
+is unexecuted and needs approval. Native authentication/runtime and final
+acceptance remain live gates. No target contact or sampling; OBS-02/D1–D5 and
+other accepted limitations remain unchanged.
+
+## Master-hosted observation readiness captured — November 24, 2026
+
+Executed approved v2 once; both targets completed scoped reads. Fixed master
+IPv4/ULA binds and routes passed. Native tools/systemd and Munin cache metadata
+are present; use `/usr/sbin/runuser`. No outbound key was found in inspected
+master SSH directories, so the deployment must provision a restricted dedicated
+identity. Node host-key fingerprint matches pinned trust. [Outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-controller-readiness-20261124-v2-run/outcome.md)
+retains evidence limits. No onward login, configuration change or sampling;
+OBS-05 remains open and OBS-02/D1–D5 unchanged.
+
+## Readiness helper-import failure corrected — November 24, 2026
+
+Approved controller-readiness v1 reached J1-SVMF but exited before collector
+output because the helper loader omitted `__file__`. The node stage never ran.
+Preserved the consumed receipt and partial evidence. Corrected module filenames
+and added an actual generated-payload regression using the real helper/collector.
+Focused tests and full offline pre-commit passed; six optional cases skipped.
+[Successor v2](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-controller-readiness-20261124-v2/review.md)
+was sealed with unchanged scope; its later execution is recorded in the
+November 24 readiness-captured entry above. No deployment or sampling occurred.
+
+## J1-SVMF observation readiness inspection sealed — November 24, 2026
+
+Prepared the [read-only access/source inspection](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-controller-readiness-20261124-v1/review.md)
+using the existing bounded observation runner. It inventories public key and
+permission metadata, native controller prerequisites, routes and fixed-source
+bind availability without onward login, packets from the bind checks, or target
+writes. Local qualification covers one-use scope, current-boot admission,
+mid-capture change, key-output privacy and loopback binding. Full offline checks
+passed outside the sandbox. Sealed and unexecuted; actual authentication and
+master-hosted deployment remain pending. No new OBS-09 interval or OBS-05
+recurrence is claimed. Accepted limitations remain unchanged.
+
+## OBS-09 interruption reconciled; controller moved in plan — November 24, 2026
+
+Retained terminal evidence shows the November 9 observation stopped at
+12:38:48 p.m. CST after six slots because the client IPv6 source changed.
+Both client responses remained synchronized; node/master identity and protected
+hashes were unchanged. Aaron reported a workstation reboot and selected
+J1-SVMF for the successor. Updated the existing contract/procedure/readiness;
+no new capture, deployment or sampling occurred. OBS-05 recurrence verification
+is approved in intent and pending bounded execution; its last recorded trigger
+is November 26, with review due November 27. OBS-02/D1–D5 remain unchanged.
+
 ## OBS-09 entry accepted; observation started — November 9, 2026
 
 Executed the approved renewal once after current operator confirmations.
 All eleven entry gates passed; all 275 selected RRDs were fresh and finite,
 configured limits were OK, and native/client timing passed. Started the 48-hour
 window at 12:08:43 p.m. CST; first four-stream sample and boundaries completed.
-Final sample is due November 11 at 12:08:43 p.m. CST. Observation and final
-acceptance remain pending. [Run record](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261109-v1-run/outcome.md)
-preserves current baseline and OBS-05 trigger/follow-up deadlines. Accepted
+The final sample was scheduled for November 11 at 12:08:43 p.m. CST.
+**Subsequent outcome:** the observer stopped November 9 at 12:38:48 p.m. CST
+after six recorded slots on client-source change; the interval did not complete.
+See [the November 24 reconciliation](#obs-09-interruption-reconciled-controller-moved-in-plan--november-24-2026).
+Final acceptance remains pending. [Run record](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261109-v1-run/outcome.md)
+preserves that run’s baseline and OBS-05 trigger/follow-up deadlines. Accepted
 OBS-02/D1–D5 and other limitations remain unchanged; no production mutation.
 
 ## OBS-09 start deadline renewed without execution — November 9, 2026

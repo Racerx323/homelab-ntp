@@ -1,58 +1,58 @@
 # j2-svntp1 production readiness
 
-Reconciled October 30, 2026, from retained outcomes and Phase 3 requirements.
-This checklist summarizes approved captures and repository documents;
-updating it performs no additional live inspection. The [plan](ntp-architecture-deployment-plan-v1.0.md)
-defines requirements; [HISTORY](../HISTORY.md) records operation outcomes.
+Current status reconciled **November 24, 2026** from retained outcomes; no new
+live inspection is implied. The [architecture plan](ntp-architecture-deployment-plan-v1.0.md)
+defines requirements, [OPERATIONS](OPERATIONS.md) defines reusable procedure,
+and [HISTORY](../HISTORY.md) records dated milestones. This document owns the
+current action and gate status. Historical handoffs at the end are not a work queue.
 
 ## Decision and next action
 
-**Resume here:** OBS-02 is accepted with Aaron's D1–D5 dispositions as a
+**Next action:** review the running master-hosted OBS-09 observation at the
+November 25 daily checkpoint, then complete its November 26 finish boundary and
+verified evidence export/cleanup under the existing approval. Do not restart it.
+The [prepared closeout procedure](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-master-deployment-20261124-v1-run/closeout.md)
+contains finish commands, retirement ordering, an unassessed acceptance template
+and a separate OBS-05 follow-up. The [qualified OBS-05 review](/home/aaron/code/.local-evidence/homelab-ntp/current/obs05-recurrence-inspection-20261124-v1/review.md)
+is prepared for exact-hash execution approval after the expected recurrence;
+no target contact occurred during its preparation.
+
+The [approved deployment](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-master-deployment-20261124-v1/review.md)
+started its sole 48-hour window on **November 24, 2026, at 3:50:28.978 p.m. CST**.
+Native authentication/admission and all eleven entry gates passed; slot 000
+completed node, master and both fixed-source client streams. The observer runs
+on J1-SVMF independently of the workstation. See the [execution outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-master-deployment-20261124-v1-run/outcome.md).
+
+Daily review is **November 25 at 3:50:28.978 p.m. CST**. The final scheduled sample
+is **November 26 at 3:50:28.978 p.m. CST**. Complete the workstation finish checks
+and authenticated IPv4/IPv6 Webmin confirmation after that sample and **by
+4:20:28.978 p.m. CST November 26**. Missing or late boundaries block acceptance.
+Aaron owns cleanup within 72 hours of admission; exact times and active paths
+are recorded in the outcome. Final acceptance remains pending. OBS-02/D1–D5 and
+other accepted limitations are unchanged.
+
+**Previous OBS-09 attempt stopped incomplete.** The November 9 runner
+stopped at **12:38:48 p.m. CST**, after six recorded slots, on `client source
+changed`. The failing slot retained valid PPS/stratum-1/leap-0 responses on both
+families; node/master boot identities and protected hashes matched entry.
+See the [terminal record](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261109-v1-run/terminal.json)
+and [error](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261109-v1-run/observe-error.json).
+No completion record exists. Do not replay this consumed operation.
+
+On November 24 Aaron reported rebooting the operator workstation and selected
+**J1-SVMF**, the existing Munin master, to host the next observation and independent
+client probes. The retained captures establish IPv6 source change, not its exact
+mechanism or temporal relation to that reboot. Do not claim an NTP outage.
+
+## Accepted basis and deferred work
+
+**OBS-02 acceptance:** accepted with Aaron's D1–D5 dispositions as a
 qualified planning baseline and conditional storage budget. The
 [acceptance record](/home/aaron/code/.local-evidence/homelab-ntp/current/obs02-acceptance-20261024-v1/outcome.md)
 binds the unchanged review and proposed reserve scenario. No further information
 or approval is needed for those dispositions. Late cadence/gaps, unmeasured
 protostats bursts, unmeasured reserve sufficiency, composed failure coverage and
 native inode-alert rounding remain explicit limitations.
-
-**Next checkpoint:** resume J2-SVNTP1 production acceptance. Per Aaron, select
-and deploy the second host only after J2-SVNTP1's production deployment is
-accepted. The reusable [fleet procedure](FLEET-QUALIFICATION.md) now separates
-trial from external acceptance/persistence, arms independent systemd recovery,
-and supports partial-install and completed-service restoration. These controls
-are qualified locally; actual timer expiry, native recovery and reboot acceptance
-remain live gates for the later trial. No second-host selection or target action
-is authorized by this repository work. OBS-02/D1–D5 remain unchanged.
-The [October 28 observation outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/post-update-observation-20261028-v1/outcome.md)
-accepts 31 on-time samples over the scheduled 30-minute window, both client
-families at start/end, and one Windows-native discovery capture. Maximum absolute
-selected offset/jitter were 0.096152/0.036947 ms. Boot, service identity, protected
-configuration and watchdog ownership/policy remained unchanged; no new
-error-priority record appeared. The known WSL discovery limitation is recorded
-with Aaron's Windows-stack amendment. OBS-06 initial invocation/schedule is now
-observed successfully; OBS-05 four-week recurrence remains open.
-
-**OBS-09 is running:** Aaron approved the November 9 renewal and confirmed
-current dual-stack authenticated Webmin access and workstation availability.
-All eleven entry gates passed; [entry assessment](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261109-v1-run/entry-assessment.md)
-records current identities, unchanged protected inputs, 55 graphs/275 fresh
-RRDs and healthy native/client timing. The current master boot and client IPv6
-source form the prospective baseline. No historical boot identity is assumed.
-
-Sampling started **November 9, 2026, 12:08:43 p.m. CST**. The final scheduled
-sample is **November 11, 2026, 12:08:43 p.m. CST**; capture completion follows.
-Slot 000 and its boundaries passed. The [run outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261109-v1-run/outcome.md)
-and [session record](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261109-v1-session.json)
-retain progress. **Next checkpoint:** inspect the existing observer and retained
-samples; do not relaunch a consumed operation. Keep the workstation awake and
-connected. At completion, assess coverage/health/boundaries and obtain final
-operator Webmin confirmation before Aaron's acceptance. No final acceptance is
-claimed. November 4 v2 remains expired and unexecuted; earlier consumed attempts
-remain preserved.
-
-OBS-05's current next trigger is **November 26, 2026, 5:45:57 p.m. CST**;
-Aaron's review is due by **November 27 at 5:45:57 p.m. CST**. Update these
-if the actual schedule or boot changes. All accepted limitations remain.
 
 Aaron approved the prior preparation scope, the full OBS-09 contract and both
 bounded limitations: reported USW-Pro-48-POE/600 W/PoE+ plus ordinary-load hardware
@@ -68,6 +68,180 @@ Independent reset timing remains unproved; hardware attribution remains
 inconclusive under the original contract. No repeat panic is required solely for
 the missed measurement. This approval does not change fleet requirements or
 permit another live action, final production acceptance or a second host.
+
+**OBS-05:** Aaron approved verification of the genuine scheduled result.
+The November 24 entry verified the next-trigger time as **November 26, 2026, 5:45:57 p.m. CST** and the
+follow-up deadline **November 27 at 5:45:57 p.m. CST**. These are admission-time
+schedule observations; a subsequent reboot or schedule change requires reconciliation. Use the [bounded follow-up scope](OBS09-OBSERVATION-REVIEW.md#obs-05-bounded-read-only-follow-up-scope);
+assess actual timer/journal evidence after the due event, or record
+an intervening boot/schedule change and revised deadline. Never force a fetch.
+
+**Fleet sequencing:** per Aaron, select
+and deploy the second host only after J2-SVNTP1's production deployment is
+accepted. The reusable [fleet procedure](FLEET-QUALIFICATION.md) now separates
+trial from external acceptance/persistence, arms independent systemd recovery,
+and supports partial-install and completed-service restoration. These controls
+are qualified locally; actual timer expiry, native recovery and reboot acceptance
+remain live gates for the later trial. No second-host selection or target action
+is authorized by this repository work. OBS-02/D1–D5 remain unchanged.
+
+## Work ledger
+
+Change-record mapping: architecture plan = requirements;
+FINAL-OBSERVATION-CONTRACT = acceptance; OBS09-OBSERVATION-REVIEW = procedure;
+this checklist = work ledger; HISTORY and private outcomes = results.
+
+| Work item | State | Closure condition |
+| --- | --- | --- |
+| W-OBS09-01: stale running status | Resolved | November 9 terminal failure reconciled November 24; raw records preserved |
+| W-OBS09-02: workstation-dependent observation | In progress | Approved deployment, restricted authentication and native start passed November 24; retain required finish boundary/results and verify owned-state cleanup |
+| W-OBS09-04: current access/source inputs | Resolved | Accepted v2 inspection establishes routes/binds and absence of an outbound key in inspected directories; actual scoped authentication belongs to deployment admission |
+| W-OBS09-03: final window | In progress | November 24–26 interval meets unchanged coverage/health criteria, includes finish boundary and receives Aaron's acceptance |
+| W-OBS05-01: genuine leap recurrence | Deferred | Aaron owns review within 24 hours of actual trigger; capture schedule provenance, service result, valid leapfile and subsequent trigger without manual execution |
+
+## Phase 3 gate reconciliation
+
+| Gate | Retained evidence and disposition | Remaining work |
+| --- | --- | --- |
+| NTP/GPSD runtime | All-source startup, saved-drift controlled restart, acquisition-aware startup and new-boot structural handoff accepted | Preserve the accepted runtime while closing other gates |
+| Timing and clients | October 27 availability recovered within about 99 seconds; +5-minute precision failed. October 28 all 31 scheduled timing samples, dual-stack boundary clients and one Windows discovery capture passed | Preserve the original precision failures; October 29 recovery subsequently passed the separate availability, convergence and 30-minute stability gates. Complete sustained OBS-09 acceptance without inventing missing samples |
+| RTC | Commissioning v3 and boot v2 prove RV3028 identity, UTC policy, synchronized set/readback, fake-clock absence and kernel boot initialization | Battery-backed power-loss retention remains explicitly untested; the plan distinguishes it from warm reboot acceptance |
+| Leap maintenance | Timer-only correction executed and passed; prior successful scheduled run preserved and four-week next trigger checked across reload | October 28 observation confirms the successful initial postboot invocation and recurrence schedule (OBS-06); actual four-week recurrence (OBS-05) remains unobserved |
+| Webmin | v2 local HTTP/configuration checks and operator ama login over IPv4/IPv6 passed; temp-storage inspection found no current space shortage | Assess storage needs before large uploads/backups; controller exposure remains unverified |
+| Mail and needrestart | Genuine reporting/master consumption accepted October 22; controlled cron-originated failure route and downstream receipt accepted October 24 | Preserve recurring reporting and bounded OBS-04 acceptance; no replay or claim of all scanner failures/provider delivery |
+| Statistics retention | Genuine rule-specific success/master consumption accepted; completed t0/+6h/+24h/+48h study accepted October 24 as qualified OBS-02 planning baseline and conditional budget under D1–D5 | Preserve accepted limitations, ordinary retention and collected health; no replacement sampling or actual storage-fault test required by this reconciliation. Global logrotate-unit verdict remains unaccepted; plotting is Phase 3B |
+| Munin | Expanded profile/graphs, genuine producers, corrected timing readers, canonical source attribution, committed contacts, exact delivered tests and bounded native mail recovery accepted October 22 | Preserve accepted collection and the [coverage/persistence dispositions](PRODUCTION-OBSERVATION-CONTRACT.md#coverage-and-persistence-reconciliation) and complete the approved [final observation contract](FINAL-OBSERVATION-CONTRACT.md). No consumed stage may be replayed |
+| Hardware watchdog | October 29 controlled panic: boot/network, usable NTP, convergence, 30-minute stability and reconciliation passed; panic independently confirmed, no manual intervention | J2 prerequisite accepted October 30 by one-test timing exception; exact reset timing and hardware attribution remain unproved. Preserve PID 1 ownership and fleet requirements |
+| Network persistence | October 28 boundary reads confirm fixed addresses, static IPv4 and RA IPv6 default routes, intended resolver/profile and automatic-DNS suppression, unchanged across the interval | Preserve these dated current-boot observations; broader client/controller coverage and final-window persistence remain separate |
+| PoE, fan and thermal health | Earlier operator observations establish normal fan/power and original PoE HAT; boot success does not establish sustained health | Reported switch/PoE facts and ordinary-load checks accepted as bounded entry evidence; measured per-port reserve remains unproved. Collect sustained fan/thermal/undervoltage health under OBS-08/09; no stress or switch changes implicit |
+| OS/media/access | October 27 v5 completed 22 upgrades with clean audit, protected-file/initramfs checks and unchanged kernel; original recovery card retained | Refresh missing or changed baseline facts, including Wi-Fi/access state, during the new admission and final inventory; historical inventory and login results are not current inspections |
+| Final observation and inventory | Short timing/monitoring observations accepted; OBS-02 qualified growth baseline and conditional budget accepted with D1–D5 limitations. OBS-09 duration/five-minute cadence agreed; detailed criteria approved | Complete the running November 24–26 master-hosted window, finish boundary and final inventory; the November 9 attempt remains consumed and incomplete |
+
+The [October 30 reconciliation](PHASE3-PREREQUISITE-RECONCILIATION.md) distinguishes
+mandatory pre-window work, explicit pending decisions and later-phase obligations.
+The J2 watchdog prerequisite is satisfied by the approved timing exception;
+OBS-05 has the bounded October 30 phase-gate deferral; recurrence remains open. RTC battery retention remains
+Phase 8. The final-observation contract and master-hosted execution are approved; the November 24–26 interval is running, with final acceptance pending.
+
+The October 20 Munin-absence inspection is historical and superseded by the
+accepted deployment/observations above. Earlier userspace-watchdog absence did
+not establish absence of hardware protection; October 26 PID 1 ownership and
+October 27 active-watchdog captures supersede that handoff.
+The relevant retained operations are `production-boot-20261015-v2`,
+`rtc-set-readback-20261015-v3`, and `client-postboot-20261015-v1`.
+
+## Monitoring and deferred observation register
+
+This is the current checklist for the plan's
+[deferred observation and ongoing monitoring register](ntp-architecture-deployment-plan-v1.0.md#deferred-observation-and-ongoing-monitoring).
+All current rows concern j2-svntp1 unless noted. Repeat applicable checks for the
+next node; j2 evidence does not accept another host. These are retained observations,
+not new live checks. Recorded times are checkpoints, not automatic reminders or
+proof of completion. Owner assignment and recurring monitoring implementation
+remain pending wherever not established below.
+
+| ID | Current status | Follow-up or dependency | Evidence required to close or hand over |
+| --- | --- | --- | --- |
+| OBS-01 | Initial genuine retention completion/provenance and master evidence/age consumption accepted October 22; four-stream monitoring remains active | Preserve recurring retention evidence and failure visibility; continued statistics/storage observation remains OBS-02 | Actual rule-specific success and collected monitoring evidence accepted within bounded captures; continuing operation is not inferred |
+| OBS-02 | Accepted October 24 as a qualified planning growth baseline and conditional budget under D1–D5; limitations retained | Preserve late/gap/burst qualifications, additional 10 GiB/386,433-inode planning reserves, composed coverage and native precision disposition; no further sampling scheduled | [Acceptance record](/home/aaron/code/.local-evidence/homelab-ntp/current/obs02-acceptance-20261024-v1/outcome.md); unchanged review/contract and original captures |
+| OBS-03 | Initial genuine reporter completion/cron correlation and master evidence/age consumption accepted October 22 | Preserve recurring reporter evidence, quiet success, locks and failure-mail handling; controlled cron failure delivery accepted under OBS-04; preserve its limits | Actual producer completion and collected monitoring evidence accepted within bounded captures; recurrence/delivery remain separate |
+| OBS-04 | Accepted October 24 for one controlled argument-failure route: genuine cron ancestry/journal, expected failure and one marker release, plus operator-confirmed AppriseAPP receipt | Preserve ordinary reporting and consumed evidence; no replay. Full diagnostics, scanner crashes, fanout reliability and exact SMTP disposition remain outside this proof | [Reviewed outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/obs04-cron-failure-delivery-test-20261024-v2/outcome.md); authored entry withdrawn and running service identities unchanged |
+| OBS-05 | Corrected timer accepted; four-week live recurrence unobserved | Bounded phase-gate deferral approved October 30; Aaron owns genuine recurrence review within 24 hours of the next trigger captured at OBS-09 start | Actual scheduled result, valid leapfile and subsequent trigger. Keep OBS-05 open under the approved deferral; calculated dates alone do not close it |
+| OBS-06 | Initial physical-host invocation/schedule observed October 28: October 27 13:25:27 service exit 0, native no-replacement-needed journal, unchanged valid leapfile and active four-week timer | Preserve this bounded acceptance; later actual recurrence remains OBS-05 | [Observation outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/post-update-observation-20261028-v1/outcome.md); no forced job, new download or reboot |
+| OBS-07 | Expanded collection/graphs, source attribution, corrected timing/maintenance, contacts and bounded native mail recovery accepted October 22 | Use the [coverage/persistence matrix](PRODUCTION-OBSERVATION-CONTRACT.md#coverage-and-persistence-reconciliation); preserve the explicit source policy and compare after the next separately approved master maintenance event | Current-boot node network policy, representative clients/access, source persistence or approved disposition, and sustained operation remain separate from accepted short captures |
+| OBS-08 | Boot and earlier operator fan/power observations retained; sustained health not accepted | Collect during the approved 48-hour ordinary-load final observation | Fan/thermal/PoE/undervoltage evidence; J2 watchdog prerequisite already satisfied with the accepted exception |
+| OBS-09 | Contract approved; November 9 attempt stopped after six slots. Master-hosted successor started November 24; first slot complete | Follow the single current action above: daily/final review, complete workstation finish boundary, verified export and cleanup | Reviewed time/client/network/hardware health across the full agreed interval, evidence-gap/reset dispositions, final inventory and recurring owner/cadence; Phase 8 remains later |
+| OBS-10 | RTC set/readback and warm-boot initialization accepted; power-loss retention untested | Separate operator decision and approved recoverable power-loss window | Battery-retention result or explicit untested disposition; never infer it from the accepted warm reboot |
+| OBS-11 | Required separate-host dashboard deferred to Phase 3B; host/name undecided | After j2 Phase 3 completion, before next-server installation | Host sizing and private dashboard acceptance, then refresh/staleness/failure monitoring under the statistics policy |
+| OBS-12 | Webmin idle temp capacity inspected; large upload/backup suitability unassessed | Before enabling/using large workloads | Workload-specific disk/RAM assessment; retain current configuration until a separate change is reviewed |
+
+Update this table after every relevant operation, including a quiet or failed
+observation. Reference the exact operation/result in HISTORY; keep raw evidence
+private. A new delayed obligation needs a row here and, if it changes requirements,
+a corresponding plan entry. Before phase closure, account for every open row;
+carry continuing checks into an identified operations procedure instead of dropping
+them when installation is complete.
+
+## Separate rollout and reproducibility work
+
+- **Phase 3A:** record adopted/deferred optimization decisions before copying
+  the configuration to the primary. The plan explicitly permits retaining
+  defaults; optional tuning is not a production blocker by itself.
+- **Phase 3B required ntpviz dashboard:** after current-server completion, select
+  and qualify the separate always-on host, measure resource needs, and deploy/accept
+  private plots under the governing statistics section. This remains mandatory
+  before the next NTPsec server installation, but does not block j2 Phase 3 completion.
+- **Fresh installation:** the repository-only `clockmaker.py` lifecycle and
+  [second-host qualification procedure](FLEET-QUALIFICATION.md) are implemented
+  and locally qualified without historical pilot evidence as an install input.
+  Native second-host build, service, recovery and reboot acceptance remain
+  unproved and deferred until J2 production acceptance. Do not reopen the
+  implemented fresh-install path as though it were still missing.
+- **Phase 4 primary rebuild:** first close standby and Phase 3B dashboard gates, then separately
+  establish shared-antenna power continuity and any required interim DNAT
+  transition. The primary supplies antenna power; successful standby NTP tests
+  do not authorize primary shutdown or prove that dependency is removed.
+- **Phase 5 unicast DNS:** A/AAAA/PTR/SRV deployment and queries through both DNS
+  nodes/VIPs remain separate. The accepted October 21 change establishes standby A/AAAA and IPv4/IPv6 PTR
+  answers through both nodes/VIPs. The remaining primary and SRV requirements
+  are still separate; this scoped acceptance does not close all Phase 5 DNS. mDNS acceptance does not
+  substitute for these records.
+- **Phases 6–8:** finish UniFi DHCP/allow/deny/DNAT policy and traffic tests,
+  both-node inventory, remaining end-to-end acceptance and final observation.
+  Do not bring all later rollout work into the next leap-maintenance stage.
+
+No installation, timer activation, mail delivery, poller probe, watchdog test,
+power interruption, DNS change or primary-node operation is authorized by this
+review. Each live stage requires its scoped, sealed execution approval.
+
+## Historical handoff notes — superseded
+
+The retained narrative below describes earlier preparation and execution states.
+Its “next”, “pending”, “current” and “unexecuted” statements apply to those stages,
+not to today's queue. Use only the current action and registers above for status.
+Later accepted outcomes supersede earlier holds; failed and consumed operations
+remain preserved and must not be replayed. Do not append new handoffs here.
+
+The [October 28 observation outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/post-update-observation-20261028-v1/outcome.md)
+accepts 31 on-time samples over the scheduled 30-minute window, both client
+families at start/end, and one Windows-native discovery capture. Maximum absolute
+selected offset/jitter were 0.096152/0.036947 ms. Boot, service identity, protected
+configuration and watchdog ownership/policy remained unchanged; no new
+error-priority record appeared. The known WSL discovery limitation is recorded
+with Aaron's Windows-stack amendment. OBS-06 initial invocation/schedule is now
+observed successfully; OBS-05 four-week recurrence remains open.
+
+**OBS-09 stopped; the 48-hour window is incomplete.** The November 9 runner
+stopped at **12:38:48 p.m. CST**, after six recorded slots, on `client source
+changed`. The failing slot retained valid PPS/stratum-1/leap-0 responses on both
+families; node/master boot identities and protected hashes matched entry.
+See the [terminal record](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261109-v1-run/terminal.json)
+and [error](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-observation-20261109-v1-run/observe-error.json).
+No completion record exists. Do not replay this consumed operation.
+
+On November 24 Aaron reported rebooting the operator workstation and selected
+**J1-SVMF**, the existing Munin master, to host the next observation and independent
+client probes. The retained captures establish IPv6 source change, not its exact
+mechanism or temporal relation to that reboot. Do not claim an NTP outage.
+
+The November 24 readiness v1 inspection failed during helper import on J1-SVMF
+before any collector output; j2 was not contacted. This was a wrapper defect,
+not a target readiness finding. The [failed outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-controller-readiness-20261124-v1-run/outcome.md)
+is retained. The correction sets module filenames and qualifies the actual
+payload locally; v2 keeps the same targets, expiry and read-only effects.
+
+The [v2 readiness inspection completed](/home/aaron/code/.local-evidence/homelab-ntp/current/obs09-controller-readiness-20261124-v2-run/outcome.md)
+on November 24 at 2:50:15 p.m. CST. Both targets completed all scoped reads with
+stable admitted identities. J1-SVMF binds fixed sources `10.1.3.83` and
+`fd36:5aa8:6971:1::83`; routes to j2 use `eth0` on both families. Native
+systemd/tools and local Munin cache metadata are available. Use
+`/usr/sbin/runuser`, not the absent `/usr/bin/runuser`.
+
+No outbound key was found in the inspected master root/pi SSH directories;
+the node's inspected authorized-key file contains the workstation key only.
+This is not evidence of keys elsewhere or proof of onward authentication.
+The node host-key fingerprint matches pinned trust. No credentials, policies,
+services or observation schedules were changed.
 
 The [October 29 recovery outcome](/home/aaron/code/.local-evidence/homelab-server-configs/current/watchdog-panic-recovery-20261029-v1/outcome.md)
 retains all original verdicts: boot/network 50.643 seconds; usable native and
@@ -1035,98 +1209,3 @@ The approved policy remains HTTP on the Default LAN IPv4/ULA pair with `ama`;
 Caddy integration is deferred. Operator-attested authenticated login passed. Controller
 firewall policy and External exposure remain unverified. Observe scheduled leap
 maintenance during final observation; do not infer a result from elapsed time.
-
-## Phase 3 gate reconciliation
-
-| Gate | Retained evidence and disposition | Remaining work |
-| --- | --- | --- |
-| NTP/GPSD runtime | All-source startup, saved-drift controlled restart, acquisition-aware startup and new-boot structural handoff accepted | Preserve the accepted runtime while closing other gates |
-| Timing and clients | October 27 availability recovered within about 99 seconds; +5-minute precision failed. October 28 all 31 scheduled timing samples, dual-stack boundary clients and one Windows discovery capture passed | Preserve original precision failures; assess availability and revised convergence/stability separately without inventing missing samples |
-| RTC | Commissioning v3 and boot v2 prove RV3028 identity, UTC policy, synchronized set/readback, fake-clock absence and kernel boot initialization | Battery-backed power-loss retention remains explicitly untested; the plan distinguishes it from warm reboot acceptance |
-| Leap maintenance | Timer-only correction executed and passed; prior successful scheduled run preserved and four-week next trigger checked across reload | October 28 observation confirms the successful initial postboot invocation and recurrence schedule (OBS-06); actual four-week recurrence (OBS-05) remains unobserved |
-| Webmin | v2 local HTTP/configuration checks and operator ama login over IPv4/IPv6 passed; temp-storage inspection found no current space shortage | Assess storage needs before large uploads/backups; controller exposure remains unverified |
-| Mail and needrestart | Genuine reporting/master consumption accepted October 22; controlled cron-originated failure route and downstream receipt accepted October 24 | Preserve recurring reporting and bounded OBS-04 acceptance; no replay or claim of all scanner failures/provider delivery |
-| Statistics retention | Genuine rule-specific success/master consumption accepted; completed t0/+6h/+24h/+48h study accepted October 24 as qualified OBS-02 planning baseline and conditional budget under D1–D5 | Preserve accepted limitations, ordinary retention and collected health; no replacement sampling or actual storage-fault test required by this reconciliation. Global logrotate-unit verdict remains unaccepted; plotting is Phase 3B |
-| Munin | Expanded profile/graphs, genuine producers, corrected timing readers, canonical source attribution, committed contacts, exact delivered tests and bounded native mail recovery accepted October 22 | Preserve accepted collection; complete the [coverage/persistence matrix](PRODUCTION-OBSERVATION-CONTRACT.md#coverage-and-persistence-reconciliation) and agree the final observation contract. No consumed stage may be replayed |
-| Hardware watchdog | October 29 controlled panic: boot/network, usable NTP, convergence, 30-minute stability and reconciliation passed; panic independently confirmed, no manual intervention | J2 prerequisite accepted October 30 by one-test timing exception; exact reset timing and hardware attribution remain unproved. Preserve PID 1 ownership and fleet requirements |
-| Network persistence | October 28 boundary reads confirm fixed addresses, static IPv4 and RA IPv6 default routes, intended resolver/profile and automatic-DNS suppression, unchanged across the interval | Preserve these dated current-boot observations; broader client/controller coverage and final-window persistence remain separate |
-| PoE, fan and thermal health | Earlier operator observations establish normal fan/power and original PoE HAT; boot success does not establish sustained health | Current power budget/class, fan/control, temperature, undervoltage/throttling and sustained-operation evidence; no stress or switch changes implicit |
-| OS/media/access | October 27 v5 completed 22 upgrades with clean audit, protected-file/initramfs checks and unchanged kernel; original recovery card retained | Refresh only missing or changed baseline facts and final observed inventory. Wi-Fi disablement remains unproven in HISTORY, not silently accepted |
-| Final observation and inventory | Short timing/monitoring observations accepted; OBS-02 qualified growth baseline and conditional budget accepted with D1–D5 limitations. OBS-09 duration/five-minute cadence agreed; detailed criteria approved | Resolve baseline gate dispositions and the [final-window decisions](PRODUCTION-OBSERVATION-CONTRACT.md#final-phase-3-window-inputs-still-required), then begin after relevant changes and complete observed inventory |
-
-The [October 30 reconciliation](PHASE3-PREREQUISITE-RECONCILIATION.md) distinguishes
-mandatory pre-window work, explicit pending decisions and later-phase obligations.
-The J2 watchdog prerequisite is satisfied by the approved timing exception;
-OBS-05 has the bounded October 30 phase-gate deferral; recurrence remains open. RTC battery retention remains
-Phase 8. Final observation requires its own agreed contract and authorization.
-
-The October 20 Munin-absence inspection is historical and superseded by the
-accepted deployment/observations above. Earlier userspace-watchdog absence did
-not establish absence of hardware protection; October 26 PID 1 ownership and
-October 27 active-watchdog captures supersede that handoff.
-The relevant retained operations are `production-boot-20261015-v2`,
-`rtc-set-readback-20261015-v3`, and `client-postboot-20261015-v1`.
-
-## Monitoring and deferred observation register
-
-This is the current checklist for the plan's
-[deferred observation and ongoing monitoring register](ntp-architecture-deployment-plan-v1.0.md#deferred-observation-and-ongoing-monitoring).
-All current rows concern j2-svntp1 unless noted. Repeat applicable checks for the
-next node; j2 evidence does not accept another host. These are retained observations,
-not new live checks. Recorded times are checkpoints, not automatic reminders or
-proof of completion. Owner assignment and recurring monitoring implementation
-remain pending wherever not established below.
-
-| ID | Current status | Next checkpoint or dependency | Evidence required to close or hand over |
-| --- | --- | --- | --- |
-| OBS-01 | Initial genuine retention completion/provenance and master evidence/age consumption accepted October 22; four-stream monitoring remains active | Preserve recurring retention evidence and failure visibility; continued statistics/storage observation remains OBS-02 | Actual rule-specific success and collected monitoring evidence accepted within bounded captures; continuing operation is not inferred |
-| OBS-02 | Accepted October 24 as a qualified planning growth baseline and conditional budget under D1–D5; limitations retained | Preserve late/gap/burst qualifications, additional 10 GiB/386,433-inode planning reserves, composed coverage and native precision disposition; no further sampling scheduled | [Acceptance record](/home/aaron/code/.local-evidence/homelab-ntp/current/obs02-acceptance-20261024-v1/outcome.md); unchanged review/contract and original captures |
-| OBS-03 | Initial genuine reporter completion/cron correlation and master evidence/age consumption accepted October 22 | Preserve recurring reporter evidence, quiet success, locks and failure-mail handling; controlled cron failure delivery accepted under OBS-04; preserve its limits | Actual producer completion and collected monitoring evidence accepted within bounded captures; recurrence/delivery remain separate |
-| OBS-04 | Accepted October 24 for one controlled argument-failure route: genuine cron ancestry/journal, expected failure and one marker release, plus operator-confirmed AppriseAPP receipt | Preserve ordinary reporting and consumed evidence; no replay. Full diagnostics, scanner crashes, fanout reliability and exact SMTP disposition remain outside this proof | [Reviewed outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/obs04-cron-failure-delivery-test-20261024-v2/outcome.md); authored entry withdrawn and running service identities unchanged |
-| OBS-05 | Corrected timer accepted; four-week live recurrence unobserved | Bounded phase-gate deferral approved October 30; Aaron owns genuine recurrence review within 24 hours of the next trigger captured at OBS-09 start | Actual scheduled result, valid leapfile and subsequent trigger. Keep OBS-05 open under the approved deferral; calculated dates alone do not close it |
-| OBS-06 | Initial physical-host invocation/schedule observed October 28: October 27 13:25:27 service exit 0, native no-replacement-needed journal, unchanged valid leapfile and active four-week timer | Preserve this bounded acceptance; later actual recurrence remains OBS-05 | [Observation outcome](/home/aaron/code/.local-evidence/homelab-ntp/current/post-update-observation-20261028-v1/outcome.md); no forced job, new download or reboot |
-| OBS-07 | Expanded collection/graphs, source attribution, corrected timing/maintenance, contacts and bounded native mail recovery accepted October 22 | Use the [coverage/persistence matrix](PRODUCTION-OBSERVATION-CONTRACT.md#coverage-and-persistence-reconciliation); preserve the explicit source policy and compare after the next separately approved master maintenance event | Current-boot node network policy, representative clients/access, source persistence or approved disposition, and sustained operation remain separate from accepted short captures |
-| OBS-08 | Boot and earlier operator fan/power observations retained; sustained health not accepted | Collect during the approved 48-hour ordinary-load final observation | Fan/thermal/PoE/undervoltage evidence; J2 watchdog prerequisite already satisfied with the accepted exception |
-| OBS-09 | New 48-hour interval and five-minute node/client cadence agreed October 30; detailed criteria approved; OBS-02 is a different window | Resolve prerequisite gates and the [final-window contract inputs](PRODUCTION-OBSERVATION-CONTRACT.md#final-phase-3-window-inputs-still-required), then agree start after the last relevant change | Reviewed time/client/network/hardware health across the full agreed interval, evidence-gap/reset dispositions, final inventory and recurring owner/cadence; Phase 8 remains later |
-| OBS-10 | RTC set/readback and warm-boot initialization accepted; power-loss retention untested | Separate operator decision and approved recoverable power-loss window | Battery-retention result or explicit untested disposition; never infer it from the accepted warm reboot |
-| OBS-11 | Required separate-host dashboard deferred to Phase 3B; host/name undecided | After j2 Phase 3 completion, before next-server installation | Host sizing and private dashboard acceptance, then refresh/staleness/failure monitoring under the statistics policy |
-| OBS-12 | Webmin idle temp capacity inspected; large upload/backup suitability unassessed | Before enabling/using large workloads | Workload-specific disk/RAM assessment; retain current configuration until a separate change is reviewed |
-
-Update this table after every relevant operation, including a quiet or failed
-observation. Reference the exact operation/result in HISTORY; keep raw evidence
-private. A new delayed obligation needs a row here and, if it changes requirements,
-a corresponding plan entry. Before phase closure, account for every open row;
-carry continuing checks into an identified operations procedure instead of dropping
-them when installation is complete.
-
-## Separate rollout and reproducibility work
-
-- **Phase 3A:** record adopted/deferred optimization decisions before copying
-  the configuration to the primary. The plan explicitly permits retaining
-  defaults; optional tuning is not a production blocker by itself.
-- **Phase 3B required ntpviz dashboard:** after current-server completion, select
-  and qualify the separate always-on host, measure resource needs, and deploy/accept
-  private plots under the governing statistics section. This remains mandatory
-  before the next NTPsec server installation, but does not block j2 Phase 3 completion.
-- **Fresh installation:** OPERATIONS and the installation-durability report
-  still identify first-install paths that require prior acquisition/restoration
-  receipts. Cached payloads and archive-free executable code do not close this
-  gap. Implement/test fresh-observation entry paths before reusing the workflow
-  for the primary; include the accepted RTC and acquisition policy in the
-  reproducibility audit. Do not manufacture failed-run receipts.
-- **Phase 4 primary rebuild:** first close standby and Phase 3B dashboard gates, then separately
-  establish shared-antenna power continuity and any required interim DNAT
-  transition. The primary supplies antenna power; successful standby NTP tests
-  do not authorize primary shutdown or prove that dependency is removed.
-- **Phase 5 unicast DNS:** A/AAAA/PTR/SRV deployment and queries through both DNS
-  nodes/VIPs remain separate. The accepted October 21 change establishes standby A/AAAA and IPv4/IPv6 PTR
-  answers through both nodes/VIPs. The remaining primary and SRV requirements
-  are still separate; this scoped acceptance does not close all Phase 5 DNS. mDNS acceptance does not
-  substitute for these records.
-- **Phases 6–8:** finish UniFi DHCP/allow/deny/DNAT policy and traffic tests,
-  both-node inventory, remaining end-to-end acceptance and final observation.
-  Do not bring all later rollout work into the next leap-maintenance stage.
-
-No installation, timer activation, mail delivery, poller probe, watchdog test,
-power interruption, DNS change or primary-node operation is authorized by this
-review. Each live stage requires its scoped, sealed execution approval.

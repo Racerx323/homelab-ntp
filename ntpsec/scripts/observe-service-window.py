@@ -281,14 +281,28 @@ def capture(bundle, spec, output, label, role, rich, since):
         sources = {n: (bundle/n).read_text() for n in ('helper.py', 'passive.py', 'measure.py', 'checks.py', 'munin.py')}
         program = ('import types\nm=types.ModuleType("observer")\nexec('+repr((bundle/'observer.py').read_text())+',m.__dict__)\n'
                    'm.remote('+repr(role)+','+repr(rich)+','+repr(spec)+','+repr(sources)+','+repr(since)+')\n')
-        r = stream_record(bundle, output, label+'-'+role, target_argv(bundle, spec, role), program.encode(), 140, 1048576)
+        if spec.get('hosting') == 'master':
+            if role == 'master':
+                argv, payload = ['/usr/bin/python3', '-I', '-B', '-'], program.encode()
+            else:
+                argv = ['/usr/bin/ssh', '-F', '/dev/null', '-T', '-n',
+                        '-b', spec['probe_sources']['client4'], '-i', spec['identity_file'],
+                        *sum((['-o', x] for x in spec['ssh_options']), []),
+                        '-o', 'UserKnownHostsFile='+str(bundle/'known_hosts'),
+                        '-o', 'HostKeyAlias='+spec['node']['host_key_alias'],
+                        spec['node']['target'], label]
+                payload = None
+        else:
+            argv, payload = target_argv(bundle, spec, role), program.encode()
+        r = stream_record(bundle, output, label+'-'+role, argv, payload, 140, 1048576)
         data = parse_remote(r['stdout']) if r['returncode'] == 0 and not r.get('error') else {}
         complete = data.get('complete') is True
     else:
         endpoint = spec['node']['endpoints'][0 if role == 'client4' else 1]
         # Reuse nonce/protocol checks. Boundary denial probes are explicit; regular slots are NTP only.
         program = ('import types,json\nm=types.ModuleType("client")\nexec('+repr((bundle/'client.py').read_text())+',m.__dict__)\n'
-                   'print(json.dumps(m.client_ntp('+repr(endpoint)+',administrative='+repr(rich)+')))\n')
+                   'print(json.dumps(m.client_ntp('+repr(endpoint)+',administrative='+repr(rich)+
+                   ',source='+repr(spec.get('probe_sources', {}).get(role))+')))\n')
         r = stream_record(bundle, output, label+'-'+role, ['/usr/bin/python3', '-I', '-B', '-'], program.encode(), 20, 65536)
         data = json.loads(r['stdout']) if r['returncode'] == 0 and not r.get('error') else {}
         complete = bool(data)
@@ -305,7 +319,14 @@ def parallel_capture(bundle, spec, output, label, rich, since):
 
 
 def boundary(bundle, spec, output, label):
-    deadline = time.monotonic()+90
+    if spec.get('hosting') == 'master':
+        boundary_commands(bundle, spec, output, label)
+        return
+    boundary_windows(bundle, spec, output, label)
+    boundary_commands(bundle, spec, output, label)
+
+
+def boundary_windows(bundle, spec, output, label):
     c = module('client', (bundle/'client.py').read_text())
     compare = module('compare', (bundle/'compare.py').read_text())
     mdns = spec['windows']
@@ -318,6 +339,10 @@ def boundary(bundle, spec, output, label):
     require(r['returncode'] == 0 and not r.get('error'), 'Windows discovery failed')
     native = json.loads(r['stdout'].lstrip('\ufeff')); compare.decode(native, mdns, c.__dict__)
     require(native.get("matched") is True, "Windows discovery records do not match")
+
+
+def boundary_commands(bundle, spec, output, label):
+    deadline = time.monotonic()+60
     for i, item in enumerate(spec['boundary_commands']):
         argv = [x.replace('{bundle}', str(bundle)) for x in item['argv']]
         remaining = deadline-time.monotonic()
@@ -434,17 +459,42 @@ def summarize(rows):
     return {'streams': summary, 'acceptance': 'requires review of health, boundaries, gaps and all gates'}
 
 
+def readiness_payload(bundle, role, hostname):
+    return ('import types\n' +
+            'h=types.ModuleType("helper");h.__file__="/sealed/helper.py";exec('+repr((bundle/'helper.py').read_text())+',h.__dict__)\n' +
+            'r=types.ModuleType("readiness");r.__file__="/sealed/controller-readiness.py";exec('+repr((bundle/'controller-readiness.py').read_text())+',r.__dict__)\n' +
+            'r.collect('+repr(role)+','+repr(hostname)+',h)\n')
+
+
 def execute(bundle, output, expected, phase, grant):
     spec = check(bundle, expected); private(output)
     require(spec.get('purpose', 'observation') ==
-            ('master-selection' if phase == 'inspect-master' else 'observation'), 'phase outside sealed scope')
+            ({'inspect-master': 'master-selection', 'inspect-controller': 'controller-readiness'}.get(phase, 'observation')), 'phase outside sealed scope')
+    hosted = spec.get('hosting') == 'master'
+    if hosted:
+        runtime = json.loads((bundle.parent/'key.json').read_text())
+        spec['identity_fingerprint'] = runtime['fingerprint']
     fingerprint(spec)
     require(time.time() <= spec['not_after_epoch'], 'execution scope expired')
-    if phase != 'inspect-master':
+    if not hosted and phase not in ('inspect-master', 'inspect-controller'):
         require(Path(spec['windows']['executable']).is_file(), 'Windows native executable missing')
     for argv in [t['argv'] for t in spec['boundary_commands']]:
         require(os.access(argv[0], os.X_OK), 'boundary executable missing')
     require(socket.gethostname() == spec['controller_hostname'], 'wrong controller')
+    if phase == 'inspect-controller':
+        require(not any(output.iterdir()), 'new empty output directory required')
+        write_new(output/'execution.json', {'manifest_sha256': expected, 'epoch': time.time(), 'phase': phase})
+        results = {}
+        for role in ('master', 'node'):
+            program = readiness_payload(bundle, role, spec[role]['hostname'])
+            result = stream_record(bundle, output, 'readiness-'+role, target_argv(bundle, spec, role),
+                                   program.encode(), 140, 1048576)
+            data = parse_remote(result['stdout']) if result['returncode'] == 0 and not result.get('error') else {}
+            results[role] = {'returncode': result['returncode'], 'error': result.get('error'), 'data': data}
+            write_new(output/('readiness-'+role+'.json'), results[role])
+            require(data.get('complete') is True, 'incomplete readiness capture: '+role)
+        write_new(output/'inspection.json', {'epoch': time.time(), 'streams': results, 'accepted': False})
+        return
     if phase == 'inspect-master':
         require(not any(output.iterdir()), 'new empty output directory required')
         write_new(output/'execution.json', {'manifest_sha256': expected, 'epoch': time.time(), 'phase': phase})
@@ -504,7 +554,7 @@ def execute(bundle, output, expected, phase, grant):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument('phase', choices=('check','entry','observe','inspect-master'))
+    parser.add_argument('phase', choices=('check','entry','observe','inspect-master','inspect-controller'))
     parser.add_argument('--bundle', required=True, type=Path)
     parser.add_argument('--sha256', required=True)
     parser.add_argument('--output', type=Path)
